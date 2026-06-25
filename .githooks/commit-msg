@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$1"
+elif command -v powershell.exe >/dev/null 2>&1; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$1"
+else
+  echo "PowerShell is required for scripts/lint-git-governance.ps1" >&2
+  exit 1
+fi
