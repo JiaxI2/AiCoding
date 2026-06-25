@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "kit_version": "0.2.0",
+  "agent": "codex",
+  "workspace": "F:\\Study\\AI\\AiCoding\\CodingKit\\tests\\ai-debug-kit",
+  "installation_status": "ready",
+  "validated_at": "2026-06-25T07:36:18Z",
+  "backend": "simulator",
+  "platform": "generic",
+  "capabilities": {
+    "artifact_load": true,
+    "memory_read": true,
+    "memory_write": true,
+    "variable_read": true,
+    "telemetry_capture": true,
+    "fault_snapshot": true,
+    "flash": false
+  },
+  "evidence": {
+    "smoke_test": "F:\\Study\\AI\\AiCoding\\CodingKit\\tests\\ai-debug-kit\\.ai-debug\\deployment\\smoke-test.json",
+    "backends": "F:\\Study\\AI\\AiCoding\\CodingKit\\tests\\ai-debug-kit\\.ai-debug\\deployment\\backends.json",
+    "jlink_target_profile": "F:\\Study\\AI\\AiCoding\\CodingKit\\tests\\ai-debug-kit\\.ai-debug\\targets\\jlink-generic.json"
+  }
+}

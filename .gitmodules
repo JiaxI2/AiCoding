@@ -1,0 +1,8 @@
+[submodule "CodingKit/agents/skills"]
+	path = CodingKit/agents/skills
+	url = https://github.com/JiaxI2/Codex-Skills.git
+	branch = main
+[submodule "CodingKit/tests/ai-debug-kit/_external/Mklink-AI-Probe"]
+	path = CodingKit/tests/ai-debug-kit/_external/Mklink-AI-Probe
+	url = https://github.com/Aladdin-Wang/Mklink-AI-Probe.git
+	branch = master

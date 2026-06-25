@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "backends": {
+    "jlink": {
+      "detected": false,
+      "code": "OK",
+      "message": "Operation completed",
+      "capabilities": {
+        "artifact_load": false,
+        "memory_read": true,
+        "memory_write": false,
+        "variable_read": false,
+        "telemetry_capture": false,
+        "fault_snapshot": false,
+        "flash": false
+      }
+    },
+    "simulator": {
+      "detected": true,
+      "code": "OK",
+      "message": "Operation completed",
+      "capabilities": {
+        "artifact_load": true,
+        "memory_read": true,
+        "memory_write": true,
+        "variable_read": true,
+        "telemetry_capture": true,
+        "fault_snapshot": true,
+        "flash": false
+      }
+    }
+  }
+}

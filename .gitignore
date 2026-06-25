@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# Runtime session logs
+**/.ai-debug/sessions/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
