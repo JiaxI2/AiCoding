@@ -1,0 +1,20 @@
+{
+  "name": "aicoding-platform",
+  "interface": {
+    "displayName": "AiCoding Platform"
+  },
+  "plugins": [
+    {
+      "name": "aicoding",
+      "source": {
+        "source": "local",
+        "path": "./CodingKit/agents/skills/plugins/AiCoding"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

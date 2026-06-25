@@ -1,44 +1,49 @@
 # AiCoding
 
-AiCoding 是面向嵌入式开发的本地 CodingKit 仓库，用于沉淀模块、调试工具、AI 辅助开发流程和 Codex/Git 治理规则。
+AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, and a version-locked Codex plugin kit.
 
-## 状态
-
-- 默认分支：`main`
-- 远程仓库：`https://github.com/JiaxI2/AiCoding.git`
-- Git 治理：使用 `CodingKit/agents/skills` 中的 `Git-Skill`
-- `CodingKit/agents/skills` 是 submodule，来源于 `https://github.com/JiaxI2/Codex-Skills.git`
-
-## 快速开始
+## Quick Start
 
 ```powershell
 git clone --recurse-submodules https://github.com/JiaxI2/AiCoding.git
 cd AiCoding
 git submodule update --init --recursive
-git config core.hooksPath .githooks
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode all
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps1
 ```
 
-## 目录
+## Repository Roles
+
+- `CodingKit/agents/skills` is a submodule pointing to `https://github.com/JiaxI2/Codex-Skills.git`.
+- `CodingKit/agents/skills/plugins/AiCoding` is the packaged Codex plugin source for installation.
+- `.agents/plugins/marketplace.json` is the AiCoding platform Marketplace entry.
+- `config/codex-kit.json` defines CodingKit asset discovery and installation rules.
+- `.githooks/` contains Git-native hooks for this repository; Codex hooks live inside the plugin.
+
+## CodingKit Assets
 
 ```text
-CodingKit/
-  agents/skills/      Codex-Skills submodule
-  modules/            可复用模块
-  tests/              测试、验证和实验工程
-.github/              仓库治理配置
-.githooks/            Git hook 入口
-scripts/              本仓库 lint 和治理脚本
+CodingKit/examples
+CodingKit/modules
+CodingKit/platforms
+CodingKit/tests
+CodingKit/tools
 ```
 
-## Git 提交流程
+These directories are platform assets. They are not copied into the Codex plugin. Skills and tools discover them through `config/codex-kit.json` or `AICODING_HOME`.
 
-1. 每次提交选择一个主类型：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`。
-2. 提交标题使用 `<type>(<scope>): <summary>`。
-3. 每次普通提交都更新 `CHANGELOG.md`，并在条目中显式标注类型，例如 `**docs**` 或 `**chore**`。
-4. 本仓库通过 `.githooks` 调用 `scripts/lint-git-governance.ps1` 做本地门禁。
+## Maintenance Commands
 
-## 文档
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/status-codex-kit.ps1 -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
+```
 
+Do not rebuild `plugins/AiCoding` inside the submodule from AiCoding. Update the submodule only after Codex-Skills has built, verified, committed, and pushed the plugin package.
+
+## Documentation
+
+- [CodingKit](CodingKit/README.md)
 - [CHANGELOG](CHANGELOG.md)
 - [Repository Governance](.github/repository-governance.toml)
