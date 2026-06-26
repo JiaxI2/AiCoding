@@ -140,6 +140,7 @@ $result = [pscustomobject]@{
     pluginCache = $pluginCache
     sourceRepository = $sourceRepository
     sourceRepositoryUnderSkillRoot = $sourceRepositoryUnderSkillRoot
+    registeredStandaloneSkills = @($config.standaloneSkillRegistry.skills)
     brokenLinks = $brokenLinks
     wholeRepositoryLinks = $wholeRepositoryLinks
     generatedSkillLinks = $generatedSkillLinks

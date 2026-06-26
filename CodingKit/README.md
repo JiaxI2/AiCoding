@@ -44,11 +44,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps
 ```
 
 After installing the plugin, open Codex `/hooks` and review/trust the plugin-bundled hooks.
+
+The install script creates the local Marketplace link required by the Codex plugin CLI:
+
+```text
+plugins/AiCoding -> CodingKit/agents/skills/plugins/AiCoding
+```
+
+This link is local generated state. It must not be used to copy plugin files into AiCoding.
 ## Runtime Skill Exposure
 
 `CodingKit/agents/skills` is a submodule and must not be linked wholesale into a user Skill Root.
 
-Normal runtime should expose `aicoding-*` skills through the installed AiCoding plugin. Personal standalone skills are linked selectively from `%USERPROFILE%\.agents\skills`.
+Normal runtime should expose `aicoding-*` skills through the installed AiCoding plugin. Personal standalone skills are linked selectively from `%USERPROFILE%\.agents\skills` by default. The complete registry lives in `config/codex-kit.json` under `standaloneSkillRegistry`, and compatibility installs can target `%USERPROFILE%\.codex\skills` only when `set-codex-skill-profile.ps1 -StandaloneRoot codex` is explicitly selected.
+
+When compatibility mode keeps `%USERPROFILE%\.codex\skills`, keep `.system` and selected standalone links only. Remove source checkout directories such as `embedded`, `platform`, and `plugins/AiCoding/skills` from active runtime exposure after backing them up.
 
 Run the runtime audit before and after install, update, migration, profile switching, or uninstall work:
 

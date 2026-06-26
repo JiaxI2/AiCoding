@@ -9,6 +9,11 @@
 - 本轮已提交类型：`feat(coding-kit)`、`chore(coding-kit)`。
 
 ### Added
+- **feat(coding-kit)**：`install-codex-kit.ps1` 现在可创建本地 Marketplace junction，并通过 Codex plugin CLI 注册 `aicoding-platform`、安装 `aicoding@aicoding-platform`；add reproducible local Marketplace link creation and Codex CLI plugin registration/installation.
+- **chore(runtime)**：完成本机 runtime 迁移闭环：旧 `.codex\skills` 源码暴露已备份，`.system` 保留，standalone skills 以 junction 从 `F:\Study\AI\Codex-Skills` 暴露，`aicoding-*` 只来自 AiCoding Plugin；complete local runtime migration with backup, preserved `.system`, standalone junctions, and plugin-only `aicoding-*` exposure.
+- **feat(coding-kit)**：补全 standalone skill registry，将当前已备份的个人/下载 skill 纳入 `full` profile 安装计划；add a standalone skill registry and include backed-up personal/downloaded skills in the `full` profile plan.
+- **feat(tooling)**：`set-codex-skill-profile.ps1` 支持 `-StandaloneRoot agents|codex`、幂等 junction 创建和 dry-run 安装预览；support selectable standalone install roots, idempotent junction creation, and dry-run install previews.
+- **docs**：新增 `README_CN.md`，并把 README、CHANGELOG、Tag、Release 维护策略调整为中英双语闭环；add Chinese README documentation and align README, CHANGELOG, Tag, and Release governance with bilingual operation.
 
 - **chore(coding-kit)**：更新 `CodingKit/agents/skills` submodule 到 `61d2176`，包含 `aicoding-kit-maintenance`、`aicoding-user-skill-creator` 以及 `fix(tooling)` 的 BUILDINFO 非自引用漂移检查修复。
 - **docs**：明确 `aicoding-git-governance` 负责 Git/README/CHANGELOG/发布治理，`aicoding-kit-maintenance` 负责 kit 生命周期；新增 `aicoding-user-skill-creator`（User-Skill-Creator）与系统 `skill-creator` 的共存边界。

@@ -43,10 +43,67 @@
       "pluginEnabled": true,
       "sourceSkillLinks": [],
       "standaloneSkills": [
-        "obsidian-markdown",
+        "algorithmic-art",
+        "anthropic-docx",
+        "anthropic-pdf",
+        "anthropic-pptx",
+        "anthropic-xlsx",
+        "brand-guidelines",
+        "canvas-design",
+        "claude-api",
+        "codex-documents-anthropic-docx",
+        "defuddle",
+        "doc-coauthoring",
+        "drawio",
+        "frontend-design",
+        "internal-comms",
+        "json-canvas",
+        "karpathy-guidelines",
+        "mcp-builder",
+        "obsidian-bases",
         "obsidian-cli",
-        "obsidian-bases"
+        "obsidian-markdown",
+        "slack-gif-creator",
+        "theme-factory",
+        "web-artifacts-builder",
+        "webapp-testing"
       ]
     }
+  },
+  "standaloneSkillRegistry": {
+    "sourceRepository": "F:\\Study\\AI\\Codex-Skills",
+    "defaultInstallRoot": "%USERPROFILE%\\.agents\\skills",
+    "supportedInstallRoots": [
+      "agents",
+      "codex"
+    ],
+    "linkMode": "junction",
+    "installByProfile": true,
+    "skills": [
+      "algorithmic-art",
+      "anthropic-docx",
+      "anthropic-pdf",
+      "anthropic-pptx",
+      "anthropic-xlsx",
+      "brand-guidelines",
+      "canvas-design",
+      "claude-api",
+      "codex-documents-anthropic-docx",
+      "defuddle",
+      "doc-coauthoring",
+      "drawio",
+      "frontend-design",
+      "internal-comms",
+      "json-canvas",
+      "karpathy-guidelines",
+      "mcp-builder",
+      "obsidian-bases",
+      "obsidian-cli",
+      "obsidian-markdown",
+      "slack-gif-creator",
+      "theme-factory",
+      "web-artifacts-builder",
+      "webapp-testing"
+    ]
   }
 }

@@ -17,12 +17,43 @@ function Resolve-KitPath {
     return Join-Path $RepoRoot $rel
 }
 
+function Find-CodexCliPath {
+    $command = Get-Command codex -ErrorAction SilentlyContinue
+    if ($command -and $command.Source) { return $command.Source }
+    $binRoot = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\bin'
+    if (Test-Path -LiteralPath $binRoot) {
+        $candidate = Get-ChildItem -LiteralPath $binRoot -Recurse -Filter 'codex.exe' -File -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+        if ($candidate) { return $candidate.FullName }
+    }
+    return $null
+}
+
 function Test-CodexPluginCli {
+    $path = Find-CodexCliPath
+    if (-not $path) { return [pscustomobject]@{ available = $false; path = $null; detail = 'codex CLI not found' } }
     try {
-        $output = & codex plugin --help 2>&1
-        return [pscustomobject]@{ available = ($LASTEXITCODE -eq 0); detail = ($output -join "`n") }
+        $output = & $path plugin --help 2>&1
+        return [pscustomobject]@{ available = ($LASTEXITCODE -eq 0); path = $path; detail = ($output -join "`n") }
     } catch {
-        return [pscustomobject]@{ available = $false; detail = $_.Exception.Message }
+        $binRoot = Join-Path $env:LOCALAPPDATA 'OpenAI\Codex\bin'
+        $fallback = $null
+        if (Test-Path -LiteralPath $binRoot) {
+            $fallback = Get-ChildItem -LiteralPath $binRoot -Recurse -Filter 'codex.exe' -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.FullName -ne $path } |
+                Sort-Object LastWriteTime -Descending |
+                Select-Object -First 1
+        }
+        if ($fallback) {
+            try {
+                $output = & $fallback.FullName plugin --help 2>&1
+                return [pscustomobject]@{ available = ($LASTEXITCODE -eq 0); path = $fallback.FullName; detail = ($output -join "`n") }
+            } catch {
+                return [pscustomobject]@{ available = $false; path = $fallback.FullName; detail = $_.Exception.Message }
+            }
+        }
+        return [pscustomobject]@{ available = $false; path = $path; detail = $_.Exception.Message }
     }
 }
 

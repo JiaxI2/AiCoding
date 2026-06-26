@@ -4,6 +4,8 @@ param(
     [string]$Profile,
     [string]$Skill,
     [string]$SourceRepository,
+    [ValidateSet('agents','codex')]
+    [string]$StandaloneRoot = 'agents',
     [switch]$DryRun,
     [switch]$Json
 )
@@ -14,6 +16,12 @@ function Expand-RuntimePath {
     param([string]$PathValue)
     if ([string]::IsNullOrWhiteSpace($PathValue)) { return $null }
     return [Environment]::ExpandEnvironmentVariables($PathValue.Replace('%USERPROFILE%', $env:USERPROFILE))
+}
+
+function Resolve-StandaloneRoot {
+    param($Config, [string]$RootName)
+    if ($RootName -eq 'codex') { return Expand-RuntimePath $Config.skillRuntime.legacyUserRoot }
+    return Expand-RuntimePath $Config.skillRuntime.canonicalUserRoot
 }
 
 function Find-CanonicalSkillPath {
@@ -30,28 +38,46 @@ function Find-CanonicalSkillPath {
     return $null
 }
 
+function Ensure-Junction {
+    param([string]$Link, [string]$Target)
+    if (-not (Test-Path -LiteralPath $Target)) { throw "Missing target: $Target" }
+    if (Test-Path -LiteralPath $Link) {
+        $item = Get-Item -LiteralPath $Link -Force
+        $targets = @($item.Target)
+        if ($item.LinkType -and ($targets -contains $Target)) { return 'exists' }
+        throw "Refusing to overwrite existing path: $Link"
+    }
+    New-Item -ItemType Junction -Path $Link -Target $Target | Out-Null
+    return 'created'
+}
+
 $repo = Get-AiCodingRoot $PSScriptRoot
 $config = Read-CodexKitConfig $repo
 $agentsRoot = Expand-RuntimePath $config.skillRuntime.canonicalUserRoot
+$legacyRoot = Expand-RuntimePath $config.skillRuntime.legacyUserRoot
+$standaloneInstallRoot = Resolve-StandaloneRoot $config $StandaloneRoot
 if (-not $SourceRepository) { $SourceRepository = Expand-RuntimePath $config.skillRuntime.defaultSourceRepository }
 $actions = @()
 $warnings = @()
+$changes = @()
 
 if ($Profile -eq 'skill-development' -and [string]::IsNullOrWhiteSpace($Skill)) {
     throw '-Skill is required for skill-development profile.'
 }
 
-$actions += 'Ensure user skill root exists: ' + $agentsRoot
+$actions += 'Ensure canonical user skill root exists: ' + $agentsRoot
+$actions += 'Standalone install root: ' + $standaloneInstallRoot
 if ($Profile -eq 'runtime') {
     $actions += 'Use AiCoding Plugin as the only aicoding-* runtime source.'
     $actions += 'Do not link canonical embedded/ or platform/ sources.'
+    $actions += 'Do not install standalone skills unless Profile full is selected.'
     $actions += 'Run audit-runtime-skills.ps1 -ExpectedProfile runtime.'
 }
 elseif ($Profile -eq 'full') {
     $actions += 'Use AiCoding Plugin as the only aicoding-* runtime source.'
     foreach ($standalone in @($config.profiles.full.standaloneSkills)) {
         $target = Join-Path $SourceRepository $standalone
-        $link = Join-Path $agentsRoot $standalone
+        $link = Join-Path $standaloneInstallRoot $standalone
         $actions += "Ensure standalone skill link: $link -> $target"
         if (-not (Test-Path -LiteralPath $target)) { $warnings += "Standalone skill target missing: $target" }
     }
@@ -68,21 +94,21 @@ else {
 
 if (-not $DryRun) {
     New-Item -ItemType Directory -Force -Path $agentsRoot | Out-Null
+    New-Item -ItemType Directory -Force -Path $standaloneInstallRoot | Out-Null
     if ($Profile -eq 'full') {
         foreach ($standalone in @($config.profiles.full.standaloneSkills)) {
             $target = Join-Path $SourceRepository $standalone
-            $link = Join-Path $agentsRoot $standalone
-            if (-not (Test-Path -LiteralPath $target)) { throw "Missing target: $target" }
-            if (Test-Path -LiteralPath $link) { throw "Refusing to overwrite existing path: $link" }
-            New-Item -ItemType Junction -Path $link -Target $target | Out-Null
+            $link = Join-Path $standaloneInstallRoot $standalone
+            $result = Ensure-Junction -Link $link -Target $target
+            $changes += [pscustomobject]@{ name=$standalone; link=$link; target=$target; result=$result }
         }
     }
     elseif ($Profile -eq 'skill-development') {
         $target = Find-CanonicalSkillPath -Repository $SourceRepository -SkillName $Skill
         if (-not $target) { throw "Canonical skill not found: $Skill" }
         $link = Join-Path $agentsRoot $Skill
-        if (Test-Path -LiteralPath $link) { throw "Refusing to overwrite existing path: $link" }
-        New-Item -ItemType Junction -Path $link -Target $target | Out-Null
+        $result = Ensure-Junction -Link $link -Target $target
+        $changes += [pscustomobject]@{ name=$Skill; link=$link; target=$target; result=$result }
     }
 }
 
@@ -91,8 +117,11 @@ $result = [pscustomobject]@{
     dryRun = [bool]$DryRun
     sourceRepository = $SourceRepository
     agentsRoot = $agentsRoot
+    legacyRoot = $legacyRoot
+    standaloneRoot = $StandaloneRoot
+    standaloneInstallRoot = $standaloneInstallRoot
     actions = $actions
     warnings = $warnings
+    changes = $changes
 }
 if ($Json) { $result | ConvertTo-Json -Depth 8 } else { $result | Format-List }
-
