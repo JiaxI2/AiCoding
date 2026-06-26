@@ -18,5 +18,35 @@
     "buildPluginInSubmodule": false,
     "pluginInstallUsesMarketplace": true,
     "hooksAreAuxiliaryConstraints": true
+  },
+  "skillRuntime": {
+    "canonicalUserRoot": "%USERPROFILE%\\.agents\\skills",
+    "legacyUserRoot": "%USERPROFILE%\\.codex\\skills",
+    "defaultSourceRepository": "F:\\Study\\AI\\Codex-Skills",
+    "sourceRepositoryMustNotBeUnderSkillRoot": true,
+    "rejectDuplicateNames": true,
+    "rejectGeneratedSkillLinks": true,
+    "rejectWholeRepositoryLinks": true
+  },
+  "profiles": {
+    "runtime": {
+      "pluginEnabled": true,
+      "sourceSkillLinks": [],
+      "standaloneSkills": []
+    },
+    "skill-development": {
+      "pluginEnabled": false,
+      "allowSelectedSourceSkillLinks": true,
+      "maxSelectedSourceSkills": 1
+    },
+    "full": {
+      "pluginEnabled": true,
+      "sourceSkillLinks": [],
+      "standaloneSkills": [
+        "obsidian-markdown",
+        "obsidian-cli",
+        "obsidian-bases"
+      ]
+    }
   }
 }

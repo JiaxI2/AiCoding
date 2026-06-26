@@ -6,10 +6,15 @@
 
 ### Commit Type
 
-- 本次提交主类型：`chore(git)`。
+- 本次提交主类型：`feat(coding-kit)`。
 
 ### Added
 
+- **chore**：更新 `CodingKit/agents/skills` submodule 到 `0ed67b3`，包含 `aicoding-kit-maintenance` 和 `aicoding-user-skill-creator` 的已验证 AiCoding Plugin 包。
+- **docs**：明确 `aicoding-git-governance` 负责 Git/README/CHANGELOG/发布治理，`aicoding-kit-maintenance` 负责 kit 生命周期；新增 `aicoding-user-skill-creator`（User-Skill-Creator）与系统 `skill-creator` 的共存边界。
+- **feat**：新增 runtime skill exposure 配置和 `audit-runtime-skills.ps1`、`set-codex-skill-profile.ps1`、`migrate-skill-root.ps1`、`restore-legacy-skill-root.ps1`，用于审计重复 Skill、预演 Profile 切换、迁移和回滚。
+- **docs**：补充 Runtime Skill Exposure Policy，明确 `Codex-Skills` 源码仓库不得作为用户级 Skill Root，正常模式只通过 AiCoding Plugin 暴露 `aicoding-*`。
+- **docs**：新增 `AGENTS.md`、`CodingKit/AGENTS.md`、`docs/CODEX_KIT_ARCHITECTURE.md` 和 `docs/MAINTENANCE_METHOD.md`，形成“AGENTS 边界 → 维护 Skill → docs → config/scripts → CI/Git hooks”的后续维护管理方法。
 - **docs**：新增根 `README.md`，说明 AiCoding 仓库定位、submodule、快速开始和 Git 提交流程。
 - **docs**：新增 CodingKit/README.md，说明 CodingKit/agents/skills submodule、plugins/AiCoding kit 入口和新电脑安装流程。
 - **chore**：新增 scripts/install-aicoding-codex-kit.ps1，把 CodingKit/agents/skills/plugins/AiCoding 链接或复制到本机 Codex skills 插件目录，并配置仓库 Git hooks。

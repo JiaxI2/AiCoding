@@ -25,5 +25,7 @@ $result = [pscustomobject]@{
     codexPluginCli = Test-CodexPluginCli
     assets = $assetStatus
     rules = $config.rules
+    skillRuntime = $config.skillRuntime
+    profiles = $config.profiles
 }
 if ($Json) { $result | ConvertTo-Json -Depth 8 } else { $result | Format-List }

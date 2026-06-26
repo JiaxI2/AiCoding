@@ -16,6 +16,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps
 
 - `CodingKit/agents/skills` is a submodule pointing to `https://github.com/JiaxI2/Codex-Skills.git`.
 - `CodingKit/agents/skills/plugins/AiCoding` is the packaged Codex plugin source for installation.
+- `aicoding-user-skill-creator` is bundled in the AiCoding plugin as User-Skill-Creator; the system `skill-creator` remains separate.
 - `.agents/plugins/marketplace.json` is the AiCoding platform Marketplace entry.
 - `config/codex-kit.json` defines CodingKit asset discovery and installation rules.
 - `.githooks/` contains Git-native hooks for this repository; Codex hooks live inside the plugin.
@@ -44,6 +45,8 @@ Do not rebuild `plugins/AiCoding` inside the submodule from AiCoding. Update the
 
 ## Documentation
 
+- [Codex Kit Architecture](docs/CODEX_KIT_ARCHITECTURE.md)
+- [Maintenance Method](docs/MAINTENANCE_METHOD.md)
 - [CodingKit](CodingKit/README.md)
 - [CHANGELOG](CHANGELOG.md)
 - [Repository Governance](.github/repository-governance.toml)

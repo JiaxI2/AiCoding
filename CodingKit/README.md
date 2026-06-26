@@ -44,3 +44,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps
 ```
 
 After installing the plugin, open Codex `/hooks` and review/trust the plugin-bundled hooks.
+## Runtime Skill Exposure
+
+`CodingKit/agents/skills` is a submodule and must not be linked wholesale into a user Skill Root.
+
+Normal runtime should expose `aicoding-*` skills through the installed AiCoding plugin. Personal standalone skills are linked selectively from `%USERPROFILE%\.agents\skills`.
+
+Run the runtime audit before and after install, update, migration, profile switching, or uninstall work:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit-runtime-skills.ps1 -Json
+```
