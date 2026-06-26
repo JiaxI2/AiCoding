@@ -6,11 +6,11 @@
 
 ### Commit Type
 
-- 本次提交主类型：`feat(coding-kit)`。
+- 本轮已提交类型：`feat(coding-kit)`、`chore(coding-kit)`。
 
 ### Added
 
-- **chore**：更新 `CodingKit/agents/skills` submodule 到 `0ed67b3`，包含 `aicoding-kit-maintenance` 和 `aicoding-user-skill-creator` 的已验证 AiCoding Plugin 包。
+- **chore(coding-kit)**：更新 `CodingKit/agents/skills` submodule 到 `61d2176`，包含 `aicoding-kit-maintenance`、`aicoding-user-skill-creator` 以及 `fix(tooling)` 的 BUILDINFO 非自引用漂移检查修复。
 - **docs**：明确 `aicoding-git-governance` 负责 Git/README/CHANGELOG/发布治理，`aicoding-kit-maintenance` 负责 kit 生命周期；新增 `aicoding-user-skill-creator`（User-Skill-Creator）与系统 `skill-creator` 的共存边界。
 - **feat**：新增 runtime skill exposure 配置和 `audit-runtime-skills.ps1`、`set-codex-skill-profile.ps1`、`migrate-skill-root.ps1`、`restore-legacy-skill-root.ps1`，用于审计重复 Skill、预演 Profile 切换、迁移和回滚。
 - **docs**：补充 Runtime Skill Exposure Policy，明确 `Codex-Skills` 源码仓库不得作为用户级 Skill Root，正常模式只通过 AiCoding Plugin 暴露 `aicoding-*`。
