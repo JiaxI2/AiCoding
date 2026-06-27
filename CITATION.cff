@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite it using the metadata in this file."
+title: "AiCoding"
+authors:
+  - name: "JiaxI2"
+license: "Apache-2.0"
+repository-code: "https://github.com/JiaxI2/AiCoding"
+url: "https://github.com/JiaxI2/AiCoding"
+date-released: "2026-06-27"

@@ -19,20 +19,20 @@ require_pull_request = false
 enabled = true
 profile = "minimal-internal"
 file = "README.md"
-secondary_language_file = ""
+secondary_language_file = "README_CN.md"
 require_toc = false
 validate_links = true
 required_sections = ["status", "quick-start", "repository-navigation", "git-workflow"]
 
 [readme.urls]
-documentation = ""
+documentation = "./README_CN.md"
 changelog = "./CHANGELOG.md"
 latest_release = "https://github.com/JiaxI2/AiCoding/releases/latest"
 releases = "https://github.com/JiaxI2/AiCoding/releases"
 issues = "https://github.com/JiaxI2/AiCoding/issues"
-contributing = ""
-security = ""
-license = ""
+contributing = "./CONTRIBUTING.md"
+security = "./SECURITY.md"
+license = "./LICENSE"
 
 [changelog]
 enabled = true

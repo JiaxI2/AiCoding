@@ -1,6 +1,6 @@
 # AiCoding
 
-Chinese documentation: [README_CN.md](README_CN.md).
+中文文档 / Chinese documentation: [README_CN.md](README_CN.md).
 
 AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, and a version-locked Codex plugin kit.
 
@@ -48,6 +48,16 @@ AiCoding separates bundled plugin skills from personal standalone skills.
 - `scripts/set-codex-skill-profile.ps1 -Profile full -DryRun -Json` shows the complete standalone skill install plan.
 - Use `-StandaloneRoot codex` only when a compatibility workflow explicitly needs `%USERPROFILE%\.codex\skills`; the default is `-StandaloneRoot agents`.
 - A clean compatibility runtime may keep `%USERPROFILE%\.codex\skills\.system` and selected standalone skill junctions, but `aicoding-*` must come only from the installed AiCoding plugin.
+
+## Git Governance Standard
+
+All AiCoding-governed Git repositories must document branch, environment, commit type, and release-note rules in README or an equivalent governance file.
+
+- Branches: `main` or `master` is the stable production branch and must not receive direct code edits except approved release or hotfix integration; `develop` is the DEV integration branch; `feature/<scope>` branches start from `develop`; `test` maps to FAT when a shared test environment exists; `release/<version>` maps to UAT/pre-production; `hotfix/<scope>` starts from `main` and is merged back to `main` and `develop`.
+- Environments: `DEV` is developer debugging, `FAT` is functional acceptance testing, `UAT` is user acceptance/pre-production, and `PRO` is production.
+- Commit types: `feat` adds functionality, `fix` repairs bugs, `docs` changes documentation only, `style` changes formatting without behavior impact, `refactor` restructures code without feature or bug-fix intent, `perf` improves performance, `test` adds or corrects tests, `build` changes build or packaging behavior, `ci` changes automation, and `chore` changes supporting tools or maintenance files.
+- Single commits: one commit should contain one category of change, no more than three tightly related topics, and a typed subject such as `feat(scope): summary`.
+- Releases: Tag and GitHub Release notes must group every included commit by type, state the primary release type, and describe the concrete user-facing or maintenance impact.
 
 ## Maintenance Commands
 

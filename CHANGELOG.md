@@ -6,10 +6,13 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`chore(coding-kit)`、`feat(docs-sync)`。
+- 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`。
 
 ### Added
-- **feat(coding-kit)**：更新 `CodingKit/agents/skills` submodule 到 `df46c2b`，包含 AiCoding SDD/MVP/BDD/架构优先/TDD fallback/文档同步 workflow skills，并保持 Superpowers 为可选增强；update the Codex-Skills submodule to `df46c2b` with standalone-capable AiCoding workflow skills while keeping Superpowers optional.
+- **feat(git-governance)**：将 README 中文链接、Git 治理标准、commit type 和 Release typed summary 规则接入 `scripts/lint-git-governance.ps1`，通过 Git hook 机器检查；enforce README Chinese-link, Git governance, commit type, and release typed-summary rules through the Git hook lint.
+- **docs(repo)**：新增 Apache-2.0 `LICENSE`、`CONTRIBUTING.md`、`SECURITY.md` 和 `CITATION.cff`，补齐 GitHub About 侧栏可识别文件；add repository metadata files recognized by GitHub About.
+- **docs(repo)**：在 README/README_CN 中写明 AiCoding Git 治理标准，包括分支命名、环境映射、commit type、单次提交约束和 Release typed summary；document branch/environment, commit type, single-commit, and release typed-summary standards in README files.
+- **feat(coding-kit)**：更新 `CodingKit/agents/skills` submodule 到 `283b3a0`，包含 AiCoding SDD/MVP/BDD/架构优先/TDD fallback/文档同步 workflow skills，并保持 Superpowers 为可选增强；update the Codex-Skills submodule to `283b3a0` with standalone-capable AiCoding workflow skills while keeping Superpowers optional.
 - **feat(docs-sync)**：新增 `config/docs-sync.policy.json`、`scripts/check-documentation-sync.ps1`、`scripts/install-docsync-hook.ps1`、`.github/workflows/docs-sync.yml`，并把 docs-sync 接入 `.githooks/pre-commit`；add documentation synchronization policy, checker, installer, CI workflow, and pre-commit integration.
 - **feat(coding-kit)**：`install-codex-kit.ps1` 现在可创建本地 Marketplace junction，并通过 Codex plugin CLI 注册 `aicoding-platform`、安装 `aicoding@aicoding-platform`；add reproducible local Marketplace link creation and Codex CLI plugin registration/installation.
 - **chore(runtime)**：完成本机 runtime 迁移闭环：旧 `.codex\skills` 源码暴露已备份，`.system` 保留，standalone skills 以 junction 从 `F:\Study\AI\Codex-Skills` 暴露，`aicoding-*` 只来自 AiCoding Plugin；complete local runtime migration with backup, preserved `.system`, standalone junctions, and plugin-only `aicoding-*` exposure.
