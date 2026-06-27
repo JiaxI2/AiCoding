@@ -6,9 +6,11 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`chore(coding-kit)`。
+- 本轮已提交类型：`feat(coding-kit)`、`chore(coding-kit)`、`feat(docs-sync)`。
 
 ### Added
+- **feat(coding-kit)**：更新 `CodingKit/agents/skills` submodule 到 `df46c2b`，包含 AiCoding SDD/MVP/BDD/架构优先/TDD fallback/文档同步 workflow skills，并保持 Superpowers 为可选增强；update the Codex-Skills submodule to `df46c2b` with standalone-capable AiCoding workflow skills while keeping Superpowers optional.
+- **feat(docs-sync)**：新增 `config/docs-sync.policy.json`、`scripts/check-documentation-sync.ps1`、`scripts/install-docsync-hook.ps1`、`.github/workflows/docs-sync.yml`，并把 docs-sync 接入 `.githooks/pre-commit`；add documentation synchronization policy, checker, installer, CI workflow, and pre-commit integration.
 - **feat(coding-kit)**：`install-codex-kit.ps1` 现在可创建本地 Marketplace junction，并通过 Codex plugin CLI 注册 `aicoding-platform`、安装 `aicoding@aicoding-platform`；add reproducible local Marketplace link creation and Codex CLI plugin registration/installation.
 - **chore(runtime)**：完成本机 runtime 迁移闭环：旧 `.codex\skills` 源码暴露已备份，`.system` 保留，standalone skills 以 junction 从 `F:\Study\AI\Codex-Skills` 暴露，`aicoding-*` 只来自 AiCoding Plugin；complete local runtime migration with backup, preserved `.system`, standalone junctions, and plugin-only `aicoding-*` exposure.
 - **feat(coding-kit)**：补全 standalone skill registry，将当前已备份的个人/下载 skill 纳入 `full` profile 安装计划；add a standalone skill registry and include backed-up personal/downloaded skills in the `full` profile plan.

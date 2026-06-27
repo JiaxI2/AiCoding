@@ -166,3 +166,9 @@ Before completing installation, upgrade, migration, profile switching, or uninst
 
 Source skills may have generated package copies in the repository, but a Skill name must have only one active runtime source.
 
+
+## SDD/BDD/TDD Workflow Policy
+
+AiCoding workflow skills for SDD, MVP, BDD, architecture-first scaffolding, TDD fallback, and documentation synchronization are bundled through the AiCoding plugin only. Superpowers is optional acceleration, not a required dependency.
+
+Documentation synchronization is enforced by `scripts/check-documentation-sync.ps1`, `.githooks/pre-commit`, and `.github/workflows/docs-sync.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit `DOCSYNC-NO-DOC-CHANGE` review note.

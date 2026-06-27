@@ -40,6 +40,8 @@ Codex hooks live in the plugin and are reviewed through `/hooks`. They are auxil
 
 Git hooks live in `.githooks/` and enforce repository-local commit, changelog, and governance rules.
 
+Documentation synchronization is a Git hook and CI concern in AiCoding. scripts/check-documentation-sync.ps1, .githooks/pre-commit, and .github/workflows/docs-sync.yml enforce that code, script, config, hook, CI, and CodingKit changes receive documentation review.
+
 ## External Assets
 
 These directories are platform assets and are not copied into the plugin:

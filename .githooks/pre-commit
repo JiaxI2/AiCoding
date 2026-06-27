@@ -8,3 +8,12 @@ else
   echo "PowerShell is required for scripts/lint-git-governance.ps1" >&2
   exit 1
 fi
+# AiCoding documentation synchronization gate
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode pre-commit -Staged
+elif command -v powershell.exe >/dev/null 2>&1; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode pre-commit -Staged
+else
+  echo "PowerShell is required for scripts/check-documentation-sync.ps1" >&2
+  exit 1
+fi

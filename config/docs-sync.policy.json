@@ -1,0 +1,33 @@
+{
+  "$schema": "https://example.invalid/aicoding/docs-sync-policy.schema.json",
+  "version": 1,
+  "description": "AiCoding documentation synchronization policy. Superpowers is not required.",
+  "docPaths": [
+    "README.md",
+    "README_CN.md",
+    "CHANGELOG.md",
+    "AGENTS.md",
+    "docs/**/*.md",
+    "config/**/*.md"
+  ],
+  "rules": [
+    {
+      "name": "source-or-script-change-requires-doc-review",
+      "changed": ["**/*.c", "**/*.h", "**/*.cpp", "**/*.hpp", "**/*.py", "**/*.ps1", "**/*.sh", "src/**", "scripts/**"],
+      "requiresAnyDoc": true,
+      "allowNoDocMarker": "DOCSYNC-NO-DOC-CHANGE"
+    },
+    {
+      "name": "config-or-hook-change-requires-platform-doc",
+      "changed": ["config/**", ".githooks/**", ".github/workflows/**", ".agents/**"],
+      "requiresAnyDoc": true,
+      "allowNoDocMarker": "DOCSYNC-NO-DOC-CHANGE"
+    },
+    {
+      "name": "skill-kit-change-requires-agent-doc",
+      "changed": ["CodingKit/**", "skills/**", "codex-skills/**"],
+      "requiresAnyDoc": true,
+      "allowNoDocMarker": "DOCSYNC-NO-DOC-CHANGE"
+    }
+  ]
+}

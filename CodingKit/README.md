@@ -25,6 +25,8 @@ CodingKit/agents/skills/plugins/AiCoding
 
 AiCoding does not rebuild this plugin inside the submodule. Build and verification happen in `Codex-Skills`; AiCoding only locks a verified commit and installs it through its Marketplace.
 
+The bundled AiCoding plugin includes standalone-capable SDD, MVP, BDD, architecture-first, TDD fallback, and documentation synchronization workflow skills. Superpowers remains optional.
+
 ## Asset Discovery
 
 Plugin skills and hooks discover CodingKit assets by this protocol:

@@ -24,6 +24,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps
 - `.agents/plugins/marketplace.json` is the AiCoding platform Marketplace entry.
 - `config/codex-kit.json` defines CodingKit asset discovery and installation rules.
 - `.githooks/` contains Git-native hooks for this repository; Codex hooks live inside the plugin.
+- The AiCoding plugin bundles standalone-capable SDD, MVP, BDD, architecture-first, TDD fallback, and documentation synchronization workflow skills; Superpowers can be reused when installed but is not required.
 
 ## CodingKit Assets
 
@@ -54,6 +55,7 @@ AiCoding separates bundled plugin skills from personal standalone skills.
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/status-codex-kit.ps1 -Json
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
 ```
 
 Do not rebuild `plugins/AiCoding` inside the submodule from AiCoding. Update the submodule only after Codex-Skills has built, verified, committed, and pushed the plugin package.

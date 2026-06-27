@@ -33,6 +33,10 @@ AiCoding 把 Skill 分成两类运行入口：
    - 不进入 AiCoding Plugin。
    - 由 profile 脚本按 `config/codex-kit.json` 的 `standaloneSkillRegistry` 创建 junction，默认安装到 `%USERPROFILE%\.agents\skills`。
 
+## AiCoding 工作流
+
+AiCoding Plugin 现在内置可独立运行的 SDD、MVP、BDD、架构优先、TDD fallback 和文档同步 workflow。Superpowers 可作为增强能力复用，但不是运行 AiCoding 工作流的硬依赖。
+
 ## 常用命令
 
 查看安装计划：
@@ -51,6 +55,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-codex-skill-prof
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit-runtime-skills.ps1 -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
 ```
 
 ## 维护规则

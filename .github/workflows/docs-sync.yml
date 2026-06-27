@@ -1,0 +1,18 @@
+name: Documentation Sync
+
+on:
+  pull_request:
+  push:
+    branches: [ main, dev ]
+
+jobs:
+  docs-sync:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check documentation synchronization
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
