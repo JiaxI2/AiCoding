@@ -29,3 +29,4 @@ Thumbs.db
 .ai-debug-repair/attempts.jsonl
 .ai-debug-repair/repair-context.json
 .ai-debug-repair/repair-report.md
+.ai-debug-repair/profiles/

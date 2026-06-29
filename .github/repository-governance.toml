@@ -20,12 +20,14 @@ enabled = true
 profile = "minimal-internal"
 file = "README.md"
 secondary_language_file = "README_CN.md"
+secondary_language_surface = "github-about-homepage"
 require_toc = false
 validate_links = true
 required_sections = ["status", "quick-start", "repository-navigation", "git-workflow"]
 
 [readme.urls]
 documentation = "./README_CN.md"
+chinese_documentation = "https://github.com/JiaxI2/AiCoding/blob/main/README_CN.md"
 changelog = "./CHANGELOG.md"
 latest_release = "https://github.com/JiaxI2/AiCoding/releases/latest"
 releases = "https://github.com/JiaxI2/AiCoding/releases"

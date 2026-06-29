@@ -53,3 +53,25 @@ ready
 partial
 failed
 ```
+
+
+## TI DSS / XDS checks
+
+```powershell
+airepair dss doctor --output json
+airepair dss profile-template --profile .ai-debug-repair\profiles\ti-dss-readonly.json --output json
+airepair dss validate-profile --profile .ai-debug-repair\profiles\ti-dss-readonly.json --output json
+airepair dss capabilities --profile .ai-debug-repair\profiles\ti-dss-readonly.json --output json
+```
+
+The TI DSS backend is read-only by default. Do not enable reset, halt, run, flash, expression write, register write, or memory write.
+
+## J-Link invasive interface checks
+
+```powershell
+airepair jlink profile-template --profile .ai-debug-repair\profiles\jlink.json --output json
+airepair jlink validate-profile --profile .ai-debug-repair\profiles\jlink.json --output json
+airepair jlink capabilities --profile .ai-debug-repair\profiles\jlink.json --output json
+```
+
+J-Link reset/halt/flash/write-memory interfaces exist, but default profile denies them.

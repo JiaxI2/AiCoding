@@ -6,9 +6,11 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`。
+- 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`。
 
 ### Added
+- **feat(ai-debug-repair-kit)**：更新 README/README_CN 和 Git governance 规则，将 `README_CN.md` 作为 GitHub About/Homepage 中文入口而不是英文 README 顶部链接，并记录 Agent Patch Kit 与 AI Debug Repair Kit 的环境、安装和使用说明；document Agent Patch Kit and AI Debug Repair Kit setup and usage, and route `README_CN.md` through GitHub About/Homepage governance instead of an English README top link.
+- **feat(ai-debug-repair-kit)**：集成 AiCoding AI Debug Repair Kit v0.4.0，新增 `ti_dss` 非侵入式 TI XDS/CCS DSS backend scaffold、`airepair dss` 只读命令族、J-Link 侵入式操作 policy-gated stubs、TI DSS/J-Link 安全策略文档与示例 profile，并通过 v0.4.0 包内 pytest、部署后 verify、Codex plugin validator 和 TI DSS capabilities 验证；integrate AiCoding AI Debug Repair Kit v0.4.0 with non-invasive `ti_dss` backend scaffold, `airepair dss` read-only commands, policy-gated J-Link invasive stubs, safety docs, example profiles, and verified package pytest, installed verify, Codex plugin validation, and TI DSS capabilities.
 - **feat(ai-debug-repair-kit)**：集成 AiCoding AI Debug Repair Kit v0.3.2，本地 Marketplace 新增 `aicoding-ai-debug-repair-kit`，发布 `airepair` CLI、三项调试/修复 Skill、PowerShell 安装/验证/状态/卸载脚本，并通过 Windows PowerShell 5.1、PowerShell 7、pytest 与 Codex plugin validator 验证；integrate AiCoding AI Debug Repair Kit v0.3.2 with local Marketplace entry, `airepair` CLI, debug/repair skills, PowerShell lifecycle scripts, and verified Windows PowerShell 5.1, PowerShell 7, pytest, and Codex plugin validation.
 - **fix(agent-patch-kit)**：升级 Agent Patch Kit 到 v2.2，修复 v2.1 editable pip 安装依赖原始解压目录的问题，改为 non-editable user-mode wheel 安装，并重新部署 repo-scoped Skill 与 marketplace sidecar；upgrade Agent Patch Kit to v2.2, fix the v2.1 editable-install source-directory dependency, use non-editable user-mode wheel install, and redeploy repo-scoped Skill plus marketplace sidecar.
 - **feat(agent-patch-kit)**：部署 Agent Patch Kit v2.1 为 repo-scoped Skill，新增项目配置、Agent snippet、AiCoding marketplace sidecar 和本地 plugin 条目，并记录安装前后 Agent 上下文/token 成本对比；deploy Agent Patch Kit v2.1 as a repo-scoped Skill with project config, Agent snippet, AiCoding marketplace sidecar, local plugin entry, and before/after agent context-token evaluation.

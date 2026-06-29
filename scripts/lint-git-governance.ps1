@@ -48,8 +48,15 @@ function Require-Content([string]$Path, [string]$Pattern, [string]$Message) {
 
 if (Test-Path -LiteralPath "README_CN.md") {
     $readmeHead = (Get-Content -LiteralPath "README.md" -Encoding utf8 | Select-Object -First 8) -join "`n"
-    if ($readmeHead -notmatch "README_CN\.md") {
-        Fail "README.md must include a visible top-of-file link to README_CN.md when README_CN.md exists."
+    if ($readmeHead -match "README_CN\.md") {
+        Fail "README.md must not carry the README_CN.md top-of-file link; expose README_CN.md through repository About/Homepage governance."
+    }
+    $governanceContent = Get-Content -LiteralPath ".github/repository-governance.toml" -Raw -Encoding utf8
+    if ($governanceContent -notlike '*secondary_language_surface = "github-about-homepage"*') {
+        Fail ".github/repository-governance.toml must route README_CN.md through github-about-homepage."
+    }
+    if ($governanceContent -notlike '*chinese_documentation = "https://github.com/JiaxI2/AiCoding/blob/main/README_CN.md"*') {
+        Fail ".github/repository-governance.toml must define the GitHub About/Homepage URL for README_CN.md."
     }
 }
 

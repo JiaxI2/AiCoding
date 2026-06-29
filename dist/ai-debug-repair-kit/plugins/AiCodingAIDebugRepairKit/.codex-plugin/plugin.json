@@ -1,7 +1,7 @@
 {
   "name": "aicoding-ai-debug-repair-kit",
-  "version": "0.3.2",
-  "description": "Codex skills and CLI assets for AI debug deployment, generic debug operations, and bounded AI repair loops using build/test evidence.",
+  "version": "0.4.0",
+  "description": "Codex skills and CLI assets for AI debug deployment, generic debug operations, bounded repair loops, non-invasive TI XDS / CCS DSS backend scaffolding, and policy-gated J-Link invasive operation stubs.",
   "author": {
     "name": "JiaxI2 / AiCoding",
     "url": "https://github.com/JiaxI2/AiCoding"
@@ -9,17 +9,25 @@
   "repository": "https://github.com/JiaxI2/AiCoding",
   "license": "MIT",
   "keywords": [
+    "c2000",
+    "c28x",
+    "ccs",
     "codex",
-    "embedded",
     "debug",
+    "dss",
+    "embedded",
+    "hardware-in-the-loop",
+    "jlink",
     "repair-loop",
-    "hardware-in-the-loop"
+    "segger",
+    "ti",
+    "xds"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "AiCoding AI Debug Repair Kit",
     "shortDescription": "Bounded build/test repair loops for Codex.",
-    "longDescription": "Provides deployment, generic debug operations, and bounded AI repair-loop skills plus the airepair CLI asset. The kit avoids flash/reset/halt by default and only accepts PASS from configured test runners.",
+    "longDescription": "Provides deployment, generic debug operations, bounded AI repair-loop skills, the airepair CLI asset, a non-invasive TI XDS / CCS DSS backend scaffold, and policy-gated J-Link invasive operation stubs. The kit avoids flash/reset/halt/write by default and only accepts PASS from configured test runners.",
     "developerName": "JiaxI2 / AiCoding",
     "category": "Developer Tools",
     "capabilities": [
@@ -30,7 +38,9 @@
     "websiteURL": "https://github.com/JiaxI2/AiCoding",
     "defaultPrompt": [
       "Use ai-debug-kit-deploy to validate the AI Debug Repair Kit in this repository.",
-      "Use ai-debug-repair-loop to run a bounded build/test repair loop without flash, reset, commit, or push."
+      "Use ai-debug-repair-loop to run a bounded build/test repair loop without flash, reset, commit, or push.",
+      "Use airepair dss validate-profile and airepair dss doctor before any TI XDS / CCS DSS read-only operation.",
+      "Use airepair jlink capabilities and airepair jlink validate-profile before any J-Link operation; invasive J-Link operations are disabled unless explicitly enabled in profile."
     ]
   }
 }

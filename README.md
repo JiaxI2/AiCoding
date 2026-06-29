@@ -1,8 +1,6 @@
 # AiCoding
 
-中文文档 / Chinese documentation: [README_CN.md](README_CN.md).
-
-AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, and a version-locked Codex plugin kit.
+AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, a version-locked Codex plugin kit, Agent Patch Kit, and AI Debug Repair Kit for safer agent editing and non-invasive embedded debug workflows.
 
 ## Quick Start
 
@@ -15,6 +13,35 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps
 ```
 
 `install-codex-kit.ps1` creates the local Marketplace link `plugins/AiCoding -> CodingKit/agents/skills/plugins/AiCoding`, registers this repository as the `aicoding-platform` Marketplace through the Codex plugin CLI when available, and installs `aicoding@aicoding-platform`. The link is local generated state and is intentionally ignored by Git.
+
+## Local Agent Kits
+
+AiCoding also publishes repo-scoped agent kits through the local Marketplace:
+
+- Agent Patch Kit: `aicoding-agent-patch-kit`, installed from `dist/agent-patch-kit/plugins/AiCodingAgentPatch`, provides the `apatch` safe patch workflow, state gates, fixed-string scan/replace, transaction snapshots, Markdown link checks, and patch summaries.
+- AI Debug Repair Kit: `aicoding-ai-debug-repair-kit`, installed from `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`, provides `airepair` for bounded build/test repair loops and read-only embedded debug helpers. v0.4.0 includes the `ti_dss` TI XDS/CCS DSS scaffold and policy-gated J-Link invasive-operation stubs.
+
+Environment expectations:
+
+- PowerShell 7 (`pwsh`) is the default shell for repository install, verify, status, update, and documentation checks; Windows PowerShell 5.1 is used only for explicit compatibility gates. Git, Python 3.10+, and the Codex plugin Marketplace flow are also required.
+- Agent Patch Kit uses the user-mode `apatch` CLI. Validate it with `apatch install doctor`, `apatch brief --format md`, and `apatch state status`.
+- AI Debug Repair Kit installs the user-mode `ai-debug-repair-kit` Python package. Validate it with `python -m ai_debug_repair.cli version --output json`, `python -m ai_debug_repair.cli doctor --output json`, and `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-ai-debug-repair-kit.ps1 -Json`.
+- TI DSP debug flows require TI CCS/DSS, such as `C:\ti\ccs1281\ccs\ccs_base\scripting\bin\dss.bat`, plus an XDS probe and a target `.ccxml` before real hardware execution. The default profile remains non-invasive: no reset, halt, run, flash, or writes.
+
+Typical usage:
+
+```powershell
+apatch status
+apatch scan "README.md" --fixed
+apatch summary
+
+python -m ai_debug_repair.cli dss capabilities --output json
+python -m ai_debug_repair.cli dss profile-template --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+python -m ai_debug_repair.cli dss validate-profile --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+python -m ai_debug_repair.cli dss doctor --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+```
+
+Machine-local AI Debug Repair state under `.ai-debug-repair/` is ignored by Git. Do not commit generated profiles, run scripts, or session logs unless a specific test fixture is intentionally added.
 
 ## Repository Roles
 

@@ -21,6 +21,22 @@ apatch state status
 
 If `apatch state status` reports disabled, stop using this kit for apply/edit operations unless the user explicitly asks to re-enable it or authorizes override.
 
+## Shell preference on Windows
+
+When running repository verification, install, status, update, or documentation checks on Windows, prefer PowerShell 7 (`pwsh`) as the default shell. Use Windows PowerShell 5.1 (`powershell`) only for explicit compatibility gates or when a repository script requires it. This avoids Windows PowerShell 5.1 UTF-8/no-BOM parsing issues while still preserving compatibility coverage.
+
+Preferred form:
+
+```powershell
+"C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts\verify-codex-kit.ps1
+```
+
+Compatibility form:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-codex-kit.ps1
+```
+
 ## Non-negotiable workflow
 
 Before modifying text or code, run:

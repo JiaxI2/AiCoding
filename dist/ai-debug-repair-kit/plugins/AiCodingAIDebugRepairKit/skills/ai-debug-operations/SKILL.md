@@ -41,3 +41,29 @@ This skill must not:
 - Treat AI text as a passing test.
 
 If the user asks for automatic repair, hand off to `ai-debug-repair-loop`.
+
+
+## TI DSS read-only operations
+
+1. Validate profile first.
+2. Check capabilities.
+3. Use an explicit allow-list of expressions/registers.
+4. Generate the DSS script first without `--execute`.
+5. Only execute after the user confirms target_config, core, and allowed expression.
+6. Never run reset/halt/run/flash/write operations from this skill.
+
+## J-Link invasive operations
+
+J-Link reset/halt/flash/write-memory CLI entries exist but are denied by default. This skill must not enable them unless the user explicitly requests maintenance mode and accepts the risk.
+
+Default allowed:
+
+```powershell
+airepair jlink capabilities --profile .ai-debug-repair\profiles\jlink.json --output json
+```
+
+Default denied:
+
+```powershell
+airepair jlink reset --profile .ai-debug-repair\profiles\jlink.json --output json
+```
