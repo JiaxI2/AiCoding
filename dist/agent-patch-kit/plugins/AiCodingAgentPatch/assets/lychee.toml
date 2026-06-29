@@ -1,0 +1,20 @@
+# Agent Patch Kit default Markdown link validation config.
+verbose = "info"
+no_progress = true
+timeout = 20
+max_retries = 2
+accept = ["200..=204", "429"]
+include_fragments = "full"
+fallback_extensions = ["md", "html"]
+exclude_path = [
+  "(^|/)\.git/",
+  "(^|/)node_modules/",
+  "(^|/)dist/",
+  "(^|/)build/",
+  "(^|/)coverage/"
+]
+exclude = [
+  "^https://example\.com",
+  "^http://localhost",
+  "^https://localhost"
+]

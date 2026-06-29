@@ -1,0 +1,38 @@
+{
+  "name": "agent-patch-kit",
+  "version": "0.2.1",
+  "cli": [
+    "apatch",
+    "agent-patch"
+  ],
+  "skills": [
+    "aicoding-agent-patch-kit"
+  ],
+  "features": [
+    "developer agent fast-read brief",
+    "system/user/project enable-disable state gates",
+    "rg scan",
+    "safe replacement preview/apply",
+    "ast-grep wrapper",
+    "transaction snapshot rollback",
+    "lychee markdown links",
+    "system/personal/project deploy",
+    "aicoding marketplace package"
+  ],
+  "state_scopes": [
+    "system",
+    "user",
+    "project"
+  ],
+  "windows_required": [
+    "git",
+    "python>=3.10",
+    "rg"
+  ],
+  "windows_optional": [
+    "task",
+    "lychee",
+    "ast-grep",
+    "sd"
+  ]
+}

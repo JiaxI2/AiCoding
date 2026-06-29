@@ -9,6 +9,7 @@
 - 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`。
 
 ### Added
+- **feat(agent-patch-kit)**：部署 Agent Patch Kit v2.1 为 repo-scoped Skill，新增项目配置、Agent snippet、AiCoding marketplace sidecar 和本地 plugin 条目，并记录安装前后 Agent 上下文/token 成本对比；deploy Agent Patch Kit v2.1 as a repo-scoped Skill with project config, Agent snippet, AiCoding marketplace sidecar, local plugin entry, and before/after agent context-token evaluation.
 - **feat(git-governance)**：将 README 中文链接、Git 治理标准、commit type 和 Release typed summary 规则接入 `scripts/lint-git-governance.ps1`，通过 Git hook 机器检查；enforce README Chinese-link, Git governance, commit type, and release typed-summary rules through the Git hook lint.
 - **docs(repo)**：新增 Apache-2.0 `LICENSE`、`CONTRIBUTING.md`、`SECURITY.md` 和 `CITATION.cff`，补齐 GitHub About 侧栏可识别文件；add repository metadata files recognized by GitHub About.
 - **docs(repo)**：在 README/README_CN 中写明 AiCoding Git 治理标准，包括分支命名、环境映射、commit type、单次提交约束和 Release typed summary；document branch/environment, commit type, single-commit, and release typed-summary standards in README files.

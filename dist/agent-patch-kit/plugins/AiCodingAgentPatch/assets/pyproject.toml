@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-patch-kit"
+version = "0.2.1"
+description = "Agent-safe patch workflow CLI for scan, preview, apply, verify, rollback and agent deployment"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "AiCoding" }]
+license = { text = "MIT" }
+keywords = ["agent", "codex", "patch", "ripgrep", "ast-grep", "lychee"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Environment :: Console",
+  "Topic :: Software Development :: Build Tools"
+]
+
+[project.scripts]
+apatch = "agent_patch.cli:main"
+agent-patch = "agent_patch.cli:main"
+
+[tool.setuptools]
+packages = ["agent_patch"]
