@@ -1,0 +1,24 @@
+{
+  "type": "repair_loop",
+  "max_iterations": 3,
+  "build_profile": ".ai-debug-repair/profiles/build.json",
+  "test_profile": ".ai-debug-repair/profiles/test.json",
+  "allowed_paths": [
+    "src/",
+    "include/",
+    "tests/"
+  ],
+  "forbidden_paths": [
+    "boot/",
+    "linker/",
+    "security/",
+    "safety/",
+    ".git/",
+    ".venv/",
+    "dist/",
+    ".ai-debug-repair/"
+  ],
+  "allow_flash": false,
+  "auto_commit": false,
+  "require_human_review_before_commit": true
+}

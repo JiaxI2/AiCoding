@@ -1,0 +1,36 @@
+{
+  "name": "aicoding-ai-debug-repair-kit",
+  "version": "0.3.2",
+  "description": "Codex skills and CLI assets for AI debug deployment, generic debug operations, and bounded AI repair loops using build/test evidence.",
+  "author": {
+    "name": "JiaxI2 / AiCoding",
+    "url": "https://github.com/JiaxI2/AiCoding"
+  },
+  "repository": "https://github.com/JiaxI2/AiCoding",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "embedded",
+    "debug",
+    "repair-loop",
+    "hardware-in-the-loop"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AiCoding AI Debug Repair Kit",
+    "shortDescription": "Bounded build/test repair loops for Codex.",
+    "longDescription": "Provides deployment, generic debug operations, and bounded AI repair-loop skills plus the airepair CLI asset. The kit avoids flash/reset/halt by default and only accepts PASS from configured test runners.",
+    "developerName": "JiaxI2 / AiCoding",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Run Commands",
+      "Write with approval"
+    ],
+    "websiteURL": "https://github.com/JiaxI2/AiCoding",
+    "defaultPrompt": [
+      "Use ai-debug-kit-deploy to validate the AI Debug Repair Kit in this repository.",
+      "Use ai-debug-repair-loop to run a bounded build/test repair loop without flash, reset, commit, or push."
+    ]
+  }
+}

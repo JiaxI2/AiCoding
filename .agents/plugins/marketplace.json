@@ -27,6 +27,18 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
+    },
+    {
+      "name": "aicoding-ai-debug-repair-kit",
+      "source": {
+        "source": "local",
+        "path": "./dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
     }
   ]
 }

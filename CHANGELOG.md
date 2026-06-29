@@ -9,6 +9,7 @@
 - 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`。
 
 ### Added
+- **feat(ai-debug-repair-kit)**：集成 AiCoding AI Debug Repair Kit v0.3.2，本地 Marketplace 新增 `aicoding-ai-debug-repair-kit`，发布 `airepair` CLI、三项调试/修复 Skill、PowerShell 安装/验证/状态/卸载脚本，并通过 Windows PowerShell 5.1、PowerShell 7、pytest 与 Codex plugin validator 验证；integrate AiCoding AI Debug Repair Kit v0.3.2 with local Marketplace entry, `airepair` CLI, debug/repair skills, PowerShell lifecycle scripts, and verified Windows PowerShell 5.1, PowerShell 7, pytest, and Codex plugin validation.
 - **fix(agent-patch-kit)**：升级 Agent Patch Kit 到 v2.2，修复 v2.1 editable pip 安装依赖原始解压目录的问题，改为 non-editable user-mode wheel 安装，并重新部署 repo-scoped Skill 与 marketplace sidecar；upgrade Agent Patch Kit to v2.2, fix the v2.1 editable-install source-directory dependency, use non-editable user-mode wheel install, and redeploy repo-scoped Skill plus marketplace sidecar.
 - **feat(agent-patch-kit)**：部署 Agent Patch Kit v2.1 为 repo-scoped Skill，新增项目配置、Agent snippet、AiCoding marketplace sidecar 和本地 plugin 条目，并记录安装前后 Agent 上下文/token 成本对比；deploy Agent Patch Kit v2.1 as a repo-scoped Skill with project config, Agent snippet, AiCoding marketplace sidecar, local plugin entry, and before/after agent context-token evaluation.
 - **feat(git-governance)**：将 README 中文链接、Git 治理标准、commit type 和 Release typed summary 规则接入 `scripts/lint-git-governance.ps1`，通过 Git hook 机器检查；enforce README Chinese-link, Git governance, commit type, and release typed-summary rules through the Git hook lint.

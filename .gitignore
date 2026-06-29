@@ -23,3 +23,9 @@ node_modules/
 Thumbs.db
 .vscode/
 .idea/
+# AI Debug Repair Kit runtime state
+.ai-debug-repair/install-state.json
+.ai-debug-repair/runs/
+.ai-debug-repair/attempts.jsonl
+.ai-debug-repair/repair-context.json
+.ai-debug-repair/repair-report.md

@@ -1,0 +1,350 @@
+param(
+  [string]$RepoRoot = "",
+  [switch]$Json,
+  [switch]$SkipPytest,
+  [switch]$SkipPluginValidator
+)
+
+$ErrorActionPreference = "Stop"
+
+function Out-Result {
+  param(
+    [bool]$Ok,
+    [string]$Code,
+    [string]$Message,
+    $Data = @{},
+    $Warnings = @()
+  )
+
+  $obj = [ordered]@{
+    schema_version = "1.0"
+    ok = [bool]$Ok
+    code = $Code
+    message = $Message
+    data = $Data
+    warnings = $Warnings
+  }
+
+  if ($Json) {
+    $obj | ConvertTo-Json -Depth 60
+  } else {
+    Write-Host ("[{0}] {1}" -f $Code, $Message)
+    $Data | ConvertTo-Json -Depth 30
+    foreach ($w in $Warnings) {
+      Write-Warning $w
+    }
+  }
+
+  if (-not $Ok) {
+    exit 1
+  }
+}
+
+function Quote-ProcessArgument {
+  param([string]$Value)
+
+  if ($null -eq $Value) {
+    return '""'
+  }
+
+  $s = [string]$Value
+  if ($s.Length -eq 0) {
+    return '""'
+  }
+
+  if ($s -notmatch '[\s"]') {
+    return $s
+  }
+
+  # Windows command-line quoting compatible with .NET Framework ProcessStartInfo.Arguments.
+  $s = $s -replace '(\\*)"', '$1$1\"'
+  $s = $s -replace '(\\+)$', '$1$1'
+  return '"' + $s + '"'
+}
+
+function Join-ProcessArguments {
+  param([object[]]$Arguments)
+
+  $parts = @()
+  foreach ($arg in $Arguments) {
+    $parts += (Quote-ProcessArgument ([string]$arg))
+  }
+  return ($parts -join " ")
+}
+
+function Invoke-ProcessCapture {
+  param(
+    [string]$Command,
+    [object[]]$Arguments,
+    [string]$WorkingDirectory = "",
+    $ExtraEnv = @{}
+  )
+
+  $psi = New-Object System.Diagnostics.ProcessStartInfo
+  $psi.FileName = $Command
+  $psi.Arguments = Join-ProcessArguments $Arguments
+  if ($WorkingDirectory -and $WorkingDirectory.Length -gt 0) {
+    $psi.WorkingDirectory = $WorkingDirectory
+  }
+  $psi.RedirectStandardOutput = $true
+  $psi.RedirectStandardError = $true
+  $psi.UseShellExecute = $false
+  $psi.CreateNoWindow = $true
+
+  if ($ExtraEnv) {
+    foreach ($key in $ExtraEnv.Keys) {
+      if ($psi.EnvironmentVariables.ContainsKey($key)) {
+        $psi.EnvironmentVariables[$key] = [string]$ExtraEnv[$key]
+      } else {
+        $psi.EnvironmentVariables.Add($key, [string]$ExtraEnv[$key])
+      }
+    }
+  }
+
+  $p = New-Object System.Diagnostics.Process
+  $p.StartInfo = $psi
+
+  [void]$p.Start()
+  $stdout = $p.StandardOutput.ReadToEnd()
+  $stderr = $p.StandardError.ReadToEnd()
+  $p.WaitForExit()
+
+  return [ordered]@{
+    command = $Command
+    arguments = $Arguments
+    argumentLine = $psi.Arguments
+    workingDirectory = $WorkingDirectory
+    returncode = $p.ExitCode
+    stdout = $stdout
+    stderr = $stderr
+  }
+}
+
+function Remove-ReleaseCache {
+  param([string]$Root)
+
+  $removed = @()
+
+  if (-not (Test-Path $Root)) {
+    return $removed
+  }
+
+  $dirs = Get-ChildItem -Path $Root -Recurse -Force -Directory -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -eq ".pytest_cache" -or $_.Name -eq "__pycache__" -or $_.Name -eq ".venv" }
+
+  foreach ($d in $dirs) {
+    $removed += $d.FullName
+    Remove-Item -Recurse -Force $d.FullName -ErrorAction SilentlyContinue
+  }
+
+  $pycFiles = Get-ChildItem -Path $Root -Recurse -Force -File -Filter "*.pyc" -ErrorAction SilentlyContinue
+  foreach ($f in $pycFiles) {
+    $removed += $f.FullName
+    Remove-Item -Force $f.FullName -ErrorAction SilentlyContinue
+  }
+
+  return $removed
+}
+
+function Find-ReleaseCache {
+  param([string]$Root)
+
+  $bad = @()
+  if (-not (Test-Path $Root)) {
+    return $bad
+  }
+
+  $items = Get-ChildItem -Path $Root -Recurse -Force -ErrorAction SilentlyContinue
+  foreach ($i in $items) {
+    if ($i.Name -eq ".pytest_cache" -or $i.Name -eq "__pycache__" -or $i.Name -eq ".venv" -or $i.Name -like "*.pyc") {
+      $bad += $i.FullName
+    }
+  }
+  return $bad
+}
+
+try {
+  if (-not $RepoRoot -or $RepoRoot.Length -eq 0) {
+    $RepoRoot = (Get-Location).Path
+  }
+  $RepoRoot = (Resolve-Path $RepoRoot).Path
+
+  $pluginPath = Join-Path $RepoRoot "dist\ai-debug-repair-kit\plugins\AiCodingAIDebugRepairKit"
+  $assetRoot = Join-Path $pluginPath "assets\ai-debug-repair-kit"
+  $manifest = Join-Path $pluginPath ".codex-plugin\plugin.json"
+
+  $skills = @()
+  $skills += (Join-Path $pluginPath "skills\ai-debug-kit-deploy\SKILL.md")
+  $skills += (Join-Path $pluginPath "skills\ai-debug-operations\SKILL.md")
+  $skills += (Join-Path $pluginPath "skills\ai-debug-repair-loop\SKILL.md")
+
+  $warnings = @()
+  $ok = $true
+
+  $checks = [ordered]@{
+    repoRoot = $RepoRoot
+    powershell = $PSVersionTable.PSVersion.ToString()
+    pluginPath = [ordered]@{ path = $pluginPath; exists = (Test-Path $pluginPath) }
+    manifest = [ordered]@{ path = $manifest; exists = (Test-Path $manifest) }
+    assetRoot = [ordered]@{ path = $assetRoot; exists = (Test-Path $assetRoot) }
+    skills = @()
+    cli = $null
+    profile = $null
+    pytest = $null
+    pluginValidator = $null
+    cleanup = @()
+    hygiene = $null
+  }
+
+  foreach ($required in @($pluginPath, $manifest, $assetRoot)) {
+    if (-not (Test-Path $required)) {
+      $ok = $false
+    }
+  }
+
+  foreach ($s in $skills) {
+    $exists = Test-Path $s
+    $checks.skills += [ordered]@{ path = $s; exists = $exists }
+    if (-not $exists) {
+      $ok = $false
+    }
+  }
+
+  $pythonExe = "python"
+
+  # CLI verification: prefer installed airepair, fallback to source tree.
+  $airepairCmd = Get-Command airepair -ErrorAction SilentlyContinue
+  if ($airepairCmd) {
+    $versionRun = Invoke-ProcessCapture $airepairCmd.Source @("version", "--output", "json")
+    $doctorRun = Invoke-ProcessCapture $airepairCmd.Source @("doctor", "--output", "json")
+    $checks.cli = [ordered]@{
+      mode = "installed"
+      executable = $airepairCmd.Source
+      version = $versionRun
+      doctor = $doctorRun
+    }
+  } else {
+    $srcPath = Join-Path $assetRoot "src"
+    $extraEnv = @{
+      PYTHONPATH = $srcPath
+      PYTHONDONTWRITEBYTECODE = "1"
+    }
+    $versionRun = Invoke-ProcessCapture $pythonExe @("-m", "ai_debug_repair.cli", "version", "--output", "json") $assetRoot $extraEnv
+    $doctorRun = Invoke-ProcessCapture $pythonExe @("-m", "ai_debug_repair.cli", "doctor", "--output", "json") $assetRoot $extraEnv
+    $checks.cli = [ordered]@{
+      mode = "source-fallback"
+      pythonpath = $srcPath
+      version = $versionRun
+      doctor = $doctorRun
+    }
+  }
+
+  if ($checks.cli.version.returncode -ne 0 -or $checks.cli.doctor.returncode -ne 0) {
+    $ok = $false
+  }
+
+  # Profile initialization and validation in a temp workspace.
+  $tempWorkspace = Join-Path ([System.IO.Path]::GetTempPath()) ("airepair-verify-" + [System.Guid]::NewGuid().ToString("N"))
+  New-Item -ItemType Directory -Force -Path $tempWorkspace | Out-Null
+
+  try {
+    if ($airepairCmd) {
+      $initRun = Invoke-ProcessCapture $airepairCmd.Source @("init", "--workspace", $tempWorkspace, "--output", "json")
+      $profilePath = Join-Path $tempWorkspace ".ai-debug-repair\profiles\loop.safe.json"
+      $validateRun = Invoke-ProcessCapture $airepairCmd.Source @("profile", "validate", "--profile", $profilePath, "--output", "json")
+    } else {
+      $srcPath = Join-Path $assetRoot "src"
+      $extraEnv = @{
+        PYTHONPATH = $srcPath
+        PYTHONDONTWRITEBYTECODE = "1"
+      }
+      $initRun = Invoke-ProcessCapture $pythonExe @("-m", "ai_debug_repair.cli", "init", "--workspace", $tempWorkspace, "--output", "json") $assetRoot $extraEnv
+      $profilePath = Join-Path $tempWorkspace ".ai-debug-repair\profiles\loop.safe.json"
+      $validateRun = Invoke-ProcessCapture $pythonExe @("-m", "ai_debug_repair.cli", "profile", "validate", "--profile", $profilePath, "--output", "json") $assetRoot $extraEnv
+    }
+
+    $checks.profile = [ordered]@{
+      tempWorkspace = $tempWorkspace
+      init = $initRun
+      validate = $validateRun
+    }
+
+    if ($initRun.returncode -ne 0 -or $validateRun.returncode -ne 0) {
+      $ok = $false
+    }
+  }
+  finally {
+    if (Test-Path $tempWorkspace) {
+      Remove-Item -Recurse -Force $tempWorkspace -ErrorAction SilentlyContinue
+    }
+  }
+
+  # Optional pytest. Important: disable pytest cache provider and prevent bytecode.
+  if (-not $SkipPytest) {
+    $testsPath = Join-Path $assetRoot "tests"
+    if (Test-Path $testsPath) {
+      $extraEnv = @{
+        PYTHONPATH = (Join-Path $assetRoot "src")
+        PYTHONDONTWRITEBYTECODE = "1"
+        PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
+      }
+      $pytestRun = Invoke-ProcessCapture $pythonExe @("-m", "pytest", "-q", "-p", "no:cacheprovider", $testsPath) $assetRoot $extraEnv
+      $checks.pytest = $pytestRun
+      if ($pytestRun.returncode -ne 0) {
+        $warnings += "pytest did not pass or pytest is not installed. Use -SkipPytest to skip this optional check."
+        $ok = $false
+      }
+    } else {
+      $warnings += "No tests directory found under asset root."
+      $checks.pytest = [ordered]@{ skipped = $true; reason = "tests directory not found" }
+    }
+  } else {
+    $checks.pytest = [ordered]@{ skipped = $true; reason = "SkipPytest flag set" }
+  }
+
+  # Clean any cache generated by verification before hygiene check.
+  $checks.cleanup = Remove-ReleaseCache $pluginPath
+
+  # Optional Codex plugin validator.
+  if (-not $SkipPluginValidator) {
+    $candidate = Join-Path $env:USERPROFILE ".codex\skills\.system\plugin-creator\scripts\validate_plugin.py"
+    if (Test-Path $candidate) {
+      $validatorRun = Invoke-ProcessCapture $pythonExe @($candidate, $pluginPath)
+      $checks.pluginValidator = [ordered]@{
+        validator = $candidate
+        result = $validatorRun
+      }
+      if ($validatorRun.returncode -ne 0) {
+        $ok = $false
+      }
+    } else {
+      $warnings += "Codex plugin validator not found at $candidate; skipped."
+      $checks.pluginValidator = [ordered]@{
+        skipped = $true
+        reason = "validator not found"
+        path = $candidate
+      }
+    }
+  } else {
+    $checks.pluginValidator = [ordered]@{ skipped = $true; reason = "SkipPluginValidator flag set" }
+  }
+
+  # Hygiene check after cleanup.
+  $badFiles = Find-ReleaseCache $pluginPath
+  $checks.hygiene = [ordered]@{ badFiles = $badFiles }
+
+  if ($badFiles.Count -gt 0) {
+    $ok = $false
+    $warnings += "Release hygiene failed: cache or pyc files found."
+  }
+
+  $finalCode = "VERIFY_FAILED"
+  if ($ok) {
+    $finalCode = "OK"
+  }
+
+  Out-Result $ok $finalCode "AI Debug Repair Kit verification completed" $checks $warnings
+}
+catch {
+  Out-Result $false "INTERNAL_ERROR" $_.Exception.Message
+}

@@ -1,0 +1,11 @@
+{
+  "type": "build",
+  "command": [
+    "python",
+    "-c",
+    "print('example build pass')"
+  ],
+  "cwd": ".",
+  "timeout_seconds": 60,
+  "pass_exit_code": 0
+}
