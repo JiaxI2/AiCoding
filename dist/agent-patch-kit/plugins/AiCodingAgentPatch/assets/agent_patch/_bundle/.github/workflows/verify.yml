@@ -1,0 +1,21 @@
+name: verify
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ripgrep
+        run: choco install ripgrep -y
+      - name: Install Agent Patch Kit
+        run: python -m pip install -e .
+      - name: Doctor
+        run: apatch doctor
+      - name: Verify package
+        run: apatch package aicoding-plugin --out dist/agent-patch-kit --zip

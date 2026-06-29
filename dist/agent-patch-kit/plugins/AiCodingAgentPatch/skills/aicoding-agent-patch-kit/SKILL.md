@@ -9,12 +9,15 @@ Use this skill for safe repository edits, especially on Windows where raw PowerS
 
 ## First-read rule for agents
 
-Before using this kit in a repository, quickly load the developer-only brief:
+Before using this kit in a repository, quickly load the developer-only brief and verify install mode:
 
 ```powershell
+apatch install doctor
 apatch brief --format md
 apatch state status
 ```
+
+`apatch install doctor` should report `install_mode: non-editable / user mode` and `bundle_assets: OK` for a normal user install. Editable/dev installs are allowed only when the user is actively developing this kit.
 
 If `apatch state status` reports disabled, stop using this kit for apply/edit operations unless the user explicitly asks to re-enable it or authorizes override.
 
@@ -95,3 +98,8 @@ Use `--clean-created` only when the user explicitly authorizes deleting files cr
 - Do not hide `git diff --check` failures.
 - If docs changed, run the Markdown link validator.
 - End with a concise diff summary.
+
+
+## Installation-mode rule
+
+For normal use, Agent Patch Kit must be installed in non-editable mode. The original zip and extracted source directory may be deleted after `apatch install doctor` passes. Do not use `pip install -e` unless the user explicitly asks for development mode. If `apatch` fails with `ModuleNotFoundError: No module named 'agent_patch'`, reinstall v0.2.2 with `scripts\repair-agent-patch-kit.ps1` or `python -m pip install --force-reinstall .` from the v0.2.2 kit root.

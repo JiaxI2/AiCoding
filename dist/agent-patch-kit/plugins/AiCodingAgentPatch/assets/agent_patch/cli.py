@@ -10,6 +10,8 @@ import shutil
 import sys
 import tarfile
 import time
+import site
+import importlib.metadata as importlib_metadata
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Any
@@ -641,7 +643,20 @@ def cmd_summary(args: argparse.Namespace) -> int:
 
 
 def package_root() -> Path:
-    return Path(__file__).resolve().parents[1]
+    """Return the source root in development or the bundled runtime root after wheel install.
+
+    v0.2.2 intentionally supports non-editable installs. In a normal wheel
+    install, top-level kit assets are not next to site-packages; they are
+    bundled under agent_patch/_bundle. In a source checkout, prefer the source
+    root so developers can edit assets live.
+    """
+    source_root = Path(__file__).resolve().parents[1]
+    if (source_root / "skills" / SKILL_NAME).exists():
+        return source_root
+    bundle_root = Path(__file__).resolve().parent / "_bundle"
+    if (bundle_root / "skills" / SKILL_NAME).exists():
+        return bundle_root
+    return source_root
 
 
 def copytree_merge(src: Path, dst: Path) -> None:
@@ -953,7 +968,10 @@ def make_plugin(out: Path, version: str, include_cli: bool = True) -> Path:
     # ensure skill copy is current
     copytree_merge(skill_source_dir(), dst / "skills" / SKILL_NAME)
     if include_cli:
-        copytree_merge(package_root() / "agent_patch", dst / "assets" / "agent_patch")
+        agent_src = package_root() / "agent_patch"
+        if not agent_src.exists():
+            agent_src = Path(__file__).resolve().parent
+        copytree_merge(agent_src, dst / "assets" / "agent_patch")
         scripts_src = package_root() / "scripts"
         if scripts_src.exists():
             copytree_merge(scripts_src, dst / "assets" / "scripts")
@@ -1008,6 +1026,91 @@ def cmd_package(args: argparse.Namespace) -> int:
         if archive:
             print(f"archive: {archive}")
     return 0
+
+
+
+def distribution_direct_url() -> dict[str, Any] | None:
+    try:
+        dist = importlib_metadata.distribution("agent-patch-kit")
+        text = dist.read_text("direct_url.json")
+        if text:
+            return json.loads(text)
+    except Exception:
+        return None
+    return None
+
+
+def installed_package_info() -> dict[str, Any]:
+    info: dict[str, Any] = {
+        "version": __version__,
+        "module_file": str(Path(__file__).resolve()),
+        "package_root": str(package_root()),
+        "bundle_exists": bool((package_root() / "skills" / SKILL_NAME / "SKILL.md").exists()),
+        "python_executable": sys.executable,
+        "python_prefix": sys.prefix,
+    }
+    try:
+        dist = importlib_metadata.distribution("agent-patch-kit")
+        info["distribution_version"] = dist.version
+        direct = distribution_direct_url()
+        info["direct_url"] = direct
+        info["editable"] = bool(direct and direct.get("dir_info", {}).get("editable"))
+        info["source_url"] = direct.get("url") if isinstance(direct, dict) else None
+    except Exception as e:
+        info["distribution_error"] = str(e)
+        info["editable"] = None
+    return info
+
+
+def cmd_install(args: argparse.Namespace) -> int:
+    if args.installcmd == "doctor":
+        info = installed_package_info()
+        ok = bool(info.get("bundle_exists")) and not bool(info.get("editable"))
+        if args.json:
+            print_json({"ok": ok, **info})
+        else:
+            print(f"apatch: {__version__}")
+            print(f"python: {info.get('python_executable')}")
+            print(f"module: {info.get('module_file')}")
+            print(f"package_root: {info.get('package_root')}")
+            print(f"bundle_assets: {'OK' if info.get('bundle_exists') else 'MISSING'}")
+            if info.get("editable") is True:
+                print("install_mode: editable / dev mode")
+                print("status: NOT USER-STABLE; deleting the source directory will break apatch")
+            elif info.get("editable") is False:
+                print("install_mode: non-editable / user mode")
+                print("status: OK; original zip/extracted directory can be deleted")
+            else:
+                print("install_mode: unknown")
+            if info.get("source_url"):
+                print(f"source_url: {info.get('source_url')}")
+            if not ok:
+                print("\nSuggested repair: run scripts\\repair-agent-patch-kit.ps1 from the v0.2.2 kit, or reinstall with scripts\\install-agent-patch-kit.ps1 without -Dev.")
+        return 0 if ok else 2
+    if args.installcmd == "repair":
+        # A running apatch cannot repair itself in-place reliably on Windows.
+        # Provide an explicit command plan and fail-safe guidance.
+        plan = {
+            "goal": "replace editable/broken install with non-editable user install",
+            "current": installed_package_info(),
+            "commands": [
+                "python -m pip uninstall -y agent-patch-kit",
+                "python -m pip install --force-reinstall .",
+                "apatch install doctor",
+            ],
+            "note": "Run these commands from the Agent Patch Kit v0.2.2 extracted root. Do not use -e unless developing the kit.",
+        }
+        if args.json:
+            print_json(plan)
+        else:
+            print("Agent Patch Kit repair plan")
+            print("Run from the v0.2.2 kit root:")
+            for c in plan["commands"]:
+                print(f"  {c}")
+            print(plan["note"])
+        return 0
+    print("unknown install command", file=sys.stderr)
+    return 2
 
 
 DEFAULT_LYCHEE_TOML = """# Agent Patch Kit link validation config\nverbose = \"info\"\nno_progress = true\ntimeout = 20\nmax_retries = 2\naccept = [\"200..=204\", \"429\"]\ninclude_fragments = \"full\"\nfallback_extensions = [\"md\", \"html\"]\nexclude_path = [\n  \"(^|/)\\\\.git/\",\n  \"(^|/)node_modules/\",\n  \"(^|/)dist/\",\n  \"(^|/)build/\",\n  \"(^|/)coverage/\"\n]\nexclude = [\n  \"^https://example\\\\.com\",\n  \"^http://localhost\",\n  \"^https://localhost\"\n]\n"""
@@ -1168,6 +1271,16 @@ def build_parser() -> argparse.ArgumentParser:
     pkg.add_argument("--zip", action="store_true")
     pkg.add_argument("--json", action="store_true")
     pkg.set_defaults(func=cmd_package)
+
+    inst = sub.add_parser("install", help="inspect or repair Agent Patch Kit installation mode")
+    instsub = inst.add_subparsers(dest="installcmd", required=True)
+    instd = instsub.add_parser("doctor", help="verify this CLI is non-editable and self-contained")
+    instd.add_argument("--json", action="store_true")
+    instd.set_defaults(func=cmd_install)
+    instr = instsub.add_parser("repair", help="print safe repair commands for broken editable installs")
+    instr.add_argument("--json", action="store_true")
+    instr.set_defaults(func=cmd_install)
+
     return p
 
 

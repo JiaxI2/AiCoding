@@ -2,13 +2,13 @@
 
 ## Scope
 
-This evaluation records the Agent Patch Kit v2.1 deployment into the AiCoding repository on 2026-06-29. It focuses on repository-agent workflow cost, not model quality.
+This evaluation records the Agent Patch Kit v2.2 deployment into the AiCoding repository on 2026-06-29. It focuses on repository-agent workflow cost, not model quality.
 
 ## Capability Check
 
-Agent Patch Kit v2.1 is not only an AiCoding component definition. The provided kit includes:
+Agent Patch Kit v2.2 is not only an AiCoding component definition. The provided kit includes:
 
-- standalone editable Python CLI installation through scripts/install-agent-patch-kit.ps1;
+- standalone non-editable user-mode Python CLI installation through scripts/install-agent-patch-kit.ps1;
 - apatch and agent-patch console commands;
 - user, project, and system deployment scopes;
 - repo-scoped Skill deployment to .agents/skills/aicoding-agent-patch-kit;
@@ -17,6 +17,10 @@ Agent Patch Kit v2.1 is not only an AiCoding component definition. The provided 
 - marketplace sidecar generation through integrations/aicoding/package-marketplace.ps1.
 
 The AiCoding deployment used the project/repo-scoped path and did not modify CodingKit/agents/skills.
+
+## v2.2 Repair Validation
+
+The v2.2 repair replaced the previous editable v2.1 install with a non-editable user-mode wheel install. The validated runtime module path is under the Python user site-packages directory, and the bundle assets are packaged under agent_patch/_bundle. After apatch install doctor reports OK, the original zip file and extracted v2.2 source directory can be deleted without breaking the apatch CLI.
 
 ## Test Method
 
