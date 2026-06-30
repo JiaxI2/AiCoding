@@ -43,7 +43,7 @@ git submodule update --init --recursive
 AiCoding 通过本地 Marketplace 发布两套仓库级 Agent Kit：
 
 - Agent Patch Kit：Marketplace 名称为 `aicoding-agent-patch-kit`，来源为 `dist/agent-patch-kit/plugins/AiCodingAgentPatch`，提供 `apatch` 安全补丁流程、状态门禁、固定字符串扫描/替换、事务快照、Markdown 链接检查和 patch summary。
-- AI Debug Repair Kit：Marketplace 名称为 `aicoding-ai-debug-repair-kit`，来源为 `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`，提供 `airepair`，用于有边界的 build/test repair loop 和只读嵌入式 debug 辅助。v0.4.0 包含 `ti_dss` TI XDS/CCS DSS scaffold，以及受 policy 限制的 J-Link 侵入式操作 stub。
+- AI Debug Repair Kit：Marketplace 名称为 `aicoding-ai-debug-repair-kit`，来源为 `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`，提供 `airepair`，用于有边界的 build/test repair loop 和默认非侵入式 TI DSS/XDS 只读 debug 辅助。v0.4.1 固定 `airepair dss` 工作流，提供 `connect-test`、`core-list`、`monitor-address`、`monitor-symbol`、`find-changing-symbol` 和 `report`，并保留受 policy 限制的 J-Link 侵入式操作 stub。
 
 环境要求：
 
@@ -62,10 +62,14 @@ apatch summary
 python -m ai_debug_repair.cli dss capabilities --output json
 python -m ai_debug_repair.cli dss profile-template --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
 python -m ai_debug_repair.cli dss validate-profile --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
-python -m ai_debug_repair.cli dss doctor --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+python -m ai_debug_repair.cli dss connect-test --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+python -m ai_debug_repair.cli dss core-list --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+python -m ai_debug_repair.cli dss monitor-address --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --address 0xB4C0 --samples 10 --output json
+python -m ai_debug_repair.cli dss monitor-symbol --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --out "<app.out>" --symbol "<symbol>" --samples 10 --output json
+python -m ai_debug_repair.cli dss report --workspace . --output md
 ```
 
-`.ai-debug-repair/` 下的 profile、run script、session log 属于本机运行状态，默认不提交到 Git。只有明确作为测试 fixture 时，才应单独纳入版本管理。
+`.ai-debug-repair/` 下的 profile、run script、session log、DSS session evidence 和 Markdown report 属于本机运行状态，默认不提交到 Git。只有明确作为测试 fixture 时，才应单独纳入版本管理。AI Debug Repair Kit 默认不 reset、不 halt、不 run、不 loadProgram、不 flash、不 erase、不 write-memory、不写表达式、不写寄存器。
 
 ## Skill 安装边界
 

@@ -45,7 +45,7 @@ git submodule update --init --recursive
 AiCoding publishes repository-scoped Agent Kits through the local Marketplace:
 
 - Agent Patch Kit: `aicoding-agent-patch-kit`, sourced from `dist/agent-patch-kit/plugins/AiCodingAgentPatch`, provides the `apatch` safe patch workflow, state gates, fixed-string scan/replace, transaction snapshots, Markdown link checks, and patch summaries.
-- AI Debug Repair Kit: `aicoding-ai-debug-repair-kit`, sourced from `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`, provides `airepair` for bounded build/test repair loops and read-only embedded debug helpers. v0.4.0 includes the `ti_dss` TI XDS/CCS DSS scaffold and policy-gated J-Link invasive-operation stubs.
+- AI Debug Repair Kit: `aicoding-ai-debug-repair-kit`, sourced from `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`, provides `airepair` for bounded build/test repair loops and default non-invasive TI DSS/XDS read-only debug helpers. v0.4.1 fixes the `airepair dss` workflow around `connect-test`, `core-list`, `monitor-address`, `monitor-symbol`, `find-changing-symbol`, and `report`, while keeping policy-gated J-Link invasive-operation stubs.
 
 Environment expectations:
 
@@ -64,10 +64,14 @@ apatch summary
 python -m ai_debug_repair.cli dss capabilities --output json
 python -m ai_debug_repair.cli dss profile-template --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
 python -m ai_debug_repair.cli dss validate-profile --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
-python -m ai_debug_repair.cli dss doctor --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+python -m ai_debug_repair.cli dss connect-test --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+python -m ai_debug_repair.cli dss core-list --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --output json
+python -m ai_debug_repair.cli dss monitor-address --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --address 0xB4C0 --samples 10 --output json
+python -m ai_debug_repair.cli dss monitor-symbol --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --out "<app.out>" --symbol "<symbol>" --samples 10 --output json
+python -m ai_debug_repair.cli dss report --workspace . --output md
 ```
 
-Machine-local AI Debug Repair profiles, run scripts, and session logs under `.ai-debug-repair/` are ignored by Git unless a specific test fixture is intentionally added.
+Machine-local AI Debug Repair profiles, run scripts, session logs, DSS session evidence, and Markdown reports under `.ai-debug-repair/` are ignored by Git unless a specific test fixture is intentionally added. The default AI Debug Repair Kit policy denies reset, halt, run, loadProgram, flash, erase, write-memory, expression writes, and register writes.
 
 ## Repository Roles / 仓库角色
 

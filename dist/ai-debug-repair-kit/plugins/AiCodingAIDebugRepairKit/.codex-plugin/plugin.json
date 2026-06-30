@@ -1,7 +1,7 @@
 {
   "name": "aicoding-ai-debug-repair-kit",
-  "version": "0.4.0",
-  "description": "Codex skills and CLI assets for AI debug deployment, generic debug operations, bounded repair loops, non-invasive TI XDS / CCS DSS backend scaffolding, and policy-gated J-Link invasive operation stubs.",
+  "version": "0.4.1",
+  "description": "Codex skills and CLI assets for fixed non-invasive TI DSS debug workflows, bounded repair loops, session evidence, and policy-gated J-Link operation stubs.",
   "author": {
     "name": "JiaxI2 / AiCoding",
     "url": "https://github.com/JiaxI2/AiCoding"
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "AiCoding AI Debug Repair Kit",
     "shortDescription": "Bounded build/test repair loops for Codex.",
-    "longDescription": "Provides deployment, generic debug operations, bounded AI repair-loop skills, the airepair CLI asset, a non-invasive TI XDS / CCS DSS backend scaffold, and policy-gated J-Link invasive operation stubs. The kit avoids flash/reset/halt/write by default and only accepts PASS from configured test runners.",
+    "longDescription": "Provides fixed airepair dss commands for non-invasive TI XDS / CCS DSS debug workflows, including connect-test, core-list, monitor-address, monitor-symbol, find-changing-symbol, report, bounded repair-loop skills, session evidence, and policy-gated J-Link operation stubs. The kit avoids flash/reset/halt/run/loadProgram/erase/write by default.",
     "developerName": "JiaxI2 / AiCoding",
     "category": "Developer Tools",
     "capabilities": [

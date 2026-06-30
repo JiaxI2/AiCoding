@@ -48,14 +48,19 @@ def envelope(ok: bool, code: str, message: str, data: dict[str, Any] | None = No
 def print_result(result: dict[str, Any], output: str = "text") -> int:
     if output == "json":
         print(json.dumps(result, ensure_ascii=False, indent=2))
+    elif output in {"md", "markdown"}:
+        print(result.get("markdown") or json.dumps(result.get("data") or {}, ensure_ascii=False, indent=2))
     else:
-        status = "OK" if result.get("ok") else "FAIL"
-        print(f"[{status}] {result.get('code')}: {result.get('message')}")
-        data = result.get("data") or {}
-        if data:
-            print(json.dumps(data, ensure_ascii=False, indent=2))
-        for warning in result.get("warnings", []):
-            print(f"WARNING: {warning}", file=sys.stderr)
+        if result.get("text"):
+            print(result["text"])
+        else:
+            status = "OK" if result.get("ok") else "FAIL"
+            print(f"[{status}] {result.get('code')}: {result.get('message')}")
+            data = result.get("data") or {}
+            if data:
+                print(json.dumps(data, ensure_ascii=False, indent=2))
+            for warning in result.get("warnings", []):
+                print(f"WARNING: {warning}", file=sys.stderr)
     return code_to_exit(str(result.get("code", "INTERNAL_ERROR")))
 
 

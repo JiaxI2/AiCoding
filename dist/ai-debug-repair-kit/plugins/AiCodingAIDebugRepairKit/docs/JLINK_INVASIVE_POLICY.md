@@ -4,7 +4,7 @@
 
 J-Link backend 也应有 reset/halt/flash/write-memory 的功能入口，但默认不支持执行。
 
-本 Kit v0.4.0 提供以下 CLI 入口：
+本 Kit v0.4.1 提供以下 CLI 入口：
 
 ```powershell
 airepair jlink profile-template --profile .ai-debug-repair\profiles\jlink.json --output json

@@ -13,7 +13,7 @@ https://github.com/JiaxI2/AiCoding
 ```powershell
 git clone https://github.com/JiaxI2/AiCoding.git AiCoding-ai-debug-repair
 cd AiCoding-ai-debug-repair
-git checkout -b feature/ai-debug-repair-kit-v0.4.0
+git checkout -b feature/ai-debug-repair-kit-v0.4.1
 powershell -NoProfile -ExecutionPolicy Bypass -File "<package-root>\scripts\install-ai-debug-repair-kit.ps1" -PackageRoot "<package-root>" -Json -SkipPipInstall
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\scripts\verify-ai-debug-repair-kit.ps1" -Json
 git diff --check

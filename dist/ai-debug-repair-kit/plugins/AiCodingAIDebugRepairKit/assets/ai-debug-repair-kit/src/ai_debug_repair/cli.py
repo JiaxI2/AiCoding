@@ -12,6 +12,14 @@ from .ti_dss import (
     generate_dss_script,
     validate_dss_profile,
 )
+from .dss_workflow import (
+    connect_test,
+    core_list,
+    monitor_address,
+    monitor_symbol,
+    find_changing_symbol,
+    dss_report,
+)
 from .jlink_guard import (
     jlink_capabilities,
     jlink_invasive_operation,
@@ -35,7 +43,7 @@ from .core import (
 
 
 def add_output(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--output", choices=["text", "json"], default="text")
+    parser.add_argument("--output", choices=["text", "json", "md", "markdown"], default="text")
 
 
 def main() -> int:
@@ -123,6 +131,49 @@ def main() -> int:
     p_dss_read_reg.add_argument("--execute", action="store_true")
     p_dss_read_reg.add_argument("--timeout", type=int)
     add_output(p_dss_read_reg)
+    p_dss_connect = dss_sub.add_parser("connect-test")
+    p_dss_connect.add_argument("--profile", required=True)
+    p_dss_connect.add_argument("--workspace", default=".")
+    p_dss_connect.add_argument("--execute", action="store_true")
+    add_output(p_dss_connect)
+    p_dss_core = dss_sub.add_parser("core-list")
+    p_dss_core.add_argument("--profile", required=True)
+    p_dss_core.add_argument("--workspace", default=".")
+    p_dss_core.add_argument("--execute", action="store_true")
+    add_output(p_dss_core)
+    p_dss_mon_addr = dss_sub.add_parser("monitor-address")
+    p_dss_mon_addr.add_argument("--profile", required=True)
+    p_dss_mon_addr.add_argument("--workspace", default=".")
+    p_dss_mon_addr.add_argument("--address", required=True)
+    p_dss_mon_addr.add_argument("--page", default="DATA")
+    p_dss_mon_addr.add_argument("--width", type=int, default=16)
+    p_dss_mon_addr.add_argument("--samples", type=int, default=10)
+    p_dss_mon_addr.add_argument("--interval-ms", type=int, default=100)
+    p_dss_mon_addr.add_argument("--execute", action="store_true")
+    add_output(p_dss_mon_addr)
+    p_dss_mon_sym = dss_sub.add_parser("monitor-symbol")
+    p_dss_mon_sym.add_argument("--profile", required=True)
+    p_dss_mon_sym.add_argument("--workspace", default=".")
+    p_dss_mon_sym.add_argument("--out", required=True)
+    p_dss_mon_sym.add_argument("--symbol", required=True)
+    p_dss_mon_sym.add_argument("--samples", type=int, default=10)
+    p_dss_mon_sym.add_argument("--interval-ms", type=int, default=100)
+    p_dss_mon_sym.add_argument("--execute", action="store_true")
+    add_output(p_dss_mon_sym)
+    p_dss_find = dss_sub.add_parser("find-changing-symbol")
+    p_dss_find.add_argument("--profile", required=True)
+    p_dss_find.add_argument("--workspace", default=".")
+    p_dss_find.add_argument("--out", required=True)
+    p_dss_find.add_argument("--candidates", type=int, default=30)
+    p_dss_find.add_argument("--samples", type=int, default=5)
+    p_dss_find.add_argument("--interval-ms", type=int, default=100)
+    p_dss_find.add_argument("--prefer-name", default="tick,counter,timer,timestamp,state,status,flag,heartbeat,index")
+    p_dss_find.add_argument("--execute", action="store_true")
+    add_output(p_dss_find)
+    p_dss_report = dss_sub.add_parser("report")
+    p_dss_report.add_argument("--workspace", default=".")
+    p_dss_report.add_argument("--session-id")
+    add_output(p_dss_report)
 
     p_jlink = sub.add_parser("jlink")
     jlink_sub = p_jlink.add_subparsers(dest="jlink_command")
@@ -200,6 +251,20 @@ def main() -> int:
             if not gen["ok"] or not args.execute:
                 return print_result(gen, args.output)
             return print_result(execute_dss_script(Path(args.profile).resolve(), script_path, args.timeout), args.output)
+
+
+        if args.command == "dss" and args.dss_command == "connect-test":
+            return print_result(connect_test(Path(args.profile).resolve(), Path(args.workspace).resolve(), args.execute), args.output)
+        if args.command == "dss" and args.dss_command == "core-list":
+            return print_result(core_list(Path(args.profile).resolve(), Path(args.workspace).resolve(), args.execute), args.output)
+        if args.command == "dss" and args.dss_command == "monitor-address":
+            return print_result(monitor_address(Path(args.profile).resolve(), Path(args.workspace).resolve(), args.address, args.page, args.width, args.samples, args.interval_ms, args.execute), args.output)
+        if args.command == "dss" and args.dss_command == "monitor-symbol":
+            return print_result(monitor_symbol(Path(args.profile).resolve(), Path(args.workspace).resolve(), Path(args.out).resolve(), args.symbol, args.samples, args.interval_ms, args.execute), args.output)
+        if args.command == "dss" and args.dss_command == "find-changing-symbol":
+            return print_result(find_changing_symbol(Path(args.profile).resolve(), Path(args.workspace).resolve(), Path(args.out).resolve(), args.candidates, args.samples, args.interval_ms, args.prefer_name, args.execute), args.output)
+        if args.command == "dss" and args.dss_command == "report":
+            return print_result(dss_report(Path(args.workspace).resolve(), args.session_id), args.output)
 
         if args.command == "jlink" and args.jlink_command == "profile-template":
             return print_result(jlink_profile_template(Path(args.profile).resolve()), args.output)

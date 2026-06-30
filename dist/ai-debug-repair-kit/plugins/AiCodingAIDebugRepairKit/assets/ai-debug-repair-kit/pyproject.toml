@@ -1,6 +1,6 @@
 [project]
 name = "ai-debug-repair-kit"
-version = "0.4.0"
+version = "0.4.1"
 description = "Bounded AI repair loop CLI assets for AiCoding AI Debug Kit."
 requires-python = ">=3.10"
 dependencies = []

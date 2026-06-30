@@ -17,7 +17,7 @@ def test_version_json():
     assert result.returncode == 0
     payload = json.loads(result.stdout)
     assert payload["ok"] is True
-    assert payload["data"]["version"] == "0.4.0"
+    assert payload["data"]["version"] == "0.4.1"
 
 
 def test_init_and_profiles(tmp_path):
