@@ -1,0 +1,67 @@
+{
+  "name": "codex-agent-powershell-skill-kit",
+  "version": "1.2.1",
+  "runtime": {
+    "primary": "pwsh",
+    "minimum_major": 7,
+    "fallback": "powershell.exe",
+    "fallback_policy": "only_if_pwsh_unavailable_or_required"
+  },
+  "gates": {
+    "ast": {
+      "required": true,
+      "fail_on_parse_error": true
+    },
+    "safety": {
+      "required": true,
+      "block_bash_leakage": true,
+      "block_destructive_without_whatif": true
+    },
+    "psscriptanalyzer": {
+      "required": true,
+      "fail_on": [
+        "Error"
+      ],
+      "warn_on": [
+        "Warning"
+      ]
+    },
+    "rewrite_plan": {
+      "required_for_one_liners": true,
+      "never_execute_rewrites": true
+    }
+  },
+  "destructive_commands": [
+    "Remove-Item",
+    "Clear-Content",
+    "Set-ExecutionPolicy",
+    "Set-ItemProperty",
+    "Remove-ItemProperty",
+    "New-ItemProperty",
+    "Stop-Service",
+    "Restart-Service",
+    "Stop-Process",
+    "Format-Volume",
+    "Resize-Partition",
+    "diskpart",
+    "reg",
+    "reg.exe",
+    "icacls",
+    "takeown",
+    "netsh",
+    "bcdedit"
+  ],
+  "bash_leakage": [
+    "grep",
+    "awk",
+    "sed",
+    "rm",
+    "cp",
+    "mv",
+    "cat",
+    "ls",
+    "wget",
+    "curl"
+  ],
+  "notes": "This JSON is read-friendly for agents. Scripts use embedded defaults and do not require a YAML parser."
+}

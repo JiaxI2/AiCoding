@@ -39,6 +39,25 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
+    },
+    {
+      "name": "codex-agent-powershell-skill-kit",
+      "displayName": "Codex Agent PowerShell Skill Kit",
+      "version": "1.2.1",
+      "description": "PS7-first PowerShell AST, safe rewrite, and PSScriptAnalyzer gate for Codex/AiCoding agents.",
+      "path": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit",
+      "skillPath": ".agents/skills/codex-agent-powershell-skill-kit",
+      "entrypoint": ".codex-plugin/plugin.json",
+      "tags": [
+        "powershell",
+        "codex",
+        "aicoding",
+        "agent-guard",
+        "psscriptanalyzer",
+        "ast"
+      ],
+      "skillPathRole": "generated-runtime-mirror",
+      "packagedSkillPath": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/codex-agent-powershell-skill-kit"
     }
   ]
 }

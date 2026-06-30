@@ -30,3 +30,6 @@ Thumbs.db
 .ai-debug-repair/repair-context.json
 .ai-debug-repair/repair-report.md
 .ai-debug-repair/profiles/
+# Codex Agent PowerShell Skill Kit generated runtime state
+.agents/skills/codex-agent-powershell-skill-kit/
+.codex-agent-powershell-skill-kit/

@@ -9,6 +9,7 @@
 - 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`。
 
 ### Added
+- **feat(powershell-skill-kit)**：集成 Codex Agent PowerShell Skill Kit v1.2.1，新增 package-only 子 kit、Marketplace 条目、生命周期脚本、PS7 AST/Safety/PSScriptAnalyzer gate、runtime mirror 所有权标记，并修复 dry-run、PowerShell 7.5 Generic.List 序列化和 `$count:` rewrite 阻塞测试；integrate Codex Agent PowerShell Skill Kit v1.2.1 with package-only sub-kit, Marketplace entry, lifecycle scripts, PS7 AST/Safety/PSScriptAnalyzer gates, runtime-mirror ownership markers, and fixes for dry-run, PowerShell 7.5 Generic.List serialization, and `$count:` rewrite blocking tests.
 - **docs(repo)**：新增 `README_EN.md` 独立英文入口，并把 README 顶部 English 快速切换从页内锚点改为文件跳转；add a standalone `README_EN.md` English entry and change the top English switch from an in-page anchor to a file-level README link.
 - **docs(repo)**：将 `README.md` 改为中文优先的双语入口，顶部保留 `README_CN.md`/English 快速切换，并新增可点击环境预览；make `README.md` a Chinese-first bilingual entry with top `README_CN.md`/English switching and a clickable environment preview.
 - **chore(git-governance)**：把 README 顶部双语切换、CHANGELOG 双语、GitHub About 双语和中文优先顺序写入治理配置、lint 与 Agent Patch Kit 规则；codify README language switch, bilingual CHANGELOG, bilingual GitHub About, and Chinese-first ordering in governance config, lint, and Agent Patch Kit rules.

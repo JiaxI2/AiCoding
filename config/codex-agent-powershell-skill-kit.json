@@ -1,0 +1,24 @@
+{
+  "name": "codex-agent-powershell-skill-kit",
+  "version": "1.2.1",
+  "runtime": "pwsh",
+  "minimumPowerShellMajor": 7,
+  "skillPath": ".agents/skills/codex-agent-powershell-skill-kit",
+  "distPluginPath": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit",
+  "tools": {
+    "fullGate": ".agents/skills/codex-agent-powershell-skill-kit/tools/Invoke-PowerShellSkillKitGate.ps1",
+    "astGate": ".agents/skills/codex-agent-powershell-skill-kit/tools/Invoke-PowerShellAstGate.ps1",
+    "rewritePlan": ".agents/skills/codex-agent-powershell-skill-kit/tools/Invoke-SafeRewritePlan.ps1",
+    "psscriptAnalyzerGate": ".agents/skills/codex-agent-powershell-skill-kit/tools/Invoke-PSScriptAnalyzerGate.ps1"
+  },
+  "integrationPattern": "Agent Patch Kit / AI Debug Repair Kit compatible lifecycle; AiCoding stores package/config/scripts, installer materializes repo-scoped runtime mirror.",
+  "nonDestructiveDefault": true,
+  "packagedSkillPath": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/codex-agent-powershell-skill-kit",
+  "sourceOwnership": {
+    "aicodingOwnsCanonicalSource": false,
+    "repoScopedSkillRole": "generated-runtime-mirror",
+    "authoritativePackagePath": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/codex-agent-powershell-skill-kit",
+    "materializedBy": "scripts/install-codex-agent-powershell-skill-kit.ps1",
+    "manualEditsToRepoScopedMirrorAllowed": false
+  }
+}

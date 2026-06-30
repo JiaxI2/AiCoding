@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "name": "AiCodingPowerShellSkillKit",
+  "display_name": "AiCoding PowerShell Skill Kit",
+  "version": "1.2.1",
+  "description": "PowerShell 7-first agent guard with AST parser, safe rewrite plan, and PSScriptAnalyzer gate.",
+  "skills": [
+    {
+      "name": "codex-agent-powershell-skill-kit",
+      "path": "skills/codex-agent-powershell-skill-kit"
+    }
+  ],
+  "management": {
+    "verify": "scripts/verify-codex-agent-powershell-skill-kit.ps1",
+    "test": "scripts/test-codex-agent-powershell-skill-kit.ps1"
+  }
+}
