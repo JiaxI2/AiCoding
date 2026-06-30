@@ -1,24 +1,46 @@
 # AiCoding
 
+<p align="center">
+  <a href="README_CN.md">中文 README_CN.md</a> |
+  <a href="README.md#english">English</a> |
+  <a href="CHANGELOG.md">更新日志 / CHANGELOG</a> |
+  <a href="README.md#environment-preview">环境预览 / Environment</a>
+</p>
+
+[![Version](https://img.shields.io/badge/Version-0.1.0-2ea44f)](config/codex-kit.json)
+[![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](README.md#environment-preview)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](README.md#environment-preview)
+[![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
+
 AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它不直接维护 Skill 源码，而是通过 `CodingKit/agents/skills` submodule 锁定 `Codex-Skills` 的已验证版本，并提供安装、更新、状态、卸载、运行时审计、CodingKit 资产入口、Agent Patch Kit 和 AI Debug Repair Kit。
 
-## 快速开始
+## 快速环境预览 / Environment Preview
+
+| 项目 | 当前规则 | 跳转 |
+|---|---|---|
+| Shell | 默认 PowerShell 7；Windows PowerShell 5.1 只做兼容性门禁 | [维护命令](#commands) |
+| Plugin | 通过本地 Marketplace 安装 `aicoding@aicoding-platform` | [快速开始](#quick-start) |
+| Agent Patch Kit | `apatch` 安全补丁、扫描、事务快照、Markdown 链接检查 | [本地 Agent Kit](#local-agent-kits) |
+| AI Debug Repair Kit | `airepair` repair loop、TI DSS 只读 scaffold、J-Link policy stubs | [本地 Agent Kit](#local-agent-kits) |
+| 文档治理 | README/CHANGELOG/Tag/Release/About 默认中文在前、英文在后 | [Git 治理标准](#git-governance-standard) |
+
+<a id="quick-start"></a>
+## 快速开始 / Quick Start
 
 ```powershell
 git clone --recurse-submodules https://github.com/JiaxI2/AiCoding.git
 cd AiCoding
 git submodule update --init --recursive
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps1 -DryRun
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps1 -DryRun
 ```
 
-真实安装 Plugin 时优先使用 Codex 的 Marketplace/plugin 机制。不要手工修改 Codex plugin cache。
+真实安装 Plugin 时优先使用 Codex 的 Marketplace/plugin 机制。不要手工修改 Codex plugin cache。`install-codex-kit.ps1` 会创建本地 Marketplace 需要的 `plugins/AiCoding -> CodingKit/agents/skills/plugins/AiCoding` junction，然后通过 Codex plugin CLI 注册 `aicoding-platform` 并安装 `aicoding@aicoding-platform`。`plugins/` 是本机生成状态，不提交到 Git。
 
-执行真实安装时，`install-codex-kit.ps1` 会创建本地 Marketplace 需要的 `plugins/AiCoding -> CodingKit/agents/skills/plugins/AiCoding` junction，然后通过 Codex plugin CLI 注册 `aicoding-platform` 并安装 `aicoding@aicoding-platform`。`plugins/` 是本机生成状态，不提交到 Git。
+<a id="local-agent-kits"></a>
+## 本地 Agent Kit / Local Agent Kits
 
-## 本地 Agent Kit
-
-AiCoding 还通过本地 Marketplace 发布两套仓库级 Agent Kit：
+AiCoding 通过本地 Marketplace 发布两套仓库级 Agent Kit：
 
 - Agent Patch Kit：Marketplace 名称为 `aicoding-agent-patch-kit`，来源为 `dist/agent-patch-kit/plugins/AiCodingAgentPatch`，提供 `apatch` 安全补丁流程、状态门禁、固定字符串扫描/替换、事务快照、Markdown 链接检查和 patch summary。
 - AI Debug Repair Kit：Marketplace 名称为 `aicoding-ai-debug-repair-kit`，来源为 `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`，提供 `airepair`，用于有边界的 build/test repair loop 和只读嵌入式 debug 辅助。v0.4.0 包含 `ti_dss` TI XDS/CCS DSS scaffold，以及受 policy 限制的 J-Link 侵入式操作 stub。
@@ -27,7 +49,7 @@ AiCoding 还通过本地 Marketplace 发布两套仓库级 Agent Kit：
 
 - 默认使用 PowerShell 7（`pwsh`）执行仓库安装、验证、状态、更新和文档检查；Windows PowerShell 5.1 只用于明确的兼容性门禁。同时需要 Git、Python 3.10+ 和 Codex plugin Marketplace 流程。
 - Agent Patch Kit 使用用户态 `apatch` CLI。验证命令：`apatch install doctor`、`apatch brief --format md`、`apatch state status`。
-- AI Debug Repair Kit 使用用户态 `ai-debug-repair-kit` Python 包。验证命令：`python -m ai_debug_repair.cli version --output json`、`python -m ai_debug_repair.cli doctor --output json`、`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-ai-debug-repair-kit.ps1 -Json`。
+- AI Debug Repair Kit 使用用户态 `ai-debug-repair-kit` Python 包。验证命令：`python -m ai_debug_repair.cli version --output json`、`python -m ai_debug_repair.cli doctor --output json`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-ai-debug-repair-kit.ps1 -Json`。
 - TI DSP debug 需要 TI CCS/DSS，例如 `C:\ti\ccs1281\ccs\ccs_base\scripting\bin\dss.bat`，还需要 XDS 仿真器和目标 `.ccxml` 后才能执行真实硬件访问。默认 profile 保持非侵入式：不 reset、不 halt、不 run、不 flash、不写内存/寄存器/表达式。
 
 常用命令：
@@ -66,35 +88,38 @@ AiCoding 把 Skill 分成两类运行入口：
 
 AiCoding Plugin 现在内置可独立运行的 SDD、MVP、BDD、架构优先、TDD fallback 和文档同步 workflow。Superpowers 可作为增强能力复用，但不是运行 AiCoding 工作流的硬依赖。
 
-## 常用命令
+<a id="commands"></a>
+## 常用命令 / Commands
 
 查看安装计划：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-codex-skill-profile.ps1 -Profile full -DryRun -Json
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/set-codex-skill-profile.ps1 -Profile full -DryRun -Json
 ```
 
 选择兼容安装到 `.codex\skills` 时必须显式指定：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-codex-skill-profile.ps1 -Profile full -StandaloneRoot codex -DryRun -Json
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/set-codex-skill-profile.ps1 -Profile full -StandaloneRoot codex -DryRun -Json
 ```
 
 运行审计：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit-runtime-skills.ps1 -Json
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/audit-runtime-skills.ps1 -Json
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
 ```
 
-## Git 治理标准
+<a id="git-governance-standard"></a>
+## Git 治理标准 / Git Governance Standard
 
-所有 AiCoding 管理的 Git 仓库都必须在 README 或等价治理文档中写明分支、环境、提交类型和 Release 说明规则。
+所有 AiCoding 管理的 Git 仓库都必须在 README 或等价治理文档中写明分支、环境、提交类型、Release 说明和双语文档规则。
 
 - 分支：`main` 或 `master` 是稳定生产分支，除批准的 release/hotfix 集成外不得直接改代码；`develop` 是 DEV 集成分支；`feature/<scope>` 从 `develop` 创建；存在共享测试环境时 `test` 对应 FAT；`release/<version>` 对应 UAT/预上线；`hotfix/<scope>` 从 `main` 创建，并回合到 `main` 和 `develop`。
 - 环境：`DEV` 用于开发调试，`FAT` 用于功能验收测试，`UAT` 用于用户验收/预生产，`PRO` 用于生产。
 - 提交类型：`feat` 新增功能，`fix` 修复 bug，`docs` 仅文档变更，`style` 仅格式/空白等不影响语义的变更，`refactor` 既不修 bug 也不加功能的代码重构，`perf` 性能改进，`test` 添加或修正测试，`build` 构建或打包行为，`ci` 自动化变更，`chore` 辅助工具或维护文件变更。
 - 单次提交：一个 commit 只放一类变更，议题不超过 3 个，并使用 `feat(scope): summary` 这类 typed subject。
+- 双语规则：README 默认中文优先，顶部必须保留可见的 `README_CN.md` 与 English 快速切换；CHANGELOG、Tag、GitHub Release 和 GitHub About 描述默认中文在前、英文在后。
 - Release：Tag 和 GitHub Release 必须按类型汇总本次包含的全部提交，说明本次 release 主类型，并写清具体影响。
 
 ## 维护规则
@@ -108,8 +133,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-
 
 ## 相关文档
 
-- [English README](README.md)
+- [English section](README.md#english)
 - [CodingKit 架构](docs/CODEX_KIT_ARCHITECTURE.md)
 - [维护方法](docs/MAINTENANCE_METHOD.md)
 - [CodingKit](CodingKit/README.md)
-- [更新日志](CHANGELOG.md)
+- [更新日志 / CHANGELOG](CHANGELOG.md)

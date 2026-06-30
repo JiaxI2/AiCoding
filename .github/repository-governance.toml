@@ -19,8 +19,11 @@ require_pull_request = false
 enabled = true
 profile = "minimal-internal"
 file = "README.md"
+primary_language = "zh-CN"
+language_order = ["zh-CN", "en"]
 secondary_language_file = "README_CN.md"
-secondary_language_surface = "github-about-homepage"
+secondary_language_surface = "top-language-switch-and-github-about"
+quick_environment_preview = true
 require_toc = false
 validate_links = true
 required_sections = ["status", "quick-start", "repository-navigation", "git-workflow"]
@@ -78,3 +81,11 @@ validate_release_notes = true
 github_generated_release_notes = false
 hooks_path = ".githooks"
 lint_command = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode all"
+
+[github_about]
+require_bilingual = true
+language_order = ["zh-CN", "en"]
+description_zh = "AiCoding：本地 AI 辅助嵌入式开发平台，集成 Agent Patch Kit 与 AI Debug Repair Kit。"
+description_en = "Local AI-assisted embedded development platform with Agent Patch Kit and AI Debug Repair Kit."
+homepage = "https://github.com/JiaxI2/AiCoding/blob/main/README_CN.md"
+topics = ["aicoding", "agent-patch-kit", "ai-debug-kit", "embedded-debug"]

@@ -37,6 +37,16 @@ Compatibility form:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\verify-codex-kit.ps1
 ```
 
+## Documentation governance for AiCoding repositories
+
+When editing AiCoding-governed README, CHANGELOG, release, or repository metadata:
+
+- `README.md` defaults to Chinese-first bilingual content.
+- The top of `README.md` must keep a visible bilingual switch linking `README_CN.md` and the English section.
+- README entry pages should include a clickable environment preview with links to install, kit, verification, and governance sections.
+- `CHANGELOG.md`, Tag messages, GitHub Release notes, and GitHub About descriptions use Chinese first, then concise English.
+- GitHub About metadata should describe Agent Patch Kit and AI Debug Repair Kit in bilingual form.
+
 ## Non-negotiable workflow
 
 Before modifying text or code, run:
