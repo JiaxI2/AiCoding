@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="README_CN.md">中文 README_CN.md</a> |
-  <a href="README.md#english">English</a> |
+  <a href="README_EN.md">English README_EN.md</a> |
   <a href="CHANGELOG.md">更新日志 / CHANGELOG</a> |
   <a href="README.md#environment-preview">环境预览 / Environment</a>
 </p>
@@ -133,7 +133,7 @@ AiCoding Plugin 现在内置可独立运行的 SDD、MVP、BDD、架构优先、
 
 ## 相关文档
 
-- [English section](README.md#english)
+- [English README](README_EN.md)
 - [CodingKit 架构](docs/CODEX_KIT_ARCHITECTURE.md)
 - [维护方法](docs/MAINTENANCE_METHOD.md)
 - [CodingKit](CodingKit/README.md)

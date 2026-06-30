@@ -5,6 +5,7 @@
   "docPaths": [
     "README.md",
     "README_CN.md",
+    "README_EN.md",
     "CHANGELOG.md",
     "AGENTS.md",
     "docs/**/*.md",

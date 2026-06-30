@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="README_CN.md">中文 README_CN.md</a> |
-  <a href="#english">English</a> |
+  <a href="README_EN.md">English README_EN.md</a> |
   <a href="CHANGELOG.md">更新日志 / CHANGELOG</a> |
   <a href="#environment-preview">环境预览 / Environment</a>
 </p>
@@ -128,17 +128,9 @@ AiCoding 区分 plugin bundled skills 和个人 standalone skills：
 ## 文档 / Documentation
 
 - [中文 README](README_CN.md)
+- [English README](README_EN.md)
 - [Codex Kit Architecture](docs/CODEX_KIT_ARCHITECTURE.md)
 - [Maintenance Method](docs/MAINTENANCE_METHOD.md)
 - [CodingKit](CodingKit/README.md)
 - [CHANGELOG](CHANGELOG.md)
 - [Repository Governance](.github/repository-governance.toml)
-
-<a id="english"></a>
-## English
-
-AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, a version-locked Codex plugin kit, Agent Patch Kit, and AI Debug Repair Kit.
-
-The default documentation order is Chinese first and English second. Use the language switch at the top for the dedicated Chinese README, the English section, changelog, and environment preview. PowerShell 7 is the default shell for install, verify, status, update, and documentation checks; Windows PowerShell 5.1 is reserved for explicit compatibility gates.
-
-The installed AiCoding plugin exposes `aicoding-*` workflow skills through the Codex plugin cache. CodingKit external assets remain outside the plugin and are discovered through `AICODING_HOME`, install state, PATH, project discovery, or MCP.

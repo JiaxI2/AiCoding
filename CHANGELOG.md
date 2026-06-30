@@ -9,6 +9,7 @@
 - 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`。
 
 ### Added
+- **docs(repo)**：新增 `README_EN.md` 独立英文入口，并把 README 顶部 English 快速切换从页内锚点改为文件跳转；add a standalone `README_EN.md` English entry and change the top English switch from an in-page anchor to a file-level README link.
 - **docs(repo)**：将 `README.md` 改为中文优先的双语入口，顶部保留 `README_CN.md`/English 快速切换，并新增可点击环境预览；make `README.md` a Chinese-first bilingual entry with top `README_CN.md`/English switching and a clickable environment preview.
 - **chore(git-governance)**：把 README 顶部双语切换、CHANGELOG 双语、GitHub About 双语和中文优先顺序写入治理配置、lint 与 Agent Patch Kit 规则；codify README language switch, bilingual CHANGELOG, bilingual GitHub About, and Chinese-first ordering in governance config, lint, and Agent Patch Kit rules.
 - **feat(ai-debug-repair-kit)**：更新 README/README_CN 和 Git governance 规则，将 `README_CN.md` 作为 GitHub About/Homepage 中文入口而不是英文 README 顶部链接，并记录 Agent Patch Kit 与 AI Debug Repair Kit 的环境、安装和使用说明；document Agent Patch Kit and AI Debug Repair Kit setup and usage, and route `README_CN.md` through GitHub About/Homepage governance instead of an English README top link.
