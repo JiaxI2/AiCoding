@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "description": "AiCoding DocSync Plus semantic drift policy.",
+  "thresholds": {
+    "preCommitWarn": 10,
+    "preCommitBlock": 30,
+    "allBlock": 25,
+    "ciBlock": 10,
+    "releaseBlock": 0
+  },
+  "weights": {
+    "apiDrift": 35,
+    "behaviorDrift": 25,
+    "policyDrift": 20,
+    "commandDrift": 10,
+    "linkDrift": 10
+  },
+  "publicSurfaces": [
+    "scripts/**/*.ps1:param",
+    "scripts/**/*.ps1:function",
+    "config/docs-sync.policy.json:rules",
+    "config/docs-sync.semantic.json:thresholds",
+    ".githooks/**",
+    ".github/workflows/**"
+  ],
+  "docTargets": {
+    "scripts/check-documentation-sync.ps1": [
+      "README.md",
+      "docs/MAINTENANCE_METHOD.md",
+      "docs/DOC_SYNC_PLUS_SPEC.md",
+      "CHANGELOG.md"
+    ],
+    "config/docs-sync.policy.json": [
+      "docs/DOC_SYNC_PLUS_SPEC.md",
+      "docs/MAINTENANCE_METHOD.md",
+      "README.md",
+      "CHANGELOG.md"
+    ],
+    ".githooks/pre-commit": [
+      "docs/MAINTENANCE_METHOD.md",
+      "AGENTS.md",
+      "CHANGELOG.md"
+    ],
+    ".github/workflows/docs-sync.yml": [
+      "docs/MAINTENANCE_METHOD.md",
+      "AGENTS.md",
+      "CHANGELOG.md"
+    ]
+  },
+  "noDocMarker": {
+    "marker": "DOCSYNC-NO-DOC-CHANGE",
+    "minimumReasonLength": 20,
+    "forbiddenReasons": [
+      "skip",
+      "none",
+      "no",
+      "n/a",
+      "no change"
+    ]
+  }
+}

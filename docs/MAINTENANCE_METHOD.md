@@ -88,7 +88,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/status-codex-kit.ps1 -Json
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode all
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/install-docsync-plus.ps1 -DryRun -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/status-docsync-plus.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-docsync-plus.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-docsync-plus.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all -Format json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode ci -Format json
 git diff --check
 ```
 
@@ -143,6 +148,7 @@ Do not claim completion if:
 - the submodule is dirty;
 - AiCoding changed Skill source;
 - docs or CHANGELOG no longer match behavior;
+- DocSync Plus modules, semantic policy, or the single `scripts/check-documentation-sync.ps1` entrypoint are missing or fail status/verify/test checks;
 - Hook changes have not been reported for `/hooks` review;
 - destructive Git or cache actions were needed but not explicitly authorized.
 

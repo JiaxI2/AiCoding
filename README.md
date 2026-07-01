@@ -145,10 +145,15 @@ AiCoding 区分 plugin bundled skills 和个人 standalone skills：
 & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/status-codex-kit.ps1 -Json
 & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun
 & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
-& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/status-docsync-plus.ps1 -Json
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/verify-docsync-plus.ps1 -Json
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/test-docsync-plus.ps1 -Json
+& "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all -Format json
 ```
 
 不要在 AiCoding submodule 内重建 `plugins/AiCoding`。只有在 Codex-Skills 已构建、验证、提交并推送 plugin package 后，AiCoding 才更新 submodule 指针。
+
+DocSync Plus 将文档同步从路径级检查升级为 Git diff 主轴上的语义漂移检查。`scripts/check-documentation-sync.ps1` 仍是唯一入口，pre-commit hook 和 `docs-sync.yml` 必须继续调用该入口；增强模块位于 `scripts/docsync/`，语义阈值位于 `config/docs-sync.semantic.json`。
 
 ## 文档 / Documentation
 
