@@ -20,6 +20,14 @@ from .dss_workflow import (
     find_changing_symbol,
     dss_report,
 )
+from .dss_attach import (
+    attach_core_list,
+    attach_derive_ccxml,
+    attach_connect_test,
+    attach_read_expression,
+    attach_monitor_address,
+    attach_monitor_symbol,
+)
 from .jlink_guard import (
     jlink_capabilities,
     jlink_invasive_operation,
@@ -175,6 +183,57 @@ def main() -> int:
     p_dss_report.add_argument("--session-id")
     add_output(p_dss_report)
 
+    p_dss_attach = dss_sub.add_parser("attach-readonly")
+    attach_sub = p_dss_attach.add_subparsers(dest="attach_command")
+
+    p_attach_derive = attach_sub.add_parser("derive-ccxml")
+    p_attach_derive.add_argument("--profile", required=True)
+    p_attach_derive.add_argument("--workspace", default=".")
+    p_attach_derive.add_argument("--ccxml-out", required=True)
+    p_attach_derive.add_argument("--execute", action="store_true")
+    p_attach_derive.add_argument("--keep-gel", action="store_true")
+    add_output(p_attach_derive)
+
+    p_attach_core = attach_sub.add_parser("core-list")
+    p_attach_core.add_argument("--profile", required=True)
+    p_attach_core.add_argument("--workspace", default=".")
+    p_attach_core.add_argument("--execute", action="store_true")
+    add_output(p_attach_core)
+
+    p_attach_connect = attach_sub.add_parser("connect-test")
+    p_attach_connect.add_argument("--profile", required=True)
+    p_attach_connect.add_argument("--workspace", default=".")
+    p_attach_connect.add_argument("--execute", action="store_true")
+    add_output(p_attach_connect)
+
+    p_attach_expr = attach_sub.add_parser("read-expression")
+    p_attach_expr.add_argument("--profile", required=True)
+    p_attach_expr.add_argument("--workspace", default=".")
+    p_attach_expr.add_argument("--expression", required=True)
+    p_attach_expr.add_argument("--execute", action="store_true")
+    add_output(p_attach_expr)
+
+    p_attach_addr = attach_sub.add_parser("monitor-address")
+    p_attach_addr.add_argument("--profile", required=True)
+    p_attach_addr.add_argument("--workspace", default=".")
+    p_attach_addr.add_argument("--address", required=True)
+    p_attach_addr.add_argument("--page", default="DATA")
+    p_attach_addr.add_argument("--width", type=int, default=16)
+    p_attach_addr.add_argument("--samples", type=int, default=10)
+    p_attach_addr.add_argument("--interval-ms", type=int, default=100)
+    p_attach_addr.add_argument("--execute", action="store_true")
+    add_output(p_attach_addr)
+
+    p_attach_monitor = attach_sub.add_parser("monitor-symbol")
+    p_attach_monitor.add_argument("--profile", required=True)
+    p_attach_monitor.add_argument("--workspace", default=".")
+    p_attach_monitor.add_argument("--out", required=True)
+    p_attach_monitor.add_argument("--symbol", required=True)
+    p_attach_monitor.add_argument("--samples", type=int, default=10)
+    p_attach_monitor.add_argument("--interval-ms", type=int, default=100)
+    p_attach_monitor.add_argument("--execute", action="store_true")
+    add_output(p_attach_monitor)
+
     p_jlink = sub.add_parser("jlink")
     jlink_sub = p_jlink.add_subparsers(dest="jlink_command")
     p_jlink_template = jlink_sub.add_parser("profile-template")
@@ -265,6 +324,20 @@ def main() -> int:
             return print_result(find_changing_symbol(Path(args.profile).resolve(), Path(args.workspace).resolve(), Path(args.out).resolve(), args.candidates, args.samples, args.interval_ms, args.prefer_name, args.execute), args.output)
         if args.command == "dss" and args.dss_command == "report":
             return print_result(dss_report(Path(args.workspace).resolve(), args.session_id), args.output)
+
+        if args.command == "dss" and args.dss_command == "attach-readonly":
+            if args.attach_command == "derive-ccxml":
+                return print_result(attach_derive_ccxml(Path(args.profile).resolve(), Path(args.workspace).resolve(), Path(args.ccxml_out).resolve(), args.execute, not args.keep_gel), args.output)
+            if args.attach_command == "core-list":
+                return print_result(attach_core_list(Path(args.profile).resolve(), Path(args.workspace).resolve(), args.execute), args.output)
+            if args.attach_command == "connect-test":
+                return print_result(attach_connect_test(Path(args.profile).resolve(), Path(args.workspace).resolve(), args.execute), args.output)
+            if args.attach_command == "read-expression":
+                return print_result(attach_read_expression(Path(args.profile).resolve(), Path(args.workspace).resolve(), args.expression, args.execute), args.output)
+            if args.attach_command == "monitor-address":
+                return print_result(attach_monitor_address(Path(args.profile).resolve(), Path(args.workspace).resolve(), args.address, args.page, args.width, args.samples, args.interval_ms, args.execute), args.output)
+            if args.attach_command == "monitor-symbol":
+                return print_result(attach_monitor_symbol(Path(args.profile).resolve(), Path(args.workspace).resolve(), Path(args.out).resolve(), args.symbol, args.samples, args.interval_ms, args.execute), args.output)
 
         if args.command == "jlink" and args.jlink_command == "profile-template":
             return print_result(jlink_profile_template(Path(args.profile).resolve()), args.output)
