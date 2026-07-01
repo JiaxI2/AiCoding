@@ -6,7 +6,10 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`。
+- 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`fix(ai-debug-repair-kit)`。
+
+### Fixed
+- **fix(ai-debug-repair-kit)**：补齐 `test-ai-debug-repair-kit.ps1` 生命周期脚本，并为 `install-ai-debug-repair-kit.ps1` 增加真实 `-DryRun` 路径，dry-run 只输出安装计划、不复制插件、不改 Marketplace、不执行 pip、不写 install-state；add the missing `test-ai-debug-repair-kit.ps1` lifecycle script and implement a real `-DryRun` path for `install-ai-debug-repair-kit.ps1` that reports the install plan without copying the plugin, changing Marketplace, running pip, or writing install-state.
 
 ### Added
 - **feat(coding-kit)**：新增 `CodingKit/modules/common/ring_buffer` C99 环形缓冲区模块，提供外部存储、无动态内存、C28x 16-bit 字节寻址兼容的 `RingBuf_Init/Reset/Used/Free/Write/Read/ReadByte` 接口；add a `CodingKit/modules/common/ring_buffer` C99 ring buffer module with caller-owned storage, no dynamic allocation, C28x 16-bit byte-addressing compatibility, and `RingBuf_Init/Reset/Used/Free/Write/Read/ReadByte` APIs.
