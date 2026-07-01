@@ -6,12 +6,15 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`。
 
 ### Fixed
 - **fix(ai-debug-repair-kit)**：补齐 `test-ai-debug-repair-kit.ps1` 生命周期脚本，并为 `install-ai-debug-repair-kit.ps1` 增加真实 `-DryRun` 路径，dry-run 只输出安装计划、不复制插件、不改 Marketplace、不执行 pip、不写 install-state；add the missing `test-ai-debug-repair-kit.ps1` lifecycle script and implement a real `-DryRun` path for `install-ai-debug-repair-kit.ps1` that reports the install plan without copying the plugin, changing Marketplace, running pip, or writing install-state.
 
 ### Added
+- **feat(coding-kit)**：新增 `CodingKit/modules/common/controller` 控制模块集，包含 C99 PID 控制器、FOC 控制器和二阶 Butterworth 低通滤波器，配套 README、示例、验证脚本、Simulink 参考脚本和验证报告；add the `CodingKit/modules/common/controller` control module set with C99 PID, FOC, and second-order Butterworth LPF modules plus README files, examples, validation scripts, Simulink reference scripts, and validation reports.
+- **docs(ai-debug-kit)**：整理 AI Debug Kit v0.2 架构说明到 `CodingKit/tests/ai-debug-kit/docs/ai-debug-kit-architecture.md`，并移除根 `CodingKit/tests` 下旧版需求/干预报告文档；move the AI Debug Kit v0.2 architecture notes into `CodingKit/tests/ai-debug-kit/docs/ai-debug-kit-architecture.md` and remove superseded root-level requirements/intervention reports.
+- **docs(coding-kit)**：微调 `vofa+` 公共头文件配置段注释为“用户配置”；clarify the `vofa+` public header configuration section label as user configuration.
 - **feat(coding-kit)**：新增 `CodingKit/modules/common/ring_buffer` C99 环形缓冲区模块，提供外部存储、无动态内存、C28x 16-bit 字节寻址兼容的 `RingBuf_Init/Reset/Used/Free/Write/Read/ReadByte` 接口；add a `CodingKit/modules/common/ring_buffer` C99 ring buffer module with caller-owned storage, no dynamic allocation, C28x 16-bit byte-addressing compatibility, and `RingBuf_Init/Reset/Used/Free/Write/Read/ReadByte` APIs.
 - **feat(docsync)**：集成 DocSync Plus semantic drift kit，新增 `config/docs-sync.semantic.json`、`scripts/docsync/*`、status/verify/test/install 脚本和 DocSync Plus 规格/验证计划，并将增强逻辑合入唯一入口 `scripts/check-documentation-sync.ps1`；integrate the DocSync Plus semantic drift kit, add semantic policy, docsync modules, lifecycle scripts, specification/validation docs, and route the enhanced logic through the single documentation sync entrypoint.
 - **feat(ai-debug-repair-kit)**：新增严格 DSS `attach-readonly` CLI 模板和授权 `flash-debug` 验证路径，固化 full-core/no-GEL attach、`symbol.load` + `evaluateToString`、地址 `memory.readData` 监控、DSS stderr 异常判定和字符串字面量安全扫描，并完成 F28388D CPU1 Flash 擦除、烧录、verify、复位运行及 `txMsgData` 实时变化验证；add strict DSS `attach-readonly` CLI templates and an authorized `flash-debug` validation path, covering full-core/no-GEL attach, `symbol.load` plus `evaluateToString`, address `memory.readData` monitoring, DSS stderr exception detection, string-literal-aware safety scanning, and verified F28388D CPU1 Flash erase/program/verify/reset/run with live `txMsgData` changes.

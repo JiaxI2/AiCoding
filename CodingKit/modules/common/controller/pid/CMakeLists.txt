@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.10)
+project(aicoding_pid_controller_v1_5 C)
+set(CMAKE_C_STANDARD 99)
+add_library(aicoding_pid src/pid.c)
+target_include_directories(aicoding_pid PUBLIC src)

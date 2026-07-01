@@ -1,0 +1,11 @@
+{
+  "control_freq_hz": 1000.0,
+  "period_s": 0.001,
+  "sim_time_s": 5.0,
+  "final_value": 0.9999958031979035,
+  "steady_error": 4.196802096512187e-06,
+  "overshoot": 0.0,
+  "settled_at_s": 1.041,
+  "max_abs_output": 1.0,
+  "final_integral": 0.4999901806383229
+}

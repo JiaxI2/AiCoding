@@ -1,0 +1,6 @@
+{
+  "iterations": 100000,
+  "elapsed_s": 0.39223939999646973,
+  "avg_us_per_iter_python_model": 3.9223939999646977,
+  "checksum": 49974.140666256564
+}

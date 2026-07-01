@@ -1,0 +1,42 @@
+{
+  "passed": 3,
+  "failed": 0,
+  "steps": [
+    {
+      "cmd": [
+        "C:\\Users\\24322\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "tools/check_c_gbk.py"
+      ],
+      "returncode": 0,
+      "stdout": "C source GBK check passed.\n",
+      "stderr": "",
+      "elapsed_s": 0.23030080000171438
+    },
+    {
+      "cmd": [
+        "C:\\Users\\24322\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "tests/test_foc_behavior.py"
+      ],
+      "returncode": 0,
+      "stdout": "Passed: 18\nFailed: 0\n",
+      "stderr": "",
+      "elapsed_s": 0.16546440000092844
+    },
+    {
+      "cmd": [
+        "C:\\Users\\24322\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+        "tests/check_static_boundary.py"
+      ],
+      "returncode": 0,
+      "stdout": "Static boundary checks passed.\n",
+      "stderr": "",
+      "elapsed_s": 0.12894429999869317
+    }
+  ],
+  "performance": {
+    "iterations": 100000,
+    "elapsed_s": 0.39223939999646973,
+    "avg_us_per_iter_python_model": 3.9223939999646977,
+    "checksum": 49974.140666256564
+  }
+}

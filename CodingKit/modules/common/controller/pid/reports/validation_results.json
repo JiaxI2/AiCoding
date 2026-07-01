@@ -1,0 +1,102 @@
+{
+  "passed": 24,
+  "failed": 0,
+  "tests": [
+    {
+      "name": "test_pid_behavior.py::test_feedforward_is_struct_field",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_behavior.py::test_input_limits",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_behavior.py::test_invalid_control_freq_keeps_previous_output",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_behavior.py::test_invalid_limit_sets_status",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_behavior.py::test_p_control_uses_struct_input",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_behavior.py::test_pd_has_no_integral_state",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_behavior.py::test_pi_anti_windup_runs_when_saturated",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_behavior.py::test_pid_anti_windup_runs_when_saturated",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_behavior.py::test_setpoint_rate_limit",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_performance.py::test_first_order_plant_response",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_author_is_hu_jiaxuan",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_c99_style_basics",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_c_sources_are_gbk",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_core_has_no_application_terms",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_external_function_definitions_are_limited",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_header_has_module_level_usage_notes",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_package_has_no_third_party_project_names",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_public_function_declarations",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_readme_documents_controller_unit_boundary",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_readme_documents_required_config",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_struct_fields_have_chinese_comments",
+      "status": "PASS"
+    },
+    {
+      "name": "test_pid_static.py::test_units_and_pu_are_documented",
+      "status": "PASS"
+    },
+    {
+      "name": "test_simulink_antiwindup_topology.py::test_pid_formula_matches_reference_topology_for_one_step",
+      "status": "PASS"
+    },
+    {
+      "name": "test_simulink_antiwindup_topology.py::test_reference_model_is_expected_back_calculation_topology",
+      "status": "PASS"
+    }
+  ]
+}
