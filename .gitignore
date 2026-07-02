@@ -33,3 +33,5 @@ Thumbs.db
 # Codex Agent PowerShell Skill Kit generated runtime state
 .agents/skills/codex-agent-powershell-skill-kit/
 .codex-agent-powershell-skill-kit/
+# AiCoding Agent Dev Kit generated runtime state
+.aicoding-agent-dev-kit/

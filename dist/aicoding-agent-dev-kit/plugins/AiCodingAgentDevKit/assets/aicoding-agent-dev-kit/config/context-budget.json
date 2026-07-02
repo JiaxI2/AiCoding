@@ -1,0 +1,42 @@
+{
+  "schema": "aicoding-agent-dev-kit.context-budget.v1",
+  "version": "0.11.1",
+  "defaults": {
+    "maxContextPackChars": 12000,
+    "maxFileChars": 20000,
+    "maxListedFiles": 200,
+    "roughCharsPerToken": 4
+  },
+  "excludeGlobs": [
+    ".git/**",
+    "node_modules/**",
+    ".next/**",
+    "dist/**",
+    "build/**",
+    "out/**",
+    "coverage/**",
+    "*.png",
+    "*.jpg",
+    "*.jpeg",
+    "*.gif",
+    "*.zip",
+    "*.7z",
+    "*.pdf",
+    "*.exe",
+    "*.dll",
+    "*.obj",
+    "*.bin",
+    "*.out",
+    "*.map",
+    "*.log"
+  ],
+  "preferredContextOrder": [
+    ".agent-memory/CURRENT.md",
+    ".agent-memory/DECISIONS.md",
+    "spec/IMPLEMENTATION_PLAN.md",
+    "spec/PRD.md",
+    "spec/TEST_STRATEGY.md",
+    "docs/traceability/TRACEABILITY_MATRIX.md"
+  ],
+  "loader": "config/loading-policy.json"
+}

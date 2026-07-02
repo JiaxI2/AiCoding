@@ -1,0 +1,35 @@
+{
+  "name": "aicoding-agent-dev-kit",
+  "version": "0.11.1",
+  "description": "Spec Pack, SDD, TDD, sequential context loading, lightweight decision memory, and quality-gate workflows for Codex.",
+  "author": {
+    "name": "AiCoding",
+    "email": "noreply@example.com",
+    "url": "https://example.com"
+  },
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "agent",
+    "sdd",
+    "tdd",
+    "quality-gate",
+    "context-loader"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "AiCoding Agent Dev Kit",
+    "shortDescription": "Spec/TDD workflow with sequential context loading.",
+    "longDescription": "A repo-safe Codex plugin that provides thin skills, optional lifecycle hooks, custom agents, and scripts for Spec Pack, TDD, decision memory, context loading, and quality gates.",
+    "developerName": "AiCoding",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use AiCoding Agent Dev Kit to load the minimum project context and plan the next TDD task.",
+      "Use AiCoding Agent Dev Kit to verify this change with the quality gate."
+    ]
+  }
+}

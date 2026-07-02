@@ -1,0 +1,112 @@
+{
+  "schema": "aicoding-agent-dev-kit.loading-policy.v1",
+  "version": "0.11.1",
+  "goal": "sequential-context-loading",
+  "defaultStage": "L0",
+  "stages": {
+    "L0": {
+      "name": "fast-start",
+      "description": "Only load decision memory and changed-file list.",
+      "maxChars": 5000,
+      "includeFiles": [
+        ".agent-memory/CURRENT.md",
+        ".agent-memory/DECISIONS.md"
+      ],
+      "includeChangedFiles": true,
+      "includeDiffSummary": false,
+      "includeSpecs": false
+    },
+    "L1": {
+      "name": "minimal-task-context",
+      "description": "Load memory, implementation plan, and changed file snippets.",
+      "maxChars": 12000,
+      "includeFiles": [
+        ".agent-memory/CURRENT.md",
+        ".agent-memory/DECISIONS.md",
+        "spec/IMPLEMENTATION_PLAN.md",
+        "spec/TEST_STRATEGY.md"
+      ],
+      "includeChangedFiles": true,
+      "includeDiffSummary": true,
+      "includeSpecs": false
+    },
+    "L2": {
+      "name": "task-and-interface-context",
+      "description": "Load task context, touched files, linked tests, and relevant specs.",
+      "maxChars": 24000,
+      "includeFiles": [
+        ".agent-memory/CURRENT.md",
+        ".agent-memory/DECISIONS.md",
+        "spec/PRD.md",
+        "spec/APP_FLOW.md",
+        "spec/TECH_STACK.md",
+        "spec/CODING_GUIDELINES.md",
+        "spec/PROJECT_STRUCTURE.md",
+        "spec/IMPLEMENTATION_PLAN.md",
+        "spec/TEST_STRATEGY.md"
+      ],
+      "includeChangedFiles": true,
+      "includeDiffSummary": true,
+      "includeSpecs": true
+    },
+    "L3": {
+      "name": "deep-trace-context",
+      "description": "Load full traceability, ADR, BDD, TDD, and doc sync relevant files.",
+      "maxChars": 48000,
+      "includeFiles": [
+        ".agent-memory/CURRENT.md",
+        ".agent-memory/DECISIONS.md",
+        "spec/PRD.md",
+        "spec/APP_FLOW.md",
+        "spec/TECH_STACK.md",
+        "spec/CODING_GUIDELINES.md",
+        "spec/PROJECT_STRUCTURE.md",
+        "spec/IMPLEMENTATION_PLAN.md",
+        "spec/TEST_STRATEGY.md",
+        "docs/traceability/TRACEABILITY_MATRIX.md",
+        "spec/PRD_OPTIONS.md",
+        "spec/SELECTED_SOLUTION.md",
+        "spec/MVP_PROGRESS.md"
+      ],
+      "includeGlobs": [
+        "docs/adr/*.md",
+        "specs/bdd/*.feature",
+        "specs/tdd/*.md"
+      ],
+      "includeChangedFiles": true,
+      "includeDiffSummary": true,
+      "includeSpecs": true
+    }
+  },
+  "escalationRules": [
+    {
+      "when": "changed path matches .github/** or .githooks/** or scripts/** or config/**",
+      "stage": "L2",
+      "reason": "workflow, hook, CLI, script, or config change"
+    },
+    {
+      "when": "changed path matches docs/adr/** or spec/** or specs/**",
+      "stage": "L3",
+      "reason": "specification, decision, BDD, or TDD change"
+    },
+    {
+      "when": "quality gate fails validate-implementation-plan or validate-tdd",
+      "stage": "L2",
+      "reason": "TDD or implementation plan failure"
+    },
+    {
+      "when": "DocSync fails",
+      "stage": "L3",
+      "reason": "official documentation drift"
+    },
+    {
+      "when": "changed path matches spec/PRD_OPTIONS.md or spec/SELECTED_SOLUTION.md or spec/MVP_PROGRESS.md",
+      "stage": "L3",
+      "reason": "requirement clarification or selected solution changed"
+    }
+  ],
+  "outputs": {
+    "contextPack": ".agent-dev-kit/context/context-pack.md",
+    "manifest": ".agent-dev-kit/context/context-manifest.json"
+  }
+}

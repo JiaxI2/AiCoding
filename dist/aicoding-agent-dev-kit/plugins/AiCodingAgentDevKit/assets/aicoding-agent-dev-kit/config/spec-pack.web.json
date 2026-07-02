@@ -1,0 +1,12 @@
+{
+  "name": "web-app",
+  "required": [
+    "spec/PRD.md",
+    "spec/APP_FLOW.md",
+    "spec/TECH_STACK.md",
+    "spec/CODING_GUIDELINES.md",
+    "spec/PROJECT_STRUCTURE.md",
+    "spec/IMPLEMENTATION_PLAN.md",
+    "spec/TEST_STRATEGY.md"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schema": "aicoding-agent-dev-kit.decision-memory.v1",
+  "version": "0.11.1",
+  "purpose": "lightweight-decision-anchor",
+  "files": {
+    "current": ".agent-memory/CURRENT.md",
+    "decisions": ".agent-memory/DECISIONS.md"
+  },
+  "doRecord": [
+    "human decisions",
+    "agent proposals accepted by human",
+    "rejected decisions with reason",
+    "current goal",
+    "active task",
+    "next step",
+    "blockers"
+  ],
+  "doNotRecord": [
+    "full logs",
+    "full conversation transcripts",
+    "large summaries",
+    "temporary implementation details",
+    "repeated status noise",
+    "private names",
+    "secrets"
+  ],
+  "promoteToAdrWhen": [
+    "architecture",
+    "cross-cutting",
+    "hard to reverse",
+    "security or safety related",
+    "public workflow behavior"
+  ]
+}

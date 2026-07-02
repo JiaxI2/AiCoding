@@ -1,0 +1,13 @@
+# AiCoding Agent Dev Kit runtime cache
+.agent-dev-kit/cache/
+.agent-dev-kit/context/
+.agent-dev-kit/shards/
+
+# Local current session state
+.agent-memory/CURRENT.md
+
+# Keep if your team wants committed decision anchors:
+# !.agent-memory/DECISIONS.md
+
+# Agent Dev Kit runtime progress
+.agent-dev-kit/progress/

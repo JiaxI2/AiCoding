@@ -1,0 +1,14 @@
+{
+  "schema": "aicoding-agent-dev-kit.codex-native-adapter.v1",
+  "version": "0.11.1",
+  "pluginManifest": "plugins/aicoding-agent-dev-kit/.codex-plugin/plugin.json",
+  "repoMarketplace": ".agents/plugins/marketplace.json",
+  "projectHooks": ".codex/hooks.json",
+  "projectConfig": ".codex/config.toml",
+  "projectAgents": ".codex/agents/*.toml",
+  "trustPolicy": {
+    "hooksRequireReview": true,
+    "doNotTreatHooksAsEnforcement": true,
+    "gitHookAndCiRemainEnforcement": true
+  }
+}

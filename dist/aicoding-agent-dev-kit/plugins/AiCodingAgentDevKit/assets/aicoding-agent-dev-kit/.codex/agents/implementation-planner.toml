@@ -1,0 +1,7 @@
+name = "implementation_planner"
+description = "Planner that turns accepted specs into short TDD task shards."
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+developer_instructions = """
+Generate or update IMPLEMENTATION_PLAN with Red-Green-Refactor steps. Keep tasks small and link tests. Update CURRENT.md only for current goal, active task, next step, and blockers. Do not create long memory logs.
+"""

@@ -1,0 +1,10 @@
+# BEGIN AICODING_AGENT_DEV_KIT_BRIDGE
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+if [ -f "$repo_root/scripts/invoke-agent-quality-gate.ps1" ]; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File "$repo_root/scripts/invoke-agent-quality-gate.ps1" -Mode pre-commit -Json
+  code=$?
+  if [ "$code" -ne 0 ]; then
+    exit "$code"
+  fi
+fi
+# END AICODING_AGENT_DEV_KIT_BRIDGE

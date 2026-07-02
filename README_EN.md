@@ -13,7 +13,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](#environment-preview)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 
-AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, a version-locked Codex plugin kit, Agent Patch Kit, and AI Debug Repair Kit for safer agent editing, clearer Git synchronization rules, and default non-invasive embedded debug assistance.
+AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, a version-locked Codex plugin kit, Agent Patch Kit, AI Debug Repair Kit, and AiCoding Agent Dev Kit for safer agent editing, clearer Git synchronization rules, and default non-invasive embedded debug assistance.
 
 <a id="environment-preview"></a>
 ## Environment Preview / 环境预览
@@ -24,6 +24,7 @@ AiCoding is a platform repository for local AI-assisted embedded development. It
 | Plugin install / Plugin 安装 | Install `aicoding@aicoding-platform` through the local Marketplace / 通过本地 Marketplace 安装 | [Quick Start](#quick-start) |
 | Agent Patch Kit | Safe `apatch` patching, fixed-string scans, transaction snapshots, and Markdown checks / 安全补丁、扫描、事务快照和 Markdown 链接检查 | [Local Agent Kits](#local-agent-kits) |
 | AI Debug Repair Kit | `airepair` build/test repair and TI DSS read-only scaffold / build-test repair 与 TI DSS 只读 scaffold | [Local Agent Kits](#local-agent-kits) |
+| AiCoding Agent Dev Kit | `aicoding-agent-kit` clarification, option matrix, Spec/TDD, sequential loading, and progress tracking / 需求澄清、方案矩阵、Spec/TDD、顺序加载和进度监控 | [Local Agent Kits](#local-agent-kits) |
 | Git governance / Git 治理 | README, CHANGELOG, Tag, Release, and About are Chinese first, English second / 默认中文在前、英文在后 | [Git Governance Standard](#git-governance-standard) |
 
 <a id="quick-start"></a>
@@ -46,12 +47,14 @@ AiCoding publishes repository-scoped Agent Kits through the local Marketplace:
 
 - Agent Patch Kit: `aicoding-agent-patch-kit`, sourced from `dist/agent-patch-kit/plugins/AiCodingAgentPatch`, provides the `apatch` safe patch workflow, state gates, fixed-string scan/replace, transaction snapshots, Markdown link checks, and patch summaries.
 - AI Debug Repair Kit: `aicoding-ai-debug-repair-kit`, sourced from `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`, provides `airepair` for bounded build/test repair loops and default non-invasive TI DSS/XDS read-only debug helpers. v0.4.1 fixes the `airepair dss` workflow around `connect-test`, `core-list`, `monitor-address`, `monitor-symbol`, `find-changing-symbol`, and `report`, while keeping policy-gated J-Link invasive-operation stubs.
+- AiCoding Agent Dev Kit: `aicoding-agent-dev-kit`, sourced from `dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit`, provides `aicoding-agent-kit` for requirement clarification, technical option matrices, Spec Pack, TDD planning, sequential context loading, lightweight decision memory, hook bridge, and MVP progress tracking.
 
 Environment expectations:
 
 - PowerShell 7 (`pwsh`) is the default shell for repository install, verify, status, update, and documentation checks; Windows PowerShell 5.1 is reserved for explicit compatibility gates. Git, Python 3.10+, and the Codex plugin Marketplace flow are also required.
 - Agent Patch Kit uses the user-mode `apatch` CLI. Validate it with `apatch install doctor`, `apatch brief --format md`, and `apatch state status`.
 - AI Debug Repair Kit installs the user-mode `ai-debug-repair-kit` Python package. Validate it with `python -m ai_debug_repair.cli version --output json`, `python -m ai_debug_repair.cli doctor --output json`, and `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-ai-debug-repair-kit.ps1 -Json`.
+- AiCoding Agent Dev Kit installs the user-mode `aicoding-agent-dev-kit` Python package. Validate it with `aicoding-agent-kit status --repo .`, `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-aicoding-agent-dev-kit.ps1 -Json`, and `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-aicoding-agent-dev-kit.ps1 -Json`.
 - TI DSP debug flows require TI CCS/DSS, such as `C:\ti\ccs1281\ccs\ccs_base\scripting\bin\dss.bat`, plus an XDS probe and a target `.ccxml` before real hardware access. The default profile remains non-invasive: no reset, halt, run, flash, or writes.
 
 Typical usage:
@@ -69,6 +72,13 @@ python -m ai_debug_repair.cli dss core-list --profile .ai-debug-repair\profiles\
 python -m ai_debug_repair.cli dss monitor-address --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --address 0xB4C0 --samples 10 --output json
 python -m ai_debug_repair.cli dss monitor-symbol --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --out "<app.out>" --symbol "<symbol>" --samples 10 --output json
 python -m ai_debug_repair.cli dss report --workspace . --output md
+
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\install-aicoding-agent-dev-kit.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\status-aicoding-agent-dev-kit.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-aicoding-agent-dev-kit.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\test-aicoding-agent-dev-kit.ps1 -Json
+aicoding-agent-kit clarify init --repo . --requirement "Describe the unclear requirement"
+aicoding-agent-kit load --repo . --auto
 ```
 
 Machine-local AI Debug Repair profiles, run scripts, session logs, DSS session evidence, and Markdown reports under `.ai-debug-repair/` are ignored by Git unless a specific test fixture is intentionally added. The default AI Debug Repair Kit policy denies reset, halt, run, loadProgram, flash, erase, write-memory, expression writes, and register writes.

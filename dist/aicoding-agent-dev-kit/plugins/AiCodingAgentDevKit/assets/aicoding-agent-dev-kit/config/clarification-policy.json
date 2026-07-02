@@ -1,0 +1,56 @@
+{
+  "schema": "aicoding-agent-dev-kit.clarification-policy.v1",
+  "version": "0.11.1",
+  "goal": "turn fuzzy requirements into selected PRD and implementation plan",
+  "mode": "option-matrix-before-plan",
+  "domainPolicy": {
+    "noApplicationSpecificExamplesInKit": true,
+    "examplesMustBeGeneric": true,
+    "applicationExamplesBelongInTargetRepoDocs": true
+  },
+  "requiredArtifacts": [
+    "spec/PRD_OPTIONS.md",
+    "spec/SELECTED_SOLUTION.md",
+    "spec/APP_FLOW.md",
+    "spec/IMPLEMENTATION_PLAN.md",
+    "spec/MVP_PROGRESS.md"
+  ],
+  "optionMatrixFields": [
+    "Option ID",
+    "Name",
+    "Architecture",
+    "Flow",
+    "Pros",
+    "Cons",
+    "Risks",
+    "Validation",
+    "Compatibility",
+    "Estimated Effort",
+    "Recommended When"
+  ],
+  "selectionRules": {
+    "mustHaveHumanSelection": true,
+    "acceptedDecisionMustBeWrittenTo": ".agent-memory/DECISIONS.md",
+    "architectureChoiceMustHaveAdr": true,
+    "selectedSolutionDrives": [
+      "spec/PRD.md",
+      "spec/APP_FLOW.md",
+      "spec/IMPLEMENTATION_PLAN.md",
+      "docs/adr/"
+    ]
+  },
+  "progressRules": {
+    "taskGranularity": "small-module-or-small-feature",
+    "runtimeProgress": ".agent-dev-kit/progress/progress-board.json",
+    "readableProgress": "spec/MVP_PROGRESS.md",
+    "statuses": [
+      "todo",
+      "doing",
+      "blocked",
+      "review",
+      "done",
+      "dropped"
+    ],
+    "oneActiveTaskRecommended": true
+  }
+}

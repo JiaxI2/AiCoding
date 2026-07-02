@@ -12,7 +12,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](README.md#environment-preview)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 
-AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它不直接维护 Skill 源码，而是通过 `CodingKit/agents/skills` submodule 锁定 `Codex-Skills` 的已验证版本，并提供安装、更新、状态、卸载、运行时审计、CodingKit 资产入口、Agent Patch Kit 和 AI Debug Repair Kit。
+AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它不直接维护 Skill 源码，而是通过 `CodingKit/agents/skills` submodule 锁定 `Codex-Skills` 的已验证版本，并提供安装、更新、状态、卸载、运行时审计、CodingKit 资产入口、Agent Patch Kit、AI Debug Repair Kit 和 AiCoding Agent Dev Kit。
 
 ## 快速环境预览 / Environment Preview
 
@@ -22,6 +22,7 @@ AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它不直接维护 Ski
 | Plugin | 通过本地 Marketplace 安装 `aicoding@aicoding-platform` | [快速开始](#quick-start) |
 | Agent Patch Kit | `apatch` 安全补丁、扫描、事务快照、Markdown 链接检查 | [本地 Agent Kit](#local-agent-kits) |
 | AI Debug Repair Kit | `airepair` repair loop、TI DSS 只读 scaffold、J-Link policy stubs | [本地 Agent Kit](#local-agent-kits) |
+| AiCoding Agent Dev Kit | `aicoding-agent-kit` 需求澄清、方案矩阵、Spec/TDD、顺序上下文加载和进度监控 | [本地 Agent Kit](#local-agent-kits) |
 | 文档治理 | README/CHANGELOG/Tag/Release/About 默认中文在前、英文在后 | [Git 治理标准](#git-governance-standard) |
 
 <a id="quick-start"></a>
@@ -40,16 +41,18 @@ git submodule update --init --recursive
 <a id="local-agent-kits"></a>
 ## 本地 Agent Kit / Local Agent Kits
 
-AiCoding 通过本地 Marketplace 发布两套仓库级 Agent Kit：
+AiCoding 通过本地 Marketplace 发布三套仓库级 Agent Kit：
 
 - Agent Patch Kit：Marketplace 名称为 `aicoding-agent-patch-kit`，来源为 `dist/agent-patch-kit/plugins/AiCodingAgentPatch`，提供 `apatch` 安全补丁流程、状态门禁、固定字符串扫描/替换、事务快照、Markdown 链接检查和 patch summary。
 - AI Debug Repair Kit：Marketplace 名称为 `aicoding-ai-debug-repair-kit`，来源为 `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`，提供 `airepair`，用于有边界的 build/test repair loop 和默认非侵入式 TI DSS/XDS 只读 debug 辅助。v0.4.1 固定 `airepair dss` 工作流，提供 `connect-test`、`core-list`、`monitor-address`、`monitor-symbol`、`find-changing-symbol` 和 `report`，并保留受 policy 限制的 J-Link 侵入式操作 stub。
+- AiCoding Agent Dev Kit：Marketplace 名称为 `aicoding-agent-dev-kit`，来源为 `dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit`，提供 `aicoding-agent-kit`，用于需求澄清、技术方案矩阵、Spec Pack、TDD 计划、顺序上下文加载、轻量决策记忆、Hook bridge 和 MVP 进度监控。
 
 环境要求：
 
 - 默认使用 PowerShell 7（`pwsh`）执行仓库安装、验证、状态、更新和文档检查；Windows PowerShell 5.1 只用于明确的兼容性门禁。同时需要 Git、Python 3.10+ 和 Codex plugin Marketplace 流程。
 - Agent Patch Kit 使用用户态 `apatch` CLI。验证命令：`apatch install doctor`、`apatch brief --format md`、`apatch state status`。
 - AI Debug Repair Kit 使用用户态 `ai-debug-repair-kit` Python 包。验证命令：`python -m ai_debug_repair.cli version --output json`、`python -m ai_debug_repair.cli doctor --output json`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-ai-debug-repair-kit.ps1 -Json`。
+- AiCoding Agent Dev Kit 使用用户态 `aicoding-agent-dev-kit` Python 包。验证命令：`aicoding-agent-kit status --repo .`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-aicoding-agent-dev-kit.ps1 -Json`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-aicoding-agent-dev-kit.ps1 -Json`。
 - TI DSP debug 需要 TI CCS/DSS，例如 `C:\ti\ccs1281\ccs\ccs_base\scripting\bin\dss.bat`，还需要 XDS 仿真器和目标 `.ccxml` 后才能执行真实硬件访问。默认 profile 保持非侵入式：不 reset、不 halt、不 run、不 flash、不写内存/寄存器/表达式。
 
 常用命令：
@@ -67,6 +70,13 @@ python -m ai_debug_repair.cli dss core-list --profile .ai-debug-repair\profiles\
 python -m ai_debug_repair.cli dss monitor-address --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --address 0xB4C0 --samples 10 --output json
 python -m ai_debug_repair.cli dss monitor-symbol --profile .ai-debug-repair\profiles\ti-dss-f28388d-readonly.json --out "<app.out>" --symbol "<symbol>" --samples 10 --output json
 python -m ai_debug_repair.cli dss report --workspace . --output md
+
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\install-aicoding-agent-dev-kit.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\status-aicoding-agent-dev-kit.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-aicoding-agent-dev-kit.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\test-aicoding-agent-dev-kit.ps1 -Json
+aicoding-agent-kit clarify init --repo . --requirement "Describe the unclear requirement"
+aicoding-agent-kit load --repo . --auto
 ```
 
 `.ai-debug-repair/` 下的 profile、run script、session log、DSS session evidence 和 Markdown report 属于本机运行状态，默认不提交到 Git。只有明确作为测试 fixture 时，才应单独纳入版本管理。AI Debug Repair Kit 默认不 reset、不 halt、不 run、不 loadProgram、不 flash、不 erase、不 write-memory、不写表达式、不写寄存器。

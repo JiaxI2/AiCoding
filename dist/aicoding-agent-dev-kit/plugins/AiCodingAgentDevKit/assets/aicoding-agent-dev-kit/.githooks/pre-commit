@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/invoke-agent-quality-gate.ps1 -Mode pre-commit

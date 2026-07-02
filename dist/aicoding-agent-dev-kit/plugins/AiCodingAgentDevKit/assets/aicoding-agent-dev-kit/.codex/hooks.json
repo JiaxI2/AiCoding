@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"scripts/load-agent-context.ps1\" -RepoRoot . -Auto -Json",
+            "timeout": 60,
+            "statusMessage": "AiCoding Agent Dev Kit: project hook loads context"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"scripts/show-context-manifest.ps1\" -RepoRoot . -Json",
+            "timeout": 30,
+            "statusMessage": "AiCoding Agent Dev Kit: project hook shows manifest"
+          }
+        ]
+      }
+    ]
+  }
+}
