@@ -7,7 +7,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path -LiteralPath $RepoRoot).Path
-$skill = Join-Path $repo '.agents\skills\codex-agent-powershell-skill-kit'
+$runtimeSkill = Join-Path $repo '.agents\skills\codex-agent-powershell-skill-kit'
+$packagedSkill = Join-Path $repo 'dist\codex-agent-powershell-skill-kit\plugins\AiCodingPowerShellSkillKit\skills\codex-agent-powershell-skill-kit'
+$runtimeMarker = Join-Path $runtimeSkill 'SKILL.md'
+$packagedMarker = Join-Path $packagedSkill 'SKILL.md'
+$skill = if (Test-Path -LiteralPath $runtimeMarker -PathType Leaf) { $runtimeSkill } else { $packagedSkill }
 $toolRoot = Join-Path $skill 'tools'
 $caseRoot = Join-Path $skill 'tests\cases'
 $results = New-Object System.Collections.Generic.List[object]
@@ -16,6 +20,7 @@ function Add-Result { param([string]$Name, [bool]$Ok, [string]$Message) $results
 function Expect-Pass { param([string]$Name, [scriptblock]$Action) try { & $Action; Add-Result $Name $true 'passed as expected' } catch { Add-Result $Name $false ("expected pass but failed: " + $_.Exception.Message) } }
 function Expect-Fail { param([string]$Name, [scriptblock]$Action) try { & $Action; Add-Result $Name $false 'expected failure but passed' } catch { Add-Result $Name $true 'failed as expected' } }
 
+Expect-Pass 'skill-source-present' { if (-not (Test-Path -LiteralPath $packagedMarker -PathType Leaf)) { throw "Packaged skill missing: $packagedMarker" } }
 Expect-Pass 'runtime-ps7' { & (Join-Path $toolRoot 'Test-PowerShellRuntime.ps1') | Out-Null }
 Expect-Pass 'good-cases-full-gate' { & (Join-Path $toolRoot 'Invoke-PowerShellSkillKitGate.ps1') -Path (Join-Path $caseRoot 'good') -Recurse -InstallMissingTools:$InstallMissingTools | Out-Null }
 Expect-Fail 'bad-syntax-ast-fails' { & (Join-Path $toolRoot 'Invoke-PowerShellAstGate.ps1') -Path (Join-Path $caseRoot 'bad\Syntax-MissingBrace.ps1') | Out-Null }

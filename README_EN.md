@@ -25,6 +25,7 @@ AiCoding is a platform repository for local AI-assisted embedded development. It
 | Agent Patch Kit | Safe `apatch` patching, fixed-string scans, transaction snapshots, and Markdown checks / 安全补丁、扫描、事务快照和 Markdown 链接检查 | [Local Agent Kits](#local-agent-kits) |
 | AI Debug Repair Kit | `airepair` build/test repair and TI DSS read-only scaffold / build-test repair 与 TI DSS 只读 scaffold | [Local Agent Kits](#local-agent-kits) |
 | AiCoding Agent Dev Kit | `aicoding-agent-kit` clarification, option matrix, Spec/TDD, sequential loading, and progress tracking / 需求澄清、方案矩阵、Spec/TDD、顺序加载和进度监控 | [Local Agent Kits](#local-agent-kits) |
+| Kit Lifecycle v2.0 | Unified `scripts/aicoding-kit.ps1` Kit lifecycle and skill routing entrypoint / 统一 registry/manifest adapter 入口 | [Maintenance Commands](#maintenance-commands) |
 | Git governance / Git 治理 | README, CHANGELOG, Tag, Release, and About are Chinese first, English second / 默认中文在前、英文在后 | [Git Governance Standard](#git-governance-standard) |
 
 <a id="quick-start"></a>
@@ -56,6 +57,22 @@ Environment expectations:
 - AI Debug Repair Kit installs the user-mode `ai-debug-repair-kit` Python package. Validate it with `python -m ai_debug_repair.cli version --output json`, `python -m ai_debug_repair.cli doctor --output json`, and `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-ai-debug-repair-kit.ps1 -Json`.
 - AiCoding Agent Dev Kit installs the user-mode `aicoding-agent-dev-kit` Python package. Validate it with `aicoding-agent-kit status --repo .`, `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-aicoding-agent-dev-kit.ps1 -Json`, and `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-aicoding-agent-dev-kit.ps1 -Json`.
 - TI DSP debug flows require TI CCS/DSS, such as `C:\ti\ccs1281\ccs\ccs_base\scripting\bin\dss.bat`, plus an XDS probe and a target `.ccxml` before real hardware access. The default profile remains non-invasive: no reset, halt, run, flash, or writes.
+
+Unified lifecycle entrypoint:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 list
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 status -All -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 verify -All
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 test -All -Profile Smoke -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 skills -All -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 verify-skills -All -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-common-code.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-hooks.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 export -All -Zip -DryRun
+```
+
+Kit Lifecycle v2.0 freezes the registry + manifest + adapter layer, skill routing, common registry, hook registry, package boundary, state boundary, and third-party/user-created skill policy. It does not rewrite legacy scripts and does not add `install-all.ps1`, `verify-all.ps1`, `test-all.ps1`, `update-all.ps1`, `uninstall-all.ps1`, or `export-all.ps1`. `-All` only walks enabled Kits in `config/kit-registry.json` and reuses the same action dispatch path as single-Kit execution. Smoke remains the default gate. `verify -All` and `test -All` default to Smoke; use `-Profile Full` only for explicit legacy full verification. Full and Release are explicit.
 
 Typical usage:
 
@@ -144,6 +161,15 @@ Do not rebuild `plugins/AiCoding` inside the AiCoding submodule. Update the subm
 - [中文 README](README_CN.md)
 - [English README](README_EN.md)
 - [Codex Kit Architecture](docs/CODEX_KIT_ARCHITECTURE.md)
+- [Kit Lifecycle Architecture](docs/KIT_LIFECYCLE_ARCHITECTURE.md)
+- [Kit Lifecycle Test Profiles](docs/KIT_LIFECYCLE_TEST_PROFILES.md)
+- [Kit Skill Routing](docs/KIT_SKILL_ROUTING.md)
+- [Common Code Management](docs/COMMON_CODE_MANAGEMENT.md)
+- [Hook System](docs/HOOK_SYSTEM.md)
+- [Third-Party Skill Policy](docs/THIRD_PARTY_SKILL_POLICY.md)
+- [User-Created Skill Policy](docs/USER_CREATED_SKILL_POLICY.md)
+- [Kit Export And Release](docs/KIT_EXPORT_AND_RELEASE.md)
+- [Kit Install State](docs/KIT_INSTALL_STATE.md)
 - [Maintenance Method](docs/MAINTENANCE_METHOD.md)
 - [CodingKit](CodingKit/README.md)
 - [CHANGELOG](CHANGELOG.md)

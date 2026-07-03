@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 2,
+  "id": "aicoding-agent-dev-kit",
+  "name": "AiCoding Agent Dev Kit",
+  "version": "0.11.1",
+  "kind": [
+    "plugin-kit",
+    "python-cli-kit",
+    "workflow-kit",
+    "quality-gate-kit"
+  ],
+  "mode": "script-adapter",
+  "description": "Spec Pack, SDD, TDD, sequential context loading, decision memory, hook bridge, and quality-gate workflows for Codex.",
+  "paths": {
+    "pluginRoot": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit",
+    "pluginManifest": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/.codex-plugin/plugin.json",
+    "assetRoot": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/assets/aicoding-agent-dev-kit",
+    "stateRoot": ".aicoding/state/kits/aicoding-agent-dev-kit",
+    "legacyStateRoot": ".aicoding-agent-dev-kit",
+    "marketplace": ".agents/plugins/marketplace.json"
+  },
+  "commands": {
+    "install": {
+      "type": "powershell-script",
+      "path": "scripts/install-aicoding-agent-dev-kit.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
+    },
+    "status": {
+      "type": "powershell-script",
+      "path": "scripts/status-aicoding-agent-dev-kit.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true
+    },
+    "verify": {
+      "type": "powershell-script",
+      "path": "scripts/verify-aicoding-agent-dev-kit.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true
+    },
+    "test": {
+      "type": "powershell-script",
+      "path": "scripts/test-aicoding-agent-dev-kit.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true
+    },
+    "uninstall": {
+      "type": "powershell-script",
+      "path": "scripts/uninstall-aicoding-agent-dev-kit.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true
+    },
+    "update": {
+      "type": "composed",
+      "steps": [
+        "install",
+        "verify"
+      ]
+    },
+    "export": {
+      "type": "builtin-package",
+      "include": [
+        "dist/aicoding-agent-dev-kit/**",
+        "scripts/install-aicoding-agent-dev-kit.ps1",
+        "scripts/status-aicoding-agent-dev-kit.ps1",
+        "scripts/verify-aicoding-agent-dev-kit.ps1",
+        "scripts/test-aicoding-agent-dev-kit.ps1",
+        "scripts/uninstall-aicoding-agent-dev-kit.ps1",
+        "config/kits/aicoding-agent-dev-kit.json"
+      ],
+      "exclude": [
+        "**/__pycache__/**",
+        "**/.pytest_cache/**",
+        "**/*.pyc",
+        "**/.venv/**"
+      ],
+      "outputName": "aicoding-agent-dev-kit-${version}.zip"
+    }
+  },
+  "skills": {
+    "umbrella": {
+      "id": "aicoding-agent-dev-kit",
+      "path": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/skills/aicoding-agent-dev-kit/SKILL.md",
+      "role": "router",
+      "description": "Umbrella router for Spec, SDD, TDD, hooks, and quality workflows.",
+      "tags": [
+        "agent",
+        "workflow"
+      ]
+    },
+    "members": []
+  },
+  "hooks": {
+    "repo": [],
+    "agent": [
+      {
+        "id": "aicoding-agent-quality-gate",
+        "type": "before-commit",
+        "path": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/hooks/stop.ps1",
+        "enabledByDefault": true,
+        "owner": "aicoding-agent-dev-kit"
+      }
+    ]
+  },
+  "commonDependencies": [],
+  "export": {
+    "include": [
+      "dist/aicoding-agent-dev-kit/**",
+      "scripts/install-aicoding-agent-dev-kit.ps1",
+      "scripts/status-aicoding-agent-dev-kit.ps1",
+      "scripts/verify-aicoding-agent-dev-kit.ps1",
+      "scripts/test-aicoding-agent-dev-kit.ps1",
+      "scripts/uninstall-aicoding-agent-dev-kit.ps1",
+      "config/kits/aicoding-agent-dev-kit.json"
+    ],
+    "exclude": [
+      "**/__pycache__/**",
+      "**/.pytest_cache/**",
+      "**/*.pyc",
+      "**/.venv/**"
+    ],
+    "outputName": "aicoding-agent-dev-kit-${version}.zip"
+  },
+  "state": {
+    "root": ".aicoding/state/kits/aicoding-agent-dev-kit",
+    "installState": ".aicoding/state/kits/aicoding-agent-dev-kit/install-state.json"
+  },
+  "trust": {
+    "level": "first-party",
+    "source": "AiCoding",
+    "thirdParty": false,
+    "updatePolicy": "manual"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 20
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true,
+      "packageRestore": true
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "hooks": [
+    {
+      "id": "docsync-pre-commit",
+      "owner": "docsync-plus",
+      "type": "repo-hook",
+      "trigger": "pre-commit",
+      "path": "scripts/check-documentation-sync.ps1",
+      "enabledByDefault": true,
+      "machineReadable": true
+    },
+    {
+      "id": "aicoding-agent-stop-quality-gate",
+      "owner": "aicoding-agent-dev-kit",
+      "type": "agent-hook",
+      "trigger": "stop",
+      "path": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/hooks/stop.ps1",
+      "enabledByDefault": true,
+      "machineReadable": true
+    }
+  ]
+}

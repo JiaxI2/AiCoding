@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 2,
+  "id": "docsync-plus",
+  "name": "DocSync Plus",
+  "version": "0.1.0",
+  "kind": [
+    "repo-hook-kit",
+    "docsync-kit",
+    "governance-kit"
+  ],
+  "mode": "script-adapter",
+  "description": "Semantic documentation drift detection kit for AiCoding repositories.",
+  "paths": {
+    "entrypoint": "scripts/check-documentation-sync.ps1",
+    "moduleRoot": "scripts/docsync",
+    "policy": "config/docs-sync.policy.json",
+    "semanticPolicy": "config/docs-sync.semantic.json",
+    "stateRoot": ".aicoding/state/kits/docsync-plus"
+  },
+  "commands": {
+    "install": {
+      "type": "powershell-script",
+      "path": "scripts/install-docsync-plus.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
+    },
+    "status": {
+      "type": "powershell-script",
+      "path": "scripts/status-docsync-plus.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true
+    },
+    "verify": {
+      "type": "powershell-script",
+      "path": "scripts/verify-docsync-plus.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true
+    },
+    "test": {
+      "type": "powershell-script",
+      "path": "scripts/test-docsync-plus.ps1",
+      "args": [
+        "-RepoRoot",
+        "${repoRoot}"
+      ],
+      "supportsJson": true
+    },
+    "uninstall": {
+      "type": "unsupported",
+      "reason": "DocSync Plus is integrated as repository governance files. Safe uninstall requires state-based ownership first."
+    },
+    "update": {
+      "type": "composed",
+      "steps": [
+        "install",
+        "verify"
+      ]
+    },
+    "export": {
+      "type": "builtin-package",
+      "include": [
+        "scripts/check-documentation-sync.ps1",
+        "scripts/docsync/**",
+        "scripts/install-docsync-plus.ps1",
+        "scripts/status-docsync-plus.ps1",
+        "scripts/verify-docsync-plus.ps1",
+        "scripts/test-docsync-plus.ps1",
+        "config/docs-sync.policy.json",
+        "config/docs-sync.semantic.json",
+        "docs/DOC_SYNC_PLUS_SPEC.md",
+        "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md"
+      ],
+      "exclude": [],
+      "outputName": "docsync-plus-${version}.zip"
+    }
+  },
+  "skills": {
+    "members": []
+  },
+  "hooks": {
+    "repo": [
+      {
+        "id": "docsync-pre-commit",
+        "type": "pre-commit",
+        "path": "scripts/check-documentation-sync.ps1",
+        "enabledByDefault": true,
+        "owner": "docsync-plus"
+      }
+    ],
+    "agent": []
+  },
+  "commonDependencies": [],
+  "export": {
+    "include": [
+      "scripts/check-documentation-sync.ps1",
+      "scripts/docsync/**",
+      "scripts/install-docsync-plus.ps1",
+      "scripts/status-docsync-plus.ps1",
+      "scripts/verify-docsync-plus.ps1",
+      "scripts/test-docsync-plus.ps1",
+      "config/docs-sync.policy.json",
+      "config/docs-sync.semantic.json",
+      "docs/DOC_SYNC_PLUS_SPEC.md",
+      "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md"
+    ],
+    "exclude": [],
+    "outputName": "docsync-plus-${version}.zip"
+  },
+  "state": {
+    "root": ".aicoding/state/kits/docsync-plus",
+    "installState": ".aicoding/state/kits/docsync-plus/install-state.json"
+  },
+  "trust": {
+    "level": "first-party",
+    "source": "AiCoding",
+    "thirdParty": false,
+    "updatePolicy": "manual"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 20
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true,
+      "packageRestore": true
+    }
+  }
+}

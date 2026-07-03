@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "modules": [
+    {
+      "id": "common-control",
+      "path": "CodingKit/modules/common/controller",
+      "language": "c",
+      "version": "0.1.0",
+      "owners": ["common-control-kit"],
+      "tests": [
+        "CodingKit/modules/common/controller/pid/tests",
+        "CodingKit/modules/common/controller/foc/tests",
+        "CodingKit/modules/common/controller/filter/巴特沃兹二阶滤波器/tests"
+      ],
+      "readmePaths": [
+        "CodingKit/modules/common/controller/pid/README.md",
+        "CodingKit/modules/common/controller/foc/README.md",
+        "CodingKit/modules/common/controller/filter/巴特沃兹二阶滤波器/README.md"
+      ]
+    }
+  ]
+}

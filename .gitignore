@@ -35,3 +35,10 @@ Thumbs.db
 .codex-agent-powershell-skill-kit/
 # AiCoding Agent Dev Kit generated runtime state
 .aicoding-agent-dev-kit/
+# AiCoding lifecycle generated package/state output
+.aicoding/packages/
+.aicoding/state/
+.aicoding/tmp/
+.aicoding/skill-cache/
+.aicoding/skill-quarantine/
+.aicoding/user-skills/

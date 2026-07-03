@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 2,
+  "id": "aicoding-platform",
+  "name": "AiCoding Platform",
+  "version": "0.1.0",
+  "kind": [
+    "platform-kit",
+    "plugin-kit"
+  ],
+  "mode": "script-adapter",
+  "description": "AiCoding platform integration, Codex plugin marketplace registration, CodingKit asset discovery, and submodule validation.",
+  "paths": {
+    "config": "config/codex-kit.json",
+    "pluginRoot": "CodingKit/agents/skills/plugins/AiCoding",
+    "marketplace": ".agents/plugins/marketplace.json",
+    "submodule": "CodingKit/agents/skills"
+  },
+  "commands": {
+    "install": {
+      "type": "powershell-script",
+      "path": "scripts/install-codex-kit.ps1",
+      "args": [],
+      "supportsJson": true,
+      "supportsDryRun": true
+    },
+    "status": {
+      "type": "powershell-script",
+      "path": "scripts/status-codex-kit.ps1",
+      "args": [],
+      "supportsJson": true
+    },
+    "verify": {
+      "type": "powershell-script",
+      "path": "scripts/verify-codex-kit.ps1",
+      "args": [],
+      "supportsJson": true
+    },
+    "test": {
+      "type": "composed",
+      "steps": [
+        "verify"
+      ]
+    },
+    "update": {
+      "type": "powershell-script",
+      "path": "scripts/update-codex-kit.ps1",
+      "args": [],
+      "supportsJson": false,
+      "supportsDryRun": true
+    },
+    "uninstall": {
+      "type": "powershell-script",
+      "path": "scripts/uninstall-codex-kit.ps1",
+      "args": [],
+      "supportsJson": true,
+      "supportsDryRun": true
+    },
+    "export": {
+      "type": "builtin-package",
+      "include": [
+        "config/codex-kit.json",
+        ".agents/plugins/marketplace.json",
+        "scripts/*codex-kit.ps1",
+        "scripts/lib/CodexKit.psm1",
+        "CodingKit/README.md"
+      ],
+      "exclude": [
+        "CodingKit/agents/skills/**"
+      ],
+      "outputName": "aicoding-platform-${version}.zip"
+    }
+  },
+  "skills": {
+    "umbrella": {
+      "id": "aicoding-embedded",
+      "path": "CodingKit/agents/skills/plugins/AiCoding/skills/aicoding-embedded/SKILL.md",
+      "role": "router",
+      "description": "Umbrella entry for embedded AiCoding workflows.",
+      "tags": [
+        "embedded",
+        "router"
+      ]
+    },
+    "members": [
+      {
+        "id": "aicoding-kit-maintenance",
+        "path": "CodingKit/agents/skills/plugins/AiCoding/skills/aicoding-kit-maintenance/SKILL.md",
+        "role": "subskill",
+        "description": "Maintains AiCoding kit lifecycle and package workflows.",
+        "tags": [
+          "kit",
+          "maintenance"
+        ]
+      }
+    ]
+  },
+  "hooks": {
+    "repo": [],
+    "agent": [],
+    "kit": []
+  },
+  "commonDependencies": [],
+  "export": {
+    "include": [
+      "config/codex-kit.json",
+      ".agents/plugins/marketplace.json",
+      "scripts/*codex-kit.ps1",
+      "scripts/lib/CodexKit.psm1",
+      "CodingKit/README.md"
+    ],
+    "exclude": [
+      "CodingKit/agents/skills/**"
+    ],
+    "outputName": "aicoding-platform-${version}.zip"
+  },
+  "state": {
+    "root": ".aicoding/state/kits/aicoding-platform",
+    "installState": ".aicoding/state/kits/aicoding-platform/install-state.json"
+  },
+  "trust": {
+    "level": "first-party",
+    "source": "AiCoding",
+    "thirdParty": false,
+    "updatePolicy": "manual"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 20
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true,
+      "packageRestore": true
+    }
+  }
+}

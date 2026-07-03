@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 2,
+  "id": "common-control-kit",
+  "name": "Common Control Kit",
+  "version": "0.1.0",
+  "kind": [
+    "codingkit-module-kit",
+    "asset-kit"
+  ],
+  "mode": "script-adapter",
+  "description": "Reusable C99 control modules under CodingKit/modules/common/controller.",
+  "paths": {
+    "moduleRoot": "CodingKit/modules/common/controller"
+  },
+  "commands": {
+    "status": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "CodingKit/modules/common/controller",
+        "CodingKit/modules/common/controller/pid",
+        "CodingKit/modules/common/controller/foc",
+        "CodingKit/modules/common/controller/filter"
+      ]
+    },
+    "verify": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "CodingKit/modules/common/controller/pid/README.md",
+        "CodingKit/modules/common/controller/foc/README.md",
+        "CodingKit/modules/common/controller/pid",
+        "CodingKit/modules/common/controller/foc",
+        "CodingKit/modules/common/controller/filter"
+      ]
+    },
+    "test": {
+      "type": "composed",
+      "steps": [
+        "verify"
+      ]
+    },
+    "install": {
+      "type": "unsupported",
+      "reason": "Common Control Kit is a repository asset module and has no runtime install action in Phase 1."
+    },
+    "update": {
+      "type": "unsupported",
+      "reason": "Common Control Kit source updates are normal CodingKit module changes, not a lifecycle adapter action in Phase 1."
+    },
+    "uninstall": {
+      "type": "unsupported",
+      "reason": "Common Control Kit is versioned repository content and is not safely uninstallable through lifecycle adapter state yet."
+    },
+    "export": {
+      "type": "builtin-package",
+      "include": [
+        "CodingKit/modules/common/controller/**",
+        "config/kits/common-control-kit.json"
+      ],
+      "exclude": [
+        "**/__pycache__/**",
+        "**/.pytest_cache/**",
+        "CodingKit/modules/common/controller/**/reports/**"
+      ],
+      "outputName": "common-control-kit-${version}.zip"
+    }
+  },
+  "skills": {
+    "members": []
+  },
+  "hooks": {
+    "repo": [],
+    "agent": [],
+    "kit": []
+  },
+  "commonDependencies": [
+    {
+      "id": "common-control",
+      "path": "CodingKit/modules/common/controller",
+      "version": "0.1.0",
+      "usage": "repository-owned reusable controller modules"
+    }
+  ],
+  "export": {
+    "include": [
+      "CodingKit/modules/common/controller/**",
+      "config/kits/common-control-kit.json"
+    ],
+    "exclude": [
+      "**/__pycache__/**",
+      "**/.pytest_cache/**",
+      "CodingKit/modules/common/controller/**/reports/**"
+    ],
+    "outputName": "common-control-kit-${version}.zip"
+  },
+  "state": {
+    "root": ".aicoding/state/kits/common-control-kit",
+    "installState": ".aicoding/state/kits/common-control-kit/install-state.json"
+  },
+  "trust": {
+    "level": "first-party",
+    "source": "AiCoding",
+    "thirdParty": false,
+    "updatePolicy": "manual"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 20
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true,
+      "packageRestore": false
+    }
+  }
+}
