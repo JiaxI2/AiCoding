@@ -110,7 +110,7 @@ function Test-ExcludedFreshClonePath {
         ".ai-debug-repair",
         ".codex-agent-powershell-skill-kit",
         ".aicoding-agent-dev-kit",
-        ".agents/skills",
+        ".agents/skills/codex-agent-powershell-skill-kit",
         "plugins",
         "node_modules",
         ".venv",
@@ -140,7 +140,7 @@ function Copy-SourceOnlyTree {
         (Join-Path $Source '.ai-debug-repair'),
         (Join-Path $Source '.codex-agent-powershell-skill-kit'),
         (Join-Path $Source '.aicoding-agent-dev-kit'),
-        (Join-Path $Source '.agents\skills'),
+        (Join-Path $Source '.agents\skills\codex-agent-powershell-skill-kit'),
         (Join-Path $Source 'plugins'),
         (Join-Path $Source 'node_modules'),
         (Join-Path $Source '.venv'),
@@ -513,7 +513,7 @@ try {
         $copy = Copy-SourceOnlyTree -Source $sourceRoot -Destination $cloneRoot
         Add-Step "source.copy" $true "copied source-only tree" $copy
         Add-Step "source.excludes" (-not (Test-Path -LiteralPath (Join-Path $cloneRoot ".aicoding\packages"))) "runtime package directory excluded"
-        Add-Step "source.runtime-mirror-excluded" (-not (Test-Path -LiteralPath (Join-Path $cloneRoot ".agents\skills"))) "runtime skill mirror excluded"
+        Add-Step "source.runtime-mirror-excluded" (-not (Test-Path -LiteralPath (Join-Path $cloneRoot ".agents\skills\codex-agent-powershell-skill-kit"))) "runtime skill mirror excluded"
 
         if ($script:FreshCloneProfile -eq "Full") {
             Invoke-SourceOnlyChecks
