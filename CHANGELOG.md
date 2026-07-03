@@ -6,9 +6,10 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`。
 
 ### Fixed
+- **fix(git-governance)**：将 `scripts/verify-release-notes.ps1` 的中文章节正则改为 \uXXXX 转义动态生成，脚本源码保持纯 ASCII，避免源文件编码损坏导致双语 release notes 校验全部误报失败；rewrite the Chinese section regexes in `scripts/verify-release-notes.ps1` as dynamically built \uXXXX escapes so the script stays pure ASCII and source-file encoding corruption can no longer break bilingual release notes validation.
 - **fix(kit-lifecycle)**：修复 `scripts/test-kit-fresh-clone.ps1` 将整个 `.agents/skills` 目录按运行时镜像排除，导致 Release/Full fresh-clone 验证丢失 `aicoding-agent-dev-kit-plan-mode` 源码资产、`aicoding-agent-dev-kit` export include 失配；改为只排除生成的 `codex-agent-powershell-skill-kit` runtime mirror；fix `test-kit-fresh-clone.ps1` excluding the whole `.agents/skills` directory as a runtime mirror, which dropped the tracked `aicoding-agent-dev-kit-plan-mode` skill source and broke the `aicoding-agent-dev-kit` export include in Release/Full fresh-clone runs; now only the generated `codex-agent-powershell-skill-kit` runtime mirror is excluded.
 - **fix(aicoding-agent-dev-kit)**：将 Plan Mode overlay 的 prompt、Skill 片段、hook/script message 和用户交互说明改为中文优先，避免 Codex 权限摘要和验证说明默认生成英文，同时保持 Plan Mode、用户决策门禁和一个总 hook bridge + 多个子模块设计不变。
 - **fix(ai-debug-repair-kit)**：补齐 `test-ai-debug-repair-kit.ps1` 生命周期脚本，并为 `install-ai-debug-repair-kit.ps1` 增加真实 `-DryRun` 路径，dry-run 只输出安装计划、不复制插件、不改 Marketplace、不执行 pip、不写 install-state；add the missing `test-ai-debug-repair-kit.ps1` lifecycle script and implement a real `-DryRun` path for `install-ai-debug-repair-kit.ps1` that reports the install plan without copying the plugin, changing Marketplace, running pip, or writing install-state.

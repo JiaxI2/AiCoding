@@ -51,17 +51,27 @@ function Get-ReleaseBody {
 
 $body = Get-ReleaseBody
 
+# Chinese section names use \uXXXX regex escapes so this script stays pure
+# ASCII and immune to source-file encoding corruption.
+function New-SectionPattern {
+    param(
+        [string]$Chinese,
+        [string]$English
+    )
+    return ('(?im)^##\s*({0}\s*/\s*{1}|{1}\s*/\s*{0})\s*$' -f $Chinese, $English)
+}
+
 $requiredSections = @(
-    @{ id = "summary"; pattern = '(?im)^##\s*(摘要\s*/\s*Summary|Summary\s*/\s*摘要)\s*$' },
-    @{ id = "whats-changed"; pattern = '(?im)^##\s*(变更内容\s*/\s*What''s Changed|What''s Changed\s*/\s*变更内容)\s*$' },
-    @{ id = "compatibility"; pattern = '(?im)^##\s*(兼容性\s*/\s*Compatibility|Compatibility\s*/\s*兼容性)\s*$' },
-    @{ id = "deprecations"; pattern = '(?im)^##\s*(废弃项\s*/\s*Deprecations|Deprecations\s*/\s*废弃项)\s*$' },
-    @{ id = "release-notes"; pattern = '(?im)^##\s*(发布说明\s*/\s*Release Notes|Release Notes\s*/\s*发布说明)\s*$' },
-    @{ id = "full-changelog"; pattern = '(?im)^##\s*(完整变更\s*/\s*Full Changelog|Full Changelog\s*/\s*完整变更)\s*$' },
-    @{ id = "new-contributors"; pattern = '(?im)^##\s*(新贡献者\s*/\s*New Contributors|New Contributors\s*/\s*新贡献者)\s*$' },
-    @{ id = "known-issues"; pattern = '(?im)^##\s*(已知问题\s*/\s*Known Issues|Known Issues\s*/\s*已知问题)\s*$' },
-    @{ id = "traceability"; pattern = '(?im)^##\s*(可追溯性\s*/\s*Traceability|Traceability\s*/\s*可追溯性)\s*$' },
-    @{ id = "assets"; pattern = '(?im)^##\s*(资产\s*/\s*Assets|Assets\s*/\s*资产)\s*$' }
+    @{ id = "summary"; pattern = (New-SectionPattern '\u6458\u8981' 'Summary') },
+    @{ id = "whats-changed"; pattern = (New-SectionPattern '\u53d8\u66f4\u5185\u5bb9' 'What''s Changed') },
+    @{ id = "compatibility"; pattern = (New-SectionPattern '\u517c\u5bb9\u6027' 'Compatibility') },
+    @{ id = "deprecations"; pattern = (New-SectionPattern '\u5e9f\u5f03\u9879' 'Deprecations') },
+    @{ id = "release-notes"; pattern = (New-SectionPattern '\u53d1\u5e03\u8bf4\u660e' 'Release Notes') },
+    @{ id = "full-changelog"; pattern = (New-SectionPattern '\u5b8c\u6574\u53d8\u66f4' 'Full Changelog') },
+    @{ id = "new-contributors"; pattern = (New-SectionPattern '\u65b0\u8d21\u732e\u8005' 'New Contributors') },
+    @{ id = "known-issues"; pattern = (New-SectionPattern '\u5df2\u77e5\u95ee\u9898' 'Known Issues') },
+    @{ id = "traceability"; pattern = (New-SectionPattern '\u53ef\u8ffd\u6eaf\u6027' 'Traceability') },
+    @{ id = "assets"; pattern = (New-SectionPattern '\u8d44\u4ea7' 'Assets') }
 )
 
 foreach ($section in $requiredSections) {
