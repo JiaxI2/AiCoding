@@ -42,7 +42,15 @@ function Get-ReleaseBody {
     if ($Tag) {
         $gh = Get-Command gh -ErrorAction SilentlyContinue
         if (-not $gh) { throw "GitHub CLI gh is required when -Tag is used." }
-        $raw = & $gh.Source release view $Tag --repo $Repo --json body
+        # gh emits UTF-8; force UTF-8 pipe decoding so Chinese sections survive
+        # on consoles that default to a legacy code page (e.g. GBK).
+        $prevEncoding = [Console]::OutputEncoding
+        try {
+            [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+            $raw = & $gh.Source release view $Tag --repo $Repo --json body
+        } finally {
+            [Console]::OutputEncoding = $prevEncoding
+        }
         if ($LASTEXITCODE -ne 0) { throw "gh release view failed for tag: $Tag" }
         return (($raw | ConvertFrom-Json).body)
     }
