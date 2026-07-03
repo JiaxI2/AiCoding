@@ -142,7 +142,7 @@ All AiCoding-governed Git repositories must document branch, environment, commit
 - Commit types: `feat` adds functionality, `fix` repairs bugs, `docs` changes documentation only, `style` changes formatting without behavior impact, `refactor` restructures code without feature or bug-fix intent, `perf` improves performance, `test` adds or corrects tests, `build` changes build or packaging behavior, `ci` changes automation, and `chore` changes supporting tools or maintenance files.
 - Single commits: one commit should contain one category of change, no more than three tightly related topics, and a typed subject such as `feat(scope): summary`.
 - Bilingual rule: README defaults to Chinese first and must keep visible file-level switches to `README_CN.md` and `README_EN.md`; CHANGELOG, Tag, GitHub Release, and GitHub About descriptions are Chinese first, English second.
-- Releases: Tag and GitHub Release notes must group every included commit by type, state the primary release type, and describe concrete user-facing or maintenance impact.
+- Releases: Tag and GitHub Release notes must group every included commit by type, state the primary release type, and include `摘要 / Summary`, `变更内容 / What's Changed`, `兼容性 / Compatibility`, `废弃项 / Deprecations`, `发布说明 / Release Notes`, `完整变更 / Full Changelog`, `新贡献者 / New Contributors`, `已知问题 / Known Issues`, `可追溯性 / Traceability`, and `资产 / Assets`.
 
 <a id="maintenance-commands"></a>
 ## Maintenance Commands / 维护命令

@@ -1,4 +1,4 @@
-﻿param(
+param(
     [ValidateSet("all", "pre-commit", "commit-msg")]
     [string]$Mode = "all",
 
@@ -20,9 +20,11 @@ $requiredFiles = @(
     "README.md",
     "README_EN.md",
     "CHANGELOG.md",
+    ".github/RELEASE_TEMPLATE.md",
     ".github/repository-governance.toml",
     ".githooks/pre-commit",
-    ".githooks/commit-msg"
+    ".githooks/commit-msg",
+    "scripts/verify-release-notes.ps1"
 )
 
 foreach ($file in $requiredFiles) {
@@ -86,6 +88,19 @@ Require-Content "README.md" "Release.+type|Release.+typed|按类型汇总|主类
 Require-Content "README_EN.md" "Git Governance Standard|Git 治理标准" "README_EN.md must document the Git governance standard."
 Require-Content "README_EN.md" "feat.+fix.+docs.+style.+refactor.+perf.+test.+chore|feat.+fix.+docs.+build.+ci.+chore" "README_EN.md must document the standard commit type taxonomy."
 $governance = Get-Content -LiteralPath ".github/repository-governance.toml" -Raw -Encoding utf8
+if ($governance -notmatch 'notes_template\s*=\s*"\.github/RELEASE_TEMPLATE\.md"') {
+    Fail ".github/repository-governance.toml must declare the release notes template."
+}
+if ($governance -notmatch 'notes_validator\s*=\s*"scripts/verify-release-notes\.ps1"') {
+    Fail ".github/repository-governance.toml must declare the release notes validator."
+}
+if ($governance -notmatch 'required_bilingual_sections') {
+    Fail ".github/repository-governance.toml must require bilingual release notes sections."
+}
+& (Join-Path $repoRoot "scripts/verify-release-notes.ps1") -Path ".github/RELEASE_TEMPLATE.md" -AllowPlaceholders -Json | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Fail ".github/RELEASE_TEMPLATE.md must pass scripts/verify-release-notes.ps1."
+}
 $changelogMode = ""
 if ($governance -match '(?m)^mode\s*=\s*"([^"]+)"') {
     $changelogMode = $Matches[1]

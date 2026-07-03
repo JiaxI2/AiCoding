@@ -181,7 +181,7 @@ AiCoding 区分 plugin bundled skills 和个人 standalone skills：
 - 提交类型：`feat` 新增功能，`fix` 修复 bug，`docs` 仅文档变更，`style` 仅格式/空白等不影响语义的变更，`refactor` 既不修 bug 也不加功能的代码重构，`perf` 性能改进，`test` 添加或修正测试，`build` 构建或打包行为，`ci` 自动化变更，`chore` 辅助工具或维护文件变更。
 - 单次提交：一个 commit 只放一类变更，议题不超过 3 个，并使用 `feat(scope): summary` 这类 typed subject。
 - 双语规则：README 默认中文优先，顶部必须保留可见的 `README_CN.md` 与 English 快速切换；CHANGELOG、Tag、GitHub Release 和 GitHub About 描述默认中文在前、英文在后。
-- Release：Tag 和 GitHub Release 必须按类型汇总本次包含的全部提交，说明本次 release 主类型，并写清具体影响。
+- Release：Tag 和 GitHub Release 必须按类型汇总本次包含的全部提交，说明本次 release 主类型，并包含 `摘要 / Summary`、`变更内容 / What's Changed`、`兼容性 / Compatibility`、`废弃项 / Deprecations`、`发布说明 / Release Notes`、`完整变更 / Full Changelog`、`新贡献者 / New Contributors`、`已知问题 / Known Issues`、`可追溯性 / Traceability` 和 `资产 / Assets`。
 
 <a id="maintenance-commands"></a>
 ## 维护命令 / Maintenance Commands
