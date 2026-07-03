@@ -1,4 +1,22 @@
 {
   "schemaVersion": 1,
-  "sources": []
+  "sources": [
+    {
+      "name": "ppt-master",
+      "skill": "ppt-master",
+      "type": "git",
+      "url": "https://github.com/hugohe3/ppt-master.git",
+      "branch": "main",
+      "trust": "third-party",
+      "updatePolicy": "manual",
+      "layout": "external-repo",
+      "skillPath": "skills/ppt-master",
+      "repoRequired": true,
+      "dependencyFile": "requirements.txt",
+      "targets": [
+        "CodexUser",
+        "RepoLocal"
+      ]
+    }
+  ]
 }
