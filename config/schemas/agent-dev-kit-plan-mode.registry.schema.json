@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AiCoding Agent Dev Kit Plan Mode Registry",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "owner",
+    "phases",
+    "stopFiles",
+    "acceptedDecisionArtifacts",
+    "architectureSensitivePaths",
+    "requiredMarkers",
+    "hookModules"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer"
+    },
+    "id": {
+      "type": "string"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "artifact",
+          "requiredWhen"
+        ]
+      }
+    },
+    "stopFiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "acceptedDecisionArtifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "architectureSensitivePaths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "requiredMarkers": {
+      "type": "object",
+      "required": [
+        "selectedDecision",
+        "approvedPlan"
+      ],
+      "properties": {
+        "selectedDecision": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approvedPlan": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "hookModules": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

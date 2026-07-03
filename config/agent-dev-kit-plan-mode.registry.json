@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "id": "aicoding-agent-dev-kit-plan-mode",
+  "owner": "aicoding-agent-dev-kit",
+  "description": "Plan-first workflow overlay for AiCoding Agent Dev Kit, adapting Codex Plan Mode, Spec Kit phases, and Superpower-style explicit workflow habits.",
+  "phases": [
+    {
+      "id": "clarify",
+      "artifact": "spec/PRD_OPTIONS.md",
+      "requiredWhen": "requirement is fuzzy"
+    },
+    {
+      "id": "specify",
+      "artifact": "spec/PLAN_MODE.md",
+      "requiredWhen": "non-trivial work"
+    },
+    {
+      "id": "plan",
+      "artifact": "spec/IMPLEMENTATION_PLAN.md",
+      "requiredWhen": "implementation changes"
+    },
+    {
+      "id": "decision",
+      "artifact": "spec/SELECTED_SOLUTION.md",
+      "requiredWhen": "multiple architecture options exist"
+    },
+    {
+      "id": "tasks",
+      "artifact": "spec/TASKS.md",
+      "requiredWhen": "implementation changes"
+    },
+    {
+      "id": "traceability",
+      "artifact": "spec/TRACEABILITY.md",
+      "requiredWhen": "implementation changes"
+    },
+    {
+      "id": "verify",
+      "artifact": "verification output",
+      "requiredWhen": "handoff"
+    }
+  ],
+  "stopFiles": [
+    "spec/NEEDS_USER_DECISION.md"
+  ],
+  "acceptedDecisionArtifacts": [
+    "spec/SELECTED_SOLUTION.md",
+    ".agent-memory/DECISIONS.md",
+    "docs/decisions",
+    "docs/adr"
+  ],
+  "architectureSensitivePaths": [
+    "config/kits/",
+    "config/*.registry.json",
+    "config/schemas/",
+    "scripts/",
+    "scripts/lib/",
+    "scripts/hooks/",
+    ".agents/skills/",
+    "dist/*/plugins/*/skills/",
+    "dist/*/plugins/*/hooks/",
+    "CodingKit/modules/",
+    "docs/AGENT_",
+    "Taskfile",
+    ".github/workflows/"
+  ],
+  "requiredMarkers": {
+    "selectedDecision": [
+      "Decision Status: Selected",
+      "Status: Accepted",
+      "Selected option:",
+      "Human selection:",
+      "User selected:",
+      "用户选择：",
+      "状态：已选择"
+    ],
+    "approvedPlan": [
+      "Plan Status: Approved",
+      "Implementation Plan: Approved",
+      "Status: Accepted",
+      "计划状态：已批准"
+    ]
+  },
+  "hookModules": [
+    "plan-mode-gate",
+    "spec-artifact-gate"
+  ]
+}

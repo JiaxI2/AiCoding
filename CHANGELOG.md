@@ -6,12 +6,13 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`。
 
 ### Fixed
 - **fix(ai-debug-repair-kit)**：补齐 `test-ai-debug-repair-kit.ps1` 生命周期脚本，并为 `install-ai-debug-repair-kit.ps1` 增加真实 `-DryRun` 路径，dry-run 只输出安装计划、不复制插件、不改 Marketplace、不执行 pip、不写 install-state；add the missing `test-ai-debug-repair-kit.ps1` lifecycle script and implement a real `-DryRun` path for `install-ai-debug-repair-kit.ps1` that reports the install plan without copying the plugin, changing Marketplace, running pip, or writing install-state.
 
 ### Added
+- **feat(aicoding-agent-dev-kit)**：集成 Agent Dev Kit Plan Mode overlay v0.4，新增 Plan Mode registry、repo-scoped Plan Mode skill、Spec Kit/Superpower 适配文档、AEF plan/spec gate、统一 agent hook bridge、验证器和本次集成 traceability 工件；integrate Agent Dev Kit Plan Mode overlay v0.4 with a Plan Mode registry, repo-scoped Plan Mode skill, Spec Kit/Superpower adaptation docs, AEF plan/spec gates, a unified agent hook bridge, verifier, and integration traceability artifacts.
 - **chore(git-governance)**：新增强制 GitHub Release notes 结构治理，包含 `.github/RELEASE_TEMPLATE.md`、`scripts/verify-release-notes.ps1`、`repository-governance.toml` 声明和 `lint-git-governance.ps1` pre-commit 校验；add mandatory GitHub Release notes structure governance with a release template, validator, governance config, and pre-commit lint enforcement.
 - **feat(kit-lifecycle)**：冻结 AiCoding Kit System v2.0，新增 Kit skill routing、Common registry、Hook registry、第三方 Skill source policy、自建 Skill 草稿/验证策略、`scripts/aicoding-skill.ps1`、v2.0 policy 文档和轻量回归 gate；freeze AiCoding Kit System v2.0 with Kit skill routing, common and hook registries, third-party skill source policy, user-created skill draft/verify policy, `scripts/aicoding-skill.ps1`, v2.0 policy docs, and smoke regression gates.
 - **feat(kit-lifecycle)**：新增 Kit Lifecycle v2 Phase 1.6 real export/package 能力，包含 `scripts/lib/AiCoding.KitPackage.psm1`、单 Kit zip/sha256/BUILDINFO 产出、`export -All -Zip` 总 bundle、`SHA256SUMS.txt` 和 dry-run 无副作用计划输出；add Kit Lifecycle v2 Phase 1.6 real export/package support with `scripts/lib/AiCoding.KitPackage.psm1`, per-Kit zip/sha256/BUILDINFO artifacts, an `export -All -Zip` bundle, `SHA256SUMS.txt`, and side-effect-free dry-run planning.

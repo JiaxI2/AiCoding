@@ -24,7 +24,7 @@ AiCoding is a platform repository for local AI-assisted embedded development. It
 | Plugin install / Plugin 安装 | Install `aicoding@aicoding-platform` through the local Marketplace / 通过本地 Marketplace 安装 | [Quick Start](#quick-start) |
 | Agent Patch Kit | Safe `apatch` patching, fixed-string scans, transaction snapshots, and Markdown checks / 安全补丁、扫描、事务快照和 Markdown 链接检查 | [Local Agent Kits](#local-agent-kits) |
 | AI Debug Repair Kit | `airepair` build/test repair and TI DSS read-only scaffold / build-test repair 与 TI DSS 只读 scaffold | [Local Agent Kits](#local-agent-kits) |
-| AiCoding Agent Dev Kit | `aicoding-agent-kit` clarification, option matrix, Spec/TDD, sequential loading, and progress tracking / 需求澄清、方案矩阵、Spec/TDD、顺序加载和进度监控 | [Local Agent Kits](#local-agent-kits) |
+| AiCoding Agent Dev Kit | `aicoding-agent-kit` clarification, option matrix, Plan Mode, Spec/TDD, sequential loading, and progress tracking / 需求澄清、方案矩阵、Plan Mode、Spec/TDD、顺序加载和进度监控 | [Local Agent Kits](#local-agent-kits) |
 | Kit Lifecycle v2.0 | Unified `scripts/aicoding-kit.ps1` Kit lifecycle and skill routing entrypoint / 统一 registry/manifest adapter 入口 | [Maintenance Commands](#maintenance-commands) |
 | Git governance / Git 治理 | README, CHANGELOG, Tag, Release, and About are Chinese first, English second / 默认中文在前、英文在后 | [Git Governance Standard](#git-governance-standard) |
 
@@ -48,14 +48,14 @@ AiCoding publishes repository-scoped Agent Kits through the local Marketplace:
 
 - Agent Patch Kit: `aicoding-agent-patch-kit`, sourced from `dist/agent-patch-kit/plugins/AiCodingAgentPatch`, provides the `apatch` safe patch workflow, state gates, fixed-string scan/replace, transaction snapshots, Markdown link checks, and patch summaries.
 - AI Debug Repair Kit: `aicoding-ai-debug-repair-kit`, sourced from `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`, provides `airepair` for bounded build/test repair loops and default non-invasive TI DSS/XDS read-only debug helpers. v0.4.1 fixes the `airepair dss` workflow around `connect-test`, `core-list`, `monitor-address`, `monitor-symbol`, `find-changing-symbol`, and `report`, while keeping policy-gated J-Link invasive-operation stubs.
-- AiCoding Agent Dev Kit: `aicoding-agent-dev-kit`, sourced from `dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit`, provides `aicoding-agent-kit` for requirement clarification, technical option matrices, Spec Pack, TDD planning, sequential context loading, lightweight decision memory, hook bridge, and MVP progress tracking.
+- AiCoding Agent Dev Kit: `aicoding-agent-dev-kit`, sourced from `dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit`, provides `aicoding-agent-kit` for requirement clarification, technical option matrices, Plan Mode overlay, Spec Pack, TDD planning, sequential context loading, lightweight decision memory, hook bridge, and MVP progress tracking. Plan Mode overlay documentation: [Agent Dev Kit Plan Mode](docs/AGENT_DEV_KIT_PLAN_MODE.md), [Spec Kit Adaptation](docs/SPEC_KIT_ADAPTATION.md), and [Superpower Skill Adaptation](docs/SUPERPOWER_SKILL_ADAPTATION.md).
 
 Environment expectations:
 
 - PowerShell 7 (`pwsh`) is the default shell for repository install, verify, status, update, and documentation checks; Windows PowerShell 5.1 is reserved for explicit compatibility gates. Git, Python 3.10+, and the Codex plugin Marketplace flow are also required.
 - Agent Patch Kit uses the user-mode `apatch` CLI. Validate it with `apatch install doctor`, `apatch brief --format md`, and `apatch state status`.
 - AI Debug Repair Kit installs the user-mode `ai-debug-repair-kit` Python package. Validate it with `python -m ai_debug_repair.cli version --output json`, `python -m ai_debug_repair.cli doctor --output json`, and `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-ai-debug-repair-kit.ps1 -Json`.
-- AiCoding Agent Dev Kit installs the user-mode `aicoding-agent-dev-kit` Python package. Validate it with `aicoding-agent-kit status --repo .`, `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-aicoding-agent-dev-kit.ps1 -Json`, and `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-aicoding-agent-dev-kit.ps1 -Json`.
+- AiCoding Agent Dev Kit installs the user-mode `aicoding-agent-dev-kit` Python package. Validate it with `aicoding-agent-kit status --repo .`, `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-aicoding-agent-dev-kit.ps1 -Json`, `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-aicoding-agent-dev-kit.ps1 -Json`, `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-agent-dev-kit-plan-mode.ps1 -Json`, and `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-agent-engineering-foundation.ps1 -Json`.
 - TI DSP debug flows require TI CCS/DSS, such as `C:\ti\ccs1281\ccs\ccs_base\scripting\bin\dss.bat`, plus an XDS probe and a target `.ccxml` before real hardware access. The default profile remains non-invasive: no reset, halt, run, flash, or writes.
 
 Unified lifecycle entrypoint:
@@ -69,6 +69,10 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 skills -A
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 verify-skills -All -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-common-code.ps1 -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-hooks.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-agent-dev-kit-plan-mode.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\hooks\aef\plan-mode-gate.ps1 -Event manual -Mode warn -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\hooks\aef\spec-artifact-gate.ps1 -Event manual -Mode warn -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-agent-engineering-foundation.ps1 -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 export -All -Zip -DryRun
 ```
 
@@ -170,6 +174,9 @@ Do not rebuild `plugins/AiCoding` inside the AiCoding submodule. Update the subm
 - [User-Created Skill Policy](docs/USER_CREATED_SKILL_POLICY.md)
 - [Kit Export And Release](docs/KIT_EXPORT_AND_RELEASE.md)
 - [Kit Install State](docs/KIT_INSTALL_STATE.md)
+- [Agent Dev Kit Plan Mode](docs/AGENT_DEV_KIT_PLAN_MODE.md)
+- [Spec Kit Adaptation](docs/SPEC_KIT_ADAPTATION.md)
+- [Superpower Skill Adaptation](docs/SUPERPOWER_SKILL_ADAPTATION.md)
 - [Maintenance Method](docs/MAINTENANCE_METHOD.md)
 - [CodingKit](CodingKit/README.md)
 - [CHANGELOG](CHANGELOG.md)

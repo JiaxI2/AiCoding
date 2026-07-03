@@ -18,6 +18,28 @@
       "path": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/hooks/stop.ps1",
       "enabledByDefault": true,
       "machineReadable": true
+    },
+    {
+      "id": "plan-mode-gate",
+      "owner": "aicoding-agent-dev-kit",
+      "type": "agent-hook",
+      "trigger": "pre-implementation",
+      "path": "scripts/hooks/aef/plan-mode-gate.ps1",
+      "enabledByDefault": true,
+      "machineReadable": true,
+      "mode": "enforce",
+      "description": "Blocks architecture-sensitive implementation while Plan Mode decisions or artifacts are missing."
+    },
+    {
+      "id": "spec-artifact-gate",
+      "owner": "aicoding-agent-dev-kit",
+      "type": "agent-hook",
+      "trigger": "post-tool-use",
+      "path": "scripts/hooks/aef/spec-artifact-gate.ps1",
+      "enabledByDefault": true,
+      "machineReadable": true,
+      "mode": "warn",
+      "description": "Warns when implementation-sensitive changes lack plan, tasks, and traceability artifacts."
     }
   ]
 }

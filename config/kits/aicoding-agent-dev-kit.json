@@ -10,7 +10,7 @@
     "quality-gate-kit"
   ],
   "mode": "script-adapter",
-  "description": "Spec Pack, SDD, TDD, sequential context loading, decision memory, hook bridge, and quality-gate workflows for Codex.",
+  "description": "Spec Pack, SDD, TDD, sequential context loading, decision memory, hook bridge, Plan Mode overlay, and quality-gate workflows for Codex.",
   "paths": {
     "pluginRoot": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit",
     "pluginManifest": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/.codex-plugin/plugin.json",
@@ -82,7 +82,19 @@
         "scripts/verify-aicoding-agent-dev-kit.ps1",
         "scripts/test-aicoding-agent-dev-kit.ps1",
         "scripts/uninstall-aicoding-agent-dev-kit.ps1",
-        "config/kits/aicoding-agent-dev-kit.json"
+        "config/kits/aicoding-agent-dev-kit.json",
+        ".agents/skills/aicoding-agent-dev-kit-plan-mode/**",
+        "config/agent-dev-kit-plan-mode.registry.json",
+        "config/schemas/agent-dev-kit-plan-mode.registry.schema.json",
+        "docs/AGENT_DEV_KIT_PLAN_MODE.md",
+        "docs/SPEC_KIT_ADAPTATION.md",
+        "docs/SUPERPOWER_SKILL_ADAPTATION.md",
+        "docs/decisions/0002-aicoding-agent-dev-kit-plan-mode.md",
+        "scripts/new-agent-plan-mode-session.ps1",
+        "scripts/verify-agent-dev-kit-plan-mode.ps1",
+        "scripts/verify-agent-engineering-foundation.ps1",
+        "scripts/invoke-aicoding-agent-hook.ps1",
+        "scripts/hooks/aef/*.ps1"
       ],
       "exclude": [
         "**/__pycache__/**",
@@ -115,6 +127,20 @@
         "path": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/hooks/stop.ps1",
         "enabledByDefault": true,
         "owner": "aicoding-agent-dev-kit"
+      },
+      {
+        "id": "plan-mode-gate",
+        "type": "pre-implementation",
+        "path": "scripts/hooks/aef/plan-mode-gate.ps1",
+        "enabledByDefault": true,
+        "owner": "aicoding-agent-dev-kit"
+      },
+      {
+        "id": "spec-artifact-gate",
+        "type": "post-tool-use",
+        "path": "scripts/hooks/aef/spec-artifact-gate.ps1",
+        "enabledByDefault": true,
+        "owner": "aicoding-agent-dev-kit"
       }
     ]
   },
@@ -127,7 +153,19 @@
       "scripts/verify-aicoding-agent-dev-kit.ps1",
       "scripts/test-aicoding-agent-dev-kit.ps1",
       "scripts/uninstall-aicoding-agent-dev-kit.ps1",
-      "config/kits/aicoding-agent-dev-kit.json"
+      "config/kits/aicoding-agent-dev-kit.json",
+      ".agents/skills/aicoding-agent-dev-kit-plan-mode/**",
+      "config/agent-dev-kit-plan-mode.registry.json",
+      "config/schemas/agent-dev-kit-plan-mode.registry.schema.json",
+      "docs/AGENT_DEV_KIT_PLAN_MODE.md",
+      "docs/SPEC_KIT_ADAPTATION.md",
+      "docs/SUPERPOWER_SKILL_ADAPTATION.md",
+      "docs/decisions/0002-aicoding-agent-dev-kit-plan-mode.md",
+      "scripts/new-agent-plan-mode-session.ps1",
+      "scripts/verify-agent-dev-kit-plan-mode.ps1",
+      "scripts/verify-agent-engineering-foundation.ps1",
+      "scripts/invoke-aicoding-agent-hook.ps1",
+      "scripts/hooks/aef/*.ps1"
     ],
     "exclude": [
       "**/__pycache__/**",

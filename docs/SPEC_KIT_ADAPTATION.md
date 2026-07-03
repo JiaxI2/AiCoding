@@ -1,0 +1,45 @@
+# Spec Kit Adaptation for AiCoding
+
+## Why adapt instead of copy
+
+GitHub Spec Kit is a full specification-driven development toolkit. AiCoding already has its own kit lifecycle, PowerShell scripts, hook registry, skill routing, and embedded development constraints.
+
+Therefore AiCoding should adapt Spec Kit as a pattern, not vendor it wholesale.
+
+## Mapping
+
+| Spec Kit concept | AiCoding adaptation |
+|---|---|
+| constitution | `docs/AGENT_ENGINEERING_FOUNDATION.md`, `docs/AGENT_WORKFLOW_STANDARD.md`, `AGENTS.md` |
+| specify | `spec/PRD_OPTIONS.md`, requirements sections in `spec/IMPLEMENTATION_PLAN.md` |
+| clarify | AiCoding Agent Dev Kit fuzzy requirement gate |
+| plan | `spec/IMPLEMENTATION_PLAN.md` |
+| tasks | `spec/TASKS.md` |
+| analyze | `scripts/verify-agent-dev-kit-plan-mode.ps1` and hook submodules |
+| checklist | `spec/CHECKLIST.md`, golden tests, Smoke verify |
+| implement | only after selected solution and approved plan |
+| converge | update `spec/TRACEABILITY.md`, changelog, docs, and remaining tasks |
+
+## AiCoding-specific additions
+
+AiCoding adds embedded/agent safety requirements:
+
+- dry-run first for write operations;
+- no default flash/reset/halt/run/loadProgram/erase/write-memory;
+- Smoke is default;
+- Full/Release explicit;
+- one hook bridge with module dispatch;
+- state and trace output must be JSON-readable.
+
+## Artifact lifecycle
+
+```text
+spec/PRD_OPTIONS.md          # options if fuzzy
+spec/NEEDS_USER_DECISION.md  # blocks implementation
+spec/SELECTED_SOLUTION.md    # user selection
+.agent-memory/DECISIONS.md   # decision memory
+spec/IMPLEMENTATION_PLAN.md  # technical plan
+spec/TASKS.md                # execution tasks
+spec/TRACEABILITY.md         # requirement-plan-task-verify links
+spec/CHECKLIST.md            # quality checklist
+```

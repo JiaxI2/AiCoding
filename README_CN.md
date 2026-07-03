@@ -22,7 +22,7 @@ AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它不直接维护 Ski
 | Plugin | 通过本地 Marketplace 安装 `aicoding@aicoding-platform` | [快速开始](#quick-start) |
 | Agent Patch Kit | `apatch` 安全补丁、扫描、事务快照、Markdown 链接检查 | [本地 Agent Kit](#local-agent-kits) |
 | AI Debug Repair Kit | `airepair` repair loop、TI DSS 只读 scaffold、J-Link policy stubs | [本地 Agent Kit](#local-agent-kits) |
-| AiCoding Agent Dev Kit | `aicoding-agent-kit` 需求澄清、方案矩阵、Spec/TDD、顺序上下文加载和进度监控 | [本地 Agent Kit](#local-agent-kits) |
+| AiCoding Agent Dev Kit | `aicoding-agent-kit` 需求澄清、方案矩阵、Plan Mode、Spec/TDD、顺序上下文加载和进度监控 | [本地 Agent Kit](#local-agent-kits) |
 | Kit Lifecycle v2.0 | `scripts/aicoding-kit.ps1` 统一 Kit lifecycle 与 skill routing 入口 | [常用命令](#commands) |
 | 文档治理 | README/CHANGELOG/Tag/Release/About 默认中文在前、英文在后 | [Git 治理标准](#git-governance-standard) |
 
@@ -46,14 +46,14 @@ AiCoding 通过本地 Marketplace 发布三套仓库级 Agent Kit：
 
 - Agent Patch Kit：Marketplace 名称为 `aicoding-agent-patch-kit`，来源为 `dist/agent-patch-kit/plugins/AiCodingAgentPatch`，提供 `apatch` 安全补丁流程、状态门禁、固定字符串扫描/替换、事务快照、Markdown 链接检查和 patch summary。
 - AI Debug Repair Kit：Marketplace 名称为 `aicoding-ai-debug-repair-kit`，来源为 `dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit`，提供 `airepair`，用于有边界的 build/test repair loop 和默认非侵入式 TI DSS/XDS 只读 debug 辅助。v0.4.1 固定 `airepair dss` 工作流，提供 `connect-test`、`core-list`、`monitor-address`、`monitor-symbol`、`find-changing-symbol` 和 `report`，并保留受 policy 限制的 J-Link 侵入式操作 stub。
-- AiCoding Agent Dev Kit：Marketplace 名称为 `aicoding-agent-dev-kit`，来源为 `dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit`，提供 `aicoding-agent-kit`，用于需求澄清、技术方案矩阵、Spec Pack、TDD 计划、顺序上下文加载、轻量决策记忆、Hook bridge 和 MVP 进度监控。
+- AiCoding Agent Dev Kit：Marketplace 名称为 `aicoding-agent-dev-kit`，来源为 `dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit`，提供 `aicoding-agent-kit`，用于需求澄清、技术方案矩阵、Plan Mode overlay、Spec Pack、TDD 计划、顺序上下文加载、轻量决策记忆、Hook bridge 和 MVP 进度监控。Plan Mode overlay 文档见 [Agent Dev Kit Plan Mode](docs/AGENT_DEV_KIT_PLAN_MODE.md)、[Spec Kit Adaptation](docs/SPEC_KIT_ADAPTATION.md) 和 [Superpower Skill Adaptation](docs/SUPERPOWER_SKILL_ADAPTATION.md)。
 
 环境要求：
 
 - 默认使用 PowerShell 7（`pwsh`）执行仓库安装、验证、状态、更新和文档检查；Windows PowerShell 5.1 只用于明确的兼容性门禁。同时需要 Git、Python 3.10+ 和 Codex plugin Marketplace 流程。
 - Agent Patch Kit 使用用户态 `apatch` CLI。验证命令：`apatch install doctor`、`apatch brief --format md`、`apatch state status`。
 - AI Debug Repair Kit 使用用户态 `ai-debug-repair-kit` Python 包。验证命令：`python -m ai_debug_repair.cli version --output json`、`python -m ai_debug_repair.cli doctor --output json`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-ai-debug-repair-kit.ps1 -Json`。
-- AiCoding Agent Dev Kit 使用用户态 `aicoding-agent-dev-kit` Python 包。验证命令：`aicoding-agent-kit status --repo .`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-aicoding-agent-dev-kit.ps1 -Json`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-aicoding-agent-dev-kit.ps1 -Json`。
+- AiCoding Agent Dev Kit 使用用户态 `aicoding-agent-dev-kit` Python 包。验证命令：`aicoding-agent-kit status --repo .`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-aicoding-agent-dev-kit.ps1 -Json`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-aicoding-agent-dev-kit.ps1 -Json`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-agent-dev-kit-plan-mode.ps1 -Json`、`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-agent-engineering-foundation.ps1 -Json`。
 - TI DSP debug 需要 TI CCS/DSS，例如 `C:\ti\ccs1281\ccs\ccs_base\scripting\bin\dss.bat`，还需要 XDS 仿真器和目标 `.ccxml` 后才能执行真实硬件访问。默认 profile 保持非侵入式：不 reset、不 halt、不 run、不 flash、不写内存/寄存器/表达式。
 
 统一生命周期入口：
@@ -76,6 +76,10 @@ pwsh scripts/aicoding-kit.ps1 skills -All -Json
 pwsh scripts/aicoding-kit.ps1 verify-skills -All -Json
 pwsh scripts/verify-common-code.ps1 -Json
 pwsh scripts/verify-hooks.ps1 -Json
+pwsh scripts/verify-agent-dev-kit-plan-mode.ps1 -Json
+pwsh scripts/hooks/aef/plan-mode-gate.ps1 -Event manual -Mode warn -Json
+pwsh scripts/hooks/aef/spec-artifact-gate.ps1 -Event manual -Mode warn -Json
+pwsh scripts/verify-agent-engineering-foundation.ps1 -Json
 pwsh scripts/aicoding-skill.ps1 sources -Json
 pwsh scripts/aicoding-kit.ps1 export -All -Zip -DryRun
 pwsh scripts/aicoding-kit.ps1 export -Kit aicoding-agent-dev-kit -Zip -Json
@@ -190,6 +194,9 @@ AiCoding Plugin 现在内置可独立运行的 SDD、MVP、BDD、架构优先、
 - [User-Created Skill Policy](docs/USER_CREATED_SKILL_POLICY.md)
 - [Kit Export And Release](docs/KIT_EXPORT_AND_RELEASE.md)
 - [Kit Install State](docs/KIT_INSTALL_STATE.md)
+- [Agent Dev Kit Plan Mode](docs/AGENT_DEV_KIT_PLAN_MODE.md)
+- [Spec Kit Adaptation](docs/SPEC_KIT_ADAPTATION.md)
+- [Superpower Skill Adaptation](docs/SUPERPOWER_SKILL_ADAPTATION.md)
 - [维护方法](docs/MAINTENANCE_METHOD.md)
 - [CodingKit](CodingKit/README.md)
 - [更新日志 / CHANGELOG](CHANGELOG.md)
