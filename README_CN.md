@@ -10,6 +10,7 @@
 [![Version](https://img.shields.io/badge/Version-0.1.0-2ea44f)](config/codex-kit.json)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](README.md#environment-preview)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](README.md#environment-preview)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](README.md#environment-preview)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 
 AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它不直接维护 Skill 源码，而是通过 `CodingKit/agents/skills` submodule 锁定 `Codex-Skills` 的已验证版本，并提供安装、更新、状态、卸载、运行时审计、CodingKit 资产入口、Agent Patch Kit、AI Debug Repair Kit 和 AiCoding Agent Dev Kit。
@@ -19,6 +20,7 @@ AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它不直接维护 Ski
 | 项目 | 当前规则 | 跳转 |
 |---|---|---|
 | Shell | 默认 PowerShell 7；Windows PowerShell 5.1 只做兼容性门禁 | [维护命令](#commands) |
+| Go 快路径 | Go 1.22+ 构建 `bin/aicoding.exe`，接管 Git hook、Smoke 检查、治理 lint 和性能探针 | [Fast Path V1](#fast-path-v1) |
 | Plugin | 通过本地 Marketplace 安装 `aicoding@aicoding-platform` | [快速开始](#quick-start) |
 | Agent Patch Kit | `apatch` 安全补丁、扫描、事务快照、Markdown 链接检查 | [本地 Agent Kit](#local-agent-kits) |
 | AI Debug Repair Kit | `airepair` repair loop、TI DSS 只读 scaffold、J-Link policy stubs | [本地 Agent Kit](#local-agent-kits) |
@@ -85,6 +87,21 @@ pwsh scripts/aicoding-kit.ps1 export -All -Zip -DryRun
 pwsh scripts/aicoding-kit.ps1 export -Kit aicoding-agent-dev-kit -Zip -Json
 pwsh scripts/aicoding-kit.ps1 export -All -Zip -Json
 pwsh scripts/test-kit-fresh-clone.ps1 -Profile Smoke -Json
+```
+
+<a id="fast-path-v1"></a>
+Fast Path V1（Go 快路径）：
+
+本地高频路径（Git hook、Smoke 检查、治理 lint、性能探针）由 Go native CLI `bin/aicoding.exe` 接管，`.githooks` 优先调用快路径、失败时自动回落 PowerShell；Full/Release 仍走上表旧入口。详见 `docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md` 与 `docs/ROLLBACK_FAST_PATH_V1.md`。
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/install-fast-path-v1.ps1   # 构建 bin/aicoding.exe 并启用 .githooks
+bin\aicoding.exe kit verify --all --profile Smoke --json
+bin\aicoding.exe governance lint --json
+bin\aicoding.exe doctor perf --json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-fast-path-v1.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/measure-fast-path-v1.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/rollback-fast-path-v1.ps1 -UnsetHooksPath -RemoveBinary
 ```
 
 Kit Lifecycle v2.0 使用 registry + manifest + adapter 固化统一平台入口，不重写旧脚本，不新增 `install-all.ps1`、`verify-all.ps1`、`test-all.ps1`、`export-all.ps1`、`update-all.ps1` 或 `uninstall-all.ps1`。`-All` 只遍历 `config/kit-registry.json` 中启用的 Kit，并复用单 Kit 的同一条 action 调度路径。v2.0 还固化 `skills`/`verify-skills`、Common registry、Hook registry、第三方 Skill source policy、自建 Skill 草稿/验证流程、真实 export/bundle 和 install-state 边界。Smoke 仍是默认 gate；`verify -All` 和 `test -All` 默认等价 Smoke，旧脚本完整 verify 需要显式 `-Profile Full`；Full/Release 必须显式传入。

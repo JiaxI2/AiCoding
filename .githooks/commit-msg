@@ -1,10 +1,27 @@
 #!/bin/sh
 set -eu
+
+if [ -x "bin/aicoding" ]; then
+  bin/aicoding hook commit-msg --file "$1"
+  exit $?
+fi
+
+if [ -x "bin/aicoding.exe" ]; then
+  bin/aicoding.exe hook commit-msg --file "$1"
+  exit $?
+fi
+
+if command -v go >/dev/null 2>&1 && [ -d "cmd/aicoding" ]; then
+  go run ./cmd/aicoding hook commit-msg --file "$1"
+  exit $?
+fi
+
+# Legacy fallback.
 if command -v pwsh >/dev/null 2>&1; then
   pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$1"
 elif command -v powershell.exe >/dev/null 2>&1; then
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$1"
 else
-  echo "PowerShell is required for scripts/lint-git-governance.ps1" >&2
+  echo "AiCoding fast CLI, Go, or PowerShell is required for commit-msg checks" >&2
   exit 1
 fi

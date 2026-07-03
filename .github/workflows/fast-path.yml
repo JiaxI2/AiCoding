@@ -1,0 +1,36 @@
+name: AiCoding Fast Path
+
+on:
+  pull_request:
+  push:
+    branches: [ main, dev ]
+
+jobs:
+  fast-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Build fast CLI
+        run: |
+          mkdir -p bin
+          go build -o bin/aicoding ./cmd/aicoding
+
+      - name: Go compile check
+        run: go test ./...
+
+      - name: Fast kit smoke
+        run: ./bin/aicoding kit verify --all --profile Smoke --json
+
+      - name: Fast governance lint
+        run: ./bin/aicoding governance lint --json
+
+      - name: Fast performance probes
+        run: ./bin/aicoding doctor perf --json

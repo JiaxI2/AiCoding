@@ -6,13 +6,14 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`。
 
 ### Fixed
 - **fix(aicoding-agent-dev-kit)**：将 Plan Mode overlay 的 prompt、Skill 片段、hook/script message 和用户交互说明改为中文优先，避免 Codex 权限摘要和验证说明默认生成英文，同时保持 Plan Mode、用户决策门禁和一个总 hook bridge + 多个子模块设计不变。
 - **fix(ai-debug-repair-kit)**：补齐 `test-ai-debug-repair-kit.ps1` 生命周期脚本，并为 `install-ai-debug-repair-kit.ps1` 增加真实 `-DryRun` 路径，dry-run 只输出安装计划、不复制插件、不改 Marketplace、不执行 pip、不写 install-state；add the missing `test-ai-debug-repair-kit.ps1` lifecycle script and implement a real `-DryRun` path for `install-ai-debug-repair-kit.ps1` that reports the install plan without copying the plugin, changing Marketplace, running pip, or writing install-state.
 
 ### Added
+- **feat(fast-path)**：集成 AiCoding Fast Path V1，新增 `cmd/aicoding` Go native 快路径 CLI（`hook pre-commit`、`hook commit-msg`、`governance lint`、`kit verify --profile Smoke`、`kit list/doctor`、`doctor perf`），`.githooks/pre-commit`、`.githooks/commit-msg` 优先调用 `bin/aicoding.exe` 并保留 PowerShell 兜底，新增 `scripts/install-fast-path-v1.ps1`、`scripts/test-fast-path-v1.ps1`、`scripts/measure-fast-path-v1.ps1`、`scripts/rollback-fast-path-v1.ps1`、`scripts/aicoding-fast.ps1` 与 `.github/workflows/fast-path.yml`，Full/Release 继续走 PowerShell/Python 与 CI 旧路径；integrate AiCoding Fast Path V1 with a Go native hot-path CLI, fast-first Git hooks with PowerShell fallback, install/test/measure/rollback scripts, and a fast smoke CI workflow while keeping Full/Release on the legacy PowerShell/Python paths.
 - **feat(aicoding-agent-dev-kit)**：集成 Agent Dev Kit Plan Mode overlay v0.4，新增 Plan Mode registry、repo-scoped Plan Mode skill、Spec Kit/Superpower 适配文档、AEF plan/spec gate、统一 agent hook bridge、验证器和本次集成 traceability 工件；integrate Agent Dev Kit Plan Mode overlay v0.4 with a Plan Mode registry, repo-scoped Plan Mode skill, Spec Kit/Superpower adaptation docs, AEF plan/spec gates, a unified agent hook bridge, verifier, and integration traceability artifacts.
 - **chore(git-governance)**：新增强制 GitHub Release notes 结构治理，包含 `.github/RELEASE_TEMPLATE.md`、`scripts/verify-release-notes.ps1`、`repository-governance.toml` 声明和 `lint-git-governance.ps1` pre-commit 校验；add mandatory GitHub Release notes structure governance with a release template, validator, governance config, and pre-commit lint enforcement.
 - **feat(kit-lifecycle)**：冻结 AiCoding Kit System v2.0，新增 Kit skill routing、Common registry、Hook registry、第三方 Skill source policy、自建 Skill 草稿/验证策略、`scripts/aicoding-skill.ps1`、v2.0 policy 文档和轻量回归 gate；freeze AiCoding Kit System v2.0 with Kit skill routing, common and hook registries, third-party skill source policy, user-created skill draft/verify policy, `scripts/aicoding-skill.ps1`, v2.0 policy docs, and smoke regression gates.

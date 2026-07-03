@@ -11,6 +11,7 @@
 [![Verify](https://img.shields.io/badge/verify--codex--kit-required-2ea44f)](#maintenance-commands)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](#environment-preview)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](#environment-preview)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](#environment-preview)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 
 AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, a version-locked Codex plugin kit, Agent Patch Kit, AI Debug Repair Kit, and AiCoding Agent Dev Kit for safer agent editing, clearer Git synchronization rules, and default non-invasive embedded debug assistance.
@@ -21,6 +22,7 @@ AiCoding is a platform repository for local AI-assisted embedded development. It
 | Item / 项目 | Current rule / 当前规则 | Link / 快速跳转 |
 |---|---|---|
 | Shell / 运行 Shell | PowerShell 7 by default; Windows PowerShell 5.1 only for compatibility gates / 默认 PowerShell 7；Windows PowerShell 5.1 仅做兼容性门禁 | [Maintenance Commands](#maintenance-commands) |
+| Go fast path / Go 快路径 | Go 1.22+ builds `bin/aicoding.exe` for hooks, Smoke checks, governance lint, and perf probes / Go 1.22+ 构建 `bin/aicoding.exe`，接管 Git hook、Smoke 检查、治理 lint 和性能探针 | [Fast Path V1](#fast-path-v1) |
 | Plugin install / Plugin 安装 | Install `aicoding@aicoding-platform` through the local Marketplace / 通过本地 Marketplace 安装 | [Quick Start](#quick-start) |
 | Agent Patch Kit | Safe `apatch` patching, fixed-string scans, transaction snapshots, and Markdown checks / 安全补丁、扫描、事务快照和 Markdown 链接检查 | [Local Agent Kits](#local-agent-kits) |
 | AI Debug Repair Kit | `airepair` build/test repair and TI DSS read-only scaffold / build-test repair 与 TI DSS 只读 scaffold | [Local Agent Kits](#local-agent-kits) |
@@ -74,6 +76,21 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\hooks\aef\plan-mode-gate.p
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\hooks\aef\spec-artifact-gate.ps1 -Event manual -Mode warn -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\verify-agent-engineering-foundation.ps1 -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-kit.ps1 export -All -Zip -DryRun
+```
+
+<a id="fast-path-v1"></a>
+Fast Path V1 (Go native hot path):
+
+Local high-frequency paths (Git hooks, Smoke checks, governance lint, performance probes) are served by the Go native CLI `bin/aicoding.exe`. `.githooks` prefer the fast CLI and fall back to PowerShell automatically; Full/Release still use the legacy entrypoints above. See `docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md` and `docs/ROLLBACK_FAST_PATH_V1.md`.
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\install-fast-path-v1.ps1   # build bin/aicoding.exe and enable .githooks
+bin\aicoding.exe kit verify --all --profile Smoke --json
+bin\aicoding.exe governance lint --json
+bin\aicoding.exe doctor perf --json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\test-fast-path-v1.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\measure-fast-path-v1.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\rollback-fast-path-v1.ps1 -UnsetHooksPath -RemoveBinary
 ```
 
 Kit Lifecycle v2.0 freezes the registry + manifest + adapter layer, skill routing, common registry, hook registry, package boundary, state boundary, and third-party/user-created skill policy. It does not rewrite legacy scripts and does not add `install-all.ps1`, `verify-all.ps1`, `test-all.ps1`, `update-all.ps1`, `uninstall-all.ps1`, or `export-all.ps1`. `-All` only walks enabled Kits in `config/kit-registry.json` and reuses the same action dispatch path as single-Kit execution. Smoke remains the default gate. `verify -All` and `test -All` default to Smoke; use `-Profile Full` only for explicit legacy full verification. Full and Release are explicit.

@@ -1,19 +1,29 @@
 #!/bin/sh
 set -eu
+
+if [ -x "bin/aicoding" ]; then
+  bin/aicoding hook pre-commit
+  exit $?
+fi
+
+if [ -x "bin/aicoding.exe" ]; then
+  bin/aicoding.exe hook pre-commit
+  exit $?
+fi
+
+if command -v go >/dev/null 2>&1 && [ -d "cmd/aicoding" ]; then
+  go run ./cmd/aicoding hook pre-commit
+  exit $?
+fi
+
+# Legacy fallback: slower but preserves old behavior before the fast CLI is built.
 if command -v pwsh >/dev/null 2>&1; then
   pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode pre-commit
-elif command -v powershell.exe >/dev/null 2>&1; then
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode pre-commit
-else
-  echo "PowerShell is required for scripts/lint-git-governance.ps1" >&2
-  exit 1
-fi
-# AiCoding documentation synchronization gate
-if command -v pwsh >/dev/null 2>&1; then
   pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode pre-commit -Staged
 elif command -v powershell.exe >/dev/null 2>&1; then
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode pre-commit
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode pre-commit -Staged
 else
-  echo "PowerShell is required for scripts/check-documentation-sync.ps1" >&2
+  echo "AiCoding fast CLI, Go, or PowerShell is required for pre-commit checks" >&2
   exit 1
 fi
