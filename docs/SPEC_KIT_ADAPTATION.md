@@ -1,5 +1,7 @@
 # Spec Kit Adaptation for AiCoding
 
+> 语言要求：面向用户的计划、验证、风险、rollback 和 handoff 说明必须中文优先；英文术语保留为括号说明。
+
 ## Why adapt instead of copy
 
 GitHub Spec Kit is a full specification-driven development toolkit. AiCoding already has its own kit lifecycle, PowerShell scripts, hook registry, skill routing, and embedded development constraints.

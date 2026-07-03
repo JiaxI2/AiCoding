@@ -1,32 +1,32 @@
 ---
 name: aicoding-agent-dev-kit
-description: Thin Agent entrypoint for requirement clarification, option matrix planning, Spec Pack, TDD, sequential context loading, decision memory, progress monitor, and quality gates.
+description: 用于需求澄清、方案矩阵、Spec Pack、TDD、顺序上下文加载、决策记忆、进度监控和质量门禁的轻量 Agent 入口。
 ---
 
 # AiCoding Agent Dev Kit Thin Skill
 
-Use this Skill only as an Agent routing layer.
+只将本 Skill 作为 Agent 路由层使用。面向用户的计划、权限摘要、验证结果、风险和 rollback/handoff 说明必须中文优先；英文术语可作为括号补充。
 
-## Domain-neutral rule
+## 领域中立规则
 
-Do not write application-specific examples into the reusable Kit.
+不要把特定应用示例写入可复用 Kit。
 
-Concrete examples belong in the target repository after reading that repository's context.
+具体示例应在读取目标仓库上下文后，写入目标仓库自己的文档或规格。
 
-## If the requirement is fuzzy
+## 如果需求模糊
 
-1. Do not implement yet.
-2. Create or update `spec/PRD_OPTIONS.md`.
-3. Show 2-5 technical options with pros, cons, risks, validation, effort, and recommended conditions.
-4. Ask the human to select or reject an option.
-5. Write the selected option to `spec/SELECTED_SOLUTION.md`.
-6. Record the decision in `.agent-memory/DECISIONS.md`.
-7. Update PRD / APP_FLOW / IMPLEMENTATION_PLAN / ADR / traceability.
+1. 先不要实现。
+2. 创建或更新 `spec/PRD_OPTIONS.md`。
+3. 展示 2-5 个技术选项，说明优点、缺点、风险、验证方式、工作量和推荐条件。
+4. 请求用户选择或拒绝某个选项。
+5. 将用户选择写入 `spec/SELECTED_SOLUTION.md`。
+6. 将决策记录到 `.agent-memory/DECISIONS.md`。
+7. 再更新 PRD / APP_FLOW / IMPLEMENTATION_PLAN / ADR / traceability。
 
-## Before implementation
+## 实现前
 
-1. Load context with `aicoding-agent-kit load --repo . --auto`.
-2. Read `.agent-dev-kit/context/context-pack.md` and manifest.
-3. Check `spec/IMPLEMENTATION_PLAN.md` for Red-Green-Refactor.
-4. Initialize or update the progress board.
-5. Run the quality gate before commit or handoff.
+1. 使用 `aicoding-agent-kit load --repo . --auto` 加载上下文。
+2. 阅读 `.agent-dev-kit/context/context-pack.md` 和 manifest。
+3. 检查 `spec/IMPLEMENTATION_PLAN.md` 是否包含 Red-Green-Refactor。
+4. 初始化或更新进度看板。
+5. 在提交或 handoff 前运行质量门禁。

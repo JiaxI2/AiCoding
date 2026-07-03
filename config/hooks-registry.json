@@ -28,7 +28,7 @@
       "enabledByDefault": true,
       "machineReadable": true,
       "mode": "enforce",
-      "description": "Blocks architecture-sensitive implementation while Plan Mode decisions or artifacts are missing."
+      "description": "当 Plan Mode 决策或计划产物缺失时，阻止架构敏感实现继续执行。"
     },
     {
       "id": "spec-artifact-gate",
@@ -39,7 +39,7 @@
       "enabledByDefault": true,
       "machineReadable": true,
       "mode": "warn",
-      "description": "Warns when implementation-sensitive changes lack plan, tasks, and traceability artifacts."
+      "description": "当实现敏感变更缺少计划、任务或可追溯性文档时发出门禁提示。"
     }
   ]
 }

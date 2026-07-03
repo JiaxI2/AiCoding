@@ -171,4 +171,13 @@ Source skills may have generated package copies in the repository, but a Skill n
 
 AiCoding workflow skills for SDD, MVP, BDD, architecture-first scaffolding, TDD fallback, and documentation synchronization are bundled through the AiCoding plugin only. Superpowers is optional acceleration, not a required dependency.
 
-Documentation synchronization is enforced by `scripts/check-documentation-sync.ps1`, `.githooks/pre-commit`, and `.github/workflows/docs-sync.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit `DOCSYNC-NO-DOC-CHANGE` review note.
+Documentation synchronization is enforced by `scripts/check-documentation-sync.ps1`, `.githooks/pre-commit`, and `.github/workflows/docs-sync.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit no-doc-change review note with a meaningful reason; see `docs/DOC_SYNC_PLUS_SPEC.md` for the marker format.
+
+## 语言策略 / Language Policy
+
+- 本仓库默认中文优先。
+- 面向用户的执行计划、解释、权限请求摘要、验证结果、风险说明、rollback/handoff 说明必须使用中文。
+- 英文术语可以保留，但应作为括号说明，例如：计划模式（Plan Mode）、规格驱动开发（SDD）、注册表（registry）。
+- JSON 字段名、命令、路径、参数、文件名不翻译。
+- 如果 Codex 需要请求用户授权执行命令，必须用中文说明“为什么要执行这个命令”。
+- 不要生成英文权限摘要；应写成“读取 Plan Mode registry，用于验证前检查”。

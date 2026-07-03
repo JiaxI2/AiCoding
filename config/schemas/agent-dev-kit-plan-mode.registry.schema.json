@@ -81,6 +81,40 @@
       "items": {
         "type": "string"
       }
+    },
+    "languagePolicy": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "defaultUserLanguage": {
+          "type": "string"
+        },
+        "userFacingOutput": {
+          "type": "string"
+        },
+        "permissionSummary": {
+          "type": "string"
+        },
+        "toolExplanation": {
+          "type": "string"
+        },
+        "hookMessage": {
+          "type": "string"
+        },
+        "scriptMessage": {
+          "type": "string"
+        },
+        "allowEnglishTerms": {
+          "type": "boolean"
+        },
+        "preserveMachineKeys": {
+          "type": "boolean"
+        },
+        "examples": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
     }
   }
 }

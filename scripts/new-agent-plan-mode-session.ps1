@@ -43,166 +43,166 @@ try {
   $files = New-Object System.Collections.Generic.List[object]
 
   $planText = @"
-# Plan Mode Session: $Feature
+# 计划模式会话（Plan Mode Session）：$Feature
 
 Mode: Plan
 Plan Status: Draft
 Created: $now
 Feature Slug: $slug
 
-## Request
+## 需求 / Request
 
 $Description
 
-## Required sequence
+## 必须执行的顺序
 
-1. Clarify ambiguity.
-2. Specify intent and constraints.
-3. Produce plan.
-4. Ask user to select when multiple architecture routes exist.
-5. Break selected plan into tasks.
-6. Implement only after decision and plan gates pass.
-7. Verify with Smoke / schema / golden / doc sync as applicable.
+1. 澄清模糊点。
+2. 明确用户意图和约束。
+3. 生成实现计划。
+4. 如果存在多条架构路线，先请求用户选择。
+5. 将已选择计划拆分为任务。
+6. 只有在决策和计划门禁通过后才能实现。
+7. 按需要执行 Smoke / schema / golden / doc sync 验证。
 
-## Current decision state
+## 当前决策状态
 
-Decision required: $([bool]$NeedsDecision)
+需要用户决策：$([bool]$NeedsDecision)
 
 "@
 
   $implText = @"
-# Implementation Plan: $Feature
+# 实现计划（Implementation Plan）：$Feature
 
 Plan Status: Draft
 
-## Context
+## 上下文
 
 $Description
 
-## Selected architecture
+## 已选择架构
 
-Pending.
+待用户选择。
 
-## Constraints
+## 约束
 
-- Keep `scripts/aicoding-kit.ps1` as lifecycle entrypoint.
-- Do not add `*-all.ps1`.
-- Default to Smoke verification.
-- Write operations must support DryRun where applicable.
-- Hardware actions remain deny-by-default.
+- 保留 `scripts/aicoding-kit.ps1` 作为 lifecycle 入口。
+- 不新增 `*-all.ps1`。
+- 默认使用 Smoke 验证。
+- 写操作应在适用时支持 DryRun。
+- 硬件动作默认拒绝，禁止 flash/reset/halt/run/loadProgram/erase/write-memory 等危险动作。
 
-## Validation plan
+## 验证计划
 
-- Smoke verify
-- Schema validation
-- Hook module validation
-- Golden test if behavior is policy-sensitive
-- Documentation synchronization
+- Smoke 验证。
+- Schema 验证。
+- Hook module 验证。
+- 若行为涉及策略，执行 golden test。
+- 文档同步验证。
 
-## Rollback
+## 回滚
 
-Describe exact rollback command or file removal path before implementation.
+实现前必须写明准确的回滚命令或文件移除路径。
 "@
 
   $tasksText = @"
-# Tasks: $Feature
+# 任务（Tasks）：$Feature
 
-## Phase 0: Decision / Plan
+## Phase 0: 决策 / 计划
 
-- [ ] Confirm whether user selection is required.
-- [ ] Record selected option in `spec/SELECTED_SOLUTION.md` and `.agent-memory/DECISIONS.md` if needed.
+- [ ] 确认是否需要用户选择技术路线。
+- [ ] 如需要，将用户选择记录到 `spec/SELECTED_SOLUTION.md` 和 `.agent-memory/DECISIONS.md`。
 
-## Phase 1: Implementation
+## Phase 1: 实现
 
-- [ ] Apply minimal overlay or code change.
-- [ ] Keep existing lifecycle entrypoints.
+- [ ] 应用最小 overlay 或代码变更。
+- [ ] 保持现有 lifecycle 入口。
 
-## Phase 2: Verification
+## Phase 2: 验证
 
-- [ ] Run Smoke verify.
-- [ ] Run plan-mode gate.
-- [ ] Run hook verification.
-- [ ] Run `git diff --check`.
+- [ ] 运行 Smoke 验证。
+- [ ] 运行 Plan Mode 门禁。
+- [ ] 运行 hook 验证。
+- [ ] 运行 `git diff --check`。
 
-## Phase 3: Handoff
+## Phase 3: 交接
 
-- [ ] Summarize implemented changes.
-- [ ] Summarize verification.
-- [ ] Summarize rollback.
+- [ ] 总结已实现变更。
+- [ ] 总结已验证内容。
+- [ ] 总结回滚方法。
 "@
 
   $traceText = @"
-# Traceability: $Feature
+# 可追溯性（Traceability）：$Feature
 
-| Requirement / Decision | Plan section | Task | Verification |
+| 需求 / 决策 | 计划章节 | 任务 | 验证 |
 |---|---|---|---|
-| Pending | Pending | Pending | Pending |
+| 待补充 | 待补充 | 待补充 | 待补充 |
 "@
 
   $checkText = @"
-# Checklist: $Feature
+# 检查清单（Checklist）：$Feature
 
-- [ ] No unresolved `[NEEDS CLARIFICATION]` markers remain.
-- [ ] If architecture was fuzzy, user selection is recorded.
-- [ ] Implementation plan is approved before code changes.
-- [ ] Tasks include verification and rollback.
-- [ ] Handoff includes verified / not verified / rollback.
+- [ ] 不再存在未解决的 `[NEEDS CLARIFICATION]` 标记。
+- [ ] 如果架构路线模糊，已记录用户选择。
+- [ ] 代码变更前实现计划已批准。
+- [ ] 任务包含验证和回滚。
+- [ ] 交接包含已验证 / 未验证 / 回滚。
 "@
 
   $optionText = @"
-# PRD Options: $Feature
+# PRD 选项（PRD Options）：$Feature
 
 Decision Status: Pending User Selection
 
-## Context
+## 上下文
 
 $Description
 
-## Options
+## 选项
 
-### Option A: Minimal incremental extension
+### Option A: 最小增量扩展
 
-- Fit:
-- Impact:
-- Verification:
-- Rollback:
-- Risk:
+- 适用性：
+- 影响：
+- 验证：
+- 回滚：
+- 风险：
 
-### Option B: Registry-backed extension
+### Option B: registry 管理的扩展
 
-- Fit:
-- Impact:
-- Verification:
-- Rollback:
-- Risk:
+- 适用性：
+- 影响：
+- 验证：
+- 回滚：
+- 风险：
 
-### Option C: Full plugin/kit extension
+### Option C: 完整 plugin/kit 扩展
 
-- Fit:
-- Impact:
-- Verification:
-- Rollback:
-- Risk:
+- 适用性：
+- 影响：
+- 验证：
+- 回滚：
+- 风险：
 
-## User selection required
+## 需要用户选择
 
-Do not implement until the user selects one option.
+用户选择技术路线前，不允许继续实现。
 "@
 
   $needsText = @"
-# Needs User Decision
+# 需要用户决策（Needs User Decision）
 
 Feature: $Feature
 Created: $now
 
-The Agent detected ambiguous architecture or multiple viable implementation routes.
+Agent 检测到架构路线存在歧义，或存在多条可行实现路径。
 
-Required action: user must choose one option in `spec/PRD_OPTIONS.md`.
+需要用户操作：请从 `spec/PRD_OPTIONS.md` 中选择一个技术路线。
 
-After selection, run:
+用户选择后执行：
 
 Command:
-  pwsh scripts\confirm-agent-decision.ps1 -Title "$Feature" -SelectedOption "<chosen option>" -Rationale "<why>" -Json
+  pwsh scripts\confirm-agent-decision.ps1 -Title "$Feature" -SelectedOption "<用户选择的方案>" -Rationale "<选择理由>" -Json
 "@
 
   $planned = @(
@@ -218,7 +218,6 @@ Command:
   }
 
   foreach ($item in $planned) {
-    $rel = Resolve-Path -LiteralPath (Split-Path -Parent $item.path) -ErrorAction SilentlyContinue
     $files.Add([ordered]@{ path=$item.path; willWrite=(-not $DryRun) }) | Out-Null
     if (-not $DryRun) {
       $dir = Split-Path -Parent $item.path
@@ -229,13 +228,14 @@ Command:
 
   if (-not $DryRun -and -not (Test-Path -LiteralPath $memoryDir)) { New-Item -ItemType Directory -Force -Path $memoryDir | Out-Null }
 
-  Out-Result $true "OK" ($(if ($DryRun) { "Plan mode session dry-run completed" } else { "Plan mode session created" })) ([ordered]@{
+  $message = if ($DryRun) { "Plan Mode 会话 dry-run 完成，未写入文件。" } else { "Plan Mode 会话已创建。" }
+  Out-Result $true "OK" $message ([ordered]@{
     repoRoot=$RepoRoot
     feature=$Feature
     needsDecision=[bool]$NeedsDecision
-    files=@($files)
+    files=@($files.ToArray())
   })
 }
 catch {
-  Out-Result $false "INTERNAL_ERROR" $_.Exception.Message
+  Out-Result $false "INTERNAL_ERROR" ("创建 Plan Mode 会话时发生内部错误：{0}" -f $_.Exception.Message)
 }

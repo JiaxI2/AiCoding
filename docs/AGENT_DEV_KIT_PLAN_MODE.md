@@ -1,5 +1,11 @@
 # AiCoding Agent Dev Kit Plan Mode
 
+## 语言要求 / Language Requirement
+
+本工作流默认中文优先。向用户展示的执行计划、权限请求摘要、命令目的说明、验证结果、风险提示和 rollback 说明，都必须使用中文。英文术语可以保留，但应写成中文 + 英文括号，例如：计划模式（Plan Mode）、规格驱动开发（Spec-Driven Development / SDD）、注册表（registry）、总 hook bridge、子模块（hook module）。
+
+请求执行命令时，不要生成英文摘要；应写成“读取 Plan Mode registry，用于验证前检查。”或“运行 Plan Mode 验证脚本，确认规格、计划、任务和决策记录完整。”。
+
 ## Purpose
 
 This document upgrades AiCoding Agent Dev Kit from "clarify and implement" into a plan-first workflow.

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "aicoding-agent-dev-kit-plan-mode",
   "owner": "aicoding-agent-dev-kit",
-  "description": "Plan-first workflow overlay for AiCoding Agent Dev Kit, adapting Codex Plan Mode, Spec Kit phases, and Superpower-style explicit workflow habits.",
+  "description": "中文优先的 AiCoding Agent Dev Kit 计划模式（Plan Mode）工作流 overlay，用于适配 Codex Plan Mode、Spec Kit 阶段和显式 workflow 习惯。",
   "phases": [
     {
       "id": "clarify",
@@ -84,5 +84,22 @@
   "hookModules": [
     "plan-mode-gate",
     "spec-artifact-gate"
-  ]
+  ],
+  "languagePolicy": {
+    "defaultUserLanguage": "zh-CN",
+    "userFacingOutput": "zh-CN-first",
+    "permissionSummary": "zh-CN-first",
+    "toolExplanation": "zh-CN-first",
+    "hookMessage": "zh-CN-first",
+    "scriptMessage": "zh-CN-first",
+    "allowEnglishTerms": true,
+    "preserveMachineKeys": true,
+    "examples": {
+      "permissionReadRegistry": "读取 Plan Mode registry，用于验证前检查。",
+      "permissionRunVerify": "运行 Plan Mode 验证脚本，确认规格、计划、任务和决策记录完整。",
+      "permissionReadSpec": "读取规格文档，用于判断是否需要用户选择技术路线。",
+      "decisionBlocked": "检测到用户尚未选择技术路线，禁止继续实现。",
+      "gatePassed": "Plan Mode 门禁验证通过。"
+    }
+  }
 }

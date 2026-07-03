@@ -1,5 +1,7 @@
 # Superpower Skill Adaptation for AiCoding
 
+> 语言要求：面向用户的计划、验证、风险、rollback 和 handoff 说明必须中文优先；英文术语保留为括号说明。
+
 ## Principle
 
 AiCoding should borrow the useful habits from Superpower-style skills without tightly coupling the repository to a specific external skill package.

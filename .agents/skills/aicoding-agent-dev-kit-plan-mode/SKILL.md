@@ -1,89 +1,89 @@
 ---
 name: aicoding-agent-dev-kit-plan-mode
-description: Use when AiCoding work is non-trivial, architecture-sensitive, or fuzzy. Enforces Plan Mode before implementation, adapts Spec Kit phases, and requires user selection before ambiguous architecture changes.
+description: 用于 AiCoding 中非平凡、架构敏感或需求模糊的工作；在实现前执行计划模式（Plan Mode），适配 Spec Kit 阶段，并要求用户先选择模糊架构路线。
 ---
 
-# AiCoding Agent Dev Kit Plan Mode
+# AiCoding Agent Dev Kit 计划模式（Plan Mode）
 
-Use this Skill as a router overlay for AiCoding Agent Dev Kit.
+将本 Skill 作为 AiCoding Agent Dev Kit 的路由 overlay 使用。默认中文优先：执行计划、权限摘要、命令目的、验证结果、风险说明、rollback/handoff 都必须中文说明，英文术语只作为括号补充。
 
-## Required first step
+## 首要步骤
 
-Before implementation, declare:
-
-```text
-Mode:
-Capability domain:
-Current context loaded:
-Unknowns:
-Decision required:
-Planned artifacts:
-```
-
-## Phase sequence
-
-Use this sequence:
+实现前先声明：
 
 ```text
-Clarify -> Specify -> Plan -> User Decision -> Tasks -> Implement -> Verify -> Handoff
+Mode: 计划模式（Plan Mode）
+Capability domain: 能力领域
+Current context loaded: 已加载上下文
+Unknowns: 未知项
+Decision required: 是否需要用户决策
+Planned artifacts: 计划产物
 ```
 
-## Fuzzy architecture
+## 阶段顺序
 
-If there are multiple plausible technical routes, do not implement.
+使用以下顺序：
 
-Create or update:
+```text
+澄清（Clarify） -> 规格化（Specify） -> 计划（Plan） -> 用户决策（User Decision） -> 任务（Tasks） -> 实现（Implement） -> 验证（Verify） -> 交接（Handoff）
+```
+
+## 模糊架构处理
+
+如果存在多条可行技术路线，不要直接实现。
+
+先创建或更新：
 
 ```text
 spec/PRD_OPTIONS.md
 spec/NEEDS_USER_DECISION.md
 ```
 
-Then ask the user to select one option.
+然后向用户展示 2-5 个技术路线选项，并请求用户选择。
 
-Only continue after these exist:
+只有在以下记录存在后才能继续：
 
 ```text
 spec/SELECTED_SOLUTION.md
 .agent-memory/DECISIONS.md
 ```
 
-## Spec Kit adaptation
+## Spec Kit 适配
 
-Use Spec Kit's flow as an operating model:
+将 Spec Kit 流程作为操作模型：
 
-- constitution: AiCoding rules and AGENTS.md
-- specify: user intent and constraints
-- clarify: question/option gate
-- plan: implementation plan
-- tasks: execution tasks
-- analyze/checklist: verify plan, traceability, and gate
-- implement: only after plan and decision gates pass
+- constitution：AiCoding 规则和 `AGENTS.md`。
+- specify：用户意图和约束。
+- clarify：问题澄清和方案选择门禁。
+- plan：实现计划。
+- tasks：执行任务。
+- analyze/checklist：验证计划、可追溯性和门禁。
+- implement：仅在计划和决策门禁通过后实现。
 
-## Superpower-style habits
+## Superpower 风格习惯
 
-Use explicit mode, minimal context loading, progress checkpoints, and stop conditions.
+使用显式模式、最小上下文加载、进度检查点和停止条件。
 
-Do not depend on an external Superpower package being installed.
+不依赖外部 Superpower 包已安装。
 
-## Required commands
+## 必要命令
 
 ```powershell
-pwsh scripts\new-agent-plan-mode-session.ps1 -Feature "<feature>" -Description "<description>" -NeedsDecision -Json
+pwsh scripts\new-agent-plan-mode-session.ps1 -Feature "<功能名>" -Description "<需求描述>" -NeedsDecision -Json
 pwsh scripts\verify-agent-dev-kit-plan-mode.ps1 -Json
 pwsh scripts\hooks\aef\plan-mode-gate.ps1 -Event manual -Mode warn -Json
 ```
 
-## Handoff contract
+## 交接契约
 
-Final answer must include:
+最终回复必须包含：
 
 ```text
-Mode:
-Implemented:
-Verified:
-Not verified:
-Decision records:
-Rollback:
-Next step:
+模式：
+已实现：
+已验证：
+未验证：
+决策记录：
+回滚：
+下一步：
 ```

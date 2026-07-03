@@ -41,8 +41,13 @@ try {
     }
   }
   $ok = ($missing.Count -eq 0)
-  Out-Hook $ok ($(if ($ok) { "OK" } else { "SPEC_ARTIFACTS_MISSING" })) "Spec artifact gate completed" @{ changedFiles=$changed; implementationChangedFiles=$implChanged; missing=$missing }
+  $message = if ($ok) { "Spec artifact 门禁验证通过。" } else { "检测到实现相关文件变更，但缺少计划、任务或可追溯性文档。" }
+  $code = if ($ok) { "OK" } else { "SPEC_ARTIFACTS_MISSING" }
+  $nextSteps = "请补齐 spec/IMPLEMENTATION_PLAN.md、spec/TASKS.md 和 spec/TRACEABILITY.md 后重新运行门禁。"
+  $data = @{ changedFiles=$changed; implementationChangedFiles=$implChanged; missing=$missing }
+  if (-not $ok) { $data.nextSteps = $nextSteps }
+  Out-Hook $ok $code $message $data
 }
 catch {
-  Out-Hook $false "INTERNAL_ERROR" $_.Exception.Message
+  Out-Hook $false "INTERNAL_ERROR" ("Spec artifact 门禁执行时发生内部错误：{0}" -f $_.Exception.Message)
 }

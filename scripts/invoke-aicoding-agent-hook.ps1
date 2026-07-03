@@ -36,7 +36,7 @@ try {
   $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
   $registryPath = Join-Path $RepoRoot "config/hooks-registry.json"
   if (-not (Test-Path -LiteralPath $registryPath -PathType Leaf)) {
-    Out-BridgeResult $false "MISSING_REGISTRY" "config/hooks-registry.json not found" @{ repoRoot = $RepoRoot }
+    Out-BridgeResult $false "MISSING_REGISTRY" "缺少 hook 注册表：config/hooks-registry.json。" @{ repoRoot = $RepoRoot }
   }
 
   $registry = Get-Content -LiteralPath $registryPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -50,7 +50,7 @@ try {
   foreach ($hook in $hooks) {
     $hookPath = Join-Path $RepoRoot (($hook.path -replace '/', [IO.Path]::DirectorySeparatorChar))
     if (-not (Test-Path -LiteralPath $hookPath -PathType Leaf)) {
-      $results.Add([ordered]@{ id = $hook.id; ok = $false; code = "MISSING_HOOK"; path = $hook.path }) | Out-Null
+      $results.Add([ordered]@{ id = $hook.id; ok = $false; code = "MISSING_HOOK"; path = $hook.path; message = "缺少已注册的 hook 子模块。" }) | Out-Null
       continue
     }
 
@@ -70,12 +70,15 @@ try {
   }
 
   $failed = @($results | Where-Object { -not $_.ok })
-  Out-BridgeResult ($failed.Count -eq 0) ($(if ($failed.Count -eq 0) { "OK" } else { "HOOK_FAILED" })) "AiCoding agent hook bridge completed" @{
+  $ok = ($failed.Count -eq 0)
+  $code = if ($ok) { "OK" } else { "HOOK_FAILED" }
+  $message = if ($ok) { "AiCoding 总 hook bridge 执行完成，所有匹配 hook 子模块通过。" } else { "AiCoding 总 hook bridge 执行完成，但存在未通过的 hook 子模块。" }
+  Out-BridgeResult $ok $code $message @{
     repoRoot = $RepoRoot
-    hooks = @($results)
+    hooks = @($results.ToArray())
     matched = $hooks.Count
   }
 }
 catch {
-  Out-BridgeResult $false "INTERNAL_ERROR" $_.Exception.Message
+  Out-BridgeResult $false "INTERNAL_ERROR" ("AiCoding 总 hook bridge 执行时发生内部错误：{0}" -f $_.Exception.Message)
 }

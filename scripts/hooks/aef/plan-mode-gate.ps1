@@ -19,7 +19,7 @@ try {
   if (-not $RepoRoot) { $RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..\..")).Path }
   $script = Join-Path $RepoRoot "scripts/verify-agent-dev-kit-plan-mode.ps1"
   if (-not (Test-Path -LiteralPath $script -PathType Leaf)) {
-    Out-Hook $false "MISSING_VERIFY" "scripts/verify-agent-dev-kit-plan-mode.ps1 not found" @{ repoRoot=$RepoRoot }
+    Out-Hook $false "MISSING_VERIFY" "缺少 Plan Mode 验证脚本：scripts/verify-agent-dev-kit-plan-mode.ps1。" @{ repoRoot=$RepoRoot }
   }
 
   $capture = & pwsh -NoProfile -ExecutionPolicy Bypass -File $script -RepoRoot $RepoRoot -Json 2>&1
@@ -27,8 +27,22 @@ try {
   $parsed = $null
   try { $parsed = ($capture | Out-String).Trim() | ConvertFrom-Json } catch { $parsed = @{ raw=($capture | Out-String) } }
 
-  Out-Hook $ok ($(if ($ok) { "OK" } else { "PLAN_MODE_BLOCKED" })) "Plan mode gate completed" @{ verify=$parsed }
+  $nextSteps = @"
+检测到架构敏感变更，但没有找到已接受的用户决策记录，或仍存在待用户选择标记。
+
+请先生成 Plan Mode 会话：
+pwsh scripts/new-agent-plan-mode-session.ps1 -Feature "<功能名>" -Description "<需求描述>" -NeedsDecision -Json
+
+然后让用户从 spec/PRD_OPTIONS.md 中选择技术路线。
+
+用户选择后执行：
+pwsh scripts/confirm-agent-decision.ps1 -Title "<标题>" -SelectedOption "<用户选择的方案>" -Rationale "<选择理由>" -Json
+"@
+  $message = if ($ok) { "Plan Mode 门禁验证通过。" } else { "Plan Mode 门禁未通过：用户尚未完成技术路线选择或计划产物不完整。" }
+  $data = if ($ok) { @{ verify=$parsed } } else { @{ verify=$parsed; nextSteps=$nextSteps } }
+  $code = if ($ok) { "OK" } else { "PLAN_MODE_BLOCKED" }
+  Out-Hook $ok $code $message $data
 }
 catch {
-  Out-Hook $false "INTERNAL_ERROR" $_.Exception.Message
+  Out-Hook $false "INTERNAL_ERROR" ("Plan Mode 门禁执行时发生内部错误：{0}" -f $_.Exception.Message)
 }

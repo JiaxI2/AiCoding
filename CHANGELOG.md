@@ -6,9 +6,10 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`。
 
 ### Fixed
+- **fix(aicoding-agent-dev-kit)**：将 Plan Mode overlay 的 prompt、Skill 片段、hook/script message 和用户交互说明改为中文优先，避免 Codex 权限摘要和验证说明默认生成英文，同时保持 Plan Mode、用户决策门禁和一个总 hook bridge + 多个子模块设计不变。
 - **fix(ai-debug-repair-kit)**：补齐 `test-ai-debug-repair-kit.ps1` 生命周期脚本，并为 `install-ai-debug-repair-kit.ps1` 增加真实 `-DryRun` 路径，dry-run 只输出安装计划、不复制插件、不改 Marketplace、不执行 pip、不写 install-state；add the missing `test-ai-debug-repair-kit.ps1` lifecycle script and implement a real `-DryRun` path for `install-ai-debug-repair-kit.ps1` that reports the install plan without copying the plugin, changing Marketplace, running pip, or writing install-state.
 
 ### Added

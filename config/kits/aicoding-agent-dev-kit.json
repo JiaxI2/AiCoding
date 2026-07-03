@@ -10,7 +10,7 @@
     "quality-gate-kit"
   ],
   "mode": "script-adapter",
-  "description": "Spec Pack, SDD, TDD, sequential context loading, decision memory, hook bridge, Plan Mode overlay, and quality-gate workflows for Codex.",
+  "description": "中文优先的 Agent Dev Kit workflow，覆盖 Spec Pack、SDD、TDD、顺序上下文加载、决策记忆、总 hook bridge、Plan Mode overlay 和质量门禁。",
   "paths": {
     "pluginRoot": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit",
     "pluginManifest": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/.codex-plugin/plugin.json",
