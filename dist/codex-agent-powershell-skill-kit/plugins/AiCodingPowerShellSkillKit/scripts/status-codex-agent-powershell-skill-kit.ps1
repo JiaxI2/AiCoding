@@ -19,7 +19,7 @@ $runtimeChecks = @(
 )
 $result = [pscustomobject]@{
     Name = 'codex-agent-powershell-skill-kit'
-    Version = '1.2.1'
+    Version = '1.3.0'
     RepoRoot = $repo
     SourceOwnership = [pscustomobject]@{
         AiCodingOwnsCanonicalSource = $false

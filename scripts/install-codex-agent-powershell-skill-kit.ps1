@@ -19,9 +19,22 @@ function Resolve-RepoRoot {
     } finally { Pop-Location }
 }
 
+function Test-SamePath {
+    param([string]$Left, [string]$Right)
+    try {
+        $leftPath = (Resolve-Path -LiteralPath $Left -ErrorAction Stop).Path
+        $rightResolved = Resolve-Path -LiteralPath $Right -ErrorAction SilentlyContinue
+        if ($null -eq $rightResolved) { return $false }
+        return [string]::Equals($leftPath, $rightResolved.Path, [System.StringComparison]::OrdinalIgnoreCase)
+    } catch {
+        return $false
+    }
+}
+
 function Copy-DirectorySafe {
     param([string]$Source, [string]$Destination)
     if (-not (Test-Path -LiteralPath $Source)) { throw "Source directory not found: $Source" }
+    if (Test-SamePath -Left $Source -Right $Destination) { Write-Host "Skip copy; source and destination are the same: $Source"; return }
     if ($DryRun) { Write-Host "DRYRUN copy $Source -> $Destination"; return }
     if (Test-Path -LiteralPath $Destination) {
         if ($PSCmdlet.ShouldProcess($Destination, 'Remove existing directory before copy')) {
@@ -88,7 +101,7 @@ Do not manually edit this mirror. Update the canonical kit/package, rebuild, and
     Set-Content -LiteralPath (Join-Path $SkillDest 'RUNTIME_MIRROR_NOTICE.md') -Value $notice -Encoding utf8
     $meta = [pscustomobject]@{
         name = 'codex-agent-powershell-skill-kit'
-        version = '1.2.1'
+        version = '1.3.0'
         role = 'generated-runtime-mirror'
         canonicalOwnedByAiCoding = $false
         authoritativePackagePath = 'dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/codex-agent-powershell-skill-kit'
@@ -103,7 +116,12 @@ $overlayRoot = Split-Path -Parent $PSScriptRoot
 
 $configSource = Join-Path $overlayRoot 'config\codex-agent-powershell-skill-kit.json'
 $configDest = Join-Path $repo 'config\codex-agent-powershell-skill-kit.json'
-if (-not $DryRun) { New-Item -ItemType Directory -Path (Split-Path -Parent $configDest) -Force | Out-Null; Copy-Item -LiteralPath $configSource -Destination $configDest -Force } else { Write-Host "DRYRUN copy config" }
+if (-not $DryRun) {
+    if (-not (Test-SamePath -Left $configSource -Right $configDest)) {
+        New-Item -ItemType Directory -Path (Split-Path -Parent $configDest) -Force | Out-Null
+        Copy-Item -LiteralPath $configSource -Destination $configDest -Force
+    }
+} else { Write-Host "DRYRUN copy config" }
 
 $docsSource = Join-Path $overlayRoot 'docs\codex-agent-powershell-skill-kit'
 $docsDest = Join-Path $repo 'docs\codex-agent-powershell-skill-kit'
@@ -123,7 +141,12 @@ $scripts = @(
 foreach ($script in $scripts) {
     $src = Join-Path $overlayRoot "scripts\$script"
     $dst = Join-Path $repo "scripts\$script"
-    if (-not $DryRun) { New-Item -ItemType Directory -Path (Split-Path -Parent $dst) -Force | Out-Null; Copy-Item -LiteralPath $src -Destination $dst -Force } else { Write-Host "DRYRUN copy $script" }
+    if (-not $DryRun) {
+        if (-not (Test-SamePath -Left $src -Right $dst)) {
+            New-Item -ItemType Directory -Path (Split-Path -Parent $dst) -Force | Out-Null
+            Copy-Item -LiteralPath $src -Destination $dst -Force
+        }
+    } else { Write-Host "DRYRUN copy $script" }
 }
 
 $entryPath = Join-Path $overlayRoot '.agents\plugins\codex-agent-powershell-skill-kit.marketplace.json'
@@ -159,7 +182,7 @@ if (-not $NoRuntimeMirror) {
 
 $state = [pscustomobject]@{
     name = 'codex-agent-powershell-skill-kit'
-    version = '1.2.1'
+    version = '1.3.0'
     installedAt = (Get-Date).ToString('o')
     repoRoot = $repo
     runtime = 'pwsh'
@@ -186,5 +209,5 @@ if ($InstallMissingTools -and -not $DryRun) {
     if (-not $pssa) { Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber }
 }
 
-Write-Host "Installed codex-agent-powershell-skill-kit v1.2.1 into $repo"
+Write-Host "Installed codex-agent-powershell-skill-kit v1.3.0 into $repo"
 Write-Host "Repo-scoped skill is a generated runtime mirror, not AiCoding-owned canonical source."

@@ -2,14 +2,15 @@
   "schemaVersion": 2,
   "id": "codex-agent-powershell-skill-kit",
   "name": "Codex Agent PowerShell Skill Kit",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "kind": [
     "plugin-kit",
     "powershell-skill-kit",
-    "quality-gate-kit"
+    "quality-gate-kit",
+    "regex-optimization-kit"
   ],
   "mode": "script-adapter",
-  "description": "PowerShell 7-first agent guard with AST, safe rewrite, runtime, and PSScriptAnalyzer gates.",
+  "description": "PowerShell 7-first agent guard with AST, safe rewrite, runtime, regex optimization, and PSScriptAnalyzer gates.",
   "paths": {
     "pluginRoot": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit",
     "pluginManifest": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/.codex-plugin/plugin.json",
@@ -100,7 +101,20 @@
         "gate"
       ]
     },
-    "members": []
+    "members": [
+      {
+        "id": "pwsh-regex-optimize-kit",
+        "path": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/pwsh-regex-optimize-kit/SKILL.md",
+        "role": "member",
+        "description": "Safe capture replacement, bulk regex replace, dynamic callback transform, and Go fast-path regex lint.",
+        "tags": [
+          "powershell",
+          "regex",
+          "go-fast-path",
+          "performance"
+        ]
+      }
+    ]
   },
   "hooks": {
     "repo": [],

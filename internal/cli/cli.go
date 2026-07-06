@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/governance"
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/platform"
+	"github.com/JiaxI2/AiCoding/internal/pwshregex"
 	"github.com/JiaxI2/AiCoding/internal/report"
 )
 
@@ -38,6 +40,8 @@ func Main() {
 		res, err = runDoctor(os.Args[2:], start)
 	case "governance":
 		res, err = runGovernance(os.Args[2:], start)
+	case "powershell":
+		res, err = runPowerShell(os.Args[2:], start)
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", cmd)
 		printUsageAndExit(2)
@@ -70,6 +74,8 @@ Usage:
   aicoding kit verify --all --profile Smoke [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
   aicoding doctor perf [--repo-root PATH] [--json]
+  aicoding powershell regex-lint --staged [--repo-root PATH] [--json]
+  aicoding powershell regex-lint --path PATH [--repo-root PATH] [--json]
 
 This v1 CLI intentionally accelerates hot-path governance, staged DocSync and Smoke checks.
 Full/Release gates remain in PowerShell/Python and CI.
@@ -101,7 +107,13 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		if err != nil {
 			return report.Fail("hook pre-commit", start, "cannot resolve repo root", nil, err.Error()), err
 		}
-		errs := append(governance.Lint(repo, "pre-commit", ""), docsync.LintStaged(repo)...)
+		regexIssues, regexIssueErr := pwshregex.LintStaged(repo)
+		errs := governance.Lint(repo, "pre-commit", "")
+		errs = append(errs, docsync.LintStaged(repo)...)
+		if regexIssueErr != nil {
+			errs = append(errs, regexIssueErr.Error())
+		}
+		errs = append(errs, pwshregex.BlockingMessages(regexIssues)...)
 		return report.Result{SchemaVersion: 1, Command: "hook pre-commit", OK: len(errs) == 0, Message: "pre-commit fast gate", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	case "commit-msg":
 		fs := flag.NewFlagSet("hook commit-msg", flag.ContinueOnError)
@@ -138,6 +150,55 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 	}
 	errs := governance.Lint(repo, *mode, "")
 	return report.Result{SchemaVersion: 1, Command: "governance lint", OK: len(errs) == 0, Message: "governance fast lint", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+}
+
+func runPowerShell(args []string, start time.Time) (report.Result, error) {
+	if len(args) < 1 || args[0] != "regex-lint" {
+		return report.Result{}, errors.New("powershell requires subcommand: regex-lint")
+	}
+	fs := flag.NewFlagSet("powershell regex-lint", flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	pathArg := fs.String("path", "", "file or directory to scan")
+	stagedArg := fs.Bool("staged", false, "scan staged PowerShell files")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args[1:])
+
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("powershell regex-lint", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+
+	var issues []pwshregex.Issue
+	if *stagedArg {
+		issues, err = pwshregex.LintStaged(repo)
+	} else {
+		target := *pathArg
+		if target == "" && fs.NArg() > 0 {
+			target = fs.Arg(0)
+		}
+		if target == "" {
+			return report.Fail("powershell regex-lint", start, "path is required unless --staged is used", nil, "missing --path"), errors.New("missing --path")
+		}
+		if !filepath.IsAbs(target) {
+			target = filepath.ToSlash(target)
+		}
+		issues, err = pwshregex.LintPath(repo, target)
+	}
+	if err != nil {
+		return report.Fail("powershell regex-lint", start, "regex lint failed", issues, err.Error()), err
+	}
+
+	errs := pwshregex.BlockingMessages(issues)
+	return report.Result{
+		SchemaVersion: 1,
+		Command:       "powershell regex-lint",
+		OK:            len(errs) == 0,
+		Message:       "PowerShell regex optimization fast lint",
+		RepoRoot:      repo,
+		Data:          issues,
+		Errors:        errs,
+		ElapsedMS:     report.Elapsed(start),
+	}, report.BoolErr(errs)
 }
 
 func runKit(args []string, start time.Time) (report.Result, error) {

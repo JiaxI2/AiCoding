@@ -28,6 +28,21 @@ Expect-Fail 'bad-linux-alias-safety-fails' { & (Join-Path $toolRoot 'Test-PowerS
 Expect-Fail 'bad-removeitem-safety-fails' { & (Join-Path $toolRoot 'Test-PowerShellCommandSafety.ps1') -Path (Join-Path $caseRoot 'bad\Unsafe-RemoveItem.ps1') | Out-Null }
 Expect-Fail 'rewrite-blocks-bash-leakage' { & (Join-Path $toolRoot 'Invoke-SafeRewritePlan.ps1') -Path (Join-Path $caseRoot 'rewrite\BashLeakage.ps1') -Format Json | Out-Null }
 Expect-Fail 'rewrite-interpolation-risk-blocks' { & (Join-Path $toolRoot 'Invoke-SafeRewritePlan.ps1') -Path (Join-Path $caseRoot 'rewrite\InterpolationRisk.ps1') -Format Json | Out-Null }
+Expect-Pass 'regex-good-safe-bulk-replace' {
+    & (Join-Path $caseRoot 'good\Regex-SafeBulkReplace.ps1') | Out-Null
+}
+Expect-Pass 'regex-good-dynamic-callback-transform' {
+    & (Join-Path $caseRoot 'good\Regex-DynamicCallbackTransform.ps1') | Out-Null
+}
+Expect-Pass 'regex-gate-good-cases-pass' {
+    & (Join-Path $toolRoot 'Invoke-PowerShellRegexOptimizationGate.ps1') -Path (Join-Path $caseRoot 'good') -Recurse -Format Json | Out-Null
+}
+Expect-Fail 'regex-gate-double-quoted-capture-fails' {
+    & (Join-Path $toolRoot 'Invoke-PowerShellRegexOptimizationGate.ps1') -Path (Join-Path $caseRoot 'bad\Regex-DoubleQuotedCaptureReplacement.ps1') -Format Json | Out-Null
+}
+Expect-Fail 'regex-gate-line-pipeline-replace-fails' {
+    & (Join-Path $toolRoot 'Invoke-PowerShellRegexOptimizationGate.ps1') -Path (Join-Path $caseRoot 'bad\Regex-LinePipelineReplace.ps1') -Format Json | Out-Null
+}
 
 $ok = (@($results | Where-Object { -not $_.Ok }).Count -eq 0)
 $summary = [pscustomobject]@{ Name='codex-agent-powershell-skill-kit-tests'; Ok=[bool]$ok; Results=$results.ToArray() }

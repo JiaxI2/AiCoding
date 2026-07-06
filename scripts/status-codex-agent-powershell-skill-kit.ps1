@@ -20,7 +20,7 @@ $runtimeChecks = @(
 $checks = @($sourceChecks | ForEach-Object { [pscustomobject]@{ Path = $_; Exists = (Test-Path -LiteralPath (Join-Path $repo $_)); Required = $true } }) + @($runtimeChecks | ForEach-Object { [pscustomobject]@{ Path = $_; Exists = (Test-Path -LiteralPath (Join-Path $repo $_)); Required = $false } })
 $result = [pscustomobject]@{
     Name = 'codex-agent-powershell-skill-kit'
-    Version = '1.2.1'
+    Version = '1.3.0'
     RepoRoot = $repo
     SourceOwnership = [pscustomobject]@{
         AiCodingOwnsCanonicalSource = $false

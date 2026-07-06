@@ -1,10 +1,10 @@
 ---
 name: codex-agent-powershell-skill-kit
 description: PS7-first PowerShell guard for Codex agents. Use when executing Windows commands, writing or editing .ps1/.psm1/.psd1 files, translating Bash to PowerShell, troubleshooting PowerShell failures, or integrating AiCoding scripts.
-version: 1.2.1
+version: 1.3.0
 ---
 
-# Codex Agent PowerShell Skill Kit v1.2.1
+# Codex Agent PowerShell Skill Kit v1.3.0
 
 ## Mission
 
@@ -102,6 +102,28 @@ Any command that deletes files, changes registry/system policy, modifies ACLs, f
 - explicit user approval;
 - a dedicated backup/rollback plan.
 
+
+### Regex optimization subskill
+
+Use `pwsh-regex-optimize-kit` whenever generating or reviewing PowerShell regex replacement code.
+
+- Never put regex capture replacement tokens in double quotes. Use `'$1'` and `'${Name}'`.
+- Never perform code-file regex replacement through `Get-Content | ForEach-Object { $_ -replace ... }`.
+- Use `Get-Content -Raw` or `[System.IO.File]::ReadAllText()` for bulk replacement.
+- Dynamic callback replacement requires PowerShell 7+ and should use `#requires -Version 7.0`.
+
+Fast path:
+
+```powershell
+bin\aicoding.exe powershell regex-lint --staged --json
+```
+
+Slow path:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File .\.agents\skills\codex-agent-powershell-skill-kit\tools\Invoke-PowerShellRegexOptimizationGate.ps1 -Path .\scripts -Recurse -Format Json
+```
+
 ## Required tools
 
 - `tools/Invoke-PowerShellAstGate.ps1`
@@ -110,6 +132,8 @@ Any command that deletes files, changes registry/system policy, modifies ACLs, f
 - `tools/Invoke-PowerShellSkillKitGate.ps1`
 - `tools/Test-PowerShellRuntime.ps1`
 - `tools/Test-PowerShellCommandSafety.ps1`
+- `tools/PowerShellRegexOptimizeKit.psm1`
+- `tools/Invoke-PowerShellRegexOptimizationGate.ps1`
 
 ## Agent response after failure
 
