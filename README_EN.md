@@ -9,9 +9,9 @@
 
 [![Version](https://img.shields.io/badge/Version-0.1.0-2ea44f)](config/codex-kit.json)
 [![Verify](https://img.shields.io/badge/verify--codex--kit-required-2ea44f)](#maintenance-commands)
-[![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](#environment-preview)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](#environment-preview)
-[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](#environment-preview)
+[![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](https://learn.microsoft.com/powershell/scripting/install/install-powershell)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](https://www.python.org/downloads/)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](https://go.dev/doc/install)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 
 AiCoding is a platform repository for local AI-assisted embedded development. It integrates CodingKit assets, repository governance, a version-locked Codex plugin kit, Agent Patch Kit, AI Debug Repair Kit, and AiCoding Agent Dev Kit for safer agent editing, clearer Git synchronization rules, and default non-invasive embedded debug assistance.

@@ -8,9 +8,10 @@
 </p>
 
 [![Version](https://img.shields.io/badge/Version-0.1.0-2ea44f)](config/codex-kit.json)
-[![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](README.md#environment-preview)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](README.md#environment-preview)
-[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](README.md#environment-preview)
+[![Verify](https://img.shields.io/badge/verify--codex--kit-required-2ea44f)](#maintenance-commands)
+[![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](https://learn.microsoft.com/powershell/scripting/install/install-powershell)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](https://www.python.org/downloads/)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](https://go.dev/doc/install)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 
 AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它不直接维护 Skill 源码，而是通过 `CodingKit/agents/skills` submodule 锁定 `Codex-Skills` 的已验证版本，并提供安装、更新、状态、卸载、运行时审计、CodingKit 资产入口、Agent Patch Kit、AI Debug Repair Kit 和 AiCoding Agent Dev Kit。

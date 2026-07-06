@@ -9,9 +9,9 @@
 
 [![Version](https://img.shields.io/badge/Version-0.1.0-2ea44f)](config/codex-kit.json)
 [![Verify](https://img.shields.io/badge/verify--codex--kit-required-2ea44f)](#maintenance-commands)
-[![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](#environment-preview)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](#environment-preview)
-[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](#environment-preview)
+[![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](https://learn.microsoft.com/powershell/scripting/install/install-powershell)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](https://www.python.org/downloads/)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](https://go.dev/doc/install)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue)](LICENSE)
 
 AiCoding 是本地 AI 辅助嵌入式开发平台仓库。它集成 CodingKit 资产、仓库治理、版本锁定的 Codex plugin kit、Agent Patch Kit、AI Debug Repair Kit、AiCoding Agent Dev Kit 和 Codex Agent PowerShell Skill Kit，用于更可控的 Agent 编辑、更清晰的 Git 同步规则、默认非侵入式的嵌入式调试辅助，以及 PowerShell 7 优先的脚本安全门禁。
