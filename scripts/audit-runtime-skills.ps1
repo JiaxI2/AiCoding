@@ -7,13 +7,6 @@ param(
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'lib\CodexKit.psm1') -Force
 
-function Expand-RuntimePath {
-    param([string]$PathValue)
-    if ([string]::IsNullOrWhiteSpace($PathValue)) { return $null }
-    $expanded = $PathValue.Replace('%USERPROFILE%', $env:USERPROFILE)
-    return [Environment]::ExpandEnvironmentVariables($expanded)
-}
-
 function Get-SkillNameFromFile {
     param([string]$SkillFile)
     $text = Get-Content -LiteralPath $SkillFile -Raw -ErrorAction Stop
@@ -76,9 +69,9 @@ function Test-PathUnder {
 
 $repo = Get-AiCodingRoot $PSScriptRoot
 $config = Read-CodexKitConfig $repo
-$agentsRoot = Expand-RuntimePath $config.skillRuntime.canonicalUserRoot
-$legacyRoot = Expand-RuntimePath $config.skillRuntime.legacyUserRoot
-$sourceRepository = Expand-RuntimePath $config.skillRuntime.defaultSourceRepository
+$agentsRoot = Resolve-CodexKitRuntimePath -RepoRoot $repo -PathValue $config.skillRuntime.canonicalUserRoot
+$legacyRoot = Resolve-CodexKitRuntimePath -RepoRoot $repo -PathValue $config.skillRuntime.legacyUserRoot
+$sourceRepository = Resolve-CodexKitConfiguredPath -ConfigSection $config.skillRuntime -RepoRoot $repo
 $pluginCache = Join-Path $env:USERPROFILE '.codex\plugins\cache'
 
 $entries = @()

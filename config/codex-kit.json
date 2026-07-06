@@ -22,7 +22,8 @@
   "skillRuntime": {
     "canonicalUserRoot": "%USERPROFILE%\\.agents\\skills",
     "legacyUserRoot": "%USERPROFILE%\\.codex\\skills",
-    "defaultSourceRepository": "F:\\Study\\AI\\Codex-Skills",
+    "sourceRepositoryEnv": "AICODING_SKILL_SOURCE_REPO",
+    "defaultSourceRepository": "../Codex-Skills",
     "sourceRepositoryMustNotBeUnderSkillRoot": true,
     "rejectDuplicateNames": true,
     "rejectGeneratedSkillLinks": true,
@@ -71,7 +72,9 @@
     }
   },
   "standaloneSkillRegistry": {
-    "sourceRepository": "F:\\Study\\AI\\Codex-Skills",
+    "sourceRepositoryEnv": "AICODING_SKILL_SOURCE_REPO",
+    "sourceRepository": "../Codex-Skills",
+    "defaultSourceRepository": "../Codex-Skills",
     "defaultInstallRoot": "%USERPROFILE%\\.agents\\skills",
     "supportedInstallRoots": [
       "agents",

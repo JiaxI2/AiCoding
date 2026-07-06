@@ -13,13 +13,12 @@ Import-Module (Join-Path $PSScriptRoot 'lib\CodexKit.psm1') -Force
 
 function Expand-RuntimePath {
     param([string]$PathValue)
-    if ([string]::IsNullOrWhiteSpace($PathValue)) { return $null }
-    return [Environment]::ExpandEnvironmentVariables($PathValue.Replace('%USERPROFILE%', $env:USERPROFILE))
+    return Resolve-CodexKitRuntimePath -RepoRoot $repo -PathValue $PathValue
 }
 
 $repo = Get-AiCodingRoot $PSScriptRoot
 $config = Read-CodexKitConfig $repo
-if (-not $SourceRepository) { $SourceRepository = Expand-RuntimePath $config.skillRuntime.defaultSourceRepository }
+if (-not $SourceRepository) { $SourceRepository = Resolve-CodexKitConfiguredPath -ConfigSection $config.skillRuntime -RepoRoot $repo }
 $legacyRoot = Expand-RuntimePath $config.skillRuntime.legacyUserRoot
 $agentsRoot = Expand-RuntimePath $config.skillRuntime.canonicalUserRoot
 if (-not $BackupPath) { $BackupPath = "$legacyRoot.legacy-backup" }

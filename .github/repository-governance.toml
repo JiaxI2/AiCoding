@@ -3,8 +3,8 @@ schema_version = 1
 [project]
 name = "AiCoding"
 repository_url = "https://github.com/JiaxI2/AiCoding.git"
-visibility = "private"
-audience = ["developer", "tester"]
+visibility = "public"
+audience = ["maintainer", "agent", "embedded-developer"]
 default_language = "zh-CN"
 
 [branch]
@@ -17,7 +17,7 @@ require_pull_request = false
 
 [readme]
 enabled = true
-profile = "minimal-internal"
+profile = "minimal-public"
 file = "README.md"
 primary_language = "zh-CN"
 language_order = ["zh-CN", "en"]
@@ -84,7 +84,7 @@ validate_markdown_links = true
 validate_release_notes = true
 github_generated_release_notes = false
 hooks_path = ".githooks"
-lint_command = "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode all"
+lint_command = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode all"
 
 [github_about]
 require_bilingual = true

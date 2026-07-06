@@ -1,26 +1,33 @@
 #!/bin/sh
 set -eu
 
+if [ "$#" -ne 1 ]; then
+  echo "usage: commit-msg <commit-message-file>" >&2
+  exit 2
+fi
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+cd "$repo_root"
+
+commit_msg_path=$1
+
 if [ -x "bin/aicoding" ]; then
-  bin/aicoding hook commit-msg --file "$1"
-  exit $?
+  exec bin/aicoding hook commit-msg --file "$commit_msg_path"
 fi
 
 if [ -x "bin/aicoding.exe" ]; then
-  bin/aicoding.exe hook commit-msg --file "$1"
-  exit $?
+  exec bin/aicoding.exe hook commit-msg --file "$commit_msg_path"
 fi
 
 if command -v go >/dev/null 2>&1 && [ -d "cmd/aicoding" ]; then
-  go run ./cmd/aicoding hook commit-msg --file "$1"
-  exit $?
+  exec go run ./cmd/aicoding hook commit-msg --file "$commit_msg_path"
 fi
 
 # Legacy fallback.
 if command -v pwsh >/dev/null 2>&1; then
-  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$1"
+  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$commit_msg_path"
 elif command -v powershell.exe >/dev/null 2>&1; then
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$1"
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$commit_msg_path"
 else
   echo "AiCoding fast CLI, Go, or PowerShell is required for commit-msg checks" >&2
   exit 1

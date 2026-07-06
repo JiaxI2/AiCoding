@@ -17,6 +17,43 @@ function Resolve-KitPath {
     return Join-Path $RepoRoot $rel
 }
 
+function Resolve-CodexKitRuntimePath {
+    param([string]$RepoRoot, [string]$PathValue)
+    if ([string]::IsNullOrWhiteSpace($PathValue)) { return $null }
+    $expanded = $PathValue.Replace('%USERPROFILE%', $env:USERPROFILE)
+    $expanded = [Environment]::ExpandEnvironmentVariables($expanded)
+    if ([System.IO.Path]::IsPathRooted($expanded)) { return $expanded }
+    if ([string]::IsNullOrWhiteSpace($RepoRoot)) { return $expanded }
+    return [System.IO.Path]::GetFullPath((Join-Path $RepoRoot $expanded))
+}
+
+function Resolve-CodexKitConfiguredPath {
+    param(
+        $ConfigSection,
+        [string]$RepoRoot,
+        [string[]]$PropertyOrder = @('sourceRepository', 'defaultSourceRepository')
+    )
+    if (-not $ConfigSection) { return $null }
+    $propertyNames = @($ConfigSection.PSObject.Properties.Name)
+    if ($propertyNames -contains 'sourceRepositoryEnv') {
+        $envName = [string]$ConfigSection.sourceRepositoryEnv
+        if (-not [string]::IsNullOrWhiteSpace($envName)) {
+            $envValue = [Environment]::GetEnvironmentVariable($envName)
+            if (-not [string]::IsNullOrWhiteSpace($envValue)) {
+                return Resolve-CodexKitRuntimePath -RepoRoot $RepoRoot -PathValue $envValue
+            }
+        }
+    }
+    foreach ($propertyName in $PropertyOrder) {
+        if ($propertyNames -contains $propertyName) {
+            $value = [string]$ConfigSection.$propertyName
+            if (-not [string]::IsNullOrWhiteSpace($value)) {
+                return Resolve-CodexKitRuntimePath -RepoRoot $RepoRoot -PathValue $value
+            }
+        }
+    }
+    return $null
+}
 function Find-CodexCliPath {
     $command = Get-Command codex -ErrorAction SilentlyContinue
     if ($command -and $command.Source) { return $command.Source }

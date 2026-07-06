@@ -1,19 +1,19 @@
 #!/bin/sh
 set -eu
 
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+cd "$repo_root"
+
 if [ -x "bin/aicoding" ]; then
-  bin/aicoding hook pre-commit
-  exit $?
+  exec bin/aicoding hook pre-commit
 fi
 
 if [ -x "bin/aicoding.exe" ]; then
-  bin/aicoding.exe hook pre-commit
-  exit $?
+  exec bin/aicoding.exe hook pre-commit
 fi
 
 if command -v go >/dev/null 2>&1 && [ -d "cmd/aicoding" ]; then
-  go run ./cmd/aicoding hook pre-commit
-  exit $?
+  exec go run ./cmd/aicoding hook pre-commit
 fi
 
 # Legacy fallback: slower but preserves old behavior before the fast CLI is built.

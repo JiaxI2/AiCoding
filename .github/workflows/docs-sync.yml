@@ -3,7 +3,9 @@ name: Documentation Sync
 on:
   pull_request:
   push:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
 
 jobs:
   docs-sync:
@@ -12,7 +14,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
+
       - name: Check documentation synchronization
         shell: pwsh
         run: |
-          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
+          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
