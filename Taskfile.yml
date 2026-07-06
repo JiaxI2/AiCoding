@@ -1,0 +1,72 @@
+version: '3'
+
+# AiCoding unified task entry.
+# Keep this file as command routing only. Business logic belongs in Go CLI or scripts/.
+
+tasks:
+  default:
+    desc: Show available AiCoding tasks
+    cmds:
+      - task --list
+
+  setup:
+    desc: Build and enable AiCoding Go Fast Path when installer exists
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -Command "if (Test-Path 'scripts/install-fast-path-v1.ps1') { & 'scripts/install-fast-path-v1.ps1' } elseif (Test-Path 'go.mod') { go build -o bin/aicoding.exe ./cmd/aicoding } else { Write-Host 'No fast path installer or go.mod found.' }"
+
+  smoke:
+    desc: Run fast local Smoke gate
+    deps: [ensure-bin]
+    cmds:
+      - bin/aicoding.exe kit verify --all --profile Smoke --json
+      - bin/aicoding.exe governance lint --json
+      - bin/aicoding.exe doctor perf --json
+
+  perf:
+    desc: Run fast path performance probes
+    deps: [ensure-bin]
+    cmds:
+      - bin/aicoding.exe doctor perf --json
+      - pwsh -NoProfile -ExecutionPolicy Bypass -Command "if (Test-Path 'scripts/measure-fast-path-v1.ps1') { & 'scripts/measure-fast-path-v1.ps1' -Json } else { Write-Host 'scripts/measure-fast-path-v1.ps1 not found; skipped.' }"
+
+  full:
+    desc: Run explicit Full local validation through the legacy adapter path
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 test -All -Profile Full -Json
+
+  release:
+    desc: Run explicit Release gate and export package path
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-kit-fresh-clone.ps1 -Profile Release -Json
+      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 export -All -Zip -Json
+
+  skills:
+    desc: Verify all repo-scoped skills
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 verify-skills -All -Json
+
+  rollback:
+    desc: Roll back Go Fast Path if rollback script exists
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -Command "if (Test-Path 'scripts/rollback-fast-path-v1.ps1') { & 'scripts/rollback-fast-path-v1.ps1' -UnsetHooksPath -RemoveBinary } else { Write-Host 'scripts/rollback-fast-path-v1.ps1 not found; skipped.' }"
+
+  tag:audit:
+    desc: Audit current tag/release namespace classification
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-tag-governance.ps1 -Action Audit -Json
+
+  tag:plan:
+    desc: Generate non-destructive legacy tag migration plan
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-tag-governance.ps1 -Action Plan
+
+  tag:verify:
+    desc: Verify release governance overlay in non-strict legacy mode
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-release-governance-overlay.ps1 -Json
+
+
+  ensure-bin:
+    internal: true
+    cmds:
+      - pwsh -NoProfile -ExecutionPolicy Bypass -Command "if (-not (Test-Path 'bin/aicoding.exe')) { if (Test-Path 'go.mod') { go build -o bin/aicoding.exe ./cmd/aicoding } else { throw 'bin/aicoding.exe not found and go.mod is missing.' } }"

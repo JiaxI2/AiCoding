@@ -44,6 +44,12 @@
       "enabled": true,
       "order": 70,
       "manifest": "config/kits/common-control-kit.json"
+    },
+    {
+      "id": "release-governance-overlay-kit",
+      "enabled": true,
+      "order": 80,
+      "manifest": "config/kits/release-governance-overlay-kit.json"
     }
   ]
 }

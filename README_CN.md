@@ -8,7 +8,7 @@
 </p>
 
 [![Version](https://img.shields.io/badge/Version-0.1.0-2ea44f)](config/codex-kit.json)
-[![Verify](https://img.shields.io/badge/verify--codex--kit-required-2ea44f)](#maintenance-commands)
+[![Verify](https://img.shields.io/badge/verify--codex--kit-required-2ea44f)](#commands)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7-5391FE)](https://learn.microsoft.com/powershell/scripting/install/install-powershell)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)](https://www.python.org/downloads/)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8)](https://go.dev/doc/install)
@@ -158,6 +158,25 @@ AiCoding Plugin 现在内置可独立运行的 SDD、MVP、BDD、架构优先、
 
 <a id="commands"></a>
 ## 常用命令 / Commands
+
+Taskfile 是推荐的人和 Agent 统一入口；它只做命令路由，复杂逻辑仍保留在 Go CLI、PowerShell 或 Python 脚本中。Go CLI `bin/aicoding.exe` 是本地高频 Fast Path；PowerShell/Python 是 Full/Release 慢路径，Full 和 Release 必须显式运行，不会被 Smoke 隐式触发。
+
+Tag 命名空间必须分离：平台 release 使用 `vMAJOR.MINOR.PATCH`，Kit/组件 release 使用 `kit/<kit-id>/vMAJOR.MINOR.PATCH`，日期里程碑使用 `milestone/YYYY.MM.DD-<name>`。
+
+```powershell
+task setup
+task smoke
+task perf
+task tag:audit
+task tag:plan
+task tag:verify
+task full
+task release
+task skills
+task rollback
+```
+
+没有安装 Task 时，继续使用 `bin\aicoding.exe` 的 Fast Path 命令和 `scripts/aicoding-kit.ps1`、`scripts/test-kit-fresh-clone.ps1` 等完整路径。
 
 查看安装计划：
 

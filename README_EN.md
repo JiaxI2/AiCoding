@@ -168,6 +168,25 @@ All AiCoding-governed Git repositories must document branch, environment, commit
 <a id="maintenance-commands"></a>
 ## Maintenance Commands / 维护命令
 
+Taskfile is the recommended human and Agent entrypoint. It only routes commands; real business logic stays in the Go CLI, PowerShell scripts, or Python scripts. The Go CLI `bin/aicoding.exe` is the local Fast Path; PowerShell/Python remain the Full/Release slow path. Full and Release must be run explicitly and are not triggered by Smoke.
+
+Tag namespaces are separate: platform releases use `vMAJOR.MINOR.PATCH`, Kit/component releases use `kit/<kit-id>/vMAJOR.MINOR.PATCH`, and date milestones use `milestone/YYYY.MM.DD-<name>`.
+
+```powershell
+task setup
+task smoke
+task perf
+task tag:audit
+task tag:plan
+task tag:verify
+task full
+task release
+task skills
+task rollback
+```
+
+When Task is unavailable, continue using the Fast Path `bin\aicoding.exe` commands and the full `scripts/aicoding-kit.ps1` / `scripts/test-kit-fresh-clone.ps1` paths.
+
 ```powershell
 & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/status-codex-kit.ps1 -Json
 & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun

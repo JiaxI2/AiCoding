@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "plannedCacheRoot": ".aicoding/cache",
+  "smokeAndHookOnly": true,
+  "releaseGateUsesCache": false,
+  "files": [
+    "kit-index.json",
+    "manifest-hash.json",
+    "staged-files.json",
+    "governance-hash.json",
+    "perf-history.jsonl"
+  ],
+  "futureCommands": [
+    "bin/aicoding.exe impact --staged --json",
+    "bin/aicoding.exe verify smart --staged --json",
+    "bin/aicoding.exe doctor perf --save --json"
+  ]
+}

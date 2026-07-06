@@ -210,6 +210,25 @@ AiCoding 区分 plugin bundled skills 和个人 standalone skills：
 <a id="maintenance-commands"></a>
 ## 维护命令 / Maintenance Commands
 
+Taskfile 是推荐的人和 Agent 统一入口；它只做命令路由，复杂逻辑仍保留在 Go CLI、PowerShell 或 Python 脚本中。Go CLI `bin/aicoding.exe` 是本地高频 Fast Path；PowerShell/Python 是 Full/Release 慢路径，Full 和 Release 必须显式运行，不会被 Smoke 隐式触发。
+
+Tag 命名空间必须分离：平台 release 使用 `vMAJOR.MINOR.PATCH`，Kit/组件 release 使用 `kit/<kit-id>/vMAJOR.MINOR.PATCH`，日期里程碑使用 `milestone/YYYY.MM.DD-<name>`。
+
+```powershell
+task setup
+task smoke
+task perf
+task tag:audit
+task tag:plan
+task tag:verify
+task full
+task release
+task skills
+task rollback
+```
+
+没有安装 Task 时，继续使用 `bin\aicoding.exe` 的 Fast Path 命令和 `scripts/aicoding-kit.ps1`、`scripts/test-kit-fresh-clone.ps1` 等完整路径。
+
 ```powershell
 & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/status-codex-kit.ps1 -Json
 & "C:\Program Files\PowerShell\7\pwsh.exe" -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun

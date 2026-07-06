@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 2,
+  "id": "release-governance-overlay-kit",
+  "name": "Release Governance Overlay Kit",
+  "version": "0.1.0",
+  "kind": [
+    "governance-kit",
+    "overlay-kit"
+  ],
+  "mode": "script-adapter",
+  "description": "Tag/release namespace governance, Taskfile entry, and performance-loop overlay for AiCoding.",
+  "paths": {
+    "taggingPolicy": "docs/TAGGING_POLICY.md",
+    "releasePolicy": "docs/RELEASE_POLICY.md",
+    "overlayGuide": "docs/RELEASE_GOVERNANCE_OVERLAY.md",
+    "policyConfig": "config/tagging-policy.json"
+  },
+  "commands": {
+    "verify": {
+      "type": "powershell-script",
+      "path": "scripts/verify-release-governance-overlay.ps1",
+      "args": [],
+      "supportsJson": true
+    },
+    "test": {
+      "type": "composed",
+      "steps": [
+        "verify"
+      ]
+    },
+    "export": {
+      "type": "builtin-package",
+      "include": [
+        "Taskfile.yml",
+        "docs/TAGGING_POLICY.md",
+        "docs/RELEASE_POLICY.md",
+        "docs/RELEASE_GOVERNANCE_OVERLAY.md",
+        "scripts/aicoding-tag-governance.ps1",
+        "scripts/verify-release-governance-overlay.ps1",
+        "config/tagging-policy.json",
+        "config/kits/release-governance-overlay-kit.json"
+      ],
+      "exclude": [],
+      "outputName": "release-governance-overlay-kit-${version}.zip"
+    }
+  },
+  "skills": {
+    "umbrella": null,
+    "members": []
+  },
+  "hooks": {
+    "repo": [],
+    "agent": [],
+    "kit": []
+  },
+  "commonDependencies": [],
+  "export": {
+    "include": [
+      "Taskfile.yml",
+      "docs/TAGGING_POLICY.md",
+      "docs/RELEASE_POLICY.md",
+      "docs/RELEASE_GOVERNANCE_OVERLAY.md",
+      "scripts/aicoding-tag-governance.ps1",
+      "scripts/verify-release-governance-overlay.ps1",
+      "config/tagging-policy.json",
+      "config/kits/release-governance-overlay-kit.json"
+    ],
+    "exclude": [],
+    "outputName": "release-governance-overlay-kit-${version}.zip"
+  },
+  "state": {
+    "root": ".aicoding/state/kits/release-governance-overlay-kit",
+    "installState": ".aicoding/state/kits/release-governance-overlay-kit/install-state.json"
+  },
+  "trust": {
+    "level": "first-party-overlay",
+    "source": "AiCoding overlay package",
+    "thirdParty": false,
+    "updatePolicy": "manual"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 15
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true
+    }
+  }
+}

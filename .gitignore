@@ -42,6 +42,8 @@ Thumbs.db
 .aicoding/packages/
 .aicoding/state/
 .aicoding/tmp/
+.aicoding/cache/
+.aicoding/reports/
 .aicoding/skill-cache/
 .aicoding/skill-quarantine/
 .aicoding/user-skills/
