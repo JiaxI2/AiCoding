@@ -6,7 +6,10 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`。
+
+### Changed
+- **refactor(go)**：将 Go Fast Path 从 `cmd/aicoding/main.go` 单文件拆为 `internal/cli`、`internal/report`、`internal/platform`、`internal/gitx`、`internal/kit`、`internal/governance` 和 `internal/docsync` 控制面包，`cmd/aicoding/main.go` 仅保留薄入口；保持 `hook`、`kit`、`doctor`、`governance` 命令和 JSON schema 兼容，Full/Release 仍由 PowerShell/Python 执行；split the Go Fast Path from one `cmd/aicoding/main.go` file into maintainable internal control-plane packages while keeping command behavior and JSON schema compatible and leaving Full/Release gates on PowerShell/Python.
 
 ### Fixed
 - **fix(repo-consistency)**：恢复 AiCoding 仓库 Hook、CI、治理配置和文本格式门禁的一致性，`config/codex-kit.json` 改为 `AICODING_SKILL_SOURCE_REPO` 环境变量优先并保留相对默认源仓库，避免提交本机绝对路径；restore repository hook, CI, governance, and text-format consistency while making `AICODING_SKILL_SOURCE_REPO` the preferred local skill source override and removing committed machine-local source paths.

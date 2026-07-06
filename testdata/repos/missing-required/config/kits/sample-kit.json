@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "sample-kit",
+  "name": "Sample Kit",
+  "version": "0.1.0",
+  "kind": ["test"],
+  "mode": "declarative",
+  "commands": {
+    "verify": {"type":"builtin-check", "requiredPaths":["README.md"]}
+  }
+}

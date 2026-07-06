@@ -70,11 +70,18 @@ L3 CI / Release
 
 ## 4. 目录约束
 
-新增目录：
+新增和维护目录：
 
 ```text
-cmd/aicoding/main.go             # Go native CLI；V1 单文件实现，后续可拆 internal/*
-go.mod                           # 无第三方依赖，避免首次下载慢
+cmd/aicoding/main.go              # Go native CLI 薄入口，只调用 internal/cli
+internal/cli                      # 顶层命令分发、参数解析和 exit code
+internal/report                   # Result schema、JSON/text 输出、耗时和错误聚合
+internal/platform                 # repo root、路径、文件存在性和文本读取
+internal/gitx                     # Git 命令封装和 staged file 解析
+internal/kit                      # kit registry/manifest、选择、doctor 和 Smoke 检查
+internal/governance               # README/CHANGELOG/governance/commit-msg 快速检查
+internal/docsync                  # staged-only DocSync fast gate 和路径分类
+testdata/repos                    # Go 包级 fixture
 scripts/aicoding-fast.ps1         # PowerShell 薄封装；兼容 Windows 使用习惯
 .github/workflows/fast-path.yml   # Linux runner 上的快速 smoke CI
 ```
@@ -129,22 +136,22 @@ bin/aicoding.exe doctor perf --json
 - 不运行 PSScriptAnalyzer。
 - 不连接硬件、不运行 DSS。
 
-## 7. 后续 V2 拆分建议
+## 7. 控制面拆包状态和后续 V2 建议
 
-V1 是单文件，便于直接落地。稳定后拆为：
+当前 Go Fast Path 已从单文件实现拆为最小控制面包结构：
 
 ```text
-internal/git
-internal/governance
-internal/docsyncfast
-internal/kitregistry
-internal/manifest
-internal/perf
-internal/report
+cmd/aicoding -> internal/cli
+internal/cli -> report, platform, gitx, kit, governance, docsync
+kit -> platform
+governance -> platform, gitx
+docsync -> gitx
+report -> standard library only
 ```
 
-V2 再加入 cache：
+这个拆包只移动既有行为，不把 Full/Release、DSS、pytest、PSScriptAnalyzer 或真实 Marketplace 安装搬进 Go。
 
+V2 再加入 cache：
 ```text
 .aicoding/cache/kit-index.json
 .aicoding/cache/repo-index.json

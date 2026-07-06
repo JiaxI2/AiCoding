@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "name": "test",
+  "defaultMode": "repo-scoped",
+  "kits": [
+    {"id":"sample-kit","enabled":true,"order":10,"manifest":"config/kits/sample-kit.json"}
+  ]
+}
