@@ -87,6 +87,11 @@ Local high-frequency paths (Git hooks, Smoke checks, governance lint, performanc
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\install-fast-path-v1.ps1   # build bin/aicoding.exe and enable .githooks
 bin\aicoding.exe kit verify --all --profile Smoke --json
 bin\aicoding.exe governance lint --json
+bin\aicoding.exe verify hooks --json
+bin\aicoding.exe verify repo-text --json
+bin\aicoding.exe verify release-notes --json
+bin\aicoding.exe status --all --json
+bin\aicoding.exe doctor pwsh --json
 bin\aicoding.exe doctor perf --json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\test-fast-path-v1.ps1 -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\measure-fast-path-v1.ps1 -Json

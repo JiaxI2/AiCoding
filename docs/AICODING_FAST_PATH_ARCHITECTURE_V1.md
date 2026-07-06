@@ -34,6 +34,8 @@ Go CLI 不做 AI 推理，不做复杂 repair loop，不碰 TI DSS，不写 flas
 - commit-msg 检查。
 - kit registry / manifest 解析。
 - kit Smoke verify/test。
+- hook、repo text、release notes 的 Go native verify。
+- status 汇总和 PowerShell 调用点盘点。
 - doctor perf 基础测速。
 
 ### 2.3 分层执行
@@ -46,6 +48,9 @@ L0 Git hook / hot path
 L1 local Smoke
   bin/aicoding kit verify --all --profile Smoke
   bin/aicoding governance lint
+  bin/aicoding verify hooks
+  bin/aicoding verify repo-text
+  bin/aicoding verify release-notes
   bin/aicoding doctor perf
 
 L2 local Full
@@ -121,6 +126,13 @@ bin/aicoding.exe hook commit-msg --file .git/COMMIT_EDITMSG
 bin/aicoding.exe kit list --json
 bin/aicoding.exe kit doctor --json
 bin/aicoding.exe kit verify --all --profile Smoke --json
+
+# 快速 verify / status / doctor
+bin/aicoding.exe verify hooks --json
+bin/aicoding.exe verify repo-text --json
+bin/aicoding.exe verify release-notes --json
+bin/aicoding.exe status --all --json
+bin/aicoding.exe doctor pwsh --json
 
 # 性能诊断
 bin/aicoding.exe doctor perf --json

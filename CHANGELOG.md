@@ -19,6 +19,7 @@
 - **fix(ai-debug-repair-kit)**：补齐 `test-ai-debug-repair-kit.ps1` 生命周期脚本，并为 `install-ai-debug-repair-kit.ps1` 增加真实 `-DryRun` 路径，dry-run 只输出安装计划、不复制插件、不改 Marketplace、不执行 pip、不写 install-state；add the missing `test-ai-debug-repair-kit.ps1` lifecycle script and implement a real `-DryRun` path for `install-ai-debug-repair-kit.ps1` that reports the install plan without copying the plugin, changing Marketplace, running pip, or writing install-state.
 
 ### Added
+- **perf(go)**：扩展 Go Fast Path，新增 `doctor pwsh`、`verify hooks`、`verify repo-text`、`verify release-notes` 和 `status --all`，并让 `task smoke` 默认走 Go native verify 链路，减少 Smoke/status/verify/lint/doctor 阶段的 PowerShell 冷启动；expand the Go Fast Path with native doctor, verify, and status commands while keeping Full/Release on the PowerShell/Python slow path.
 - **docs(release)**：明确平台主版本 tag、Kit/组件 tag 和里程碑 tag 的命名空间边界，禁止继续把组件或日期里程碑打成平台 `v*` tag；clarify platform vs kit tag namespaces and keep milestones out of the platform `v*` namespace.
 - **tooling(task)**：新增统一 `Taskfile.yml` 人机入口，路由 setup、smoke、perf、Full/Release、skills、rollback 和 tag governance 检查；add a unified Taskfile entry for common human and Agent operations.
 - **tooling(release)**：新增 release-governance overlay 检查、tag 审计/计划脚本和本地性能缓存接口模板；add release-governance overlay checks, tag audit/plan tooling, and a local performance cache interface template.

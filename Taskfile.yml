@@ -16,10 +16,12 @@ tasks:
 
   smoke:
     desc: Run fast local Smoke gate
-    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe kit verify --all --profile Smoke --json
       - bin/aicoding.exe governance lint --json
+      - bin/aicoding.exe verify hooks --json
+      - bin/aicoding.exe verify repo-text --json
+      - bin/aicoding.exe verify release-notes --json
       - bin/aicoding.exe doctor perf --json
 
   perf:

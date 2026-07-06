@@ -15,6 +15,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/pwshregex"
+	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
 )
 
@@ -38,6 +39,10 @@ func Main() {
 		res, err = runKit(os.Args[2:], start)
 	case "doctor":
 		res, err = runDoctor(os.Args[2:], start)
+	case "verify":
+		res, err = runVerify(os.Args[2:], start)
+	case "status":
+		res, err = runStatus(os.Args[2:], start)
 	case "governance":
 		res, err = runGovernance(os.Args[2:], start)
 	case "powershell":
@@ -74,6 +79,11 @@ Usage:
   aicoding kit verify --all --profile Smoke [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
   aicoding doctor perf [--repo-root PATH] [--json]
+  aicoding doctor pwsh [--repo-root PATH] [--json]
+  aicoding verify hooks [--repo-root PATH] [--json]
+  aicoding verify repo-text [--repo-root PATH] [--json]
+  aicoding verify release-notes [--repo-root PATH] [--json]
+  aicoding status --all [--repo-root PATH] [--json]
   aicoding powershell regex-lint --staged [--repo-root PATH] [--json]
   aicoding powershell regex-lint --path PATH [--repo-root PATH] [--json]
 
@@ -251,17 +261,69 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	}
 }
 
-func runDoctor(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 || args[0] != "perf" {
-		return report.Result{}, errors.New("doctor requires subcommand: perf")
+func runVerify(args []string, start time.Time) (report.Result, error) {
+	if len(args) < 1 {
+		return report.Result{}, errors.New("verify requires subcommand: hooks, repo-text, or release-notes")
 	}
-	fs := flag.NewFlagSet("doctor perf", flag.ContinueOnError)
+	sub := args[0]
+	fs := flag.NewFlagSet("verify "+sub, flag.ContinueOnError)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
 	_ = fs.Parse(args[1:])
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
-		return report.Fail("doctor perf", start, "cannot resolve repo root", nil, err.Error()), err
+		return report.Fail("verify "+sub, start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	switch sub {
+	case "hooks":
+		checks, errs := repohealth.VerifyHooks(repo)
+		return report.Result{SchemaVersion: 1, Command: "verify hooks", OK: len(errs) == 0, Message: "hook fast path verification", RepoRoot: repo, Data: checks, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	case "repo-text":
+		checks, errs := repohealth.VerifyRepoText(repo)
+		return report.Result{SchemaVersion: 1, Command: "verify repo-text", OK: len(errs) == 0, Message: "repository text verification", RepoRoot: repo, Data: checks, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	case "release-notes":
+		checks, errs := repohealth.VerifyReleaseNotes(repo)
+		return report.Result{SchemaVersion: 1, Command: "verify release-notes", OK: len(errs) == 0, Message: "release notes and tag policy verification", RepoRoot: repo, Data: checks, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	default:
+		return report.Result{}, fmt.Errorf("unsupported verify subcommand: %s", sub)
+	}
+}
+
+func runStatus(args []string, start time.Time) (report.Result, error) {
+	fs := flag.NewFlagSet("status", flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	allArg := fs.Bool("all", false, "summarize all local fast-path state")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args)
+	if !*allArg {
+		return report.Result{}, errors.New("status requires --all")
+	}
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("status", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	status, errs := repohealth.StatusAll(repo)
+	return report.Result{SchemaVersion: 1, Command: "status --all", OK: len(errs) == 0, Message: "fast path repository status", RepoRoot: repo, Data: status, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+}
+func runDoctor(args []string, start time.Time) (report.Result, error) {
+	if len(args) < 1 {
+		return report.Result{}, errors.New("doctor requires subcommand: perf or pwsh")
+	}
+	sub := args[0]
+	fs := flag.NewFlagSet("doctor "+sub, flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args[1:])
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("doctor "+sub, start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	if sub == "pwsh" {
+		calls, errs := repohealth.ScanPwsh(repo)
+		return report.Result{SchemaVersion: 1, Command: "doctor pwsh", OK: len(errs) == 0, Message: "PowerShell invocation inventory", RepoRoot: repo, Data: calls, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	}
+	if sub != "perf" {
+		return report.Result{}, fmt.Errorf("unsupported doctor subcommand: %s", sub)
 	}
 	checks := []map[string]interface{}{}
 	measure := func(name string, fn func() error) {
