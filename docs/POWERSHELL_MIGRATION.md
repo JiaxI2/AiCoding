@@ -30,6 +30,8 @@ Terms:
 
 These replacements do not remove the original scripts. They only remove those scripts from the default hot path.
 
+Default `task smoke` and PR/push fast CI use the Go replacements above. The listed PowerShell scripts should appear only as legacy fallback, migration table entries, or explicit slow-path compatibility checks.
+
 ## Keep PowerShell
 
 | PowerShell surface | Reason |
@@ -43,6 +45,8 @@ These replacements do not remove the original scripts. They only remove those sc
 | `scripts/verify-release-governance-overlay.ps1` | Overlay-specific compatibility check |
 | PowerShell AST, PSScriptAnalyzer, and regex optimization gates | PowerShell-specific quality gates |
 | DSS/XDS/hardware-related scripts, fixtures, or references | Hardware safety boundary; do not run or migrate by default |
+
+The PowerShell Skill Kit pass gate is scoped to `tools/`, `hooks/`, and `tests/cases/good`. `tests/cases/bad` and `tests/cases/rewrite` remain negative fixtures and must not be promoted to recursive CI blockers.
 
 ## Planned Cleanup
 

@@ -35,5 +35,14 @@ jobs:
       - name: Fast governance lint
         run: ./bin/aicoding governance lint --json
 
+      - name: Fast hook verification
+        run: ./bin/aicoding verify hooks --json
+
+      - name: Fast repo text verification
+        run: ./bin/aicoding verify repo-text --json
+
+      - name: Fast release notes verification
+        run: ./bin/aicoding verify release-notes --json
+
       - name: Fast performance probes
         run: ./bin/aicoding doctor perf --json

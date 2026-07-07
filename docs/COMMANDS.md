@@ -24,6 +24,10 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 | Performance probes | `bin\aicoding.exe doctor perf --json` |
 | PowerShell regex lint | `bin\aicoding.exe powershell regex-lint --staged --json` |
 
+## Default CI Smoke
+
+PR/push fast CI builds the Go CLI, runs `go test ./...`, then runs the same Go native Smoke checks listed above. Legacy PowerShell fast-path scripts are retained for fallback or explicit slow-path compatibility, not as the default CI smoke lane.
+
 ## Taskfile Routes
 
 | Task | Meaning | Lane |

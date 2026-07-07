@@ -23,6 +23,8 @@ bin\aicoding.exe verify release-notes --json
 bin\aicoding.exe doctor perf --json
 ```
 
+The PR/push fast workflow uses the same Go-native smoke lane after `go test ./...` and `go build -o bin/aicoding ./cmd/aicoding`. It does not call the legacy PowerShell fast-path scripts as default CI.
+
 ## Status And Doctor
 
 ```powershell
@@ -66,6 +68,8 @@ bin\aicoding.exe powershell regex-lint --path scripts --json
 ```
 
 This is a fast lint surface for common PowerShell regex hazards. Full PowerShell AST/PSScriptAnalyzer gates remain slow-path tooling.
+
+The PowerShell Skill Kit compatibility gate remains PowerShell-owned. Its default pass gate is scoped to `tools/`, `hooks/`, and `tests/cases/good`; `tests/cases/bad` and `tests/cases/rewrite` are negative fixtures and must not be treated as recursive CI blockers.
 
 ## Out Of Scope For This Round
 
