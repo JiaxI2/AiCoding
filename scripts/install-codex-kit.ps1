@@ -32,16 +32,26 @@ $actions = @(
     "Install plugin id: aicoding@aicoding-platform",
     "Review plugin hooks in Codex with /hooks"
 )
+$pluginExists = Test-Path -LiteralPath $plugin
 $result = [ordered]@{
     dryRun=[bool]$DryRun
     marketplace=$marketplace
     marketplaceRoot=$marketplaceRoot
     marketplacePluginLink=$marketplacePluginLink
     plugin=$plugin
+    pluginExists=[bool]$pluginExists
     codexPluginCli=$codex
     actions=$actions
+    warnings=@()
 }
-if (-not (Test-Path -LiteralPath $plugin)) { throw "Missing plugin package: $plugin" }
+if (-not $pluginExists) {
+    $message = "Missing plugin package: $plugin"
+    if ($DryRun) {
+        $result['warnings'] = @($result['warnings']) + $message
+    } else {
+        throw $message
+    }
+}
 if (-not (Test-Path -LiteralPath $marketplace)) { throw "Missing marketplace: $marketplace" }
 if ($DryRun) { if($Json){ $result | ConvertTo-Json -Depth 6 } else { $result }; exit 0 }
 & git -C $repo config core.hooksPath .githooks

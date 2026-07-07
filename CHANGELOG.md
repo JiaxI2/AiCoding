@@ -44,6 +44,7 @@
 
 ### Fixed
 - **fix(kit)**：收敛 all-kit lifecycle dry-run 行为，`install -All -DryRun` 和 `update -All -DryRun` 对 unsupported 或无 dry-run 支持的动作报告为 `skipped`，不执行真实安装或更新；align all-kit lifecycle dry-runs so unsupported or no-dry-run actions are reported as skipped without executing real install/update work.
+- **fix(fresh-clone)**：让 `scripts/install-codex-kit.ps1 -DryRun` 在 fresh clone 尚未初始化 `CodingKit/agents/skills` submodule 时报告 `warnings` 而不是硬失败，真实 install 和 verify 仍保持缺插件包失败；report a warning instead of hard-failing during install dry-run when the plugin submodule is absent in a fresh clone, while real install and verify still fail on the missing package.
 - **fix(fast-path)**：收敛 Fast Path V2 的 CLI 命名、CI Smoke 文档链路、cache ignore 说明和 V1 历史文档标注，不新增 Go 命令、不新增 PowerShell 脚本、不改变 Full/Release 慢路径语义；align Fast Path V2 naming, CI Smoke documentation, cache ignore notes, and V1 historical labeling without adding commands or changing slow-path semantics.
 - **fix(kit-lifecycle-schema)**：移除 `release-governance-overlay-kit` manifest 中不符合 schema 的 `skills.umbrella: null` 字段，并补齐 `status` builtin-check，同时修正 `codex-agent-powershell-skill-kit` member role 为 `subskill`，使 `verify-kit-lifecycle` 和 `verify-codex-kit` 可通过；remove the invalid `skills.umbrella: null` field, add a `status` builtin-check, and correct the PowerShell Skill Kit member role to `subskill` so lifecycle and codex-kit verification pass.
 - **fix(release)**：修复 v0.2.1 GitHub Release notes 中由 PowerShell 反引号转义导致的乱码、代码围栏和 traceability 字段问题；fix v0.2.1 release notes garbling caused by PowerShell backtick escaping.
