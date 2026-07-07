@@ -63,6 +63,12 @@ function Get-ReleaseBody {
 
 $body = Get-ReleaseBody
 
+$badChars = [regex]::Matches($body, '[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFD]')
+Add-Check "content.no-control-or-replacement-chars" ($badChars.Count -eq 0) "release notes must not contain control characters or U+FFFD replacement characters"
+$fenceCount = [regex]::Matches($body, '```').Count
+Add-Check "content.code-fence-balance" (($fenceCount % 2) -eq 0) "release notes Markdown code fences must be balanced"
+Add-Check "content.no-single-backtick-fences" (-not [regex]::IsMatch($body, '(?m)^`(?:powershell|bash|text|json)?\s*$')) "release notes command fences must use triple backticks"
+
 # Chinese section names use \uXXXX regex escapes so this script stays pure
 # ASCII and immune to source-file encoding corruption.
 function New-SectionPattern {

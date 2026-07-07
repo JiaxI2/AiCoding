@@ -214,7 +214,33 @@ func VerifyReleaseNotes(repo string) ([]ReleaseNotesCheck, []string) {
 		}
 		items = append(items, item)
 	}
+	checkReleaseNotesBody := func(rel string, needles ...string) {
+		item := ReleaseNotesCheck{Path: rel, OK: true}
+		text, err := platform.ReadText(platform.RepoPath(repo, rel))
+		if err != nil {
+			item.OK = false
+			item.Errors = append(item.Errors, "missing or unreadable: "+err.Error())
+		} else {
+			for _, needle := range needles {
+				if !strings.Contains(text, needle) {
+					item.OK = false
+					item.Errors = append(item.Errors, "missing required text: "+needle)
+				}
+			}
+			for _, e := range releaseNotesBodyErrors(text) {
+				item.OK = false
+				item.Errors = append(item.Errors, e)
+			}
+		}
+		if !item.OK {
+			for _, e := range item.Errors {
+				errs = append(errs, rel+": "+e)
+			}
+		}
+		items = append(items, item)
+	}
 	checkContains("CHANGELOG.md", "[Unreleased]")
+	checkReleaseNotesBody(".github/RELEASE_TEMPLATE.md", "摘要 / Summary", "变更内容 / What's Changed", "可追溯性 / Traceability")
 	checkContains("docs/TAGGING_POLICY.md", "vMAJOR.MINOR.PATCH", "kit/<kit-id>/vMAJOR.MINOR.PATCH", "milestone/YYYY.MM.DD-<name>")
 	checkContains("docs/RELEASE_POLICY.md", "Platform Release", "Kit / Component Release", "Milestone / Historical Snapshot")
 	for _, rel := range []string{
@@ -397,6 +423,30 @@ func checkTextFile(repo, rel string) TextCheck {
 		}
 	}
 	return check
+}
+
+func releaseNotesBodyErrors(s string) []string {
+	errs := []string{}
+	for _, r := range s {
+		if r == '\uFFFD' || (r < 0x20 && r != '\n' && r != '\r' && r != '\t') {
+			errs = append(errs, "control or replacement character found")
+			break
+		}
+	}
+	if strings.Count(s, "```")%2 != 0 {
+		errs = append(errs, "unbalanced Markdown code fences")
+	}
+	for _, line := range strings.Split(strings.ReplaceAll(s, "\r\n", "\n"), "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "`") && !strings.HasPrefix(trimmed, "```") {
+			switch trimmed {
+			case "`", "`powershell", "`bash", "`text", "`json":
+				errs = append(errs, "single-backtick command fence found")
+				return errs
+			}
+		}
+	}
+	return errs
 }
 
 func lineEnding(s string) string {

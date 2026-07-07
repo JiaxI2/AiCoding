@@ -62,9 +62,22 @@ func TestVerifyHooksFastFirst(t *testing.T) {
 	}
 }
 
+func TestReleaseNotesBodyErrors(t *testing.T) {
+	if errs := releaseNotesBodyErrors("```powershell\ntask smoke\n```\n"); len(errs) != 0 {
+		t.Fatalf("releaseNotesBodyErrors valid body = %v", errs)
+	}
+	if errs := releaseNotesBodyErrors("`powershell\ntask smoke\n`\n"); !hasRepohealthError(errs, "single-backtick") {
+		t.Fatalf("expected single-backtick error, got %v", errs)
+	}
+	if errs := releaseNotesBodyErrors("bad \uFFFD text"); !hasRepohealthError(errs, "control or replacement") {
+		t.Fatalf("expected replacement character error, got %v", errs)
+	}
+}
+
 func TestVerifyReleaseNotes(t *testing.T) {
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "CHANGELOG.md"), "# CHANGELOG\n\n## [Unreleased]\n")
+	mustWrite(t, filepath.Join(repo, ".github", "RELEASE_TEMPLATE.md"), "## 摘要 / Summary\n\n## 变更内容 / What's Changed\n\n## 可追溯性 / Traceability\n")
 	mustWrite(t, filepath.Join(repo, "docs", "TAGGING_POLICY.md"), "vMAJOR.MINOR.PATCH\nkit/<kit-id>/vMAJOR.MINOR.PATCH\nmilestone/YYYY.MM.DD-<name>\n")
 	mustWrite(t, filepath.Join(repo, "docs", "RELEASE_POLICY.md"), "Platform Release\nKit / Component Release\nMilestone / Historical Snapshot\n")
 	for _, rel := range []string{
@@ -82,6 +95,15 @@ func TestVerifyReleaseNotes(t *testing.T) {
 	if len(errs) != 0 {
 		t.Fatalf("VerifyReleaseNotes errs = %v", errs)
 	}
+}
+
+func hasRepohealthError(errs []string, needle string) bool {
+	for _, err := range errs {
+		if strings.Contains(err, needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func mustWrite(t *testing.T, path, content string) {

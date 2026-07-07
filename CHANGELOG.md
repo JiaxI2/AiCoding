@@ -33,7 +33,7 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`test(governance)`。
 
 ### Changed
 - **chore(test)**：收敛默认 link check 范围，仅检查 maintained docs，避免模板、生成资产和 fixture 污染默认验证；scope default link checks to maintained docs while preserving explicit full audits.
@@ -43,6 +43,7 @@
 
 ### Fixed
 - **fix(release)**：修复 v0.2.1 GitHub Release notes 中由 PowerShell 反引号转义导致的乱码、代码围栏和 traceability 字段问题；fix v0.2.1 release notes garbling caused by PowerShell backtick escaping.
+- **fix(governance)**：补强 README 中文优先、badge/环境 URL 和 Release notes 控制字符/代码围栏 gate，避免同类回退再次通过 hook；harden README and release-notes gates for Chinese-first entry, badge/URL presence, and malformed release body text.
 - **docs(readme)**：恢复 README/README_CN/README_EN 顶部的 Release、Go、PowerShell、Python、Taskfile 和 License badge 链接，并让 README.md 回到中文优先默认入口；restore README badge links and make README.md the Chinese-first default entry.
 - **fix(repo-consistency)**：恢复 AiCoding 仓库 Hook、CI、治理配置和文本格式门禁的一致性，`config/codex-kit.json` 改为 `AICODING_SKILL_SOURCE_REPO` 环境变量优先并保留相对默认源仓库，避免提交本机绝对路径；restore repository hook, CI, governance, and text-format consistency while making `AICODING_SKILL_SOURCE_REPO` the preferred local skill source override and removing committed machine-local source paths.
 - **fix(git-governance)**：将 `scripts/verify-release-notes.ps1` 的中文章节正则改为 \uXXXX 转义动态生成，脚本源码保持纯 ASCII，避免源文件编码损坏导致双语 release notes 校验全部误报失败；rewrite the Chinese section regexes in `scripts/verify-release-notes.ps1` as dynamically built \uXXXX escapes so the script stays pure ASCII and source-file encoding corruption can no longer break bilingual release notes validation; also force UTF-8 console decoding when fetching the release body via gh -Tag so legacy GBK consoles do not corrupt Chinese section headings.

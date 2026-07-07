@@ -49,7 +49,7 @@ bin\aicoding.exe verify release-notes --json
 
 - `verify hooks`: checks `.githooks/pre-commit` and `.githooks/commit-msg` exist and prefer the Go fast path before PowerShell fallback.
 - `verify repo-text`: checks README, CHANGELOG, and docs text files for conflict markers, empty files, invalid UTF-8, and line-ending warnings.
-- `verify release-notes`: checks CHANGELOG, release/tag policy documents, and release-governance overlay files exist.
+- `verify release-notes`: checks CHANGELOG, release/tag policy documents, release-governance overlay files, and the release template for malformed Markdown fences or control/replacement characters.
 
 ## Maintained Docs Link Check
 

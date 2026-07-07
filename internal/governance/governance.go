@@ -40,6 +40,7 @@ func Lint(repo, mode, commitMsgPath string) []string {
 	gov, _ := platform.ReadText(platform.RepoPath(repo, ".github/repository-governance.toml"))
 	changelog, _ := platform.ReadText(platform.RepoPath(repo, "CHANGELOG.md"))
 	readmeHead := strings.Join(firstLines(readme, 16), "\n")
+	readmeTop := strings.Join(firstLines(readme, 24), "\n")
 	if platform.IsFile(platform.RepoPath(repo, "README_CN.md")) {
 		if !strings.Contains(readmeHead, "README_CN.md") {
 			fail("README.md must include top-of-file README_CN.md link")
@@ -49,6 +50,35 @@ func Lint(repo, mode, commitMsgPath string) []string {
 		}
 		if strings.Contains(readmeHead, "README.md#english") {
 			fail("README.md must not use in-page English anchor")
+		}
+		if !strings.Contains(readmeTop, "AiCoding 是") {
+			fail("README.md must be the Chinese-first default repository entry")
+		}
+		for _, req := range []struct {
+			needle string
+			msg    string
+		}{
+			{"img.shields.io/github/v/release/JiaxI2/AiCoding", "README.md must keep the Release badge link"},
+			{"https://go.dev/", "README.md must keep the Go URL badge link"},
+			{"https://learn.microsoft.com/powershell/", "README.md must keep the PowerShell URL badge link"},
+			{"https://www.python.org/", "README.md must keep the Python URL badge link"},
+			{"https://taskfile.dev/", "README.md must keep the Taskfile URL badge link"},
+			{"github/license/JiaxI2/AiCoding", "README.md must keep the License badge link"},
+		} {
+			mustContain(readmeHead, req.needle, req.msg, fail)
+		}
+		for _, req := range []struct {
+			needle string
+			msg    string
+		}{
+			{"## 环境 URL / Environment URLs", "README.md must keep the Environment URLs section"},
+			{"https://github.com/JiaxI2/AiCoding/releases/latest", "README.md must keep the latest release URL"},
+			{"https://github.com/JiaxI2/AiCoding/releases", "README.md must keep the releases URL"},
+			{"https://github.com/JiaxI2/AiCoding/tags", "README.md must keep the tags URL"},
+			{"[CHANGELOG.md](CHANGELOG.md)", "README.md must keep the CHANGELOG link"},
+			{"[CodingKit/README.md](CodingKit/README.md)", "README.md must keep the CodingKit README link"},
+		} {
+			mustContain(readme, req.needle, req.msg, fail)
 		}
 		mustContain(gov, `primary_language = "zh-CN"`, ".github/repository-governance.toml must set README primary_language to zh-CN", fail)
 		mustContain(gov, `secondary_language_surface = "top-file-language-switch-and-github-about"`, ".github/repository-governance.toml must define secondary language surface", fail)
