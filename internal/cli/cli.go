@@ -24,7 +24,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/workflow"
 )
 
-const version = "fast-path-v1"
+const version = "fast-path-v2"
 
 func Main() {
 	start := time.Now()
@@ -109,7 +109,7 @@ Usage:
   aicoding powershell regex-lint --staged [--repo-root PATH] [--json]
   aicoding powershell regex-lint --path PATH [--repo-root PATH] [--json]
 
-This v1 CLI intentionally accelerates hot-path governance, staged DocSync and Smoke checks.
+This CLI accelerates Go-native hot-path checks.
 Full/Release gates remain in PowerShell/Python and CI.
 `, version)
 	os.Exit(code)

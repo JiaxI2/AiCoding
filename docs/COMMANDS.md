@@ -37,7 +37,20 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 
 ## Default CI Smoke
 
-PR/push fast CI builds the Go CLI, runs `go test ./...`, then runs the same Go native Smoke checks listed above. Legacy PowerShell fast-path scripts are retained for fallback or explicit slow-path compatibility, not as the default CI smoke lane.
+PR/push fast CI uses this Go-native chain:
+
+```bash
+go build -o bin/aicoding ./cmd/aicoding
+go test ./...
+./bin/aicoding kit verify --all --profile Smoke --json
+./bin/aicoding governance lint --json
+./bin/aicoding verify hooks --json
+./bin/aicoding verify repo-text --json
+./bin/aicoding verify release-notes --json
+./bin/aicoding doctor perf --json
+```
+
+Legacy PowerShell fast-path scripts are retained for fallback or explicit slow-path compatibility, not as the default CI smoke lane.
 
 ## Link Checks
 

@@ -33,7 +33,7 @@ bin\aicoding.exe cache status --json
 bin\aicoding.exe cache clean --json
 ```
 
-The V2 cache is stored under `.aicoding/cache/fast-path-v2`. In this first version it is reporting-only and cleanup-only; cache state never changes pass/fail results.
+The V2 cache is stored under `.aicoding/cache/fast-path-v2`. The parent `.aicoding/cache/` directory is ignored and must not be committed. In this first version it is reporting-only and cleanup-only; cache state never changes pass/fail results.
 
 ## Recommended Smoke Chain
 
@@ -46,6 +46,19 @@ bin\aicoding.exe verify hooks --json
 bin\aicoding.exe verify repo-text --json
 bin\aicoding.exe verify release-notes --json
 bin\aicoding.exe doctor perf --json
+```
+
+CI fast smoke builds the Linux binary and runs Go tests before the same Smoke checks:
+
+```bash
+go build -o bin/aicoding ./cmd/aicoding
+go test ./...
+./bin/aicoding kit verify --all --profile Smoke --json
+./bin/aicoding governance lint --json
+./bin/aicoding verify hooks --json
+./bin/aicoding verify repo-text --json
+./bin/aicoding verify release-notes --json
+./bin/aicoding doctor perf --json
 ```
 
 Default Smoke does not call PowerShell. Full and Release remain explicit slow-path tasks.

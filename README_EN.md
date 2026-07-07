@@ -87,7 +87,7 @@ flowchart TD
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
 | Release policy | [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) |
-| Fast Path architecture v1 | [docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md](docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md) |
+| Fast Path architecture v1 (historical) | [docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md](docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md) |
 
 ## Git Governance Standard / Git 治理标准
 

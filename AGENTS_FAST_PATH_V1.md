@@ -1,10 +1,12 @@
-# AGENTS Fast Path V1 Overlay
+# AGENTS Fast Path V1 Overlay (Historical)
 
-本文件是 AiCoding Fast Path V1 的仓库级 Agent 约束补充。
+本文件是 AiCoding Fast Path V1 的仓库级 Agent 约束补充，保留用于理解历史约束和回滚背景。
 
-## 当前优先级
+当前默认路径是 Fast Path V2；新的 Fast Path 收敛工作以 V2 文档、Go CLI 和 Taskfile 入口为准。
 
-当前只优化 Fast Path V1：
+## 历史范围
+
+Fast Path V1 当时只优化：
 
 ```text
 hook pre-commit
