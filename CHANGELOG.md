@@ -2,6 +2,33 @@
 
 本仓库使用 `[Unreleased]` 记录普通开发提交。每条记录必须标注提交类型。
 
+## [v0.2.1] - 2026-07-07
+
+### Changed
+- **docs(readme)**：极简化 README/README_CN/README_EN，并将命令矩阵、Fast Path 细节、PowerShell 分工和架构说明下沉到 docs；slim the README entrypoints and move command, Fast Path, PowerShell migration, and architecture details into focused docs.
+- **chore(cleanup)**：标记已由 Go native checks 替代的旧 PowerShell fast-path 脚本用途，保留 Full/Release、install/export/fresh clone 等慢路径语义；mark replaced PowerShell fast-path scripts while preserving slow-path Full/Release and lifecycle semantics.
+- **chore(skills)**：收敛 PowerShell Skill Kit、Agent Patch Kit 和 Fast Path Skill 的搜索、精确编辑、危险命令识别和默认 Go Fast Path 规则；align skill rules for search, precise edits, command safety, and Go Fast Path defaults.
+- **ci(fast-path)**：将 PR/push fast smoke workflow 对齐 Go native kit/governance/hooks/repo-text/release-notes/perf 链路；align default CI smoke with Go-native validation.
+- **chore(test)**：收敛默认 `apatch links` 检查范围到 maintained docs，同时保留显式 full audit；scope default link checks to maintained docs while preserving explicit full audits.
+
+### Compatibility
+- Full/Release、install/update/uninstall/export/rollback/fresh clone 仍保留 PowerShell/Python 慢路径。
+- 未新增 Go CLI 命令，未移动或删除 PowerShell 脚本，未变更平台/kit/milestone tag namespace 规则。
+- `v0.2.0` 已存在并保持不动；本次平台补丁发布使用 `v0.2.1`。
+
+### Validation
+- `go test ./...`
+- `go build -o bin/aicoding.exe ./cmd/aicoding`
+- `bin\aicoding.exe kit verify --all --profile Smoke --json`
+- `bin\aicoding.exe governance lint --json`
+- `bin\aicoding.exe verify hooks --json`
+- `bin\aicoding.exe verify repo-text --json`
+- `bin\aicoding.exe verify release-notes --json`
+- `bin\aicoding.exe doctor perf --json`
+- `task smoke`
+- `task perf`
+- maintained-docs `apatch links` default check: `0 errors`
+
 ## [Unreleased]
 
 ### Commit Type
