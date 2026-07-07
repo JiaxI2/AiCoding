@@ -33,7 +33,7 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`。
 
 ### Changed
 - **chore(test)**：收敛默认 link check 范围，仅检查 maintained docs，避免模板、生成资产和 fixture 污染默认验证；scope default link checks to maintained docs while preserving explicit full audits.
@@ -42,6 +42,8 @@
 - **refactor(go)**：将 Go Fast Path 从 `cmd/aicoding/main.go` 单文件拆为 `internal/cli`、`internal/report`、`internal/platform`、`internal/gitx`、`internal/kit`、`internal/governance` 和 `internal/docsync` 控制面包，`cmd/aicoding/main.go` 仅保留薄入口；保持 `hook`、`kit`、`doctor`、`governance` 命令和 JSON schema 兼容，Full/Release 仍由 PowerShell/Python 执行；split the Go Fast Path from one `cmd/aicoding/main.go` file into maintainable internal control-plane packages while keeping command behavior and JSON schema compatible and leaving Full/Release gates on PowerShell/Python.
 
 ### Fixed
+- **fix(release)**：修复 v0.2.1 GitHub Release notes 中由 PowerShell 反引号转义导致的乱码、代码围栏和 traceability 字段问题；fix v0.2.1 release notes garbling caused by PowerShell backtick escaping.
+- **docs(readme)**：恢复 README/README_CN/README_EN 顶部的 Release、Go、PowerShell、Python、Taskfile 和 License badge 链接，并让 README.md 回到中文优先默认入口；restore README badge links and make README.md the Chinese-first default entry.
 - **fix(repo-consistency)**：恢复 AiCoding 仓库 Hook、CI、治理配置和文本格式门禁的一致性，`config/codex-kit.json` 改为 `AICODING_SKILL_SOURCE_REPO` 环境变量优先并保留相对默认源仓库，避免提交本机绝对路径；restore repository hook, CI, governance, and text-format consistency while making `AICODING_SKILL_SOURCE_REPO` the preferred local skill source override and removing committed machine-local source paths.
 - **fix(git-governance)**：将 `scripts/verify-release-notes.ps1` 的中文章节正则改为 \uXXXX 转义动态生成，脚本源码保持纯 ASCII，避免源文件编码损坏导致双语 release notes 校验全部误报失败；rewrite the Chinese section regexes in `scripts/verify-release-notes.ps1` as dynamically built \uXXXX escapes so the script stays pure ASCII and source-file encoding corruption can no longer break bilingual release notes validation; also force UTF-8 console decoding when fetching the release body via gh -Tag so legacy GBK consoles do not corrupt Chinese section headings.
 - **fix(kit-lifecycle)**：修复 `scripts/test-kit-fresh-clone.ps1` 将整个 `.agents/skills` 目录按运行时镜像排除，导致 Release/Full fresh-clone 验证丢失 `aicoding-agent-dev-kit-plan-mode` 源码资产、`aicoding-agent-dev-kit` export include 失配；改为只排除生成的 `codex-agent-powershell-skill-kit` runtime mirror；fix `test-kit-fresh-clone.ps1` excluding the whole `.agents/skills` directory as a runtime mirror, which dropped the tracked `aicoding-agent-dev-kit-plan-mode` skill source and broke the `aicoding-agent-dev-kit` export include in Release/Full fresh-clone runs; now only the generated `codex-agent-powershell-skill-kit` runtime mirror is excluded.

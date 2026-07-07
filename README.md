@@ -1,41 +1,43 @@
 # AiCoding
 
-AiCoding is the platform integration, installation, governance, and CodingKit asset repository for the local AI coding workflow. It owns the platform glue around kits, hooks, verification, and release governance; it does not own embedded skill source code.
+[![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=release)](https://github.com/JiaxI2/AiCoding/releases/latest) [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/) [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/) [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
+
+AiCoding 是本地 AI coding 工作流的平台集成、安装、治理与 CodingKit 资产仓库。它负责 kit 注册表、hook、验证入口、发布治理和 Go Fast Path；它不拥有嵌入式 skill 源码。
 
 [中文](README_CN.md) | [English](README_EN.md)
 
 ## 项目定位 / Project Positioning
 
-- Platform repository: integrates CodingKit assets, kit registry, local hooks, Taskfile routing, release governance, and Go Fast Path checks.
-- Source boundary: authoritative skill/plugin source is the `CodingKit/agents/skills` submodule and related generated package assets.
-- Runtime boundary: installed plugin/runtime state is managed through documented install/update workflows, not by editing Codex caches directly.
-- Release boundary: platform releases use platform tags; kit/component releases use separate namespaces.
+- 平台仓库：集成 CodingKit 资产、kit registry、本地 hook、Taskfile 路由、发布治理和 Go Fast Path 检查。
+- 源码边界：权威 skill/plugin 源码位于 `CodingKit/agents/skills` 子模块和对应生成资产。
+- 运行边界：本地插件/runtime 状态通过安装、更新、验证流程管理，不直接修改 Codex cache。
+- 发布边界：平台版本、kit/component 版本、milestone tag 分命名空间。
 
 ## 当前架构 / Current Architecture
 
-AiCoding has two local execution lanes:
+AiCoding 本地执行路径分两层：
 
-- Go Fast Path: hot local checks for Smoke, hooks, status, repo text, release-note presence, governance lint, and performance probes.
-- PowerShell/Python slow path: Full/Release, install/uninstall/export, fresh clone, rollback, package, and compatibility workflows.
+- Go Fast Path：承担 Smoke、hook、status、repo text、release-notes 存在性、governance lint、doctor perf 等高频检查。
+- PowerShell/Python 慢路径：保留 Full/Release、install/uninstall/export、fresh clone、rollback、打包与兼容性工作流。
 
-The Go lane reduces repeated PowerShell cold starts. It does not replace the Full/Release gates.
+Go 路径用于减少 PowerShell 冷启动，不替代 Full/Release gate。
 
 ## 环境预览 / Environment Preview
 
-| Area | Current default | Details |
+| 区域 | 当前默认 | 说明 |
 |---|---|---|
-| Human entry | `task smoke`, `task perf` | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| 人机入口 | `task smoke`, `task perf` | [docs/COMMANDS.md](docs/COMMANDS.md) |
 | Go CLI | `bin/aicoding.exe` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
 | Full/Release | PowerShell/Python scripts | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
-| Kit model | registry + manifests | [config/kit-registry.json](config/kit-registry.json) |
-| Release governance | tag namespace policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
+| Kit 模型 | registry + manifests | [config/kit-registry.json](config/kit-registry.json) |
+| 发布治理 | tag namespace policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
 
 ## 环境 URL / Environment URLs
 
-| Target | URL |
+| 目标 | URL |
 |---|---|
-| Repository | https://github.com/JiaxI2/AiCoding |
-| Latest release | https://github.com/JiaxI2/AiCoding/releases/latest |
+| 仓库 | https://github.com/JiaxI2/AiCoding |
+| 最新发布 | https://github.com/JiaxI2/AiCoding/releases/latest |
 | Releases | https://github.com/JiaxI2/AiCoding/releases |
 | Tags | https://github.com/JiaxI2/AiCoding/tags |
 | Changelog | [CHANGELOG.md](CHANGELOG.md) |
@@ -45,7 +47,7 @@ The Go lane reduces repeated PowerShell cold starts. It does not replace the Ful
 
 - 中文入口：[README_CN.md](README_CN.md)
 - English entry：[README_EN.md](README_EN.md)
-- Bilingual short entry：this file.
+- 默认中文入口：[README.md](README.md)
 
 ## 快速开始 / Quick Start
 
@@ -56,7 +58,7 @@ task perf
 bin\aicoding.exe status --all --json
 ```
 
-Use `task full` and `task release` only when explicit Full/Release validation is required.
+只有需要完整本地验证或正式发布时，才显式运行 `task full` 或 `task release`。
 
 ## 当前架构图 / Architecture Diagram
 
@@ -74,12 +76,12 @@ flowchart TD
 
 ## 重要文档索引 / Documentation Index
 
-| Need | Document |
+| 需求 | 文档 |
 |---|---|
-| Architecture overview | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
-| Fast Path commands | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| Full command matrix | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| PowerShell migration map | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
+| 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
+| Fast Path 命令 | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
+| 完整命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| PowerShell 迁移分类 | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
 | Release policy | [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) |
@@ -87,15 +89,15 @@ flowchart TD
 
 ## Git 治理标准 / Git Governance Standard
 
-Commit type taxonomy: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
+Commit type taxonomy：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`。
 
-Branch naming and environment mapping: `main` is the platform baseline; `develop`, `feature/*`, `test/*`, `release/*`, and `hotfix/*` describe integration, feature, test, release, and hotfix work.
+Branch naming and environment mapping：`main` 是平台基线；`develop`、`feature/*`、`test/*`、`release/*`、`hotfix/*` 分别表示集成、功能、测试、发布和热修复工作。
 
-Release notes must be typed by primary change type / 发布说明按主类型汇总, and Tag/Release language is Chinese-first bilingual for platform releases.
+Release notes 必须按主类型汇总；平台 Tag/Release 默认中文优先双语。
 ## Release / Tag 简短规则
 
-- Platform releases: `vMAJOR.MINOR.PATCH`, for example `v0.2.0`.
-- Kit/component releases: `kit/<kit-id>/vMAJOR.MINOR.PATCH`.
-- Milestones: `milestone/YYYY.MM.DD-<name>`.
-- Do not publish component releases as pseudo platform tags such as `v1.3.0-powershell-skill-kit`.
-- Do not move or reuse immutable release-bound tags.
+- 平台发布 tag：`vMAJOR.MINOR.PATCH`，例如 `v0.2.0`。
+- Kit/component 发布 tag：`kit/<kit-id>/vMAJOR.MINOR.PATCH`。
+- Milestone tag：`milestone/YYYY.MM.DD-<name>`。
+- 禁止继续把组件版本发布成 `v1.3.0-powershell-skill-kit` 这类伪平台 tag。
+- 不移动、不覆盖、不复用已绑定 release 的 immutable tag。

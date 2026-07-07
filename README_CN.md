@@ -1,5 +1,7 @@
 # AiCoding
 
+[![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=release)](https://github.com/JiaxI2/AiCoding/releases/latest) [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/) [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/) [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/) [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
+
 AiCoding 是本地 AI coding 工作流的平台集成、安装、治理与 CodingKit 资产仓库。它负责 kit 注册表、hook、验证入口、发布治理和 Go Fast Path；它不拥有嵌入式 skill 源码。
 
 [中文](README_CN.md) | [English](README_EN.md)
