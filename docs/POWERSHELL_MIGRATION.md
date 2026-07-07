@@ -14,7 +14,7 @@ Terms:
 
 - Go-Replaced: deprecated for default Smoke/status/verify/lint hot paths; script remains available.
 - Keep PowerShell: explicit slow path or workflow owner; do not migrate in this round.
-- Planned Go Migration: possible future orchestration target; no implementation in this round.
+- Planned Cleanup: old hot-path references to remove or mark; no implementation in this round.
 
 ## Go-Replaced
 
@@ -44,15 +44,15 @@ These replacements do not remove the original scripts. They only remove those sc
 | PowerShell AST, PSScriptAnalyzer, and regex optimization gates | PowerShell-specific quality gates |
 | DSS/XDS/hardware-related scripts, fixtures, or references | Hardware safety boundary; do not run or migrate by default |
 
-## Planned Go Migration
+## Planned Cleanup
 
-| Candidate | Possible target | Notes |
+| Candidate | Cleanup target | Notes |
 |---|---|---|
-| `scripts/aicoding-kit.ps1 list` summary | `bin\aicoding.exe status --all --json` extension | Plan only; no implementation in this round |
-| `scripts/aicoding-kit.ps1 verify-skills -All -Json` summary | Future Go orchestration check | Keep PowerShell until skill semantics are modeled |
-| `scripts/check-documentation-sync.ps1` hook mode | Existing `bin\aicoding.exe hook pre-commit --json` path | Keep fallback until docsync parity is explicit |
-| `scripts/aicoding-skill.ps1 sources -Json` | Future registry/source status view | Plan only |
-| `scripts/status-*-kit.ps1` detailed status | Future status detail subcommands | Current `status --all` covers repository summary only |
+| `scripts/aicoding-kit.ps1 list` summary | Link to `bin\aicoding.exe status --all --json` where only repo summary is needed | Keep PowerShell for kit lifecycle detail |
+| `scripts/aicoding-kit.ps1 verify-skills -All -Json` summary | Keep as explicit compatibility lane | Skill semantics remain PowerShell-owned |
+| `scripts/check-documentation-sync.ps1` hook mode | Keep as hook fallback only | Default hook path is Go; full docsync stays PowerShell |
+| `scripts/aicoding-skill.ps1 sources -Json` | Keep as skill-source workflow owner | Do not add a Go command in this round |
+| `scripts/status-*-kit.ps1` detailed status | Mark as slow-path status detail | Current `status --all` covers repository summary only |
 
 ## Default Entry Decision
 

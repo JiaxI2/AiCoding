@@ -31,6 +31,6 @@ git checkout -- .githooks/pre-commit .githooks/commit-msg .github/workflows/fast
 ## 4. 保留旧路径验证
 
 ```powershell
-pwsh scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json
+bin\aicoding.exe kit verify --all --profile Smoke --json
 pwsh scripts/aicoding-kit.ps1 test -All -Profile Full -Json
 ```

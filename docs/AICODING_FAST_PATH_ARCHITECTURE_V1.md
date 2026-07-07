@@ -163,14 +163,7 @@ report -> standard library only
 
 这个拆包只移动既有行为，不把 Full/Release、DSS、pytest、PSScriptAnalyzer 或真实 Marketplace 安装搬进 Go。
 
-V2 再加入 cache：
-```text
-.aicoding/cache/kit-index.json
-.aicoding/cache/repo-index.json
-.aicoding/cache/perf.json
-```
-
-V3 再把部分 PowerShell `Smoke` 脚本替换为 declarative manifest check；Full/Release 仍保留原脚本。
+后续优化先继续清理默认热路径中的旧 PowerShell 调用和重复文档。cache、smart verify、Full/Release 迁移不在当前 Fast Path 收口范围内。
 
 ## 8. 验收标准
 

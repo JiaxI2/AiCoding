@@ -1,3 +1,7 @@
+# Deprecated: this fast-path check is superseded by bin\aicoding.exe verify repo-text --json.
+# Kept as a temporary fallback for v0.1.x.
+# Do not call from Taskfile smoke or Git hooks.
+
 [CmdletBinding()]
 param(
     [switch]$Json

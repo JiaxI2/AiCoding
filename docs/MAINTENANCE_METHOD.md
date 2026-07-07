@@ -85,9 +85,9 @@ For AiCoding changes, run:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps1 -DryRun
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/status-codex-kit.ps1 -Json
+bin\aicoding.exe status --all --json
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode all
+bin\aicoding.exe governance lint --json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/install-docsync-plus.ps1 -DryRun -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/status-docsync-plus.ps1 -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-docsync-plus.ps1 -Json

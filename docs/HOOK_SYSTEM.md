@@ -15,10 +15,10 @@ Hooks are declared in `config/hooks-registry.json` and may also be referenced fr
 ## Verification
 
 ```powershell
-pwsh scripts/verify-hooks.ps1 -Json
+bin\aicoding.exe verify hooks --json
 ```
 
-The smoke gate parses the registry, checks unique hook ids, checks that the owner Kit exists, checks trigger text, validates hook paths, and runs PowerShell parser validation for `.ps1` hooks.
+The default smoke gate checks that repository hooks exist and prefer the Go fast path. Use the PowerShell verifier only as a compatibility fallback.
 
 ## Rules
 

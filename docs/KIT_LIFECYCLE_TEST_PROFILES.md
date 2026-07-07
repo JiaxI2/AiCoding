@@ -28,7 +28,7 @@ Recommended commands:
 ```powershell
 pwsh scripts/verify-codex-kit.ps1
 pwsh scripts/aicoding-kit.ps1 verify -All -Profile Smoke -Json
-pwsh scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json
+bin\aicoding.exe kit verify --all --profile Smoke --json
 pwsh scripts/test-kit-fresh-clone.ps1 -Profile Smoke -Json
 ```
 

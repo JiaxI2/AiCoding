@@ -1,3 +1,7 @@
+# Deprecated: this fast-path check is superseded by bin\aicoding.exe governance lint --json.
+# Kept as a temporary fallback for v0.1.x.
+# Do not call from Taskfile smoke or Git hooks.
+
 param(
     [ValidateSet("all", "pre-commit", "commit-msg")]
     [string]$Mode = "all",

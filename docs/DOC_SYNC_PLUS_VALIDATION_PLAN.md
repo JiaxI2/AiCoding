@@ -22,9 +22,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.p
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode ci -Format json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps1 -DryRun
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/status-codex-kit.ps1 -Json
+bin\aicoding.exe status --all --json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode all
+bin\aicoding.exe governance lint --json
 git diff --check
 ```
 

@@ -1,3 +1,7 @@
+# Deprecated: this fast-path check is superseded by bin\aicoding.exe status --all --json.
+# Kept as a temporary fallback for v0.1.x.
+# Do not call from Taskfile smoke or Git hooks.
+
 param([switch]$Json)
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'lib\CodexKit.psm1') -Force
