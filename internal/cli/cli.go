@@ -97,7 +97,7 @@ Usage:
   aicoding release verify [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
   aicoding kit list [--repo-root PATH] [--json]
-  aicoding kit verify --all --profile Smoke [--repo-root PATH] [--json]
+  aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
   aicoding kit lifecycle --action install|update|uninstall --all --dry-run [--repo-root PATH] [--json]
   aicoding kit lifecycle --action status --all [--repo-root PATH] [--json]
@@ -302,12 +302,19 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		}
 		return report.Result{SchemaVersion: 1, Command: "kit lifecycle", OK: len(errs) == 0, Message: message, RepoRoot: repo, Data: plan, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	case "verify", "test":
-		if !strings.EqualFold(*profile, "Smoke") {
-			return report.Fail("kit "+sub, start, "fast CLI only handles Smoke profile", nil, "use scripts/aicoding-kit.ps1 for Full/Release"), errors.New("non-Smoke profile is not handled by fast CLI")
-		}
 		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
 		if err != nil {
 			return report.Fail("kit "+sub, start, "kit selection failed", nil, err.Error()), err
+		}
+		if strings.EqualFold(*profile, "Lifecycle") {
+			if sub != "verify" {
+				return report.Fail("kit "+sub, start, "Lifecycle profile only supports kit verify", nil, "use kit verify --profile Lifecycle"), errors.New("Lifecycle profile only supports kit verify")
+			}
+			structure := kit.VerifyStructure(repo, selected)
+			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
+		}
+		if !strings.EqualFold(*profile, "Smoke") {
+			return report.Fail("kit "+sub, start, "fast CLI only handles Smoke/Lifecycle profiles", nil, "use scripts/aicoding-kit.ps1 for Full/Release"), errors.New("non-Smoke profile is not handled by fast CLI")
 		}
 		results := kit.SmokeKits(repo, selected)
 		errs := []string{}

@@ -33,6 +33,8 @@ Budget categories:
 | Tag audit summary | `bin\aicoding.exe tag audit --json` | Structural namespace classification; legacy tags are warnings |
 | Release structure summary | `bin\aicoding.exe release verify --json` | Structural release/template/tag-policy fast check |
 | All-kit lifecycle dry-run/status aggregation | `bin\aicoding.exe kit lifecycle --action install|update|uninstall --all --dry-run --json`; `bin\aicoding.exe kit lifecycle --action status --all --json` | Static registry/manifest planner; does not execute lifecycle adapters |
+| `scripts/verify-kit-lifecycle.ps1 -Json` structural subset | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` | Go-native registry/manifest/required-path/dry-run policy verification |
+| `scripts/verify-codex-kit.ps1 -Json` structural subset | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` | Go-native codex-kit config, Marketplace path, package layout, and lifecycle structure verification |
 
 These replacements remove PowerShell from the default hot path only. The moved legacy scripts remain available as explicit compatibility or historical tooling.
 
@@ -50,6 +52,8 @@ bin\aicoding.exe workflow smart-verify --json
 |---|---|
 | `scripts/aicoding-kit.ps1` Full/Release and real install/update/export/uninstall/rollback paths | Complete lifecycle orchestration and compatibility semantics |
 | `scripts/test-kit-fresh-clone.ps1` | Fresh clone and Release gate behavior |
+| `scripts/verify-codex-kit.ps1` | Compatibility/full codex-kit verification, submodule plugin verifier orchestration, and optional fresh clone integration |
+| `scripts/verify-kit-lifecycle.ps1` | Compatibility/full lifecycle verification, external PowerShell script probes, and adapter parity checks |
 | `scripts/aicoding-kit.ps1 export -All -Zip -Json` | Packaging/export ownership |
 | `scripts/install-*.ps1`, `scripts/update-*.ps1`, `scripts/uninstall-*.ps1` | Installer state, Marketplace refresh, and rollback ownership |
 | `scripts/rollback-fast-path-v1.ps1` | Explicit rollback workflow |
@@ -83,6 +87,7 @@ bin\aicoding.exe verify hooks --json
 bin\aicoding.exe verify repo-text --json
 bin\aicoding.exe verify release-notes --json
 bin\aicoding.exe status --all --json
+bin\aicoding.exe kit verify --all --profile Lifecycle --json
 bin\aicoding.exe kit lifecycle --action update --all --dry-run --json
 bin\aicoding.exe doctor pwsh-budget --json
 bin\aicoding.exe doctor perf --json

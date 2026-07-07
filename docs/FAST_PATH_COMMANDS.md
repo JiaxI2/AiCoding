@@ -63,6 +63,16 @@ go test ./...
 
 Default Smoke does not call PowerShell. Full and Release remain explicit slow-path tasks.
 
+## Kit Lifecycle Structure Verify
+
+```powershell
+bin\aicoding.exe kit verify --all --profile Lifecycle --json
+```
+
+`kit verify --profile Lifecycle` is the Go-native default for codex-kit and kit lifecycle structural verification. It checks `config/codex-kit.json`, the kit registry, manifests, command envelopes, required paths, generated package warnings, and all-kit dry-run skip policy without running PowerShell adapters or fresh clone gates.
+
+PowerShell `verify-codex-kit.ps1` and `verify-kit-lifecycle.ps1` remain explicit compatibility/full verification paths.
+
 ## Kit Lifecycle Planner
 
 ```powershell

@@ -33,9 +33,10 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`test(governance)`、`perf(task)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`test(governance)`、`perf(task)`、`perf(kit)`。
 
 ### Changed
+- **perf(kit)**：新增 Go-native `kit verify --all --profile Lifecycle --json` 结构化验证，覆盖 codex-kit 配置、kit registry/manifest、requiredPaths、命令 envelope 和 dry-run skip 策略；PowerShell `verify-codex-kit.ps1` / `verify-kit-lifecycle.ps1` 保留为显式 compatibility/full 对照；add Go-native lifecycle structure verification while keeping PowerShell verify scripts explicit for compatibility/full checks.
 - **perf(task)**：将默认 `task perf` 收敛为 Go-native 性能检查，PowerShell parity comparison 改为显式兼容性对照，不再拖慢默认本地 perf；make default `task perf` Go-native while keeping PowerShell parity checks explicit.
 - **chore(pwsh)**：为既有 lifecycle adapter / legacy PowerShell 脚本中的破坏性 `Remove-Item` 操作补充 `ShouldProcess` guard，使 full scripts PowerShell Skill Kit safety audit 可阻断，同时不改变真实 lifecycle 默认语义；add `ShouldProcess` guards to existing lifecycle adapter and legacy PowerShell `Remove-Item` calls so the full scripts safety audit can block without changing default lifecycle semantics.
 - **chore(pwsh)**：将 Go native 已替代的 fast-path PowerShell 脚本迁移到 `scripts/legacy/fast-path-replaced/`，默认 Smoke/CI 继续使用 Go native 检查；move Go-replaced fast-path PowerShell scripts to legacy while keeping Go-native Smoke and CI defaults.

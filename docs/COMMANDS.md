@@ -15,6 +15,7 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 | Tag audit | `bin\aicoding.exe tag audit --json` | Go |
 | Release structure | `bin\aicoding.exe release verify --json` | Go |
 | Lifecycle dry-run planner | `bin\aicoding.exe kit lifecycle --action update --all --dry-run --json` | Go |
+| Lifecycle structure verify | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` | Go |
 
 ## Go Native Checks
 
@@ -25,6 +26,7 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 | Cache status | `bin\aicoding.exe cache status --json` |
 | Cache clean | `bin\aicoding.exe cache clean --json` |
 | Kit Smoke | `bin\aicoding.exe kit verify --all --profile Smoke --json` |
+| Kit Lifecycle structure verify | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
@@ -85,6 +87,16 @@ The default check excludes templates, generated plugin/submodule assets, runtime
 | `task tag:plan` | Non-destructive tag correction plan | PowerShell slow path |
 | `task tag:verify` | Release governance overlay compatibility check | PowerShell slow path |
 
+## Lifecycle Structure Verify
+
+Use this Go-native structural verifier as the default fast check for `config/codex-kit.json`, `config/kit-registry.json`, `config/kits/*.json`, lifecycle action envelopes, required paths, command paths, and dry-run skip policy. It does not execute real lifecycle adapters, export packages, refresh Marketplace, or run fresh clone gates.
+
+```powershell
+bin\aicoding.exe kit verify --all --profile Lifecycle --json
+```
+
+PowerShell `scripts/verify-codex-kit.ps1` and `scripts/verify-kit-lifecycle.ps1` remain explicit compatibility/full checks for adapter orchestration and fresh clone coverage.
+
 ## Lifecycle Dry-Run Probes
 
 Use the Go planner as the default all-kit lifecycle dry-run/status aggregation path. It reads `config/kit-registry.json` and `config/kits/*.json`, reports unsupported or no-dry-run actions as `skipped`, warns when the generated AiCoding plugin package is missing in a fresh clone, and does not execute install/update/uninstall adapters.
@@ -98,9 +110,11 @@ bin\aicoding.exe kit lifecycle --action status --all --json
 
 ## Explicit PowerShell Parity Checks
 
-These are compatibility checks, not default perf or Smoke routes:
+These are compatibility checks, not default perf, Smoke, or Lifecycle structure verify routes:
 
 ```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1 -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-kit-lifecycle.ps1 -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 update -All -DryRun -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 install -All -DryRun -Json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/measure-fast-path-v1.ps1 -Json
