@@ -14,6 +14,7 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 | PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` | Go |
 | Tag audit | `bin\aicoding.exe tag audit --json` | Go |
 | Release structure | `bin\aicoding.exe release verify --json` | Go |
+| Lifecycle dry-run planner | `bin\aicoding.exe kit lifecycle --action update --all --dry-run --json` | Go |
 
 ## Go Native Checks
 
@@ -34,6 +35,7 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 | PowerShell regex lint | `bin\aicoding.exe powershell regex-lint --staged --json` |
 | Tag namespace audit | `bin\aicoding.exe tag audit --json` |
 | Release structural verify | `bin\aicoding.exe release verify --json` |
+| Kit lifecycle dry-run planner | `bin\aicoding.exe kit lifecycle --action install --all --dry-run --json` |
 
 ## Default CI Smoke
 
@@ -85,11 +87,13 @@ The default check excludes templates, generated plugin/submodule assets, runtime
 
 ## Lifecycle Dry-Run Probes
 
-Use these to inspect all-kit lifecycle recovery paths without executing real install or update work. Kits whose action is unsupported or whose script does not support dry-run are reported as `skipped`.
+Use the Go planner as the default all-kit lifecycle dry-run/status aggregation path. It reads `config/kit-registry.json` and `config/kits/*.json`, reports unsupported or no-dry-run actions as `skipped`, warns when the generated AiCoding plugin package is missing in a fresh clone, and does not execute install/update/uninstall adapters.
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 install -All -DryRun -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 update -All -DryRun -Json
+bin\aicoding.exe kit lifecycle --action install --all --dry-run --json
+bin\aicoding.exe kit lifecycle --action update --all --dry-run --json
+bin\aicoding.exe kit lifecycle --action uninstall --all --dry-run --json
+bin\aicoding.exe kit lifecycle --action status --all --json
 ```
 
 ## Explicit Slow Paths
@@ -103,7 +107,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 export -A
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 verify-skills -All -Json
 ```
 
-Install, update, uninstall, rollback, fresh clone, release, export, DSS, and PSScriptAnalyzer workflows remain PowerShell/Python-owned.
+Real install, update, uninstall, rollback, fresh clone, release, export, DSS, and PSScriptAnalyzer workflows remain PowerShell/Python-owned.
 
 ## Tag Governance
 

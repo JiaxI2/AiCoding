@@ -37,6 +37,7 @@
 
 ### Changed
 - **chore(pwsh)**：将 Go native 已替代的 fast-path PowerShell 脚本迁移到 `scripts/legacy/fast-path-replaced/`，默认 Smoke/CI 继续使用 Go native 检查；move Go-replaced fast-path PowerShell scripts to legacy while keeping Go-native Smoke and CI defaults.
+- **perf(kit)**：新增 Go-native kit lifecycle dry-run planner，用于替代 all-kit install/update/uninstall/status dry-run 聚合路径，PowerShell 真实 install/update/export/rollback 仍作为慢路径保留；add a Go-native lifecycle dry-run planner for all-kit install/update/uninstall/status planning while keeping real PowerShell lifecycle actions as slow-path adapters.
 - **chore(test)**：收敛默认 link check 范围，仅检查 maintained docs，避免模板、生成资产和 fixture 污染默认验证；scope default link checks to maintained docs while preserving explicit full audits.
 - **ci(fast-path)**：将 PR/push fast smoke workflow 收敛到 Go native kit/governance/hooks/repo-text/release-notes/perf 链路，并明确 PowerShell Skill Kit 默认 gate 只覆盖 `tools/`、`hooks/` 和 `tests/cases/good`，负例目录不作为递归 CI blocker；align the default CI smoke lane with Go-native checks while keeping PowerShell negative fixtures out of recursive gates.
 - **chore(skills)**：收敛 PowerShell Skill Kit、Agent Patch Kit 和 Fast Path Skill 的搜索、精确编辑、危险命令识别和默认 Go Fast Path 规则；align skill-level search, precise edit, command safety, and Go Fast Path defaults without adding new runtime features.

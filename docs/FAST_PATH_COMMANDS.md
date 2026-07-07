@@ -63,6 +63,17 @@ go test ./...
 
 Default Smoke does not call PowerShell. Full and Release remain explicit slow-path tasks.
 
+## Kit Lifecycle Planner
+
+```powershell
+bin\aicoding.exe kit lifecycle --action install --all --dry-run --json
+bin\aicoding.exe kit lifecycle --action update --all --dry-run --json
+bin\aicoding.exe kit lifecycle --action uninstall --all --dry-run --json
+bin\aicoding.exe kit lifecycle --action status --all --json
+```
+
+`kit lifecycle` is the Go-native default for lifecycle dry-run/status aggregation. It does not run PowerShell adapters, initialize submodules, refresh Marketplace, create runtime mirrors, or write `.aicoding/cache`. Real install/update/uninstall/export/rollback remain explicit PowerShell slow paths.
+
 ## Status And Doctor
 
 ```powershell
@@ -130,6 +141,6 @@ Run full repository link audit explicitly with `apatch links --mode offline --in
 
 ## PowerShell Slow Path Boundary
 
-PowerShell remains the explicit owner for Full/Release profiles, install/update/uninstall/export/rollback, fresh clone validation, skill verification, release overlay compatibility, PSScriptAnalyzer/PowerShell AST gates, and DSS/XDS/hardware-related flows.
+PowerShell remains the explicit owner for Full/Release profiles, real install/update/uninstall/export/rollback, fresh clone validation, skill verification, release overlay compatibility, PSScriptAnalyzer/PowerShell AST gates, and DSS/XDS/hardware-related flows.
 
 No `scripts/*.ps1` file is moved, deleted, or placed under `legacy/` by Fast Path V2.

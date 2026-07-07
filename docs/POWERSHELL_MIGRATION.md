@@ -32,6 +32,7 @@ Budget categories:
 | PowerShell inventory review | `bin\aicoding.exe doctor pwsh-budget --json` | Classifies hot/slow/fallback/docs-only invocation points |
 | Tag audit summary | `bin\aicoding.exe tag audit --json` | Structural namespace classification; legacy tags are warnings |
 | Release structure summary | `bin\aicoding.exe release verify --json` | Structural release/template/tag-policy fast check |
+| All-kit lifecycle dry-run/status aggregation | `bin\aicoding.exe kit lifecycle --action install|update|uninstall --all --dry-run --json`; `bin\aicoding.exe kit lifecycle --action status --all --json` | Static registry/manifest planner; does not execute lifecycle adapters |
 
 These replacements remove PowerShell from the default hot path only. The moved legacy scripts remain available as explicit fallback or historical tooling.
 
@@ -41,13 +42,13 @@ These replacements remove PowerShell from the default hot path only. The moved l
 bin\aicoding.exe workflow smart-verify --json
 ```
 
-`workflow smart-verify` reads Git staged, changed, and untracked files, emits the selected plan, and runs existing Go quick checks. It deliberately excludes Full, Release, install, uninstall, export, rollback, fresh clone, DSS, and PSScriptAnalyzer work.
+`workflow smart-verify` reads Git staged, changed, and untracked files, emits the selected plan, and runs existing Go quick checks. It deliberately excludes Full, Release, real install/uninstall, export, rollback, fresh clone, DSS, and PSScriptAnalyzer work.
 
 ## Keep PowerShell
 
 | PowerShell surface | Reason |
 |---|---|
-| `scripts/aicoding-kit.ps1` Full/Release/install/export/uninstall/rollback paths | Complete lifecycle orchestration and compatibility semantics |
+| `scripts/aicoding-kit.ps1` Full/Release and real install/update/export/uninstall/rollback paths | Complete lifecycle orchestration and compatibility semantics |
 | `scripts/test-kit-fresh-clone.ps1` | Fresh clone and Release gate behavior |
 | `scripts/aicoding-kit.ps1 export -All -Zip -Json` | Packaging/export ownership |
 | `scripts/install-*.ps1`, `scripts/update-*.ps1`, `scripts/uninstall-*.ps1` | Installer state, Marketplace refresh, and rollback ownership |
@@ -82,14 +83,15 @@ bin\aicoding.exe verify hooks --json
 bin\aicoding.exe verify repo-text --json
 bin\aicoding.exe verify release-notes --json
 bin\aicoding.exe status --all --json
+bin\aicoding.exe kit lifecycle --action update --all --dry-run --json
 bin\aicoding.exe doctor pwsh-budget --json
 bin\aicoding.exe doctor perf --json
 bin\aicoding.exe tag audit --json
 bin\aicoding.exe release verify --json
 ```
 
-PowerShell remains the explicit Full/Release, install/uninstall/export/fresh clone, rollback, skill verification, and compatibility lane.
+PowerShell remains the explicit Full/Release, real install/update/uninstall/export/fresh clone, rollback, skill verification, and compatibility lane.
 
 ## Legacy Boundary
 
-Go-replaced fast-path PowerShell scripts are already isolated under `scripts/legacy/fast-path-replaced/`. Do not delete remaining PowerShell slow paths or change Full/Release, install/update/uninstall/export/rollback, fresh clone, DSS, or PSScriptAnalyzer semantics without a separate migration plan and user confirmation.
+Go-replaced fast-path PowerShell scripts are already isolated under `scripts/legacy/fast-path-replaced/`. Do not delete remaining PowerShell slow paths or change Full/Release, real install/update/uninstall/export/rollback, fresh clone, DSS, or PSScriptAnalyzer semantics without a separate migration plan and user confirmation.

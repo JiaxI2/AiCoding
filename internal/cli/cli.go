@@ -99,6 +99,8 @@ Usage:
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
+  aicoding kit lifecycle --action install|update|uninstall --all --dry-run [--repo-root PATH] [--json]
+  aicoding kit lifecycle --action status --all [--repo-root PATH] [--json]
   aicoding doctor perf [--repo-root PATH] [--json]
   aicoding doctor pwsh [--repo-root PATH] [--json]
   aicoding doctor pwsh-budget [--repo-root PATH] [--json]
@@ -242,6 +244,8 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	repoArg := fs.String("repo-root", "", "repository root")
 	kitArg := fs.String("kit", "", "kit id")
 	allArg := fs.Bool("all", false, "all enabled kits")
+	actionArg := fs.String("action", "", "lifecycle action: install, update, uninstall, or status")
+	dryRunArg := fs.Bool("dry-run", false, "plan lifecycle action without executing adapters")
 	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
 	_ = fs.Bool("json", false, "json output")
 	_ = fs.Parse(args[1:])
@@ -260,6 +264,43 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	case "doctor":
 		errs := kit.DoctorKits(repo, entries)
 		return report.Result{SchemaVersion: 1, Command: "kit doctor", OK: len(errs) == 0, Message: "kit registry doctor", RepoRoot: repo, Data: withManifests, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	case "lifecycle":
+		action := strings.ToLower(*actionArg)
+		switch action {
+		case "install", "update", "uninstall", "status":
+			// supported planner actions
+		case "":
+			return report.Fail("kit lifecycle", start, "missing lifecycle action", nil, "use --action install|update|uninstall|status"), errors.New("missing lifecycle action")
+		default:
+			return report.Fail("kit lifecycle", start, "unsupported lifecycle action", nil, action), fmt.Errorf("unsupported lifecycle action: %s", action)
+		}
+		if action != "status" && !*dryRunArg {
+			return report.Fail("kit lifecycle", start, "Go lifecycle planner only supports dry-run for install/update/uninstall", nil, "use --dry-run or scripts/aicoding-kit.ps1 for real lifecycle actions"), errors.New("lifecycle action requires --dry-run")
+		}
+		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
+		if err != nil {
+			return report.Fail("kit lifecycle", start, "kit selection failed", nil, err.Error()), err
+		}
+		mode := "kit"
+		if *allArg {
+			mode = "all"
+		}
+		plan := kit.PlanLifecycle(repo, selected, kit.LifecycleOptions{Action: action, Mode: mode, DryRun: *dryRunArg})
+		errs := []string{}
+		for _, item := range plan.Kits {
+			if !item.OK {
+				reason := item.Reason
+				if reason == "" {
+					reason = item.Status
+				}
+				errs = append(errs, item.ID+": "+reason)
+			}
+		}
+		message := "kit lifecycle planner"
+		if *dryRunArg {
+			message = "kit lifecycle dry-run planner"
+		}
+		return report.Result{SchemaVersion: 1, Command: "kit lifecycle", OK: len(errs) == 0, Message: message, RepoRoot: repo, Data: plan, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	case "verify", "test":
 		if !strings.EqualFold(*profile, "Smoke") {
 			return report.Fail("kit "+sub, start, "fast CLI only handles Smoke profile", nil, "use scripts/aicoding-kit.ps1 for Full/Release"), errors.New("non-Smoke profile is not handled by fast CLI")
