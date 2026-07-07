@@ -115,6 +115,7 @@ $registrySchemaPath = Resolve-RepoPath "config/schemas/kit-registry.schema.json"
 $manifestSchemaPath = Resolve-RepoPath "config/schemas/kit-manifest.schema.json"
 $aicodingKitPath = Resolve-RepoPath "scripts/aicoding-kit.ps1"
 $aicodingSkillPath = Resolve-RepoPath "scripts/aicoding-skill.ps1"
+$kitRunnerModulePath = Resolve-RepoPath "scripts/lib/AiCoding.KitRunner.psm1"
 $verifyCodexKitPath = Resolve-RepoPath "scripts/verify-codex-kit.ps1"
 $freshCloneTestPath = Resolve-RepoPath "scripts/test-kit-fresh-clone.ps1"
 $verifyCommonCodePath = Resolve-RepoPath "scripts/verify-common-code.ps1"
@@ -172,6 +173,22 @@ if ($registryRead -and $registryRead.value) {
 }
 
 if (-not (Test-Path -LiteralPath $aicodingKitPath -PathType Leaf)) { Add-Check "aicoding-kit.exists" $false "missing scripts/aicoding-kit.ps1" }
+if (-not (Test-Path -LiteralPath $kitRunnerModulePath -PathType Leaf)) { Add-Check "kit-runner.exists" $false "missing scripts/lib/AiCoding.KitRunner.psm1" }
+
+if (Test-Path -LiteralPath $kitRunnerModulePath -PathType Leaf) {
+    try {
+        Import-Module $kitRunnerModulePath -Force
+        $fixtureKit = [pscustomobject]@{ id = "dry-run-fixture"; manifest = [pscustomobject]@{ version = "0.0.0" } }
+        $unsupportedDryRun = Invoke-AiCodingKitCommand -RepoRoot $repo -Kit $fixtureKit -Action "install" -CommandDefinition ([pscustomobject]@{ type = "unsupported"; reason = "fixture unsupported" }) -DryRun
+        Add-Check "kit-runner.dry-run.unsupported.skipped" ($unsupportedDryRun.ok -and $unsupportedDryRun.status -eq "skipped") ("status={0}" -f $unsupportedDryRun.status)
+        $scriptNoDryRun = Invoke-AiCodingKitCommand -RepoRoot $repo -Kit $fixtureKit -Action "install" -CommandDefinition ([pscustomobject]@{ type = "powershell-script"; path = "scripts/aicoding-kit.ps1"; supportsDryRun = $false }) -DryRun
+        Add-Check "kit-runner.dry-run.no-support.skipped" ($scriptNoDryRun.ok -and $scriptNoDryRun.status -eq "skipped") ("status={0}" -f $scriptNoDryRun.status)
+        $unsupportedReal = Invoke-AiCodingKitCommand -RepoRoot $repo -Kit $fixtureKit -Action "install" -CommandDefinition ([pscustomobject]@{ type = "unsupported"; reason = "fixture unsupported" })
+        Add-Check "kit-runner.real.unsupported.blocks" ((-not $unsupportedReal.ok) -and $unsupportedReal.status -eq "unsupported") ("status={0}" -f $unsupportedReal.status)
+    } catch {
+        Add-Check "kit-runner.dry-run-regression" $false $_.Exception.Message
+    }
+}
 
 if (Test-Path -LiteralPath $verifyCodexKitPath -PathType Leaf) {
     $verifyCodexText = Get-Content -LiteralPath $verifyCodexKitPath -Raw -Encoding UTF8

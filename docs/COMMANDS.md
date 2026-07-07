@@ -83,6 +83,15 @@ The default check excludes templates, generated plugin/submodule assets, runtime
 | `task tag:plan` | Non-destructive tag correction plan | PowerShell slow path |
 | `task tag:verify` | Release governance overlay compatibility check | PowerShell slow path |
 
+## Lifecycle Dry-Run Probes
+
+Use these to inspect all-kit lifecycle recovery paths without executing real install or update work. Kits whose action is unsupported or whose script does not support dry-run are reported as `skipped`.
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 install -All -DryRun -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 update -All -DryRun -Json
+```
+
 ## Explicit Slow Paths
 
 Use these only when the workflow requires complete semantics:

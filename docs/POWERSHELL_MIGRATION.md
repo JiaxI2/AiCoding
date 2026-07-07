@@ -90,6 +90,6 @@ bin\aicoding.exe release verify --json
 
 PowerShell remains the explicit Full/Release, install/uninstall/export/fresh clone, rollback, skill verification, and compatibility lane.
 
-## No-Delete Rule
+## Legacy Boundary
 
-This round marks deprecated default hot-path usage only. Do not move files to `scripts/legacy/`, do not delete scripts, and do not change existing release slow-path semantics without a separate migration plan and user confirmation.
+Go-replaced fast-path PowerShell scripts are already isolated under `scripts/legacy/fast-path-replaced/`. Do not delete remaining PowerShell slow paths or change Full/Release, install/update/uninstall/export/rollback, fresh clone, DSS, or PSScriptAnalyzer semantics without a separate migration plan and user confirmation.

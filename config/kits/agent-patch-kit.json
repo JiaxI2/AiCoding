@@ -24,7 +24,8 @@
       "args": [
         "-InstallMissing"
       ],
-      "supportsJson": false
+      "supportsJson": false,
+      "supportsDryRun": false
     },
     "status": {
       "type": "external-command",

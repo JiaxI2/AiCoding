@@ -170,8 +170,14 @@ function Invoke-AiCodingKitCommand {
         [int]$TimeoutSeconds = 20
     )
 
+    $dryRunNoExecuteActions = @("install", "update", "uninstall")
+
     switch ($CommandDefinition.type) {
         "powershell-script" {
+            if ($DryRun -and ($dryRunNoExecuteActions -contains $Action) -and $CommandDefinition.supportsDryRun -ne $true) {
+                return New-AiCodingKitActionResult -Action $Action -KitId $Kit.id -Ok $true -Status "skipped" -Message "Dry-run skipped command without supportsDryRun: $($CommandDefinition.path)"
+            }
+
             $scriptPath = Resolve-AiCodingKitPath -RepoRoot $RepoRoot -RelativePath $CommandDefinition.path
             if (-not (Test-Path -LiteralPath $scriptPath)) {
                 return New-AiCodingKitActionResult -Action $Action -KitId $Kit.id -Ok $false -Status "missing" -Message "Script not found: $($CommandDefinition.path)"
@@ -199,6 +205,10 @@ function Invoke-AiCodingKitCommand {
         }
 
         "external-command" {
+            if ($DryRun -and ($dryRunNoExecuteActions -contains $Action) -and $CommandDefinition.supportsDryRun -ne $true) {
+                return New-AiCodingKitActionResult -Action $Action -KitId $Kit.id -Ok $true -Status "skipped" -Message "Dry-run skipped command without supportsDryRun: $($CommandDefinition.executable)"
+            }
+
             $exe = Resolve-AiCodingToken -Value $CommandDefinition.executable -RepoRoot $RepoRoot -Kit $Kit
             $args = @()
             foreach ($arg in @($CommandDefinition.args)) {
@@ -244,6 +254,10 @@ function Invoke-AiCodingKitCommand {
         }
 
         "unsupported" {
+            if ($DryRun) {
+                return New-AiCodingKitActionResult -Action $Action -KitId $Kit.id -Ok $true -Status "skipped" -Message ("Dry-run skipped unsupported action: {0}" -f ([string]$CommandDefinition.reason))
+            }
+
             return New-AiCodingKitActionResult -Action $Action -KitId $Kit.id -Ok $false -Status "unsupported" -Message ([string]$CommandDefinition.reason)
         }
 
@@ -344,7 +358,11 @@ function Invoke-AiCodingKitAction {
     foreach ($entry in $kits) {
         $cmd = Get-AiCodingCommandDefinition -Kit $entry -Action $Action
         if (-not $cmd) {
-            $results += New-AiCodingKitActionResult -Action $Action -KitId $entry.id -Ok $false -Status "unsupported" -Message "Action not defined in manifest."
+            if ($DryRun) {
+                $results += New-AiCodingKitActionResult -Action $Action -KitId $entry.id -Ok $true -Status "skipped" -Message "Dry-run skipped undefined action in manifest."
+            } else {
+                $results += New-AiCodingKitActionResult -Action $Action -KitId $entry.id -Ok $false -Status "unsupported" -Message "Action not defined in manifest."
+            }
             continue
         }
         if (($Action -eq "test" -or $Action -eq "verify") -and $Profile -eq "Smoke") {
