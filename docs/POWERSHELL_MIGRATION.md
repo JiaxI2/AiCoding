@@ -1,6 +1,6 @@
 # PowerShell Migration
 
-This document classifies PowerShell entrypoints after Go Fast Path V2. It is a routing document only. The Go-replaced fast-path PowerShell scripts now live under `scripts/legacy/fast-path-replaced/` as explicit legacy fallback or historical tooling.
+This document classifies PowerShell entrypoints after Go Fast Path V2. It is a routing document only. The Go-replaced fast-path PowerShell scripts now live under `scripts/legacy/fast-path-replaced/` as explicit legacy compatibility or historical tooling.
 
 ## Source
 
@@ -15,7 +15,7 @@ Budget categories:
 
 - `hot-path`: default development or Smoke route that should prefer Go.
 - `slow-path`: complete lifecycle, compatibility, Full/Release, or PowerShell-owned gate.
-- `fallback`: retained compatibility path after a Go-first attempt.
+- legacy compatibility inventory: retained paths for explicit comparison; not a default route.
 - `documentation-only`: command examples or migration notes in docs.
 
 ## Go-Replaced Default Paths
@@ -29,12 +29,12 @@ Budget categories:
 | `scripts/legacy/fast-path-replaced/verify-repo-text-format.ps1` | `bin\aicoding.exe verify repo-text --json` | README, CHANGELOG, and docs text checks |
 | `scripts/legacy/fast-path-replaced/verify-release-notes.ps1` | `bin\aicoding.exe verify release-notes --json` | CHANGELOG and release policy presence checks |
 | `scripts/legacy/fast-path-replaced/status-codex-kit.ps1` summary use | `bin\aicoding.exe status --all --json` | Repo, tool, registry, manifest, required-path summary |
-| PowerShell inventory review | `bin\aicoding.exe doctor pwsh-budget --json` | Classifies hot/slow/fallback/docs-only invocation points |
+| PowerShell inventory review | `bin\aicoding.exe doctor pwsh-budget --json` | Classifies hot/slow/compatibility/docs-only invocation points |
 | Tag audit summary | `bin\aicoding.exe tag audit --json` | Structural namespace classification; legacy tags are warnings |
 | Release structure summary | `bin\aicoding.exe release verify --json` | Structural release/template/tag-policy fast check |
 | All-kit lifecycle dry-run/status aggregation | `bin\aicoding.exe kit lifecycle --action install|update|uninstall --all --dry-run --json`; `bin\aicoding.exe kit lifecycle --action status --all --json` | Static registry/manifest planner; does not execute lifecycle adapters |
 
-These replacements remove PowerShell from the default hot path only. The moved legacy scripts remain available as explicit fallback or historical tooling.
+These replacements remove PowerShell from the default hot path only. The moved legacy scripts remain available as explicit compatibility or historical tooling.
 
 ## Smart Verify
 
@@ -89,6 +89,8 @@ bin\aicoding.exe doctor perf --json
 bin\aicoding.exe tag audit --json
 bin\aicoding.exe release verify --json
 ```
+
+Default `task perf` is Go-only. PowerShell parity timing remains explicit through `scripts/measure-fast-path-v1.ps1 -Json` or lifecycle adapter dry-runs when compatibility comparison is needed.
 
 PowerShell remains the explicit Full/Release, real install/update/uninstall/export/fresh clone, rollback, skill verification, and compatibility lane.
 

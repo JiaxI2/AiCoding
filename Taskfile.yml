@@ -26,10 +26,8 @@ tasks:
 
   perf:
     desc: Run fast path performance probes
-    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe doctor perf --json
-      - pwsh -NoProfile -ExecutionPolicy Bypass -Command "if (Test-Path 'scripts/measure-fast-path-v1.ps1') { & 'scripts/measure-fast-path-v1.ps1' -Json } else { Write-Host 'scripts/measure-fast-path-v1.ps1 not found; skipped.' }"
 
   full:
     desc: Run explicit Full local validation through the legacy adapter path

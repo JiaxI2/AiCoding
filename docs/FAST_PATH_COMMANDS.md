@@ -83,7 +83,9 @@ bin\aicoding.exe doctor pwsh-budget --json
 bin\aicoding.exe doctor perf --json
 ```
 
-`doctor pwsh-budget` scans `Taskfile.yml`, `.githooks`, `.github/workflows`, `scripts`, and `docs`, then classifies PowerShell invocation points as `hot-path`, `slow-path`, `fallback`, or `documentation-only`.
+`doctor pwsh-budget` scans `Taskfile.yml`, `.githooks`, `.github/workflows`, `scripts`, and `docs`, then classifies PowerShell invocation points by route budget.
+
+Default `task perf` maps to Go-native `doctor perf` only. Run PowerShell parity comparisons explicitly from [COMMANDS.md](COMMANDS.md#explicit-powershell-parity-checks) when compatibility timing is needed.
 
 ## Governance And Release
 
@@ -104,7 +106,7 @@ bin\aicoding.exe verify repo-text --json
 bin\aicoding.exe verify release-notes --json
 ```
 
-- `verify hooks`: checks `.githooks/pre-commit` and `.githooks/commit-msg` exist and prefer the Go fast path before PowerShell fallback.
+- `verify hooks`: checks `.githooks/pre-commit` and `.githooks/commit-msg` exist and prefer the Go fast path before explicit PowerShell compatibility paths.
 - `verify repo-text`: checks README, CHANGELOG, and docs text files for conflict markers, empty files, invalid UTF-8, and line-ending warnings.
 - `verify release-notes`: checks CHANGELOG, release/tag policy documents, release-governance overlay files, and the release template for malformed Markdown fences or control/replacement characters.
 

@@ -9,7 +9,7 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 | Bootstrap Go CLI | `go run ./cmd/aicoding bootstrap --json` | Go |
 | Smoke | `task smoke` | Go default |
 | Smart verify | `bin\aicoding.exe workflow smart-verify --json` | Go |
-| Performance probe | `task perf` | Go plus PowerShell comparison |
+| Performance probe | `task perf` | Go |
 | Status summary | `bin\aicoding.exe status --all --json` | Go |
 | PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` | Go |
 | Tag audit | `bin\aicoding.exe tag audit --json` | Go |
@@ -52,7 +52,7 @@ go test ./...
 ./bin/aicoding doctor perf --json
 ```
 
-Legacy PowerShell fast-path scripts are retained for fallback or explicit slow-path compatibility, not as the default CI smoke lane.
+Legacy PowerShell fast-path scripts are retained for explicit parity or slow-path compatibility checks, not as the default CI smoke lane.
 
 ## Link Checks
 
@@ -76,7 +76,7 @@ The default check excludes templates, generated plugin/submodule assets, runtime
 |---|---|---|
 | `task setup` | Bootstrap the Go Fast Path binary | Go |
 | `task smoke` | Fast local Smoke gate | Go |
-| `task perf` | Fast performance probes and legacy comparison | Go + PowerShell comparison |
+| `task perf` | Go-native performance probes | Go |
 | `task full` | Explicit Full validation | PowerShell slow path |
 | `task release` | Explicit Release and export gate | PowerShell slow path |
 | `task skills` | Skill verification | PowerShell slow path |
@@ -94,6 +94,16 @@ bin\aicoding.exe kit lifecycle --action install --all --dry-run --json
 bin\aicoding.exe kit lifecycle --action update --all --dry-run --json
 bin\aicoding.exe kit lifecycle --action uninstall --all --dry-run --json
 bin\aicoding.exe kit lifecycle --action status --all --json
+```
+
+## Explicit PowerShell Parity Checks
+
+These are compatibility checks, not default perf or Smoke routes:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 update -All -DryRun -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 install -All -DryRun -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/measure-fast-path-v1.ps1 -Json
 ```
 
 ## Explicit Slow Paths
