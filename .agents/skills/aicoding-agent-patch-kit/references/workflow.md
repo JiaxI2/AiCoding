@@ -9,7 +9,7 @@
 7. Literal replacements must have one intended match. Stop on zero or multiple matches.
 8. `apatch replace --apply` or `apatch ast --apply` creates a transaction snapshot, then writes changes.
 9. Run `git diff --check` and the relevant Fast Path verification after patching.
-10. `apatch verify` runs optional old/new counts, Taskfile, and link validation.
+10. `apatch verify` runs optional old/new counts and Taskfile checks. For Markdown links, use the maintained-docs `apatch links` command by default; full repository link audit is explicit.
 11. `apatch summary` prints changed files and diff stat.
 
 Do not skip preview for multi-file edits.

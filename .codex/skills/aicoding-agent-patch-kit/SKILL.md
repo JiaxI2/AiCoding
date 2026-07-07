@@ -54,8 +54,10 @@ apatch summary
 If Markdown files changed, also run:
 
 ```powershell
-apatch links --mode offline --include-fragments full
+apatch links --mode offline --include-fragments full --input README.md --input README_CN.md --input README_EN.md --input CHANGELOG.md --input "docs/*.md" --input ".github/workflows/*.yml"
 ```
+
+This is the default maintained-docs link check. Run a full audit explicitly with `apatch links --mode offline --include-fragments full` when templates, generated assets, and fixtures must be included.
 
 ## Scope controls
 

@@ -28,6 +28,22 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 
 PR/push fast CI builds the Go CLI, runs `go test ./...`, then runs the same Go native Smoke checks listed above. Legacy PowerShell fast-path scripts are retained for fallback or explicit slow-path compatibility, not as the default CI smoke lane.
 
+## Link Checks
+
+Default maintained-docs link check:
+
+```powershell
+apatch links --mode offline --include-fragments full --input README.md --input README_CN.md --input README_EN.md --input CHANGELOG.md --input "docs/*.md" --input ".github/workflows/*.yml"
+```
+
+Full repository link audit remains explicit:
+
+```powershell
+apatch links --mode offline --include-fragments full
+```
+
+The default check excludes templates, generated plugin/submodule assets, runtime mirrors, cache/report output, and external fixtures from the blocker path.
+
 ## Taskfile Routes
 
 | Task | Meaning | Lane |

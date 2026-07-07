@@ -51,6 +51,16 @@ bin\aicoding.exe verify release-notes --json
 - `verify repo-text`: checks README, CHANGELOG, and docs text files for conflict markers, empty files, invalid UTF-8, and line-ending warnings.
 - `verify release-notes`: checks CHANGELOG, release/tag policy documents, and release-governance overlay files exist.
 
+## Maintained Docs Link Check
+
+Use this as the default Markdown link check after maintained docs change:
+
+```powershell
+apatch links --mode offline --include-fragments full --input README.md --input README_CN.md --input README_EN.md --input CHANGELOG.md --input "docs/*.md" --input ".github/workflows/*.yml"
+```
+
+Run full repository link audit explicitly with `apatch links --mode offline --include-fragments full` when templates, generated assets, fixtures, and historical archives must be included.
+
 ## Governance And Kit Smoke
 
 ```powershell
