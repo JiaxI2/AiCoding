@@ -114,14 +114,30 @@ apatch tx rollback <transaction-id> --apply --force
 
 Use `--clean-created` only when the user explicitly authorizes deleting files created after the transaction began.
 
+For Git rollback without transaction rollback, report the exact boundary first:
+
+```powershell
+git restore <file>
+git restore --staged <file>
+git reset --soft HEAD~1
+```
+
 ## Rules for agents
 
 - Prefer `--fixed` for literal text, paths, URLs, Markdown links, and Windows paths.
 - Use regex only when a fixed string cannot express the target.
+- Scan and read the target context before editing; use the developer brief for the shortest safe workflow.
+- Prefer one file and one topic per patch. Cross-file patches require an explicit file list before apply.
+- A single-string replacement must have exactly one intended match; stop on zero or multiple matches.
+- Deleting or moving files requires a file list and user confirmation before apply.
+- Batch patches need a rollback boundary and must follow `plan -> apply -> diff -> verify`.
 - Never do broad PowerShell `Get-Content | -replace | Set-Content` edits without preview.
 - Do not apply a replacement until the preview has been checked.
 - Do not apply edits when the kit is disabled, unless explicitly authorized.
 - Do not hide `git diff --check` failures.
+- After patching, run `git diff --check` and the relevant Fast Path verification.
+- Do not use patch workflows for release/tag remote operations or hardware actions.
+- Do not mix unrelated themes in one patch.
 - If docs changed, run the Markdown link validator.
 - End with a concise diff summary.
 

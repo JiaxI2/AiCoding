@@ -28,9 +28,39 @@ Keep AiCoding local hot-path checks fast and deterministic.
 go test ./...
 go build -o bin/aicoding.exe ./cmd/aicoding
 bin\aicoding.exe kit verify --all --profile Smoke --json
+bin\aicoding.exe governance lint --json
+bin\aicoding.exe verify hooks --json
+bin\aicoding.exe verify repo-text --json
+bin\aicoding.exe verify release-notes --json
+bin\aicoding.exe status --all --json
+bin\aicoding.exe doctor pwsh --json
 bin\aicoding.exe doctor perf --json
 ```
+
+## Default hot path
+
+Default Smoke/status/verify/lint/doctor checks should use Go native commands:
+
+- `bin\aicoding.exe kit verify --all --profile Smoke --json`
+- `bin\aicoding.exe governance lint --json`
+- `bin\aicoding.exe verify hooks --json`
+- `bin\aicoding.exe verify repo-text --json`
+- `bin\aicoding.exe verify release-notes --json`
+- `bin\aicoding.exe status --all --json`
+- `bin\aicoding.exe doctor pwsh --json`
+- `bin\aicoding.exe doctor perf --json`
+
+Do not recommend these as default Fast Path entrypoints:
+
+- `scripts/verify-hooks.ps1`
+- `scripts/verify-repo-text-format.ps1`
+- `scripts/verify-release-notes.ps1`
+- `scripts/status-codex-kit.ps1` for default status
+- `scripts/lint-git-governance.ps1` for default fast lint
+- `scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json` for default Smoke
 
 ## Boundary
 
 Fast Path V1 validates structure and staged changes. Full semantic checks remain in PowerShell/Python and CI.
+
+PowerShell remains the explicit slow path for Full/Release, install/update/uninstall/export/rollback, fresh clone, DocSync all/ci/release, PowerShell AST/PSScriptAnalyzer, and DSS/XDS/hardware scripts or fixtures.

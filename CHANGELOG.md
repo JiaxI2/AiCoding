@@ -9,6 +9,7 @@
 - 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`。
 
 ### Changed
+- **chore(skills)**：收敛 PowerShell Skill Kit、Agent Patch Kit 和 Fast Path Skill 的搜索、精确编辑、危险命令识别和默认 Go Fast Path 规则；align skill-level search, precise edit, command safety, and Go Fast Path defaults without adding new runtime features.
 - **refactor(go)**：将 Go Fast Path 从 `cmd/aicoding/main.go` 单文件拆为 `internal/cli`、`internal/report`、`internal/platform`、`internal/gitx`、`internal/kit`、`internal/governance` 和 `internal/docsync` 控制面包，`cmd/aicoding/main.go` 仅保留薄入口；保持 `hook`、`kit`、`doctor`、`governance` 命令和 JSON schema 兼容，Full/Release 仍由 PowerShell/Python 执行；split the Go Fast Path from one `cmd/aicoding/main.go` file into maintainable internal control-plane packages while keeping command behavior and JSON schema compatible and leaving Full/Release gates on PowerShell/Python.
 
 ### Fixed

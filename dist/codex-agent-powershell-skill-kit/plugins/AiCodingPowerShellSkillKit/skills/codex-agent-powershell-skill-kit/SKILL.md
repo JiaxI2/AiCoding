@@ -57,6 +57,22 @@ Do not treat sandbox/ACL/path failures as syntax failures.
 
 ## Rules
 
+### Repository search, edit, and command strategy
+
+- Prefer `rg` for exact keyword and regex searches; use `rg --files`, `Get-ChildItem`, or an existing glob-style file list to narrow candidates before reading.
+- Do not blindly edit across the whole repository. Exclude ignored/cache/report/binary output directories such as `bin`, `.aicoding/cache`, and `.aicoding/reports` from edit decisions.
+- Treat submodules, plugin-generated assets, and runtime mirrors as dependencies unless the task explicitly names them as the versioned source to edit.
+- For PowerShell work, read the script parameter block, existing guards, tests, and this skill gate before editing. For Go work, read `cmd/aicoding`, `internal/cli`, the target `internal` package, and tests first.
+- For kit work, read `config/kit-registry.json` before `config/kits/*.json`. For release/tag work, read `docs/TAGGING_POLICY.md` and `docs/RELEASE_POLICY.md`. For Fast Path work, read `docs/FAST_PATH_COMMANDS.md`, `Taskfile.yml`, `internal/cli`, and the target package.
+- A literal replacement must have exactly one intended match. If it has zero or multiple matches, stop and narrow the anchor.
+- Cross-file edits require a file list first. Batch edits follow `plan -> apply -> diff -> verify`.
+- Run `gofmt` after Go edits and the PowerShell Skill Kit gate after PowerShell edits.
+- Prefer links over copied long paragraphs when editing documentation.
+- Do not mix release/tag changes, Go logic, PowerShell migration, and README slimming in one patch. Clean up old blocks without rewriting business logic.
+- Start with read-only commands. Detect dangerous Windows and Unix command forms before execution.
+- Do not run `git push`, `git tag`, force push, remote tag deletion, release publish, DSS/XDS/reset/halt/run/flash/erase/write-memory, or install/uninstall/export/fresh clone/release gates unless the user explicitly requests that operation.
+- Use PowerShell slow paths only for explicit Full/Release/install/export/rollback/fresh clone and compatibility scenarios.
+
 ### Never assume current directory
 
 Before `git`, `rg`, `python`, `node`, `npm`, `gh`, or build commands:
