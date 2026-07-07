@@ -17,17 +17,17 @@ AiCoding is the platform integration, installation, governance, and CodingKit as
 
 AiCoding has two local execution lanes:
 
-- Go Fast Path: high-frequency Smoke, hooks, status, repo text, release-note presence, governance lint, and doctor perf checks.
+- Go Fast Path V2: high-frequency bootstrap, smart-verify, Smoke, hooks, status, repo text, release-note checks, tag/release structural checks, governance lint, pwsh-budget, and doctor perf checks.
 - PowerShell/Python slow path: Full/Release, install/uninstall/export, fresh clone, rollback, package, and compatibility workflows.
 
-The Go lane reduces repeated PowerShell cold starts. It does not replace Full/Release gates.
+The Go lane reduces repeated PowerShell cold starts and emits stable JSON. It does not replace Full/Release gates.
 
 ## Environment Preview / 环境预览
 
 | Area | Current default | Details |
 |---|---|---|
-| Human entry | `task smoke`, `task perf` | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| Go CLI | `bin/aicoding.exe` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
+| Human entry | `task setup`, `task smoke`, `workflow smart-verify` | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| Go CLI | `bin/aicoding.exe bootstrap/workflow/cache/tag/release` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
 | Full/Release | PowerShell/Python scripts | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
 | Kit model | registry + manifests | [config/kit-registry.json](config/kit-registry.json) |
 | Release governance | tag namespace policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
@@ -52,10 +52,12 @@ The Go lane reduces repeated PowerShell cold starts. It does not replace Full/Re
 ## Quick Start / 快速开始
 
 ```powershell
-go build -o bin/aicoding.exe ./cmd/aicoding
+go run ./cmd/aicoding bootstrap --json
+bin\aicoding.exe workflow smart-verify --json
 task smoke
-task perf
-bin\aicoding.exe status --all --json
+bin\aicoding.exe doctor pwsh-budget --json
+bin\aicoding.exe tag audit --json
+bin\aicoding.exe release verify --json
 ```
 
 Run `task full` or `task release` only when complete local validation or a formal release gate is required.
@@ -67,7 +69,7 @@ flowchart TD
   User["User / Agent"] --> Taskfile["Taskfile routing"]
   Taskfile --> GoCLI["bin/aicoding.exe Go Fast Path"]
   Taskfile --> Slow["PowerShell / Python slow path"]
-  GoCLI --> Smoke["Smoke / hooks / status / verify / lint / doctor"]
+  GoCLI --> Smoke["bootstrap / smart-verify / Smoke / hooks / status / verify / lint / doctor"]
   Slow --> Full["Full / Release / install / export / rollback / fresh clone"]
   GoCLI --> Registry["config/kit-registry.json + config/kits/*.json"]
   Slow --> Registry

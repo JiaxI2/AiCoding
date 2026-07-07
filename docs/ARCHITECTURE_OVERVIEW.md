@@ -23,16 +23,25 @@ flowchart TD
   User["User / Agent"] --> Taskfile["Taskfile.yml"]
   Taskfile --> GoCLI["cmd/aicoding -> bin/aicoding.exe"]
   Taskfile --> Scripts["scripts/*.ps1 and Python tools"]
-  GoCLI --> Internal["internal/cli report governance kit gitx platform docsync repohealth"]
+  GoCLI --> Internal["internal/cli report bootstrap workflow cache tagpolicy releasegate governance kit gitx platform docsync repohealth"]
   Scripts --> Registry["config/kit-registry.json"]
   Internal --> Registry
   Registry --> Manifests["config/kits/*.json"]
   Manifests --> Assets["CodingKit assets and generated packages"]
 ```
 
-## Go Fast Path
+## Go Fast Path V2
 
-The Go Fast Path is for high-frequency local checks that should avoid repeated PowerShell startup:
+The Go Fast Path is for high-frequency local checks that should avoid repeated PowerShell startup. V2 adds a minimal closed loop:
+
+- `bootstrap`: validates repo root, `go.mod`, `.git`, Git, Go, `bin/`, and builds `bin/aicoding.exe`;
+- `workflow smart-verify`: reads Git staged/changed/untracked files, emits a plan, and runs selected Go quick checks;
+- `cache status/clean`: reports and clears `.aicoding/cache/fast-path-v2` without affecting pass/fail;
+- `doctor pwsh-budget`: classifies PowerShell invocation points as hot path, slow path, fallback, or documentation-only;
+- `tag audit`: classifies local tags by namespace and reports legacy tags as warnings;
+- `release verify`: performs structural release/template/tag-policy checks without replacing Release gates.
+
+Existing Go fast checks remain:
 
 - kit Smoke manifest verification;
 - governance lint;
@@ -43,7 +52,7 @@ The Go Fast Path is for high-frequency local checks that should avoid repeated P
 - PowerShell invocation inventory;
 - performance probes.
 
-It is intentionally local and structural. It does not replace Full/Release semantic gates.
+The Go layer is intentionally local and structural. It does not replace Full/Release semantic gates.
 
 ## PowerShell/Python Slow Path
 
@@ -54,8 +63,11 @@ PowerShell and Python remain the owner for workflows that need complete orchestr
 - export/package paths;
 - fresh clone validation;
 - kit-specific install/status/test/verify scripts;
+- tag correction plans and release-governance overlay compatibility checks;
 - PowerShell AST, PSScriptAnalyzer, and compatibility gates;
 - hardware-related fixtures and future debug backends.
+
+No `scripts/*.ps1` file is removed or migrated to `legacy/` by Fast Path V2.
 
 ## Registry And Manifest Contract
 
@@ -64,6 +76,10 @@ PowerShell and Python remain the owner for workflows that need complete orchestr
 ## Runtime Boundary
 
 The installed plugin and Codex runtime state are not edited directly. Install/update workflows preserve enabled state, validate package drift, refresh through supported Marketplace paths, and keep the submodule clean.
+
+## Command Boundary
+
+All new Go commands support `--json` and use stable process outcomes: `0` for `ok=true`, `1` for structural or execution failure, and `2` for usage errors. JSON output stays under the common `report.Result` envelope so automation can parse command, repo root, data, errors, and elapsed time consistently.
 
 ## Documentation Map
 

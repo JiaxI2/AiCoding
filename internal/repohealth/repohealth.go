@@ -514,6 +514,9 @@ func migrationAdvice(category, path, line string) (string, string) {
 	if strings.Contains(lower, "verify-hooks.ps1") {
 		return "go-now", "bin/aicoding.exe verify hooks --json"
 	}
+	if strings.Contains(lower, "verify-release-governance-overlay.ps1") {
+		return "keep-pwsh", "keep PowerShell release-governance overlay slow path"
+	}
 	if strings.Contains(lower, "verify-release-notes.ps1") || strings.Contains(lower, "verify-release-governance-overlay.ps1") {
 		return "go-now", "bin/aicoding.exe verify release-notes --json"
 	}
@@ -586,4 +589,136 @@ func ErrorOrNil(errs []string) error {
 
 func FormatCount(name string, count int) string {
 	return fmt.Sprintf("%s=%d", name, count)
+}
+
+type PwshBudget struct {
+	Calls  []PwshBudgetCall `json:"calls"`
+	Counts map[string]int   `json:"counts"`
+}
+
+type PwshBudgetCall struct {
+	Path                 string `json:"path"`
+	Line                 int    `json:"line"`
+	Text                 string `json:"text"`
+	Category             string `json:"category"`
+	Budget               string `json:"budget"`
+	Migration            string `json:"migration"`
+	SuggestedReplacement string `json:"suggestedReplacement,omitempty"`
+}
+
+func ScanPwshBudget(repo string) (PwshBudget, []string) {
+	files, errs := pwshBudgetScanFiles(repo)
+	budget := PwshBudget{Counts: map[string]int{}}
+	for _, rel := range files {
+		content, err := os.ReadFile(platform.RepoPath(repo, rel))
+		if err != nil {
+			errs = append(errs, "cannot read "+rel+": "+err.Error())
+			continue
+		}
+		for i, line := range strings.Split(strings.ReplaceAll(string(content), "\r\n", "\n"), "\n") {
+			lower := strings.ToLower(line)
+			if !isPwshInvocationLine(lower) {
+				continue
+			}
+			category := categorizePwsh(rel, line)
+			migration, replacement := migrationAdvice(category, rel, line)
+			bucket := classifyPwshBudget(rel, line, category, migration)
+			budget.Calls = append(budget.Calls, PwshBudgetCall{
+				Path:                 rel,
+				Line:                 i + 1,
+				Text:                 strings.TrimSpace(line),
+				Category:             category,
+				Budget:               bucket,
+				Migration:            migration,
+				SuggestedReplacement: replacement,
+			})
+			budget.Counts[bucket]++
+		}
+	}
+	for _, bucket := range []string{"hot-path", "slow-path", "fallback", "documentation-only"} {
+		if _, ok := budget.Counts[bucket]; !ok {
+			budget.Counts[bucket] = 0
+		}
+	}
+	return budget, errs
+}
+
+func pwshBudgetScanFiles(repo string) ([]string, []string) {
+	seen := map[string]bool{}
+	files := []string{}
+	errs := []string{}
+	add := func(rel string) {
+		rel = filepath.ToSlash(rel)
+		if !seen[rel] && platform.IsFile(platform.RepoPath(repo, rel)) {
+			seen[rel] = true
+			files = append(files, rel)
+		}
+	}
+	add("Taskfile.yml")
+	addGlob := func(pattern string) {
+		matches, err := filepath.Glob(platform.RepoPath(repo, pattern))
+		if err != nil {
+			errs = append(errs, "bad glob "+pattern+": "+err.Error())
+			return
+		}
+		for _, p := range matches {
+			if st, err := os.Stat(p); err == nil && !st.IsDir() {
+				rel, _ := filepath.Rel(repo, p)
+				add(rel)
+			}
+		}
+	}
+	addGlob(".githooks/*")
+	addGlob(".github/workflows/*")
+	addGlob("scripts/*.ps1")
+	docsRoot := platform.RepoPath(repo, "docs")
+	if platform.IsDir(docsRoot) {
+		if err := filepath.WalkDir(docsRoot, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+			if strings.EqualFold(filepath.Ext(path), ".md") {
+				rel, _ := filepath.Rel(repo, path)
+				add(rel)
+			}
+			return nil
+		}); err != nil {
+			errs = append(errs, "walk docs: "+err.Error())
+		}
+	}
+	sort.Strings(files)
+	return files, errs
+}
+
+func classifyPwshBudget(path, line, category, migration string) string {
+	lowerPath := strings.ToLower(path)
+	lower := strings.ToLower(path + " " + line)
+	if strings.HasPrefix(lowerPath, "docs/") {
+		return "documentation-only"
+	}
+	if strings.HasPrefix(lowerPath, ".githooks/") {
+		return "fallback"
+	}
+	if strings.Contains(lower, "||") || strings.Contains(lower, "fallback") {
+		return "fallback"
+	}
+	if strings.Contains(lower, "verify-release-governance-overlay.ps1") || strings.Contains(lower, "verify-skills") {
+		return "slow-path"
+	}
+	if strings.HasPrefix(lowerPath, "scripts/measure-fast-path-v1.ps1") || strings.HasPrefix(lowerPath, "scripts/install-docsync-hook.ps1") {
+		return "fallback"
+	}
+	if containsAny(lower, "profile full", "profile release", "test-kit-fresh-clone", " export ", " install", " uninstall", " rollback", "dss", "xds", "flash", "erase", "write-memory", "psscriptanalyzer") {
+		return "slow-path"
+	}
+	if migration == "go-now" || containsAny(lower, "profile smoke", "task smoke", "lint-git-governance.ps1", "verify-hooks.ps1", "verify-release-notes.ps1", "verify-repo-text-format.ps1") {
+		return "hot-path"
+	}
+	if category == "release" || category == "install" || category == "uninstall" || category == "rollback" || category == "export" || category == "dss" {
+		return "slow-path"
+	}
+	return "fallback"
 }

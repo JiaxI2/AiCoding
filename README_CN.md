@@ -17,17 +17,17 @@ AiCoding 是本地 AI coding 工作流的平台集成、安装、治理与 Codin
 
 AiCoding 本地执行路径分两层：
 
-- Go Fast Path：承担 Smoke、hook、status、repo text、release-notes 存在性、governance lint、doctor perf 等高频检查。
+- Go Fast Path V2：承担 bootstrap、smart-verify、Smoke、hook、status、repo text、release-notes、tag/release 结构快检、governance lint、pwsh-budget 和 doctor perf 等高频检查。
 - PowerShell/Python 慢路径：保留 Full/Release、install/uninstall/export、fresh clone、rollback、打包与兼容性工作流。
 
-Go 路径用于减少 PowerShell 冷启动，不替代 Full/Release gate。
+Go 路径用于减少 PowerShell 冷启动并输出稳定 JSON，不替代 Full/Release gate。
 
 ## 环境预览 / Environment Preview
 
 | 区域 | 当前默认 | 说明 |
 |---|---|---|
-| 人机入口 | `task smoke`, `task perf` | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| Go CLI | `bin/aicoding.exe` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
+| 人机入口 | `task setup`, `task smoke`, `workflow smart-verify` | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| Go CLI | `bin/aicoding.exe bootstrap/workflow/cache/tag/release` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
 | Full/Release | PowerShell/Python scripts | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
 | Kit 模型 | registry + manifests | [config/kit-registry.json](config/kit-registry.json) |
 | 发布治理 | tag namespace policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
@@ -52,10 +52,12 @@ Go 路径用于减少 PowerShell 冷启动，不替代 Full/Release gate。
 ## 快速开始 / Quick Start
 
 ```powershell
-go build -o bin/aicoding.exe ./cmd/aicoding
+go run ./cmd/aicoding bootstrap --json
+bin\aicoding.exe workflow smart-verify --json
 task smoke
-task perf
-bin\aicoding.exe status --all --json
+bin\aicoding.exe doctor pwsh-budget --json
+bin\aicoding.exe tag audit --json
+bin\aicoding.exe release verify --json
 ```
 
 只有需要完整本地验证或正式发布时，才显式运行 `task full` 或 `task release`。
@@ -67,7 +69,7 @@ flowchart TD
   User["User / Agent"] --> Taskfile["Taskfile routing"]
   Taskfile --> GoCLI["bin/aicoding.exe Go Fast Path"]
   Taskfile --> Slow["PowerShell / Python slow path"]
-  GoCLI --> Smoke["Smoke / hooks / status / verify / lint / doctor"]
+  GoCLI --> Smoke["bootstrap / smart-verify / Smoke / hooks / status / verify / lint / doctor"]
   Slow --> Full["Full / Release / install / export / rollback / fresh clone"]
   GoCLI --> Registry["config/kit-registry.json + config/kits/*.json"]
   Slow --> Registry

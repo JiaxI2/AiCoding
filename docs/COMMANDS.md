@@ -6,23 +6,34 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 
 | Purpose | Command | Lane |
 |---|---|---|
-| Build Go CLI | `go build -o bin/aicoding.exe ./cmd/aicoding` | Go |
+| Bootstrap Go CLI | `go run ./cmd/aicoding bootstrap --json` | Go |
 | Smoke | `task smoke` | Go default |
+| Smart verify | `bin\aicoding.exe workflow smart-verify --json` | Go |
 | Performance probe | `task perf` | Go plus PowerShell comparison |
 | Status summary | `bin\aicoding.exe status --all --json` | Go |
-| PowerShell inventory | `bin\aicoding.exe doctor pwsh --json` | Go |
+| PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` | Go |
+| Tag audit | `bin\aicoding.exe tag audit --json` | Go |
+| Release structure | `bin\aicoding.exe release verify --json` | Go |
 
 ## Go Native Checks
 
 | Purpose | Command |
 |---|---|
+| Bootstrap binary | `bin\aicoding.exe bootstrap --json` |
+| Smart verify plan + selected checks | `bin\aicoding.exe workflow smart-verify --json` |
+| Cache status | `bin\aicoding.exe cache status --json` |
+| Cache clean | `bin\aicoding.exe cache clean --json` |
 | Kit Smoke | `bin\aicoding.exe kit verify --all --profile Smoke --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
 | Release notes/overlay verification | `bin\aicoding.exe verify release-notes --json` |
 | Performance probes | `bin\aicoding.exe doctor perf --json` |
+| PowerShell inventory | `bin\aicoding.exe doctor pwsh --json` |
+| PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` |
 | PowerShell regex lint | `bin\aicoding.exe powershell regex-lint --staged --json` |
+| Tag namespace audit | `bin\aicoding.exe tag audit --json` |
+| Release structural verify | `bin\aicoding.exe release verify --json` |
 
 ## Default CI Smoke
 
@@ -48,16 +59,16 @@ The default check excludes templates, generated plugin/submodule assets, runtime
 
 | Task | Meaning | Lane |
 |---|---|---|
-| `task setup` | Build or enable Go Fast Path when installer exists | PowerShell route / Go build |
+| `task setup` | Bootstrap the Go Fast Path binary | Go |
 | `task smoke` | Fast local Smoke gate | Go |
 | `task perf` | Fast performance probes and legacy comparison | Go + PowerShell comparison |
 | `task full` | Explicit Full validation | PowerShell slow path |
 | `task release` | Explicit Release and export gate | PowerShell slow path |
 | `task skills` | Skill verification | PowerShell slow path |
 | `task rollback` | Roll back Fast Path installation | PowerShell slow path |
-| `task tag:audit` | Tag namespace audit | PowerShell slow path |
+| `task tag:audit` | Tag namespace audit | Go |
 | `task tag:plan` | Non-destructive tag correction plan | PowerShell slow path |
-| `task tag:verify` | Release governance overlay check | PowerShell slow path |
+| `task tag:verify` | Release governance overlay compatibility check | PowerShell slow path |
 
 ## Explicit Slow Paths
 
@@ -70,12 +81,19 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 export -A
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 verify-skills -All -Json
 ```
 
-Install, update, uninstall, rollback, fresh clone, release, and export scripts remain PowerShell/Python-owned.
+Install, update, uninstall, rollback, fresh clone, release, export, DSS, and PSScriptAnalyzer workflows remain PowerShell/Python-owned.
 
 ## Tag Governance
 
+Fast structural audit:
+
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-tag-governance.ps1 -Action Audit -Json
+bin\aicoding.exe tag audit --json
+```
+
+Slow-path planning and overlay compatibility:
+
+```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-tag-governance.ps1 -Action Plan
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-release-governance-overlay.ps1 -Json
 ```

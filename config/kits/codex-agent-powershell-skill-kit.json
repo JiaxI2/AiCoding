@@ -105,7 +105,7 @@
       {
         "id": "pwsh-regex-optimize-kit",
         "path": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/pwsh-regex-optimize-kit/SKILL.md",
-        "role": "member",
+        "role": "subskill",
         "description": "Safe capture replacement, bulk regex replace, dynamic callback transform, and Go fast-path regex lint.",
         "tags": [
           "powershell",

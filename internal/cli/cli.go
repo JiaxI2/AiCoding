@@ -9,14 +9,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/bootstrap"
+	"github.com/JiaxI2/AiCoding/internal/cache"
 	"github.com/JiaxI2/AiCoding/internal/docsync"
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/governance"
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/pwshregex"
+	"github.com/JiaxI2/AiCoding/internal/releasegate"
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/tagpolicy"
+	"github.com/JiaxI2/AiCoding/internal/workflow"
 )
 
 const version = "fast-path-v1"
@@ -35,6 +40,16 @@ func Main() {
 		return
 	case "hook":
 		res, err = runHook(os.Args[2:], start)
+	case "bootstrap":
+		res, err = runBootstrap(os.Args[2:], start)
+	case "workflow":
+		res, err = runWorkflow(os.Args[2:], start)
+	case "cache":
+		res, err = runCache(os.Args[2:], start)
+	case "tag":
+		res, err = runTag(os.Args[2:], start)
+	case "release":
+		res, err = runRelease(os.Args[2:], start)
 	case "kit":
 		res, err = runKit(os.Args[2:], start)
 	case "doctor":
@@ -74,12 +89,19 @@ func printUsageAndExit(code int) {
 Usage:
   aicoding hook pre-commit [--repo-root PATH] [--json]
   aicoding hook commit-msg --file COMMIT_MSG [--repo-root PATH] [--json]
+  aicoding bootstrap [--repo-root PATH] [--json]
+  aicoding workflow smart-verify [--repo-root PATH] [--json]
+  aicoding cache status [--repo-root PATH] [--json]
+  aicoding cache clean [--repo-root PATH] [--json]
+  aicoding tag audit [--repo-root PATH] [--json]
+  aicoding release verify [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
   aicoding doctor perf [--repo-root PATH] [--json]
   aicoding doctor pwsh [--repo-root PATH] [--json]
+  aicoding doctor pwsh-budget [--repo-root PATH] [--json]
   aicoding verify hooks [--repo-root PATH] [--json]
   aicoding verify repo-text [--repo-root PATH] [--json]
   aicoding verify release-notes [--repo-root PATH] [--json]
@@ -307,7 +329,7 @@ func runStatus(args []string, start time.Time) (report.Result, error) {
 }
 func runDoctor(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("doctor requires subcommand: perf or pwsh")
+		return report.Result{}, errors.New("doctor requires subcommand: perf, pwsh, or pwsh-budget")
 	}
 	sub := args[0]
 	fs := flag.NewFlagSet("doctor "+sub, flag.ContinueOnError)
@@ -321,6 +343,10 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 	if sub == "pwsh" {
 		calls, errs := repohealth.ScanPwsh(repo)
 		return report.Result{SchemaVersion: 1, Command: "doctor pwsh", OK: len(errs) == 0, Message: "PowerShell invocation inventory", RepoRoot: repo, Data: calls, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	}
+	if sub == "pwsh-budget" {
+		budget, errs := repohealth.ScanPwshBudget(repo)
+		return report.Result{SchemaVersion: 1, Command: "doctor pwsh-budget", OK: len(errs) == 0, Message: "PowerShell budget inventory", RepoRoot: repo, Data: budget, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	}
 	if sub != "perf" {
 		return report.Result{}, fmt.Errorf("unsupported doctor subcommand: %s", sub)
@@ -341,4 +367,97 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 	measure("governance lint", func() error { return report.BoolErr(governance.Lint(repo, "pre-commit", "")) })
 	measure("staged docsync lint", func() error { return report.BoolErr(docsync.LintStaged(repo)) })
 	return report.Result{SchemaVersion: 1, Command: "doctor perf", OK: true, Message: "performance probes", RepoRoot: repo, Data: checks, ElapsedMS: report.Elapsed(start)}, nil
+}
+
+func runBootstrap(args []string, start time.Time) (report.Result, error) {
+	fs := flag.NewFlagSet("bootstrap", flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	noBuild := fs.Bool("no-build", false, "check and create bin directory without building")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args)
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("bootstrap", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	status, errs := bootstrap.Bootstrap(repo, bootstrap.Options{Build: !*noBuild})
+	return report.Result{SchemaVersion: 1, Command: "bootstrap", OK: len(errs) == 0, Message: "bootstrap fast path binary", RepoRoot: repo, Data: status, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+}
+
+func runWorkflow(args []string, start time.Time) (report.Result, error) {
+	if len(args) < 1 || args[0] != "smart-verify" {
+		return report.Result{}, errors.New("workflow requires subcommand: smart-verify")
+	}
+	fs := flag.NewFlagSet("workflow smart-verify", flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args[1:])
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("workflow smart-verify", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	result, errs := workflow.SmartVerify(repo)
+	return report.Result{SchemaVersion: 1, Command: "workflow smart-verify", OK: len(errs) == 0, Message: "smart Go fast-path verification", RepoRoot: repo, Data: result, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+}
+
+func runCache(args []string, start time.Time) (report.Result, error) {
+	if len(args) < 1 {
+		return report.Result{}, errors.New("cache requires subcommand: status or clean")
+	}
+	sub := args[0]
+	fs := flag.NewFlagSet("cache "+sub, flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args[1:])
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("cache "+sub, start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	switch sub {
+	case "status":
+		status, err := cache.Status(repo)
+		if err != nil {
+			return report.Fail("cache status", start, "cache status failed", status, err.Error()), err
+		}
+		return report.Result{SchemaVersion: 1, Command: "cache status", OK: true, Message: "fast path cache status", RepoRoot: repo, Data: status, ElapsedMS: report.Elapsed(start)}, nil
+	case "clean":
+		result, err := cache.Clean(repo)
+		if err != nil {
+			return report.Fail("cache clean", start, "cache clean failed", result, err.Error()), err
+		}
+		return report.Result{SchemaVersion: 1, Command: "cache clean", OK: true, Message: "fast path cache clean", RepoRoot: repo, Data: result, ElapsedMS: report.Elapsed(start)}, nil
+	default:
+		return report.Result{}, fmt.Errorf("unsupported cache subcommand: %s", sub)
+	}
+}
+
+func runTag(args []string, start time.Time) (report.Result, error) {
+	if len(args) < 1 || args[0] != "audit" {
+		return report.Result{}, errors.New("tag requires subcommand: audit")
+	}
+	fs := flag.NewFlagSet("tag audit", flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args[1:])
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("tag audit", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	audit, errs := tagpolicy.AuditRepo(repo)
+	return report.Result{SchemaVersion: 1, Command: "tag audit", OK: len(errs) == 0, Message: "tag namespace structural audit", RepoRoot: repo, Data: audit, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+}
+
+func runRelease(args []string, start time.Time) (report.Result, error) {
+	if len(args) < 1 || args[0] != "verify" {
+		return report.Result{}, errors.New("release requires subcommand: verify")
+	}
+	fs := flag.NewFlagSet("release verify", flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args[1:])
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("release verify", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	result, errs := releasegate.Verify(repo)
+	return report.Result{SchemaVersion: 1, Command: "release verify", OK: len(errs) == 0, Message: "release structural fast verification", RepoRoot: repo, Data: result, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 }

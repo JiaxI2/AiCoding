@@ -1,18 +1,43 @@
 # Fast Path Commands
 
-Go Fast Path commands are the default local hot path. They are designed for Smoke, status, verify, lint, and doctor checks where repeated PowerShell startup is unnecessary.
+Go Fast Path commands are the default local hot path for repeated development checks. Fast Path V2 keeps the checks structural, JSON-readable, and Go-native while preserving PowerShell/Python as the explicit slow path for complete lifecycle and release semantics.
 
-## Build
+## Bootstrap
 
 ```powershell
-go build -o bin/aicoding.exe ./cmd/aicoding
+go run ./cmd/aicoding bootstrap --json
+bin\aicoding.exe bootstrap --json
 ```
 
-The binary is a local build artifact and must not be committed.
+`bootstrap` checks repo root, `go.mod`, `.git`, Git, Go, and `bin/`, then builds `bin/aicoding.exe` by default. Use `--no-build` only for diagnostics. The command creates `bin/` when needed and does not call PowerShell.
+
+## Smart Verify
+
+```powershell
+bin\aicoding.exe workflow smart-verify --json
+```
+
+`workflow smart-verify` reads staged, changed, and untracked files from Git, builds a file-type plan, and executes only Go fast checks for the first V2 loop. It does not call Full, Release, install, uninstall, export, rollback, fresh clone, DSS, or PSScriptAnalyzer paths.
+
+Selected checks include:
+
+- `go test ./...` when Go source or `go.mod` changed;
+- kit Smoke manifest verification for kit registry, manifest, Taskfile, or CodingKit surfaces;
+- governance lint for README, CHANGELOG, Taskfile, and GitHub metadata surfaces;
+- hook, repo-text, and release-notes verification for their matching file types.
+
+## Cache
+
+```powershell
+bin\aicoding.exe cache status --json
+bin\aicoding.exe cache clean --json
+```
+
+The V2 cache is stored under `.aicoding/cache/fast-path-v2`. In this first version it is reporting-only and cleanup-only; cache state never changes pass/fail results.
 
 ## Recommended Smoke Chain
 
-`task smoke` routes to these Go commands:
+`task smoke` remains Go-native:
 
 ```powershell
 bin\aicoding.exe kit verify --all --profile Smoke --json
@@ -23,21 +48,29 @@ bin\aicoding.exe verify release-notes --json
 bin\aicoding.exe doctor perf --json
 ```
 
-The PR/push fast workflow uses the same Go-native smoke lane after `go test ./...` and `go build -o bin/aicoding ./cmd/aicoding`. It does not call the legacy PowerShell fast-path scripts as default CI.
+Default Smoke does not call PowerShell. Full and Release remain explicit slow-path tasks.
 
 ## Status And Doctor
 
 ```powershell
 bin\aicoding.exe status --all --json
 bin\aicoding.exe doctor pwsh --json
+bin\aicoding.exe doctor pwsh-budget --json
 bin\aicoding.exe doctor perf --json
 ```
 
-`status --all` summarizes repo root, branch, Go/Git availability, tool discovery, kit registry, manifests, and required paths. It does not run PowerShell workflow scripts.
+`doctor pwsh-budget` scans `Taskfile.yml`, `.githooks`, `.github/workflows`, `scripts`, and `docs`, then classifies PowerShell invocation points as `hot-path`, `slow-path`, `fallback`, or `documentation-only`.
 
-`doctor pwsh` scans configured repository surfaces for PowerShell invocation points and returns category plus migration advice.
+## Governance And Release
 
-`doctor perf` measures local Fast Path probes. It is not a Full/Release benchmark.
+```powershell
+bin\aicoding.exe tag audit --json
+bin\aicoding.exe release verify --json
+```
+
+`tag audit` classifies local tags into platform, kit, milestone, legacy, and unknown namespaces. Legacy tags are warnings in the JSON payload, not failures.
+
+`release verify` is a structural fast check for CHANGELOG, release template, tag policy docs, overlay files, and malformed release-note text. It does not replace `scripts/verify-release-governance-overlay.ps1` or Release profile gates.
 
 ## Verify Commands
 
@@ -51,6 +84,27 @@ bin\aicoding.exe verify release-notes --json
 - `verify repo-text`: checks README, CHANGELOG, and docs text files for conflict markers, empty files, invalid UTF-8, and line-ending warnings.
 - `verify release-notes`: checks CHANGELOG, release/tag policy documents, release-governance overlay files, and the release template for malformed Markdown fences or control/replacement characters.
 
+## JSON And Exit Code Contract
+
+All Fast Path V2 commands support `--json` and return the common `report.Result` envelope:
+
+```json
+{
+  "schemaVersion": 1,
+  "command": "...",
+  "ok": true,
+  "repoRoot": "...",
+  "data": {},
+  "elapsedMs": 0
+}
+```
+
+Stable exit code policy:
+
+- `0`: command completed and `ok` is true;
+- `1`: command completed with structural errors or failed execution;
+- `2`: CLI usage error before command execution.
+
 ## Maintained Docs Link Check
 
 Use this as the default Markdown link check after maintained docs change:
@@ -61,30 +115,8 @@ apatch links --mode offline --include-fragments full --input README.md --input R
 
 Run full repository link audit explicitly with `apatch links --mode offline --include-fragments full` when templates, generated assets, fixtures, and historical archives must be included.
 
-## Governance And Kit Smoke
+## PowerShell Slow Path Boundary
 
-```powershell
-bin\aicoding.exe governance lint --json
-bin\aicoding.exe kit verify --all --profile Smoke --json
-```
+PowerShell remains the explicit owner for Full/Release profiles, install/update/uninstall/export/rollback, fresh clone validation, skill verification, release overlay compatibility, PSScriptAnalyzer/PowerShell AST gates, and DSS/XDS/hardware-related flows.
 
-These are the default local checks for high-frequency development. Full and Release still use explicit slow-path tasks.
-
-## PowerShell Regex Fast Lint
-
-```powershell
-bin\aicoding.exe powershell regex-lint --staged --json
-bin\aicoding.exe powershell regex-lint --path scripts --json
-```
-
-This is a fast lint surface for common PowerShell regex hazards. Full PowerShell AST/PSScriptAnalyzer gates remain slow-path tooling.
-
-The PowerShell Skill Kit compatibility gate remains PowerShell-owned. Its default pass gate is scoped to `tools/`, `hooks/`, and `tests/cases/good`; `tests/cases/bad` and `tests/cases/rewrite` are negative fixtures and must not be treated as recursive CI blockers.
-
-## Out Of Scope For This Round
-
-- No smart verify implementation.
-- No cache implementation.
-- No Full/Release semantic rewrite.
-- No install/uninstall/export/fresh clone migration.
-- No hardware action execution.
+No `scripts/*.ps1` file is moved, deleted, or placed under `legacy/` by Fast Path V2.

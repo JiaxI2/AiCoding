@@ -10,9 +10,9 @@ tasks:
       - task --list
 
   setup:
-    desc: Build and enable AiCoding Go Fast Path when installer exists
+    desc: Bootstrap AiCoding Go Fast Path binary
     cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -Command "if (Test-Path 'scripts/install-fast-path-v1.ps1') { & 'scripts/install-fast-path-v1.ps1' } elseif (Test-Path 'go.mod') { go build -o bin/aicoding.exe ./cmd/aicoding } else { Write-Host 'No fast path installer or go.mod found.' }"
+      - go run ./cmd/aicoding bootstrap --json
 
   smoke:
     desc: Run fast local Smoke gate
@@ -54,8 +54,9 @@ tasks:
 
   tag:audit:
     desc: Audit current tag/release namespace classification
+    deps: [ensure-bin]
     cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-tag-governance.ps1 -Action Audit -Json
+      - bin/aicoding.exe tag audit --json
 
   tag:plan:
     desc: Generate non-destructive legacy tag migration plan
@@ -71,4 +72,4 @@ tasks:
   ensure-bin:
     internal: true
     cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -Command "if (-not (Test-Path 'bin/aicoding.exe')) { if (Test-Path 'go.mod') { go build -o bin/aicoding.exe ./cmd/aicoding } else { throw 'bin/aicoding.exe not found and go.mod is missing.' } }"
+      - go run ./cmd/aicoding bootstrap --json

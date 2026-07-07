@@ -16,6 +16,19 @@
     "policyConfig": "config/tagging-policy.json"
   },
   "commands": {
+    "status": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "Taskfile.yml",
+        "docs/TAGGING_POLICY.md",
+        "docs/RELEASE_POLICY.md",
+        "docs/RELEASE_GOVERNANCE_OVERLAY.md",
+        "scripts/aicoding-tag-governance.ps1",
+        "scripts/verify-release-governance-overlay.ps1",
+        "config/tagging-policy.json",
+        "config/kits/release-governance-overlay-kit.json"
+      ]
+    },
     "verify": {
       "type": "powershell-script",
       "path": "scripts/verify-release-governance-overlay.ps1",
@@ -45,7 +58,6 @@
     }
   },
   "skills": {
-    "umbrella": null,
     "members": []
   },
   "hooks": {
