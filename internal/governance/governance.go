@@ -59,31 +59,19 @@ func Lint(repo, mode, commitMsgPath string) []string {
 			msg    string
 		}{
 			{"img.shields.io/github/v/release/JiaxI2/AiCoding", "README.md must keep the Release badge link"},
-			{"https://go.dev/", "README.md must keep the Go URL badge link"},
-			{"https://learn.microsoft.com/powershell/", "README.md must keep the PowerShell URL badge link"},
-			{"https://www.python.org/", "README.md must keep the Python URL badge link"},
-			{"https://taskfile.dev/", "README.md must keep the Taskfile URL badge link"},
+			{"https://go.dev/", "README.md must keep the Go environment preview badge"},
+			{"https://learn.microsoft.com/powershell/", "README.md must keep the PowerShell environment preview badge"},
+			{"https://www.python.org/", "README.md must keep the Python environment preview badge"},
+			{"https://taskfile.dev/", "README.md must keep the Taskfile environment preview badge"},
 			{"github/license/JiaxI2/AiCoding", "README.md must keep the License badge link"},
 		} {
 			mustContain(readmeHead, req.needle, req.msg, fail)
 		}
-		for _, req := range []struct {
-			needle string
-			msg    string
-		}{
-			{"## 环境 URL / Environment URLs", "README.md must keep the Environment URLs section"},
-			{"https://github.com/JiaxI2/AiCoding/releases/latest", "README.md must keep the latest release URL"},
-			{"https://github.com/JiaxI2/AiCoding/releases", "README.md must keep the releases URL"},
-			{"https://github.com/JiaxI2/AiCoding/tags", "README.md must keep the tags URL"},
-			{"[CHANGELOG.md](CHANGELOG.md)", "README.md must keep the CHANGELOG link"},
-			{"[CodingKit/README.md](CodingKit/README.md)", "README.md must keep the CodingKit README link"},
-		} {
-			mustContain(readme, req.needle, req.msg, fail)
-		}
+
 		mustContain(gov, `primary_language = "zh-CN"`, ".github/repository-governance.toml must set README primary_language to zh-CN", fail)
 		mustContain(gov, `secondary_language_surface = "top-file-language-switch-and-github-about"`, ".github/repository-governance.toml must define secondary language surface", fail)
 		mustContain(gov, `english_language_file = "README_EN.md"`, ".github/repository-governance.toml must define README_EN.md", fail)
-		mustContain(gov, `quick_environment_preview = true`, ".github/repository-governance.toml must require quick environment preview", fail)
+		mustContain(gov, `quick_environment_preview = true`, ".github/repository-governance.toml must require README badge environment preview", fail)
 		if !strings.Contains(gov, "[github_about]") || !strings.Contains(gov, "require_bilingual = true") {
 			fail(".github/repository-governance.toml must require bilingual GitHub About metadata")
 		}

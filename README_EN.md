@@ -22,33 +22,6 @@ AiCoding has two local execution lanes:
 
 The Go lane reduces repeated PowerShell cold starts and emits stable JSON. It does not replace Full/Release gates.
 
-## Environment Preview / 环境预览
-
-| Area | Current default | Details |
-|---|---|---|
-| Human entry | `task setup`, `task smoke`, `workflow smart-verify` | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| Go CLI | `bin/aicoding.exe bootstrap/workflow/cache/tag/release` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| Full/Release | PowerShell/Python scripts | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
-| Kit model | registry + manifests | [config/kit-registry.json](config/kit-registry.json) |
-| Release governance | tag namespace policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
-
-## Environment URLs / 环境 URL
-
-| Target | URL |
-|---|---|
-| Repository | https://github.com/JiaxI2/AiCoding |
-| Latest release | https://github.com/JiaxI2/AiCoding/releases/latest |
-| Releases | https://github.com/JiaxI2/AiCoding/releases |
-| Tags | https://github.com/JiaxI2/AiCoding/tags |
-| Changelog | [CHANGELOG.md](CHANGELOG.md) |
-| CodingKit | [CodingKit/README.md](CodingKit/README.md) |
-
-## Language Switch / 中英文切换
-
-- Chinese entry: [README_CN.md](README_CN.md)
-- English entry: [README_EN.md](README_EN.md)
-- Bilingual short entry: [README.md](README.md)
-
 ## Quick Start / 快速开始
 
 ```powershell
@@ -66,14 +39,14 @@ Run `task full` or `task release` only when complete local validation or a forma
 
 ```mermaid
 flowchart TD
-  User["User / Agent"] --> Taskfile["Taskfile routing"]
-  Taskfile --> GoCLI["bin/aicoding.exe Go Fast Path"]
-  Taskfile --> Slow["PowerShell / Python slow path"]
-  GoCLI --> Smoke["bootstrap / smart-verify / Smoke / hooks / status / verify / lint / doctor"]
-  Slow --> Full["Full / Release / install / export / rollback / fresh clone"]
-  GoCLI --> Registry["config/kit-registry.json + config/kits/*.json"]
+  User["User / Agent"] --> Taskfile["Taskfile<br/>routing"]
+  Taskfile --> GoCLI["Go Fast Path<br/>bin/aicoding.exe"]
+  Taskfile --> Slow["Slow Path<br/>PowerShell / Python"]
+  GoCLI --> FastChecks["bootstrap / smart-verify<br/>smoke / hooks / status<br/>verify / lint / doctor"]
+  Slow --> Full["full / release<br/>install / export / rollback<br/>fresh clone"]
+  GoCLI --> Registry["Kit registry<br/>config/kit-registry.json<br/>config/kits/*.json"]
   Slow --> Registry
-  Registry --> CodingKit["CodingKit assets and skill submodule"]
+  Registry --> CodingKit["CodingKit assets<br/>skill submodule"]
 ```
 
 ## Documentation Index / 重要文档索引

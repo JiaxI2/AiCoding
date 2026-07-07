@@ -32,22 +32,6 @@ Go 路径用于减少 PowerShell 冷启动并输出稳定 JSON，不替代 Full/
 | Kit 模型 | registry + manifests | [config/kit-registry.json](config/kit-registry.json) |
 | 发布治理 | tag namespace policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
 
-## 环境 URL / Environment URLs
-
-| 目标 | URL |
-|---|---|
-| 仓库 | https://github.com/JiaxI2/AiCoding |
-| 最新发布 | https://github.com/JiaxI2/AiCoding/releases/latest |
-| Releases | https://github.com/JiaxI2/AiCoding/releases |
-| Tags | https://github.com/JiaxI2/AiCoding/tags |
-| Changelog | [CHANGELOG.md](CHANGELOG.md) |
-| CodingKit | [CodingKit/README.md](CodingKit/README.md) |
-
-## 中英文切换 / Language Switch
-
-- 中文入口：[README_CN.md](README_CN.md)
-- English entry：[README_EN.md](README_EN.md)
-- 双语短入口：[README.md](README.md)
 
 ## 快速开始 / Quick Start
 
@@ -66,14 +50,14 @@ bin\aicoding.exe release verify --json
 
 ```mermaid
 flowchart TD
-  User["User / Agent"] --> Taskfile["Taskfile routing"]
-  Taskfile --> GoCLI["bin/aicoding.exe Go Fast Path"]
-  Taskfile --> Slow["PowerShell / Python slow path"]
-  GoCLI --> Smoke["bootstrap / smart-verify / Smoke / hooks / status / verify / lint / doctor"]
-  Slow --> Full["Full / Release / install / export / rollback / fresh clone"]
-  GoCLI --> Registry["config/kit-registry.json + config/kits/*.json"]
+  User["User / Agent"] --> Taskfile["Taskfile<br/>routing"]
+  Taskfile --> GoCLI["Go Fast Path<br/>bin/aicoding.exe"]
+  Taskfile --> Slow["Slow Path<br/>PowerShell / Python"]
+  GoCLI --> FastChecks["bootstrap / smart-verify<br/>smoke / hooks / status<br/>verify / lint / doctor"]
+  Slow --> Full["full / release<br/>install / export / rollback<br/>fresh clone"]
+  GoCLI --> Registry["Kit registry<br/>config/kit-registry.json<br/>config/kits/*.json"]
   Slow --> Registry
-  Registry --> CodingKit["CodingKit assets and skill submodule"]
+  Registry --> CodingKit["CodingKit assets<br/>skill submodule"]
 ```
 
 ## 重要文档索引 / Documentation Index
@@ -87,7 +71,7 @@ flowchart TD
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
 | Release policy | [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) |
-| Fast Path architecture v1（历史文档） | [docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md](docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md) |
+| Fast Path architecture v1 (historical) | [docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md](docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md) |
 
 ## Git 治理标准 / Git Governance Standard
 
