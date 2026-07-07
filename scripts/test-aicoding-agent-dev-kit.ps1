@@ -1,3 +1,4 @@
+[CmdletBinding(SupportsShouldProcess)]
 param([string]$RepoRoot = "", [switch]$Json)
 
 $ErrorActionPreference = "Stop"
@@ -35,7 +36,11 @@ try {
   Invoke-Step "cli-hook-detect" { Invoke-Cli @("hook", "detect", "--repo", $temp) }
 }
 finally {
-  if (Test-Path -LiteralPath $temp) { Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue }
+  if (Test-Path -LiteralPath $temp) {
+    if ($PSCmdlet.ShouldProcess($temp, "Remove temporary test workspace")) {
+      Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue
+    }
+  }
 }
 
 $ok = (@($results | Where-Object { -not $_.ok }).Count -eq 0)

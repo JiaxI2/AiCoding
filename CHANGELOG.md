@@ -36,6 +36,7 @@
 - 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`test(governance)`。
 
 ### Changed
+- **chore(pwsh)**：为既有 lifecycle adapter / legacy PowerShell 脚本中的破坏性 `Remove-Item` 操作补充 `ShouldProcess` guard，使 full scripts PowerShell Skill Kit safety audit 可阻断，同时不改变真实 lifecycle 默认语义；add `ShouldProcess` guards to existing lifecycle adapter and legacy PowerShell `Remove-Item` calls so the full scripts safety audit can block without changing default lifecycle semantics.
 - **chore(pwsh)**：将 Go native 已替代的 fast-path PowerShell 脚本迁移到 `scripts/legacy/fast-path-replaced/`，默认 Smoke/CI 继续使用 Go native 检查；move Go-replaced fast-path PowerShell scripts to legacy while keeping Go-native Smoke and CI defaults.
 - **perf(kit)**：新增 Go-native kit lifecycle dry-run planner，用于替代 all-kit install/update/uninstall/status dry-run 聚合路径，PowerShell 真实 install/update/export/rollback 仍作为慢路径保留；add a Go-native lifecycle dry-run planner for all-kit install/update/uninstall/status planning while keeping real PowerShell lifecycle actions as slow-path adapters.
 - **chore(test)**：收敛默认 link check 范围，仅检查 maintained docs，避免模板、生成资产和 fixture 污染默认验证；scope default link checks to maintained docs while preserving explicit full audits.

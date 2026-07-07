@@ -1,3 +1,4 @@
+[CmdletBinding(SupportsShouldProcess)]
 param([string]$RepoRoot = "", [switch]$Json, [switch]$UninstallPip)
 $ErrorActionPreference = "Stop"
 function Out-Result($ok, $code, $message, $data = @{}, $warnings = @()) {
@@ -10,7 +11,12 @@ try {
   $RepoRoot = (Resolve-Path $RepoRoot).Path
   $removed = @()
   $pluginPath = Join-Path $RepoRoot "dist\ai-debug-repair-kit\plugins\AiCodingAIDebugRepairKit"
-  if (Test-Path $pluginPath) { Remove-Item -Recurse -Force $pluginPath; $removed += $pluginPath }
+  if (Test-Path $pluginPath) {
+    if ($PSCmdlet.ShouldProcess($pluginPath, "Remove plugin directory")) {
+      Remove-Item -Recurse -Force $pluginPath
+      $removed += $pluginPath
+    }
+  }
   $marketplacePath = Join-Path $RepoRoot ".agents\plugins\marketplace.json"
   if (Test-Path $marketplacePath) {
     $marketplace = Get-Content $marketplacePath -Raw | ConvertFrom-Json
@@ -20,7 +26,12 @@ try {
     $marketplace | ConvertTo-Json -Depth 30 | Set-Content -Encoding UTF8 $marketplacePath
   }
   $statePath = Join-Path $RepoRoot ".ai-debug-repair\install-state.json"
-  if (Test-Path $statePath) { Remove-Item -Force $statePath; $removed += $statePath }
+  if (Test-Path $statePath) {
+    if ($PSCmdlet.ShouldProcess($statePath, "Remove install state file")) {
+      Remove-Item -Force $statePath
+      $removed += $statePath
+    }
+  }
   $pipUninstalled = $false
   if ($UninstallPip) { python -m pip uninstall -y ai-debug-repair-kit | Out-Host; $pipUninstalled = $true }
   Out-Result $true "OK" "AI Debug Repair Kit uninstalled" @{ removed=$removed; pipUninstalled=$pipUninstalled }

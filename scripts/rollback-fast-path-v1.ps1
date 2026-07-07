@@ -1,4 +1,4 @@
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess)]
 param(
     [string]$RepoRoot = "",
     [switch]$UnsetHooksPath,
@@ -23,8 +23,10 @@ try {
     if ($RemoveBinary) {
         foreach ($p in @('bin/aicoding.exe','bin/aicoding')) {
             if (Test-Path -LiteralPath $p) {
-                Remove-Item -LiteralPath $p -Force
-                $actions.Add("removed $p")
+                if ($PSCmdlet.ShouldProcess($p, "Remove Fast Path binary")) {
+                    Remove-Item -LiteralPath $p -Force
+                    $actions.Add("removed $p")
+                }
             }
         }
     }

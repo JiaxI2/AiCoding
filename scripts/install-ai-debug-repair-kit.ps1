@@ -1,3 +1,4 @@
+[CmdletBinding(SupportsShouldProcess)]
 param(
   [string]$PackageRoot = "",
   [string]$RepoRoot = "",
@@ -70,7 +71,11 @@ try {
 
   if (-not $samePluginPath) {
     New-Item -ItemType Directory -Force -Path (Split-Path -Parent $targetPlugin) | Out-Null
-    if (Test-Path -LiteralPath $targetPlugin) { Remove-Item -Recurse -Force -LiteralPath $targetPlugin }
+    if (Test-Path -LiteralPath $targetPlugin) {
+      if ($PSCmdlet.ShouldProcess($targetPlugin, "Remove existing plugin directory")) {
+        Remove-Item -Recurse -Force -LiteralPath $targetPlugin
+      }
+    }
     Copy-Item -Recurse -Force -LiteralPath $sourcePlugin -Destination $targetPlugin
   }
 

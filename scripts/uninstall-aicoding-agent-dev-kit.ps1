@@ -1,3 +1,4 @@
+[CmdletBinding(SupportsShouldProcess)]
 param(
   [string]$RepoRoot = "",
   [switch]$Json,
@@ -32,8 +33,10 @@ try {
     $pipUninstalled = $true
   }
   if (Test-Path -LiteralPath $stateDir) {
-    Remove-Item -LiteralPath $stateDir -Recurse -Force
-    $changed += ".aicoding-agent-dev-kit"
+    if ($PSCmdlet.ShouldProcess($stateDir, "Remove local runtime state directory")) {
+      Remove-Item -LiteralPath $stateDir -Recurse -Force
+      $changed += ".aicoding-agent-dev-kit"
+    }
   }
 
   Out-Result $true "OK" "AiCoding Agent Dev Kit uninstalled from local runtime state" @{ changed=$changed; pipUninstalled=$pipUninstalled }
