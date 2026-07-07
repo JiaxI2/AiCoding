@@ -21,13 +21,34 @@ AiCoding does not own embedded skill source code. The authoritative skill/plugin
 ```mermaid
 flowchart TD
   User["User / Agent"] --> Taskfile["Taskfile.yml"]
-  Taskfile --> GoCLI["cmd/aicoding -> bin/aicoding.exe"]
-  Taskfile --> Scripts["scripts/*.ps1 and Python tools"]
-  GoCLI --> Internal["internal/cli report bootstrap workflow cache tagpolicy releasegate governance kit gitx platform docsync repohealth"]
-  Scripts --> Registry["config/kit-registry.json"]
-  Internal --> Registry
-  Registry --> Manifests["config/kits/*.json"]
-  Manifests --> Assets["CodingKit assets and generated packages"]
+
+  subgraph Source["Skill and plugin source"]
+    CodexSkills["Codex-Skills canonical sources"]
+    PluginPackage["plugins/AiCoding generated package"]
+    Submodule["CodingKit/agents/skills submodule"]
+  end
+
+  subgraph Runtime["Installed runtime"]
+    Marketplace["AiCoding Marketplace entry"]
+    CodexRuntime["Codex plugin cache and hooks"]
+  end
+
+  subgraph Platform["AiCoding platform repository"]
+    Taskfile --> GoCLI["cmd/aicoding -> bin/aicoding.exe"]
+    Taskfile --> Scripts["scripts/*.ps1 and Python tools"]
+    GoCLI --> Internal["internal/* fast-path packages"]
+    Scripts --> Registry["config/kit-registry.json"]
+    Internal --> Registry
+    Registry --> Manifests["config/kits/*.json"]
+    Manifests --> Assets["CodingKit examples/modules/platforms/tests/tools"]
+  end
+
+  CodexSkills --> PluginPackage
+  PluginPackage --> Submodule
+  Submodule --> Marketplace
+  Marketplace --> CodexRuntime
+  CodexRuntime --> User
+  Assets --> CodexRuntime
 ```
 
 ## Go Fast Path V2
