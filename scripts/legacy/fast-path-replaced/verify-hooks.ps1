@@ -9,7 +9,16 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repo = if ($RepoRoot) { (Resolve-Path -LiteralPath $RepoRoot).Path } else { (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).Path }
+if ($RepoRoot) {
+    $repo = (Resolve-Path -LiteralPath $RepoRoot).Path
+} else {
+    $gitRoot = (& git -C $PSScriptRoot rev-parse --show-toplevel 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $gitRoot) {
+        $repo = (Resolve-Path -LiteralPath $gitRoot.Trim()).Path
+    } else {
+        $repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..")).Path
+    }
+}
 $checks = New-Object System.Collections.Generic.List[object]
 $errors = New-Object System.Collections.Generic.List[string]
 

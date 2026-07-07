@@ -36,6 +36,7 @@
 - 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`test(governance)`。
 
 ### Changed
+- **chore(pwsh)**：将 Go native 已替代的 fast-path PowerShell 脚本迁移到 `scripts/legacy/fast-path-replaced/`，默认 Smoke/CI 继续使用 Go native 检查；move Go-replaced fast-path PowerShell scripts to legacy while keeping Go-native Smoke and CI defaults.
 - **chore(test)**：收敛默认 link check 范围，仅检查 maintained docs，避免模板、生成资产和 fixture 污染默认验证；scope default link checks to maintained docs while preserving explicit full audits.
 - **ci(fast-path)**：将 PR/push fast smoke workflow 收敛到 Go native kit/governance/hooks/repo-text/release-notes/perf 链路，并明确 PowerShell Skill Kit 默认 gate 只覆盖 `tools/`、`hooks/` 和 `tests/cases/good`，负例目录不作为递归 CI blocker；align the default CI smoke lane with Go-native checks while keeping PowerShell negative fixtures out of recursive gates.
 - **chore(skills)**：收敛 PowerShell Skill Kit、Agent Patch Kit 和 Fast Path Skill 的搜索、精确编辑、危险命令识别和默认 Go Fast Path 规则；align skill-level search, precise edit, command safety, and Go Fast Path defaults without adding new runtime features.

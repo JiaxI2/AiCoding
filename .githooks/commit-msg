@@ -25,9 +25,9 @@ fi
 
 # Legacy fallback.
 if command -v pwsh >/dev/null 2>&1; then
-  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$commit_msg_path"
+  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/legacy/fast-path-replaced/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$commit_msg_path"
 elif command -v powershell.exe >/dev/null 2>&1; then
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$commit_msg_path"
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/legacy/fast-path-replaced/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$commit_msg_path"
 else
   echo "AiCoding fast CLI, Go, or PowerShell is required for commit-msg checks" >&2
   exit 1

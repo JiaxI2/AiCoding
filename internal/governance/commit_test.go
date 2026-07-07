@@ -56,7 +56,7 @@ require_bilingual = true
 
 [release]
 notes_template = ".github/RELEASE_TEMPLATE.md"
-notes_validator = "scripts/verify-release-notes.ps1"
+notes_validator = "scripts/legacy/fast-path-replaced/verify-release-notes.ps1"
 required_bilingual_sections = ["摘要 / Summary"]
 
 [changelog]
@@ -64,7 +64,7 @@ mode = "unreleased"
 `)
 	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "#!/bin/sh\n")
 	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "#!/bin/sh\n")
-	mustWrite(t, filepath.Join(repo, "scripts", "verify-release-notes.ps1"), "# fixture\n")
+	mustWrite(t, filepath.Join(repo, "scripts", "legacy", "fast-path-replaced", "verify-release-notes.ps1"), "# fixture\n")
 }
 
 func hasErrorContaining(errs []string, needle string) bool {

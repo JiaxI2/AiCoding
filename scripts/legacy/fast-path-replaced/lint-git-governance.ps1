@@ -28,7 +28,7 @@ $requiredFiles = @(
     ".github/repository-governance.toml",
     ".githooks/pre-commit",
     ".githooks/commit-msg",
-    "scripts/verify-release-notes.ps1"
+    "scripts/legacy/fast-path-replaced/verify-release-notes.ps1"
 )
 
 foreach ($file in $requiredFiles) {
@@ -122,15 +122,15 @@ $governance = Get-Content -LiteralPath ".github/repository-governance.toml" -Raw
 if ($governance -notmatch 'notes_template\s*=\s*"\.github/RELEASE_TEMPLATE\.md"') {
     Fail ".github/repository-governance.toml must declare the release notes template."
 }
-if ($governance -notmatch 'notes_validator\s*=\s*"scripts/verify-release-notes\.ps1"') {
+if ($governance -notmatch 'notes_validator\s*=\s*"scripts/legacy/fast-path-replaced/verify-release-notes\.ps1"') {
     Fail ".github/repository-governance.toml must declare the release notes validator."
 }
 if ($governance -notmatch 'required_bilingual_sections') {
     Fail ".github/repository-governance.toml must require bilingual release notes sections."
 }
-& (Join-Path $repoRoot "scripts/verify-release-notes.ps1") -Path ".github/RELEASE_TEMPLATE.md" -AllowPlaceholders -Json | Out-Null
+& (Join-Path $repoRoot "scripts/legacy/fast-path-replaced/verify-release-notes.ps1") -Path ".github/RELEASE_TEMPLATE.md" -AllowPlaceholders -Json | Out-Null
 if ($LASTEXITCODE -ne 0) {
-    Fail ".github/RELEASE_TEMPLATE.md must pass scripts/verify-release-notes.ps1."
+    Fail ".github/RELEASE_TEMPLATE.md must pass scripts/legacy/fast-path-replaced/verify-release-notes.ps1."
 }
 $changelogMode = ""
 if ($governance -match '(?m)^mode\s*=\s*"([^"]+)"') {

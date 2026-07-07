@@ -4,8 +4,9 @@
 
 param([switch]$Json)
 $ErrorActionPreference = 'Stop'
-Import-Module (Join-Path $PSScriptRoot 'lib\CodexKit.psm1') -Force
-$repo = Get-AiCodingRoot $PSScriptRoot
+$scriptsRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
+Import-Module (Join-Path $scriptsRoot 'lib\CodexKit.psm1') -Force
+$repo = Get-AiCodingRoot $scriptsRoot
 $config = Read-CodexKitConfig $repo
 $submodule = Resolve-KitPath $repo $config.agents.skillsSubmodule
 $plugin = Resolve-KitPath $repo $config.agents.pluginPath

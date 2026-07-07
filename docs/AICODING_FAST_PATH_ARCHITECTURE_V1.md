@@ -10,7 +10,7 @@
 
 ```text
 .githooks/pre-commit
-  -> scripts/lint-git-governance.ps1
+  -> scripts/legacy/fast-path-replaced/lint-git-governance.ps1
   -> scripts/check-documentation-sync.ps1
 ```
 

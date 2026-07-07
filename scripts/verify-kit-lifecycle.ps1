@@ -118,7 +118,7 @@ $aicodingSkillPath = Resolve-RepoPath "scripts/aicoding-skill.ps1"
 $verifyCodexKitPath = Resolve-RepoPath "scripts/verify-codex-kit.ps1"
 $freshCloneTestPath = Resolve-RepoPath "scripts/test-kit-fresh-clone.ps1"
 $verifyCommonCodePath = Resolve-RepoPath "scripts/verify-common-code.ps1"
-$verifyHooksPath = Resolve-RepoPath "scripts/verify-hooks.ps1"
+$verifyHooksPath = Resolve-RepoPath "scripts/legacy/fast-path-replaced/verify-hooks.ps1"
 
 foreach ($scriptName in @("install-all.ps1", "verify-all.ps1", "test-all.ps1", "update-all.ps1", "export-all.ps1", "uninstall-all.ps1")) {
     $forbiddenPath = Join-Path (Resolve-RepoPath "scripts") $scriptName

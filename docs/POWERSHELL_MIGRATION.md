@@ -1,6 +1,6 @@
 # PowerShell Migration
 
-This document classifies PowerShell entrypoints after Go Fast Path V2. It is a routing document only. No `scripts/*.ps1` file is moved, deleted, or placed under `legacy/` in this round.
+This document classifies PowerShell entrypoints after Go Fast Path V2. It is a routing document only. The Go-replaced fast-path PowerShell scripts now live under `scripts/legacy/fast-path-replaced/` as explicit legacy fallback or historical tooling.
 
 ## Source
 
@@ -24,16 +24,16 @@ Budget categories:
 |---|---|---|
 | `task setup` PowerShell installer probe | `go run ./cmd/aicoding bootstrap --json` | Build/check `bin/aicoding.exe` without PowerShell |
 | `scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json` default smoke use | `bin\aicoding.exe kit verify --all --profile Smoke --json` | Smoke manifest check only |
-| `scripts/lint-git-governance.ps1` fast lint use | `bin\aicoding.exe governance lint --json` | Local governance fast lint |
-| `scripts/verify-hooks.ps1` | `bin\aicoding.exe verify hooks --json` | Default hook presence and fast-first verification |
-| `scripts/verify-repo-text-format.ps1` | `bin\aicoding.exe verify repo-text --json` | README, CHANGELOG, and docs text checks |
-| `scripts/verify-release-notes.ps1` | `bin\aicoding.exe verify release-notes --json` | CHANGELOG and release policy presence checks |
-| `scripts/status-codex-kit.ps1` summary use | `bin\aicoding.exe status --all --json` | Repo, tool, registry, manifest, required-path summary |
+| `scripts/legacy/fast-path-replaced/lint-git-governance.ps1` fast lint use | `bin\aicoding.exe governance lint --json` | Local governance fast lint |
+| `scripts/legacy/fast-path-replaced/verify-hooks.ps1` | `bin\aicoding.exe verify hooks --json` | Default hook presence and fast-first verification |
+| `scripts/legacy/fast-path-replaced/verify-repo-text-format.ps1` | `bin\aicoding.exe verify repo-text --json` | README, CHANGELOG, and docs text checks |
+| `scripts/legacy/fast-path-replaced/verify-release-notes.ps1` | `bin\aicoding.exe verify release-notes --json` | CHANGELOG and release policy presence checks |
+| `scripts/legacy/fast-path-replaced/status-codex-kit.ps1` summary use | `bin\aicoding.exe status --all --json` | Repo, tool, registry, manifest, required-path summary |
 | PowerShell inventory review | `bin\aicoding.exe doctor pwsh-budget --json` | Classifies hot/slow/fallback/docs-only invocation points |
 | Tag audit summary | `bin\aicoding.exe tag audit --json` | Structural namespace classification; legacy tags are warnings |
 | Release structure summary | `bin\aicoding.exe release verify --json` | Structural release/template/tag-policy fast check |
 
-These replacements remove PowerShell from the default hot path only. The original scripts remain available as explicit fallback or slow-path tooling.
+These replacements remove PowerShell from the default hot path only. The moved legacy scripts remain available as explicit fallback or historical tooling.
 
 ## Smart Verify
 

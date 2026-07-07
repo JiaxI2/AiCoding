@@ -48,7 +48,7 @@ try {
   $requiredFiles = @(
     "scripts/aicoding-kit.ps1",
     "scripts/invoke-aicoding-agent-hook.ps1",
-    "scripts/verify-hooks.ps1",
+    "scripts/legacy/fast-path-replaced/verify-hooks.ps1",
     "scripts/verify-agent-dev-kit-plan-mode.ps1",
     "scripts/hooks/aef/plan-mode-gate.ps1",
     "scripts/hooks/aef/spec-artifact-gate.ps1",

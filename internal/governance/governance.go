@@ -13,7 +13,7 @@ import (
 func Lint(repo, mode, commitMsgPath string) []string {
 	errs := []string{}
 	fail := func(msg string) { errs = append(errs, msg) }
-	requiredFiles := []string{"README.md", "README_EN.md", "CHANGELOG.md", ".github/RELEASE_TEMPLATE.md", ".github/repository-governance.toml", ".githooks/pre-commit", ".githooks/commit-msg", "scripts/verify-release-notes.ps1"}
+	requiredFiles := []string{"README.md", "README_EN.md", "CHANGELOG.md", ".github/RELEASE_TEMPLATE.md", ".github/repository-governance.toml", ".githooks/pre-commit", ".githooks/commit-msg", "scripts/legacy/fast-path-replaced/verify-release-notes.ps1"}
 	for _, f := range requiredFiles {
 		if !platform.IsFile(platform.RepoPath(repo, f)) {
 			fail("required governance file missing: " + f)
@@ -113,7 +113,7 @@ func Lint(repo, mode, commitMsgPath string) []string {
 	if !regexp.MustCompile(`notes_template\s*=\s*"\.github/RELEASE_TEMPLATE\.md"`).MatchString(gov) {
 		fail("repository-governance.toml must declare release notes template")
 	}
-	if !regexp.MustCompile(`notes_validator\s*=\s*"scripts/verify-release-notes\.ps1"`).MatchString(gov) {
+	if !regexp.MustCompile(`notes_validator\s*=\s*"scripts/legacy/fast-path-replaced/verify-release-notes\.ps1"`).MatchString(gov) {
 		fail("repository-governance.toml must declare release notes validator")
 	}
 	if !strings.Contains(gov, "required_bilingual_sections") {
