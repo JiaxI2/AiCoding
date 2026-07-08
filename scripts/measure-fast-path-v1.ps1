@@ -27,7 +27,7 @@ try {
     )
     if (Get-Command pwsh -ErrorAction SilentlyContinue) {
         $cases += @(
-            @{ name = 'legacy: governance pre-commit'; command = { pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/legacy/fast-path-replaced/lint-git-governance.ps1 -Mode pre-commit | Out-Null } },
+            @{ name = 'go: governance lint'; command = { & $bin governance lint --json | Out-Null } },
             @{ name = 'legacy: kit smoke'; command = { pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json | Out-Null } }
         )
     }

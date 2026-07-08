@@ -44,13 +44,13 @@ if (Test-Path -LiteralPath $docSync) {
 }
 
 # Optional Git governance bridge.
-$gitGov = Join-Path $root "scripts/lint-git-governance.ps1"
+$gitGov = Join-Path $root "bin/aicoding.exe"
 $gitGovRan = $false
 if (Test-Path -LiteralPath $gitGov) {
     $gitGovRan = $true
     $global:LASTEXITCODE = 0
-    & $gitGov 2>$null | Out-Null
-    if ((-not $?) -or $LASTEXITCODE -ne 0) { $failed += "lint-git-governance.ps1" }
+    & $gitGov governance lint --json 2>$null | Out-Null
+    if ((-not $?) -or $LASTEXITCODE -ne 0) { $failed += "aicoding governance lint" }
 }
 
 Write-AgentDevKitJson -Json:$Json -Data @{

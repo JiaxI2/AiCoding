@@ -155,4 +155,4 @@ Run full repository link audit explicitly with `apatch links --mode offline --in
 
 PowerShell remains the explicit owner for Full/Release profiles, real install/update/uninstall/export/rollback, fresh clone validation, skill verification, release overlay compatibility, PSScriptAnalyzer/PowerShell AST gates, and DSS/XDS/hardware-related flows.
 
-No `scripts/*.ps1` file is moved, deleted, or placed under `legacy/` by Fast Path V2.
+Go-replaced fast-path PowerShell scripts have been removed after Go Fast Path V2 parity. Remaining PowerShell slow-path scripts stay in place for Full/Release, lifecycle, export, rollback, fresh clone, and compatibility workflows.

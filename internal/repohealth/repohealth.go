@@ -505,19 +505,19 @@ func migrationAdvice(category, path, line string) (string, string) {
 	if strings.Contains(lower, "aicoding-kit.ps1") && strings.Contains(lower, "profile smoke") {
 		return "go-now", "bin/aicoding.exe kit verify --all --profile Smoke --json"
 	}
-	if strings.Contains(lower, "lint-git-governance.ps1") {
+	if strings.Contains(lower, "governance lint") {
 		return "go-now", "bin/aicoding.exe governance lint --json"
 	}
 	if strings.Contains(lower, "check-documentation-sync.ps1") && (strings.Contains(lower, "pre-commit") || strings.Contains(lower, "staged")) {
 		return "go-now", "bin/aicoding.exe hook pre-commit --json"
 	}
-	if strings.Contains(lower, "verify-hooks.ps1") {
+	if strings.Contains(lower, "verify hooks") {
 		return "go-now", "bin/aicoding.exe verify hooks --json"
 	}
 	if strings.Contains(lower, "verify-release-governance-overlay.ps1") {
 		return "keep-pwsh", "keep PowerShell release-governance overlay slow path"
 	}
-	if strings.Contains(lower, "verify-release-notes.ps1") || strings.Contains(lower, "verify-release-governance-overlay.ps1") {
+	if strings.Contains(lower, "verify release-notes") {
 		return "go-now", "bin/aicoding.exe verify release-notes --json"
 	}
 	if category == "status" {
@@ -714,7 +714,7 @@ func classifyPwshBudget(path, line, category, migration string) string {
 	if containsAny(lower, "profile full", "profile release", "test-kit-fresh-clone", " export ", " install", " uninstall", " rollback", "dss", "xds", "flash", "erase", "write-memory", "psscriptanalyzer") {
 		return "slow-path"
 	}
-	if migration == "go-now" || containsAny(lower, "profile smoke", "task smoke", "lint-git-governance.ps1", "verify-hooks.ps1", "verify-release-notes.ps1", "verify-repo-text-format.ps1") {
+	if migration == "go-now" || containsAny(lower, "profile smoke", "task smoke", "governance lint", "verify hooks", "verify release-notes", "verify repo-text") {
 		return "hot-path"
 	}
 	if category == "release" || category == "install" || category == "uninstall" || category == "rollback" || category == "export" || category == "dss" {

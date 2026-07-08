@@ -16,14 +16,5 @@ if command -v go >/dev/null 2>&1 && [ -d "cmd/aicoding" ]; then
   exec go run ./cmd/aicoding hook pre-commit
 fi
 
-# Legacy fallback: slower but preserves old behavior before the fast CLI is built.
-if command -v pwsh >/dev/null 2>&1; then
-  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/legacy/fast-path-replaced/lint-git-governance.ps1 -Mode pre-commit
-  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode pre-commit -Staged
-elif command -v powershell.exe >/dev/null 2>&1; then
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/legacy/fast-path-replaced/lint-git-governance.ps1 -Mode pre-commit
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode pre-commit -Staged
-else
-  echo "AiCoding fast CLI, Go, or PowerShell is required for pre-commit checks" >&2
-  exit 1
-fi
+echo "AiCoding fast CLI or Go is required for pre-commit checks" >&2
+exit 1

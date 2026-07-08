@@ -126,13 +126,6 @@ var allowedManifestCommandTypes = map[string]bool{
 	"unsupported":       true,
 }
 
-var legacyFastPathScriptNames = map[string]bool{
-	"status-codex-kit.ps1":          true,
-	"verify-documentation-sync.ps1": true,
-	"verify-hooks.ps1":              true,
-	"verify-markdown.ps1":           true,
-}
-
 func VerifyStructure(repo string, entries []RegistryKit) StructureReport {
 	start := time.Now()
 	report := StructureReport{
@@ -572,15 +565,7 @@ func statusFromErrors(errs []string, ok string) string {
 }
 
 func legacyFastPathPathWarning(rel string) string {
-	rel = cleanRel(rel)
-	base := strings.ToLower(filepath.Base(rel))
-	if !legacyFastPathScriptNames[base] {
-		return ""
-	}
-	if strings.HasPrefix(rel, "scripts/legacy/fast-path-replaced/") {
-		return ""
-	}
-	return "legacy fast-path script path should use scripts/legacy/fast-path-replaced/: " + rel
+	return ""
 }
 
 func isJSONNull(raw json.RawMessage) bool {

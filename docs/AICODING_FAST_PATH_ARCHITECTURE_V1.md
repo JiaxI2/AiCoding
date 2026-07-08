@@ -10,11 +10,11 @@
 
 ```text
 .githooks/pre-commit
-  -> scripts/legacy/fast-path-replaced/lint-git-governance.ps1
-  -> scripts/check-documentation-sync.ps1
+  -> bin/aicoding hook pre-commit
+  -> staged governance and documentation checks inside Go Fast Path
 ```
 
-这意味着一次提交至少两次 PowerShell 冷启动，还可能触发 docsync 模块加载、Git 查询和文件扫描。
+旧版路径曾意味着一次提交至少两次 PowerShell 冷启动；当前默认 hook 已改由 Go Fast Path 执行，完整 DocSync 仍保留在 CI/Release 慢路径。
 
 ## 2. V1 架构原则
 

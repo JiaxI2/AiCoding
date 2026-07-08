@@ -20,5 +20,5 @@ Integrate `F:\Study\AI\aicoding-agent-dev-kit-plan-mode-overlay-v0.4` into AiCod
 - `pwsh scripts\hooks\aef\plan-mode-gate.ps1 -Event manual -Mode warn -Json`
 - `pwsh scripts\hooks\aef\spec-artifact-gate.ps1 -Event manual -Mode warn -Json`
 - `pwsh scripts\verify-agent-engineering-foundation.ps1 -Json`
-- `pwsh scripts\verify-hooks.ps1 -Json`
+- `bin\aicoding.exe verify hooks --json`
 - `git diff --check`

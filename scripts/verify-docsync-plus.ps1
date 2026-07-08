@@ -53,7 +53,9 @@ foreach ($ps in $psFiles) {
 
 $hook = Join-Path $repo.Path '.githooks/pre-commit'
 if (Test-Path -LiteralPath $hook) {
-  if ((Get-Content -Raw -LiteralPath $hook) -notmatch 'check-documentation-sync\.ps1') { Add-Error 'pre-commit hook does not call check-documentation-sync.ps1' }
+  $hookText = Get-Content -Raw -LiteralPath $hook
+  $hookIntegrated = ($hookText -match 'check-documentation-sync\.ps1') -or ($hookText -match 'bin/aicoding(\.exe)? hook pre-commit') -or ($hookText -match 'go run ./cmd/aicoding hook pre-commit')
+  if (-not $hookIntegrated) { Add-Error 'pre-commit hook does not call check-documentation-sync.ps1 or Go hook pre-commit' }
 } else { Add-Warning 'Missing .githooks/pre-commit' }
 
 $workflow = Join-Path $repo.Path '.github/workflows/docs-sync.yml'

@@ -23,12 +23,5 @@ if command -v go >/dev/null 2>&1 && [ -d "cmd/aicoding" ]; then
   exec go run ./cmd/aicoding hook commit-msg --file "$commit_msg_path"
 fi
 
-# Legacy fallback.
-if command -v pwsh >/dev/null 2>&1; then
-  pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/legacy/fast-path-replaced/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$commit_msg_path"
-elif command -v powershell.exe >/dev/null 2>&1; then
-  powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/legacy/fast-path-replaced/lint-git-governance.ps1 -Mode commit-msg -CommitMsgPath "$commit_msg_path"
-else
-  echo "AiCoding fast CLI, Go, or PowerShell is required for commit-msg checks" >&2
-  exit 1
-fi
+echo "AiCoding fast CLI or Go is required for commit-msg checks" >&2
+exit 1

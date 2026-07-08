@@ -124,25 +124,6 @@ func TestVerifyStructureWarnsForMissingGeneratedPluginPackage(t *testing.T) {
 	}
 }
 
-func TestVerifyStructureWarnsForLegacyFastPathOldPath(t *testing.T) {
-	repo := structureRepo(t, false)
-	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "status-codex-kit.ps1"), "param()\n")
-	writeLifecycleRegistry(t, repo, []string{"legacy-kit"})
-	writeLifecycleManifest(t, repo, "legacy-kit", `"status":{"type":"powershell-script","path":"scripts/status-codex-kit.ps1"}`, "")
-
-	entries, err := LoadRegistry(repo)
-	if err != nil {
-		t.Fatalf("LoadRegistry: %v", err)
-	}
-	report := VerifyStructure(repo, entries)
-	if !report.OK {
-		t.Fatalf("legacy path warning should not fail structure verify: %#v", report)
-	}
-	if !containsError(report.Warnings, "legacy fast-path script path") {
-		t.Fatalf("expected legacy fast-path warning, got %#v", report.Warnings)
-	}
-}
-
 func TestVerifyStructureAllValidManifestsOK(t *testing.T) {
 	repo := structureRepo(t, true)
 	mustWriteLifecycle(t, filepath.Join(repo, "README.md"), "test\n")

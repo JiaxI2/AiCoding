@@ -50,14 +50,14 @@ Default Smoke/status/verify/lint/doctor checks should use Go native commands:
 - `bin\aicoding.exe doctor pwsh --json`
 - `bin\aicoding.exe doctor perf --json`
 
-Do not recommend these as default Fast Path entrypoints. These are historical/fallback paths only; Fast Path V2 defaults remain Go-native:
+Do not recommend the removed legacy fast-path PowerShell scripts as Fast Path entrypoints. Historical copies are available through Git history only; Fast Path V2 defaults remain Go-native:
 
-- `scripts/legacy/fast-path-replaced/verify-hooks.ps1`
-- `scripts/legacy/fast-path-replaced/verify-repo-text-format.ps1`
-- `scripts/legacy/fast-path-replaced/verify-release-notes.ps1`
-- `scripts/legacy/fast-path-replaced/status-codex-kit.ps1` for default status
-- `scripts/legacy/fast-path-replaced/lint-git-governance.ps1` for default fast lint
-- `scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json` for default Smoke
+- `bin\aicoding.exe verify hooks --json`
+- `bin\aicoding.exe verify repo-text --json`
+- `bin\aicoding.exe verify release-notes --json`
+- `bin\aicoding.exe status --all --json`
+- `bin\aicoding.exe governance lint --json`
+- `bin\aicoding.exe kit verify --all --profile Smoke --json`
 
 ## Boundary
 

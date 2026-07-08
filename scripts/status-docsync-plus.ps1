@@ -25,7 +25,7 @@ $hookPath = Join-Path $repo.Path '.githooks/pre-commit'
 $workflowPath = Join-Path $repo.Path '.github/workflows/docs-sync.yml'
 $hookIntegrated = $false
 $ciIntegrated = $false
-if (Test-Path -LiteralPath $hookPath) { $hookIntegrated = ((Get-Content -Raw -LiteralPath $hookPath) -match 'check-documentation-sync\.ps1') }
+if (Test-Path -LiteralPath $hookPath) { $hookText = Get-Content -Raw -LiteralPath $hookPath; $hookIntegrated = ($hookText -match 'check-documentation-sync\.ps1') -or ($hookText -match 'bin/aicoding(\.exe)? hook pre-commit') -or ($hookText -match 'go run ./cmd/aicoding hook pre-commit') }
 if (Test-Path -LiteralPath $workflowPath) { $ciIntegrated = ((Get-Content -Raw -LiteralPath $workflowPath) -match 'check-documentation-sync\.ps1') }
 
 $result = [ordered]@{

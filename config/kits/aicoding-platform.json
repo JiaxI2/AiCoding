@@ -24,9 +24,13 @@
       "supportsDryRun": true
     },
     "status": {
-      "type": "powershell-script",
-      "path": "scripts/legacy/fast-path-replaced/status-codex-kit.ps1",
-      "args": [],
+      "type": "external-command",
+      "executable": "bin/aicoding.exe",
+      "args": [
+        "status",
+        "--all",
+        "--json"
+      ],
       "supportsJson": true
     },
     "verify": {

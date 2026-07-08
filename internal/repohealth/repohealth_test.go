@@ -13,7 +13,7 @@ func TestCategorizePwshPriority(t *testing.T) {
 		line string
 		want string
 	}{
-		{"Taskfile.yml", "pwsh -File scripts/legacy/fast-path-replaced/status-codex-kit.ps1 -Json", "status"},
+		{"Taskfile.yml", "pwsh -File scripts/status-docsync-plus.ps1 -Json", "status"},
 		{"Taskfile.yml", "pwsh -File scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json", "test"},
 		{"Taskfile.yml", "pwsh -File scripts/test-kit-fresh-clone.ps1 -Profile Release -Json", "release"},
 		{"README.md", "pwsh -File scripts/uninstall-codex-kit.ps1", "uninstall"},

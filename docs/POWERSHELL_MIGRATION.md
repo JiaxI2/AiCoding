@@ -1,6 +1,6 @@
 # PowerShell Migration
 
-This document classifies PowerShell entrypoints after Go Fast Path V2. It is a routing document only. The Go-replaced fast-path PowerShell scripts now live under `scripts/legacy/fast-path-replaced/` as explicit legacy compatibility or historical tooling.
+This document classifies PowerShell entrypoints after Go Fast Path V2. It is a routing document only. Go-replaced fast-path PowerShell scripts have been removed from the working tree after Go Fast Path V2 reached parity. Historical copies remain available through Git history only.
 
 ## Source
 
@@ -24,11 +24,11 @@ Budget categories:
 |---|---|---|
 | `task setup` PowerShell installer probe | `go run ./cmd/aicoding bootstrap --json` | Build/check `bin/aicoding.exe` without PowerShell |
 | `scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json` default smoke use | `bin\aicoding.exe kit verify --all --profile Smoke --json` | Smoke manifest check only |
-| `scripts/legacy/fast-path-replaced/lint-git-governance.ps1` fast lint use | `bin\aicoding.exe governance lint --json` | Local governance fast lint |
-| `scripts/legacy/fast-path-replaced/verify-hooks.ps1` | `bin\aicoding.exe verify hooks --json` | Default hook presence and fast-first verification |
-| `scripts/legacy/fast-path-replaced/verify-repo-text-format.ps1` | `bin\aicoding.exe verify repo-text --json` | README, CHANGELOG, and docs text checks |
-| `scripts/legacy/fast-path-replaced/verify-release-notes.ps1` | `bin\aicoding.exe verify release-notes --json` | CHANGELOG and release policy presence checks |
-| `scripts/legacy/fast-path-replaced/status-codex-kit.ps1` summary use | `bin\aicoding.exe status --all --json` | Repo, tool, registry, manifest, required-path summary |
+| Removed legacy fast lint script (`lint-git-governance.ps1`; Git history only) | `bin\aicoding.exe governance lint --json` | Local governance fast lint |
+| Removed legacy hook verification script (`verify-hooks.ps1`; Git history only) | `bin\aicoding.exe verify hooks --json` | Default hook presence and fast-first verification |
+| Removed legacy repo-text script (`verify-repo-text-format.ps1`; Git history only) | `bin\aicoding.exe verify repo-text --json` | README, CHANGELOG, and docs text checks |
+| Removed legacy release-notes script (`verify-release-notes.ps1`; Git history only) | `bin\aicoding.exe verify release-notes --json` | CHANGELOG and release policy presence checks |
+| Removed legacy status script (`status-codex-kit.ps1`; Git history only) | `bin\aicoding.exe status --all --json` | Repo, tool, registry, manifest, required-path summary |
 | PowerShell inventory review | `bin\aicoding.exe doctor pwsh-budget --json` | Classifies hot/slow/compatibility/docs-only invocation points |
 | Tag audit summary | `bin\aicoding.exe tag audit --json` | Structural namespace classification; legacy tags are warnings |
 | Release structure summary | `bin\aicoding.exe release verify --json` | Structural release/template/tag-policy fast check |
@@ -36,7 +36,7 @@ Budget categories:
 | `scripts/verify-kit-lifecycle.ps1 -Json` structural subset | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` | Go-native registry/manifest/required-path/dry-run policy verification |
 | `scripts/verify-codex-kit.ps1 -Json` structural subset | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` | Go-native codex-kit config, Marketplace path, package layout, and lifecycle structure verification |
 
-These replacements remove PowerShell from the default hot path only. The moved legacy scripts remain available as explicit compatibility or historical tooling.
+These replacements remove PowerShell from the default hot path. The Go-replaced legacy scripts have been removed from the working tree and are available only through Git history.
 
 ## Smart Verify
 
@@ -101,4 +101,4 @@ PowerShell remains the explicit Full/Release, real install/update/uninstall/expo
 
 ## Legacy Boundary
 
-Go-replaced fast-path PowerShell scripts are already isolated under `scripts/legacy/fast-path-replaced/`. Do not delete remaining PowerShell slow paths or change Full/Release, real install/update/uninstall/export/rollback, fresh clone, DSS, or PSScriptAnalyzer semantics without a separate migration plan and user confirmation.
+Go-replaced fast-path PowerShell scripts have been removed from the working tree and are available only through Git history. Do not delete remaining PowerShell slow paths or change Full/Release, real install/update/uninstall/export/rollback, fresh clone, DSS, or PSScriptAnalyzer semantics without a separate migration plan and user confirmation.

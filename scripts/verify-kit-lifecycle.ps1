@@ -119,7 +119,7 @@ $kitRunnerModulePath = Resolve-RepoPath "scripts/lib/AiCoding.KitRunner.psm1"
 $verifyCodexKitPath = Resolve-RepoPath "scripts/verify-codex-kit.ps1"
 $freshCloneTestPath = Resolve-RepoPath "scripts/test-kit-fresh-clone.ps1"
 $verifyCommonCodePath = Resolve-RepoPath "scripts/verify-common-code.ps1"
-$verifyHooksPath = Resolve-RepoPath "scripts/legacy/fast-path-replaced/verify-hooks.ps1"
+$aicodingExePath = Resolve-RepoPath "bin/aicoding.exe"
 
 foreach ($scriptName in @("install-all.ps1", "verify-all.ps1", "test-all.ps1", "update-all.ps1", "export-all.ps1", "uninstall-all.ps1")) {
     $forbiddenPath = Join-Path (Resolve-RepoPath "scripts") $scriptName
@@ -284,11 +284,15 @@ if (Test-Path -LiteralPath $aicodingSkillPath -PathType Leaf) {
 }
 
 foreach ($gate in @(
-    @{ name = "v2.common.verify"; path = $verifyCommonCodePath },
-    @{ name = "v2.hooks.verify"; path = $verifyHooksPath }
+    @{ name = "v2.common.verify"; kind = "powershell"; path = $verifyCommonCodePath },
+    @{ name = "v2.hooks.verify"; kind = "aicoding"; path = $aicodingExePath }
 )) {
     if (Test-Path -LiteralPath $gate.path -PathType Leaf) {
-        $gateResult = Invoke-Capture $shell @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $gate.path, "-Json") @{} 20
+        if ($gate.kind -eq "aicoding") {
+            $gateResult = Invoke-Capture $gate.path @("verify", "hooks", "--json") @{} 20
+        } else {
+            $gateResult = Invoke-Capture $shell @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $gate.path, "-Json") @{} 20
+        }
         Add-Check "$($gate.name).exit" ($gateResult.exitCode -eq 0) ("exit={0}" -f $gateResult.exitCode) @{ stderr = $gateResult.stderr.Trim(); timedOut = $gateResult.timedOut }
         $gateJson = if ($gateResult.exitCode -eq 0) { Convert-CommandJson $gateResult.stdout "$($gate.name).json" } else { $null }
         if ($gateJson) { Add-Check "$($gate.name).ok" ([bool]$gateJson.ok) "$($gate.name) smoke verification" }

@@ -63,7 +63,7 @@ enabled = true
 profile = "minor"
 notes_mode = "curated"
 notes_template = ".github/RELEASE_TEMPLATE.md"
-notes_validator = "scripts/legacy/fast-path-replaced/verify-release-notes.ps1"
+notes_validator = "bin/aicoding.exe verify release-notes --json"
 required_sections = ["Summary", "What's Changed", "Compatibility", "Deprecations", "Release Notes", "Full Changelog", "New Contributors", "Known Issues", "Traceability"]
 required_bilingual_sections = ["摘要 / Summary", "变更内容 / What's Changed", "兼容性 / Compatibility", "废弃项 / Deprecations", "发布说明 / Release Notes", "完整变更 / Full Changelog", "新贡献者 / New Contributors", "已知问题 / Known Issues", "可追溯性 / Traceability", "资产 / Assets"]
 optional_sections = ["Highlights / Major Changes", "Breaking Changes / Migration", "Assets / Checksums", "Upgrade / Programming", "Rollback"]
@@ -84,7 +84,7 @@ validate_markdown_links = true
 validate_release_notes = true
 github_generated_release_notes = false
 hooks_path = ".githooks"
-lint_command = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/legacy/fast-path-replaced/lint-git-governance.ps1 -Mode all"
+lint_command = "bin/aicoding.exe governance lint --json"
 
 [github_about]
 require_bilingual = true
