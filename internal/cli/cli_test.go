@@ -115,3 +115,36 @@ func TestMainSwitchRoutesNewCommands(t *testing.T) {
 		t.Fatalf("unexpected output: %s", out)
 	}
 }
+
+func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
+	b, err := os.ReadFile("cli.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	source := string(b)
+	for _, needle := range []string{
+		`case "docsync":`,
+		`res, err = runDocSync`,
+		`case "skill":`,
+		`res, err = runSkill`,
+		`case "lifecycle":`,
+		`res, err = runLifecycle`,
+		`case "export":`,
+		`res, err = runExport`,
+		`case "fresh-clone":`,
+		`res, err = runFreshClone`,
+		`case "full":`,
+		`res, err = runFull`,
+		`case "release":`,
+		`res, err = runReleaseCommand`,
+		`aicoding release gate`,
+	} {
+		if !strings.Contains(source, needle) {
+			t.Fatalf("cli.go is missing %q", needle)
+		}
+	}
+	outdated := "Full/Release gates remain" + " in PowerShell/Python"
+	if strings.Contains(source, outdated) {
+		t.Fatal("usage still describes Full/Release as PowerShell/Python gates")
+	}
+}

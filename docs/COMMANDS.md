@@ -25,15 +25,24 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 |---|---|
 | Bootstrap binary | `bin\aicoding.exe bootstrap --json` |
 | Smart verify plan + selected checks | `bin\aicoding.exe workflow smart-verify --json` |
-| DocSync staged/all/ci/release | `bin\aicoding.exe docsync staged --json`; `bin\aicoding.exe docsync all --json`; `bin\aicoding.exe docsync ci --json`; `bin\aicoding.exe docsync release --json` |
-| Skill structure verification | `bin\aicoding.exe skill verify --all --profile Smoke --json` |
+| DocSync staged | `bin\aicoding.exe docsync staged --json` |
+| DocSync all | `bin\aicoding.exe docsync all --json` |
+| DocSync CI | `bin\aicoding.exe docsync ci --json` |
+| DocSync release | `bin\aicoding.exe docsync release --json` |
+| Skill Smoke verification | `bin\aicoding.exe skill verify --all --profile Smoke --json` |
+| Skill Full verification | `bin\aicoding.exe skill verify --all --profile Full --json` |
+| Skill Release verification | `bin\aicoding.exe skill verify --all --profile Release --json` |
 | Kit Smoke | `bin\aicoding.exe kit verify --all --profile Smoke --json` |
 | Kit Lifecycle structure verify | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` |
-| Lifecycle plan | `bin\aicoding.exe lifecycle plan --action update --all --json` |
-| Lifecycle apply | `bin\aicoding.exe lifecycle install --all --json`; `bin\aicoding.exe lifecycle update --all --json`; `bin\aicoding.exe lifecycle uninstall --all --json` |
+| Lifecycle install plan | `bin\aicoding.exe lifecycle plan --action install --all --json` |
+| Lifecycle update plan | `bin\aicoding.exe lifecycle plan --action update --all --json` |
+| Lifecycle install | `bin\aicoding.exe lifecycle install --all --json` |
+| Lifecycle update | `bin\aicoding.exe lifecycle update --all --json` |
+| Lifecycle uninstall | `bin\aicoding.exe lifecycle uninstall --all --json` |
 | Rollback last lifecycle snapshot | `bin\aicoding.exe lifecycle rollback --last --json` |
 | Export release bundle | `bin\aicoding.exe export --all --zip --json` |
-| Fresh clone profile gate | `bin\aicoding.exe fresh-clone --profile Smoke --json` |
+| Fresh clone Smoke | `bin\aicoding.exe fresh-clone --profile Smoke --json` |
+| Fresh clone Release | `bin\aicoding.exe fresh-clone --profile Release --json` |
 | Full aggregate | `bin\aicoding.exe full --json` |
 | Release aggregate | `bin\aicoding.exe release gate --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
@@ -49,20 +58,21 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 
 ## Default CI Smoke
 
-PR/push fast CI uses this Go-native chain:
+PR/push CI uses this Go-native chain on Windows:
 
-```bash
-go build -o bin/aicoding ./cmd/aicoding
+```powershell
 go test ./...
-./bin/aicoding kit verify --all --profile Smoke --json
-./bin/aicoding governance lint --json
-./bin/aicoding verify hooks --json
-./bin/aicoding verify repo-text --json
-./bin/aicoding verify release-notes --json
-./bin/aicoding doctor perf --json
+go build -o bin/aicoding.exe ./cmd/aicoding
+bin\aicoding.exe docsync ci --json
+bin\aicoding.exe skill verify --all --profile Smoke --json
+bin\aicoding.exe lifecycle plan --action install --all --json
+bin\aicoding.exe full --json
+bin\aicoding.exe export --all --zip --json
 ```
 
-DocSync CI builds the Go CLI and runs:
+The export step removes generated `dist/aicoding-kit-*` artifacts after the check. Fresh-clone Release stays on manual or scheduled release jobs to avoid slowing every push.
+
+DocSync CI also builds the Go CLI and runs:
 
 ```powershell
 bin\aicoding.exe docsync ci --json
@@ -76,7 +86,7 @@ bin\aicoding.exe docsync ci --json
 | `task smoke` | Fast local Smoke gate | Go |
 | `task perf` | Go-native performance probes | Go |
 | `task full` | Full aggregate validation | Go |
-| `task release` | Release gate, including DocSync release, skill release, export, and fresh clone unless skipped by environment | Go |
+| `task release` | Release gate with release-only checks | Go |
 | `task skills` | Skill verification | Go |
 | `task rollback` | Roll back last lifecycle state snapshot | Go |
 | `task tag:audit` | Tag namespace audit | Go |
@@ -95,14 +105,27 @@ The export manifest records stable relative paths, file sizes, SHA-256 hashes, g
 
 ## Compatibility PowerShell
 
-PowerShell remains only for workflows not fully replaced in Go, including tag migration planning, release governance overlay compatibility, PowerShell regex quality, external third-party skill install/audit, Plan Mode helper scripts, and safety-specific tooling.
+PowerShell remains only for workflows not fully replaced in Go, including:
+
+- tag migration planning;
+- release governance overlay compatibility;
+- PowerShell regex quality;
+- external third-party skill install/audit;
+- Plan Mode helper scripts;
+- safety-specific tooling.
 
 ## Link Checks
 
 Default maintained-docs link check:
 
 ```powershell
-apatch links --mode offline --include-fragments full --input README.md --input README_CN.md --input README_EN.md --input CHANGELOG.md --input "docs/*.md" --input ".github/workflows/*.yml"
+apatch links --mode offline --include-fragments full `
+  --input README.md `
+  --input README_CN.md `
+  --input README_EN.md `
+  --input CHANGELOG.md `
+  --input "docs/*.md" `
+  --input ".github/workflows/*.yml"
 ```
 
 Full repository link audit remains explicit:
@@ -130,4 +153,5 @@ These commands do not create or push tags unless a separate explicit tag operati
 
 ## Safety Boundary
 
-Do not use repository commands to perform DSS/XDS/reset/halt/run/flash/erase/write-memory actions. Hardware-related code and fixtures are documentation or test assets unless a separate approved hardware workflow exists.
+Do not use repository commands to perform DSS/XDS/reset/halt/run/flash/erase/write-memory actions.
+Hardware-related code and fixtures are documentation or test assets unless a separate approved hardware workflow exists.

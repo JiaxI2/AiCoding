@@ -16,6 +16,11 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
       - name: Build AiCoding Go CLI
         shell: pwsh
         run: go build -o bin/aicoding.exe ./cmd/aicoding

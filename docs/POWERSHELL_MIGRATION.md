@@ -1,6 +1,7 @@
 # PowerShell Migration
 
-This document classifies PowerShell entrypoints after Go-native consolidation. Go-replaced fast-path scripts and the lifecycle/export/fresh-clone/DocSync/skill verification entrypoints are no longer default routes.
+This document classifies PowerShell entrypoints after Go-native consolidation.
+Go-replaced fast-path scripts and lifecycle/export/fresh-clone/DocSync/skill verification entrypoints are no longer default routes.
 
 ## Source
 
@@ -32,11 +33,11 @@ Budget categories:
 | Fresh clone | `bin\aicoding.exe fresh-clone --profile Smoke|Full|Release --json` | Temp clone, submodule init, Go build, profile gate |
 | Skill verification | `bin\aicoding.exe skill verify --all --profile Smoke|Full|Release --json` | Manifest-declared skill structure and frontmatter checks |
 | DocSync staged/all/ci/release | `bin\aicoding.exe docsync staged|all|ci|release --json` | Go DocSync policy and release path checks |
-| Removed legacy fast lint script (`lint-git-governance.ps1`; Git history only) | `bin\aicoding.exe governance lint --json` | Local governance fast lint |
-| Removed legacy hook verification script (`verify-hooks.ps1`; Git history only) | `bin\aicoding.exe verify hooks --json` | Default hook presence and fast-first verification |
-| Removed legacy repo-text script (`verify-repo-text-format.ps1`; Git history only) | `bin\aicoding.exe verify repo-text --json` | README, CHANGELOG, and docs text checks |
-| Removed legacy release-notes script (`verify-release-notes.ps1`; Git history only) | `bin\aicoding.exe verify release-notes --json` | CHANGELOG and release policy presence checks |
-| Removed legacy status script (`status-codex-kit.ps1`; Git history only) | `bin\aicoding.exe status --all --json` | Repo, tool, registry, manifest, required-path summary |
+| Removed governance lint script | `bin\aicoding.exe governance lint --json` | Local governance fast lint |
+| Removed hook verification script | `bin\aicoding.exe verify hooks --json` | Default hook presence and fast-first verification |
+| Removed repo-text script | `bin\aicoding.exe verify repo-text --json` | README, CHANGELOG, and docs text checks |
+| Removed release-notes script | `bin\aicoding.exe verify release-notes --json` | CHANGELOG and release policy checks |
+| Removed status script | `bin\aicoding.exe status --all --json` | Repo, tool, registry, manifest, required-path summary |
 
 ## Keep PowerShell
 
@@ -44,13 +45,14 @@ Budget categories:
 |---|---|
 | `scripts/aicoding-tag-governance.ps1 -Action Plan` | Non-destructive legacy tag correction planning |
 | `scripts/verify-release-governance-overlay.ps1` | Overlay-specific compatibility check |
-| `scripts/aicoding-skill.ps1` external install/audit actions | Third-party skill download, install, audit, and adoption workflows are broader than skill verification |
+| `scripts/aicoding-skill.ps1` external install/audit actions | Third-party skill workflows are broader than skill verification |
 | `scripts/lib/AiCoding.SkillAudit.psm1` | External skill audit helper |
 | PowerShell AST, PSScriptAnalyzer, and regex optimization gates | PowerShell-specific quality gates |
 | Plan Mode and agent hook helper scripts | Agent workflow helpers not covered by lifecycle/export/DocSync migration |
 | DSS/XDS/hardware-related scripts, fixtures, or references | Hardware safety boundary; do not run or migrate by default |
 
-The PowerShell Skill Kit pass gate remains scoped to `tools/`, `hooks/`, and `tests/cases/good`. Negative fixtures remain fixtures and must not be promoted to recursive CI blockers.
+The PowerShell Skill Kit pass gate remains scoped to `tools/`, `hooks/`, and `tests/cases/good`.
+Negative fixtures remain fixtures and must not be promoted to recursive CI blockers.
 
 ## Default Entry Decision
 
@@ -69,4 +71,5 @@ bin\aicoding.exe full --json
 bin\aicoding.exe release gate --json
 ```
 
-PowerShell remains explicit compatibility and specialty tooling only. Do not delete remaining PowerShell safety, hardware, Plan Mode, external skill, tag planning, or PowerShell-quality scripts without a separate migration plan and validation.
+PowerShell remains explicit compatibility and specialty tooling only.
+Do not delete remaining PowerShell safety, hardware, Plan Mode, external skill, tag planning, or PowerShell-quality scripts without a separate migration plan and validation.
