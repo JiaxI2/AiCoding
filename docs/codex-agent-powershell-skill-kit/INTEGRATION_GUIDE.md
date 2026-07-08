@@ -1,4 +1,4 @@
-# AiCoding Integration Guide
+﻿# AiCoding Integration Guide
 
 ## Correct source-ownership model
 
@@ -28,9 +28,9 @@ Add these platform integration files to AiCoding:
 config/codex-agent-powershell-skill-kit.json
 dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/
 docs/codex-agent-powershell-skill-kit/
-scripts/install-codex-agent-powershell-skill-kit.ps1
+bin/aicoding.exe lifecycle install --all --json
 scripts/status-codex-agent-powershell-skill-kit.ps1
-scripts/uninstall-codex-agent-powershell-skill-kit.ps1
+bin/aicoding.exe lifecycle uninstall --all --json
 scripts/verify-codex-agent-powershell-skill-kit.ps1
 scripts/test-codex-agent-powershell-skill-kit.ps1
 .agents/plugins/marketplace.json

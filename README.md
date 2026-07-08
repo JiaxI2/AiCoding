@@ -15,23 +15,21 @@ AiCoding 是本地 AI coding 工作流的平台集成、安装、治理与 Codin
 
 ## 当前架构 / Current Architecture
 
-AiCoding 本地执行路径分两层：
+AiCoding 本地执行路径以 Go CLI 为默认控制面：
 
-- Go Fast Path V2：承担 bootstrap、smart-verify、Smoke、hook、status、repo text、release-notes、tag/release 结构快检、governance lint、pwsh-budget 和 doctor perf 等高频检查。
-- PowerShell/Python 慢路径：保留 Full/Release、install/uninstall/export、fresh clone、rollback、打包与兼容性工作流。
+- Go CLI：承担 bootstrap、smart-verify、Smoke、hook、status、repo text、release-notes、tag/release、governance lint、DocSync、skill verify、lifecycle、export、fresh-clone、Full 和 Release gate。
+- PowerShell/Python：只保留尚未被本轮完整替代的兼容、专项质量、安全、计划模式和外部 skill 工作流。
 
-Go 路径用于减少 PowerShell 冷启动并输出稳定 JSON，不替代 Full/Release gate。
-
+Go 路径用于减少 PowerShell 冷启动并输出稳定 JSON，Full/Release gate 现在也由 Go 聚合。
 ## 环境预览 / Environment Preview
 
 | 区域 | 当前默认 | 说明 |
 |---|---|---|
-| 人机入口 | `task setup`, `task smoke`, `workflow smart-verify` | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| Go CLI | `bin/aicoding.exe bootstrap/workflow/cache/tag/release` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| Full/Release | PowerShell/Python scripts | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
+| 人机入口 | `task setup`, `task smoke`, `task full`, `task release` | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| Go CLI | `bin/aicoding.exe bootstrap/workflow/cache/tag/release/docsync/lifecycle/export/fresh-clone` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
+| Full/Release | `bin/aicoding.exe full --json`, `bin/aicoding.exe release gate --json` | [docs/COMMANDS.md](docs/COMMANDS.md) |
 | Kit 模型 | registry + manifests | [config/kit-registry.json](config/kit-registry.json) |
 | 发布治理 | tag namespace policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
-
 
 ## 快速开始 / Quick Start
 
@@ -39,24 +37,21 @@ Go 路径用于减少 PowerShell 冷启动并输出稳定 JSON，不替代 Full/
 go run ./cmd/aicoding bootstrap --json
 bin\aicoding.exe workflow smart-verify --json
 task smoke
-bin\aicoding.exe doctor pwsh-budget --json
-bin\aicoding.exe tag audit --json
-bin\aicoding.exe release verify --json
+bin\aicoding.exe docsync ci --json
+bin\aicoding.exe skill verify --all --profile Smoke --json
+bin\aicoding.exe release gate --json
 ```
 
-只有需要完整本地验证或正式发布时，才显式运行 `task full` 或 `task release`。
-
+完整本地验证和正式发布门禁也通过 `task full`、`task release` 路由到 Go CLI。
 ## 当前架构图 / Architecture Diagram
 
 ```mermaid
 flowchart TD
   User["User / Agent"] --> Taskfile["Taskfile<br/>routing"]
-  Taskfile --> GoCLI["Go Fast Path<br/>bin/aicoding.exe"]
-  Taskfile --> Slow["Slow Path<br/>PowerShell / Python"]
+  Taskfile --> GoCLI["Go CLI<br/>bin/aicoding.exe"]
   GoCLI --> FastChecks["bootstrap / smart-verify<br/>smoke / hooks / status<br/>verify / lint / doctor"]
-  Slow --> Full["full / release<br/>install / export / rollback<br/>fresh clone"]
+  GoCLI --> Full["full / release<br/>lifecycle / export / rollback<br/>fresh clone / docsync / skills"]
   GoCLI --> Registry["Kit registry<br/>config/kit-registry.json<br/>config/kits/*.json"]
-  Slow --> Registry
   Registry --> CodingKit["CodingKit assets<br/>skill submodule"]
 ```
 

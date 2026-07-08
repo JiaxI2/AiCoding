@@ -1,4 +1,4 @@
-# Maintenance Method
+﻿# Maintenance Method
 
 This is the required operating method for maintaining Codex-Skills and AiCoding.
 
@@ -84,16 +84,16 @@ For AiCoding changes, run:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps1 -DryRun
+bin/aicoding.exe lifecycle plan --action install --all --json
 bin\aicoding.exe status --all --json
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun
+bin/aicoding.exe lifecycle plan --action update --all --json
 bin\aicoding.exe governance lint --json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/install-docsync-plus.ps1 -DryRun -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/status-docsync-plus.ps1 -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-docsync-plus.ps1 -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-docsync-plus.ps1 -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all -Format json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode ci -Format json
+bin/aicoding.exe docsync all --json
+bin/aicoding.exe docsync all --json
+bin/aicoding.exe docsync ci --json
+bin/aicoding.exe docsync release --json
+bin/aicoding.exe docsync all --json
+bin/aicoding.exe docsync ci --json
 git diff --check
 ```
 
@@ -148,7 +148,7 @@ Do not claim completion if:
 - the submodule is dirty;
 - AiCoding changed Skill source;
 - docs or CHANGELOG no longer match behavior;
-- DocSync Plus modules, semantic policy, or the single `scripts/check-documentation-sync.ps1` entrypoint are missing or fail status/verify/test checks;
+- DocSync Plus modules, semantic policy, or the single `bin/aicoding.exe docsync` entrypoint are missing or fail status/verify/test checks;
 - Hook changes have not been reported for `/hooks` review;
 - destructive Git or cache actions were needed but not explicitly authorized.
 

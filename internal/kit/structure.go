@@ -119,6 +119,7 @@ var allowedManifestCommandNames = map[string]bool{
 
 var allowedManifestCommandTypes = map[string]bool{
 	"builtin-check":     true,
+	"builtin-lifecycle": true,
 	"builtin-package":   true,
 	"composed":          true,
 	"external-command":  true,
@@ -368,7 +369,7 @@ func (v structureVerifier) checkManifestCommands(manifest Manifest, result *Stru
 			if command.Executable == "" {
 				commandResult.Errors = append(commandResult.Errors, "external-command executable is empty")
 			}
-		case "builtin-check":
+		case "builtin-check", "builtin-lifecycle":
 			for _, rel := range missingRequiredPaths(v.repo, command.RequiredPaths) {
 				commandResult.Errors = append(commandResult.Errors, "missing required path: "+rel)
 			}

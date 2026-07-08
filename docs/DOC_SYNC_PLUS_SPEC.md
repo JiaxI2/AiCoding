@@ -1,10 +1,10 @@
-# AiCoding DocSync Plus Specification
+﻿# AiCoding DocSync Plus Specification
 
 ## Role
 
 DocSync Plus is a repository-maintenance kit for AiCoding. It upgrades documentation synchronization from a path-only gate to a Git-diff-driven semantic drift gate.
 
-It is not a Codex Skill, not a plugin, and not a replacement for `scripts/check-documentation-sync.ps1`.
+It is not a Codex Skill, not a plugin, and not a replacement for `bin/aicoding.exe docsync`.
 
 ## Architecture
 
@@ -25,15 +25,15 @@ git diff changed files
 The following existing calls must remain valid:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode pre-commit -Staged
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
+bin/aicoding.exe docsync staged --json
+bin/aicoding.exe docsync all --json
 ```
 
 DocSync Plus adds:
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode ci -Format json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode release -Format markdown -ReportPath .\docsync-report.md
+bin/aicoding.exe docsync ci --json
+bin/aicoding.exe docsync release --json
 ```
 
 ## Scoring

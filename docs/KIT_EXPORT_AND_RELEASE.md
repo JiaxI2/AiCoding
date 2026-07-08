@@ -1,13 +1,13 @@
-# Kit Export And Release
+﻿# Kit Export And Release
 
 Kit packages are generated artifacts under `.aicoding/packages/` and are not committed to `main`.
 
 ## Commands
 
 ```powershell
-pwsh scripts/aicoding-kit.ps1 export -Kit aicoding-agent-dev-kit -Zip -Json
-pwsh scripts/aicoding-kit.ps1 export -All -Zip -Json
-pwsh scripts/aicoding-kit.ps1 export -All -Zip -DryRun -Json
+bin/aicoding.exe export -Kit aicoding-agent-dev-kit -Zip -Json
+bin/aicoding.exe export -All -Zip -Json
+bin/aicoding.exe export -All -Zip -DryRun -Json
 ```
 
 Single-Kit export reads `commands.export.include`, `commands.export.exclude`, and `commands.export.outputName` from the Kit manifest. All-Kit export iterates enabled registry entries and calls the same `Export-AiCodingKit` path for every Kit before creating a bundle.

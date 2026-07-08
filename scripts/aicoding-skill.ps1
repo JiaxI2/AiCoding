@@ -1,4 +1,4 @@
-[CmdletBinding(SupportsShouldProcess=$true)]
+﻿[CmdletBinding(SupportsShouldProcess=$true)]
 param(
     [Parameter(Position=0, Mandatory=$true)]
     [ValidateSet("sources", "add-source", "download", "install", "verify", "update", "remove", "create", "adopt", "list", "install-external", "status-external", "verify-external")]
@@ -1178,7 +1178,7 @@ pwsh scripts/aicoding-skill.ps1 verify -Skill $Skill -Json
                 requiredActions = @(
                     "copy-as-new into the kit canonical dist path",
                     "append config/kits/$Kit.json skills.members",
-                    "run pwsh scripts/aicoding-kit.ps1 verify-skills -Kit $Kit -Json",
+                    "run bin/aicoding.exe skill verify --all --profile Smoke --json",
                     "update docs and CHANGELOG"
                 )
                 policy = "v2.0 reports the adopt plan only; it does not silently rewrite canonical Kit content."

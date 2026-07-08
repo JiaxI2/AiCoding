@@ -13,10 +13,10 @@ func TestCategorizePwshPriority(t *testing.T) {
 		line string
 		want string
 	}{
-		{"Taskfile.yml", "pwsh -File scripts/status-docsync-plus.ps1 -Json", "status"},
-		{"Taskfile.yml", "pwsh -File scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json", "test"},
-		{"Taskfile.yml", "pwsh -File scripts/test-kit-fresh-clone.ps1 -Profile Release -Json", "release"},
-		{"README.md", "pwsh -File scripts/uninstall-codex-kit.ps1", "uninstall"},
+		{"Taskfile.yml", "bin/aicoding.exe docsync ci --json", "unknown"},
+		{"Taskfile.yml", "bin/aicoding.exe kit verify --all --profile Smoke --json", "verify"},
+		{"Taskfile.yml", "bin/aicoding.exe fresh-clone --profile Release --json", "release"},
+		{"README.md", "pwsh -File scripts/uninstall-safety-profile.ps1", "uninstall"},
 		{"README.md", "TI DSS / XDS / flash / erase / write-memory", "dss"},
 	}
 	for _, tc := range cases {
@@ -31,7 +31,7 @@ func TestIsPwshInvocationLine(t *testing.T) {
 		line string
 		want bool
 	}{
-		{"pwsh -File scripts/aicoding-kit.ps1", true},
+		{"pwsh -File scripts/verify-release-governance-overlay.ps1", true},
 		{"\"type\": \"powershell-script\"", true},
 		{"if (Get-Command pwsh -ErrorAction SilentlyContinue) {}", true},
 		{"PowerShell / Python slow path remains available", false},

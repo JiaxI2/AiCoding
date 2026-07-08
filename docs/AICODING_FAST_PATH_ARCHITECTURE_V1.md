@@ -1,10 +1,10 @@
-# AiCoding Fast Path Architecture V1
+﻿# AiCoding Fast Path Architecture V1
 
 > 目标：保留现有 PowerShell/Python Kit 生态，不推翻旧脚本；只把高频、低延迟路径迁移到 Go native CLI，降低 Git hook、Smoke gate、registry/manifest 检查和性能诊断的启动成本。
 
 ## 1. 当前问题判断
 
-当前仓库已经有较好的生命周期抽象：`config/kit-registry.json` 统一登记 7 个 kit，`scripts/aicoding-kit.ps1` 作为 registry/manifest adapter 入口，`Smoke / Full / Release` 已经分层。主要性能问题不在业务逻辑，而在热路径仍然通过多次 `sh -> pwsh -> ps1 -> git/python/ps1` 进程链路执行。
+当前仓库已经有较好的生命周期抽象：`config/kit-registry.json` 统一登记 7 个 kit，`bin/aicoding.exe` 作为 registry/manifest adapter 入口，`Smoke / Full / Release` 已经分层。主要性能问题不在业务逻辑，而在热路径仍然通过多次 `sh -> pwsh -> ps1 -> git/python/ps1` 进程链路执行。
 
 最明显的热路径是：
 
@@ -20,7 +20,7 @@
 
 ### 2.1 保留旧系统
 
-- 不删除 `scripts/aicoding-kit.ps1`。
+- 不删除 `bin/aicoding.exe`。
 - 不删除任何 `verify-*.ps1`、`test-*.ps1`、`install-*.ps1`。
 - Full / Release 仍然通过 PowerShell/Python/CI 运行。
 - 新 Go CLI 只接管热路径和 Smoke 级检查。
@@ -54,11 +54,11 @@ L1 local Smoke
   bin/aicoding doctor perf
 
 L2 local Full
-  pwsh scripts/aicoding-kit.ps1 test -All -Profile Full -Json
+  bin/aicoding.exe full --json -Profile Full -Json
 
 L3 CI / Release
-  pwsh scripts/test-kit-fresh-clone.ps1 -Profile Release -Json
-  pwsh scripts/aicoding-kit.ps1 export -All -Zip -Json
+  bin/aicoding.exe fresh-clone -Profile Release -Json
+  bin/aicoding.exe export -All -Zip -Json
 ```
 
 ## 3. Kit 分层约束
@@ -101,7 +101,7 @@ scripts/aicoding-fast.ps1         # PowerShell 薄封装；兼容 Windows 使用
 不改动：
 
 ```text
-scripts/aicoding-kit.ps1
+bin/aicoding.exe
 scripts/lib/AiCoding.*.psm1
 dist/**
 CodingKit/**
@@ -141,7 +141,7 @@ bin/aicoding.exe doctor perf --json
 ## 6. V1 明确不做的事
 
 - 不替代 Full / Release。
-- 不替代 `scripts/check-documentation-sync.ps1 -Mode all|ci|release`。
+- 不替代 `bin/aicoding.exe docsync -Mode all|ci|release`。
 - 不运行 pytest。
 - 不运行 `python -m ai_debug_repair...`。
 - 不运行 `apatch doctor`。

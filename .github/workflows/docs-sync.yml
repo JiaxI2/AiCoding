@@ -16,7 +16,10 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Build AiCoding Go CLI
+        shell: pwsh
+        run: go build -o bin/aicoding.exe ./cmd/aicoding
+
       - name: Check documentation synchronization
         shell: pwsh
-        run: |
-          pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all
+        run: bin/aicoding.exe docsync ci --json

@@ -1,4 +1,4 @@
-# Kit Lifecycle Architecture v2
+﻿# Kit Lifecycle Architecture v2
 
 AiCoding now treats a Kit as any capability unit that can be discovered, checked, verified, tested, updated, uninstalled, or exported by the platform lifecycle system. A Kit can be a Codex plugin package, Python CLI package, PowerShell skill kit, repository hook kit, documentation sync kit, CodingKit module, or repository asset package.
 ## AiCoding Kit System v2.0 Freeze
@@ -20,7 +20,7 @@ Common = reusable source module
 Trust = third-party and user-created skill boundary
 ```
 
-The primary entrypoints are `scripts/aicoding-kit.ps1` for Kit lifecycle and `scripts/aicoding-skill.ps1` for third-party or user-created skill source management. Existing install, update, uninstall, status, verify, and test scripts remain legacy adapter entries behind manifests; v2.0 does not rewrite them and does not add any `*-all.ps1` lifecycle scripts.
+The primary entrypoints are `bin/aicoding.exe` for Kit lifecycle and `scripts/aicoding-skill.ps1` for third-party or user-created skill source management. Existing install, update, uninstall, status, verify, and test scripts remain legacy adapter entries behind manifests; v2.0 does not rewrite them and does not add any `*-all.ps1` lifecycle scripts.
 
 Policy documents:
 
@@ -40,7 +40,7 @@ Default repository verification stays on Smoke. Full and Release profiles are ex
 Phase 1 implements the manifest adapter layer only:
 
 ```text
-scripts/aicoding-kit.ps1
+bin/aicoding.exe
 -> config/kit-registry.json
 -> config/kits/<kit-id>.json
 -> scripts/lib/AiCoding.KitRegistry.psm1
@@ -54,12 +54,12 @@ The adapter does not rewrite existing lifecycle scripts and does not turn legacy
 Phase 1 supports these recommended commands:
 
 ```powershell
-pwsh scripts/aicoding-kit.ps1 list
-pwsh scripts/aicoding-kit.ps1 status -All -Json
-pwsh scripts/aicoding-kit.ps1 verify -All
-pwsh scripts/aicoding-kit.ps1 test -All
-pwsh scripts/aicoding-kit.ps1 export -All -Zip -DryRun
-pwsh scripts/aicoding-kit.ps1 export -All -Zip -Json
+bin/aicoding.exe list
+bin/aicoding.exe status -All -Json
+bin/aicoding.exe kit verify --all --profile Smoke --json
+bin/aicoding.exe full --json
+bin/aicoding.exe export -All -Zip -DryRun
+bin/aicoding.exe export -All -Zip -Json
 ```
 
 `export -DryRun` reports the intended output path and manifest include/exclude rules without writing zip, sha256, or BUILDINFO files. Phase 1.6 adds real `export -Zip` package generation while preserving the same manifest adapter path.
@@ -68,14 +68,14 @@ pwsh scripts/aicoding-kit.ps1 export -All -Zip -Json
 
 Phase 1.5 makes the adapter layer mechanically verifiable without changing install, uninstall, update, or export behavior.
 
-The gate is `scripts/verify-kit-lifecycle.ps1`. It verifies that `config/kit-registry.json` parses, the registry matches `config/schemas/kit-registry.schema.json`, every enabled Kit manifest exists, each enabled manifest matches `config/schemas/kit-manifest.schema.json`, manifest ids match registry ids, PowerShell script command paths exist, manifest `mode` is either `script-adapter` or `declarative`, and `kind` is non-empty.
+The gate is `bin/aicoding.exe full --json` for repository validation and `bin/aicoding.exe release gate --json` for release validation. These Go-native gates verify registry and manifest structure, enabled kit consistency, lifecycle plans, skill structure, DocSync, export, and fresh-clone behavior without the legacy lifecycle PowerShell entrypoint.
 
 The same gate also runs the unified lifecycle entrypoint as a regression surface:
 
 ```powershell
-pwsh scripts/aicoding-kit.ps1 list
-pwsh scripts/aicoding-kit.ps1 status -All -Json
-pwsh scripts/aicoding-kit.ps1 verify -All
+bin/aicoding.exe list
+bin/aicoding.exe status -All -Json
+bin/aicoding.exe kit verify --all --profile Smoke --json
 ```
 
 `list` must include every enabled Kit, `status -All -Json` must return exactly the enabled Kit count, and default `verify -All -Json` must pass the Smoke verify-light path for every enabled Kit. The forbidden aggregate scripts `install-all.ps1`, `verify-all.ps1`, `test-all.ps1`, `update-all.ps1`, `export-all.ps1`, and `uninstall-all.ps1` must not exist.
@@ -109,13 +109,13 @@ A kit package BUILDINFO contains at least:
 Real single-kit export uses the same command path as dry-run:
 
 ```powershell
-pwsh scripts/aicoding-kit.ps1 export -Kit aicoding-agent-dev-kit -Zip -Json
+bin/aicoding.exe export -Kit aicoding-agent-dev-kit -Zip -Json
 ```
 
 Real all-kit export still does not implement separate per-kit lifecycle logic. It loads enabled registry entries, calls the same `Export-AiCodingKit` function for each Kit, and only after all Kit exports pass creates a bundle:
 
 ```powershell
-pwsh scripts/aicoding-kit.ps1 export -All -Zip -Json
+bin/aicoding.exe export -All -Zip -Json
 ```
 
 The bundle is written to `.aicoding/packages/aicoding-kit-bundle-<timestamp>.zip` and contains:
@@ -130,10 +130,10 @@ The bundle is written to `.aicoding/packages/aicoding-kit-bundle-<timestamp>.zip
 
 ## Phase 1.7: Fresh Clone Restore Test
 
-Phase 1.7 adds `scripts/test-kit-fresh-clone.ps1` with explicit test profiles. The profile policy is defined in [Kit Lifecycle Test Profiles](KIT_LIFECYCLE_TEST_PROFILES.md). The default profile is a 20-second smoke gate:
+Phase 1.7 adds `bin/aicoding.exe fresh-clone` with explicit test profiles. The profile policy is defined in [Kit Lifecycle Test Profiles](KIT_LIFECYCLE_TEST_PROFILES.md). The default profile is a 20-second smoke gate:
 
 ```powershell
-pwsh scripts/test-kit-fresh-clone.ps1 -Profile Smoke -Json
+bin/aicoding.exe fresh-clone -Profile Smoke -Json
 ```
 
 Smoke mode does not copy the full worktree, does not run `test -All`, and does not create real export/package artifacts. It validates the registry, enabled manifests, manifest ids, modes, non-empty kinds, PowerShell command paths, and the absence of forbidden aggregate lifecycle scripts.
@@ -141,8 +141,8 @@ Smoke mode does not copy the full worktree, does not run `test -All`, and does n
 Source-only restore and package restore remain available only as explicit manual or release-only checks:
 
 ```powershell
-pwsh scripts/test-kit-fresh-clone.ps1 -Mode SourceOnly -Profile Full -Json
-pwsh scripts/test-kit-fresh-clone.ps1 -Mode Package -Profile Release -Json
+bin/aicoding.exe fresh-clone -Mode SourceOnly -Profile Full -Json
+bin/aicoding.exe fresh-clone -Mode Package -Profile Release -Json
 ```
 
 `aicoding-kit.ps1 verify -All` and `aicoding-kit.ps1 test -All` both default to `-Profile Smoke`, which performs manifest smoke checks for all enabled kits. Full and release test execution must be requested explicitly with `-Profile Full` or `-Profile Release`.

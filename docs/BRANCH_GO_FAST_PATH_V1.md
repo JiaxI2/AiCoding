@@ -1,4 +1,4 @@
-# Branch: feature/go-fast-path-v1
+﻿# Branch: feature/go-fast-path-v1
 
 AiCoding Fast Path V1 branch description. This file is the remote-facing branch description and the Draft PR body source.
 
@@ -22,7 +22,7 @@ Included:
 Not included:
 
 - repo-index, tree-sitter, MCP, worktree orchestration, memory.sqlite, VS Code extension, Rust rewrite
-- Full/Release rewrite; `scripts/aicoding-kit.ps1` and legacy verify/test scripts unchanged
+- Full/Release rewrite; `bin/aicoding.exe` and legacy verify/test scripts unchanged
 - Skill external cache work (`scripts/aicoding-skill.ps1`, `config/skill-sources.json`, `docs/THIRD_PARTY_SKILL_POLICY.md`, `scripts/lib/AiCoding.SkillAudit.psm1`) stays on a separate branch
 
 ## Verification
@@ -32,13 +32,13 @@ Not included:
 - `bin/aicoding.exe kit verify --all --profile Smoke --json` PASS (7 kits)
 - `bin/aicoding.exe governance lint --json` PASS
 - `bin/aicoding.exe doctor perf --json` PASS
-- `scripts/check-documentation-sync.ps1 -Mode all` PASS
+- `bin/aicoding.exe docsync -Mode all` PASS
 - Fast hook path is roughly 10x faster than the legacy double-pwsh pre-commit path
 
 ## Rollback
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/rollback-fast-path-v1.ps1 -UnsetHooksPath -RemoveBinary
+bin/aicoding.exe lifecycle rollback --last --json
 ```
 
 Hooks fall back to PowerShell automatically when `bin/aicoding.exe` is absent. See `docs/ROLLBACK_FAST_PATH_V1.md`.
@@ -47,4 +47,4 @@ Hooks fall back to PowerShell automatically when `bin/aicoding.exe` is absent. S
 
 - Maintain Fast Path V1 on this branch; do not continue Fast Path work on `main`.
 - Sync with `git fetch origin` + `git rebase origin/main` (ask before merging instead).
-- Full/Release keep using `scripts/aicoding-kit.ps1` and `scripts/test-kit-fresh-clone.ps1`.
+- Full/Release keep using `bin/aicoding.exe` and `bin/aicoding.exe fresh-clone`.

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [string]$RepoRoot = "",
   [switch]$Json
@@ -46,7 +46,7 @@ try {
   }
 
   $requiredFiles = @(
-    "scripts/aicoding-kit.ps1",
+    "cmd/aicoding/main.go",
     "scripts/invoke-aicoding-agent-hook.ps1",
     "scripts/verify-agent-dev-kit-plan-mode.ps1",
     "scripts/hooks/aef/plan-mode-gate.ps1",

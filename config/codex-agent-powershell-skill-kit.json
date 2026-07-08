@@ -18,7 +18,7 @@
     "aicodingOwnsCanonicalSource": false,
     "repoScopedSkillRole": "generated-runtime-mirror",
     "authoritativePackagePath": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/codex-agent-powershell-skill-kit",
-    "materializedBy": "scripts/install-codex-agent-powershell-skill-kit.ps1",
+    "materializedBy": "bin/aicoding.exe lifecycle install --all --json",
     "manualEditsToRepoScopedMirrorAllowed": false
   }
 }

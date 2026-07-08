@@ -24,7 +24,7 @@
     ".github/workflows/**"
   ],
   "docTargets": {
-    "scripts/check-documentation-sync.ps1": [
+    "internal/docsync/check.go": [
       "README.md",
       "docs/MAINTENANCE_METHOD.md",
       "docs/DOC_SYNC_PLUS_SPEC.md",

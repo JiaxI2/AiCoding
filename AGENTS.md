@@ -1,4 +1,4 @@
-# AiCoding Agent Instructions
+﻿# AiCoding Agent Instructions
 
 ## Repository Role
 
@@ -171,7 +171,7 @@ Source skills may have generated package copies in the repository, but a Skill n
 
 AiCoding workflow skills for SDD, MVP, BDD, architecture-first scaffolding, TDD fallback, and documentation synchronization are bundled through the AiCoding plugin only. Superpowers is optional acceleration, not a required dependency.
 
-Documentation synchronization is enforced by `scripts/check-documentation-sync.ps1`, `.githooks/pre-commit`, and `.github/workflows/docs-sync.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit no-doc-change review note with a meaningful reason; see `docs/DOC_SYNC_PLUS_SPEC.md` for the marker format.
+Documentation synchronization is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/docs-sync.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit no-doc-change review note with a meaningful reason; see `docs/DOC_SYNC_PLUS_SPEC.md` for the marker format.
 
 ## 语言策略 / Language Policy
 

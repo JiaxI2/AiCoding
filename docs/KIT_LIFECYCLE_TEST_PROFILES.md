@@ -1,4 +1,4 @@
-# Kit Lifecycle Test Profiles
+﻿# Kit Lifecycle Test Profiles
 
 Kit Lifecycle v2 uses three explicit validation profiles. Default repository gates must stay on Smoke unless a developer intentionally requests a heavier profile.
 
@@ -12,8 +12,8 @@ Smoke must:
 - validate registry and enabled manifest consistency;
 - verify PowerShell script command paths exist;
 - verify declared Kit skills, common registry declarations, and hook registry declarations;
-- keep `scripts/test-kit-fresh-clone.ps1` on `-Profile Smoke` by default;
-- keep `scripts/aicoding-kit.ps1 verify -All` and `scripts/aicoding-kit.ps1 test -All` equivalent to `-Profile Smoke` by default.
+- keep `bin/aicoding.exe fresh-clone` on `-Profile Smoke` by default;
+- keep `bin/aicoding.exe kit verify --all --profile Smoke --json` and `bin/aicoding.exe full --json` equivalent to `-Profile Smoke` by default.
 
 Smoke must not:
 
@@ -27,9 +27,9 @@ Recommended commands:
 
 ```powershell
 pwsh scripts/verify-codex-kit.ps1
-pwsh scripts/aicoding-kit.ps1 verify -All -Profile Smoke -Json
+bin/aicoding.exe kit verify --all --profile Smoke --json -Profile Smoke -Json
 bin\aicoding.exe kit verify --all --profile Smoke --json
-pwsh scripts/test-kit-fresh-clone.ps1 -Profile Smoke -Json
+bin/aicoding.exe fresh-clone -Profile Smoke -Json
 ```
 
 ## Full
@@ -51,7 +51,7 @@ Full must not:
 Recommended command:
 
 ```powershell
-pwsh scripts/aicoding-kit.ps1 test -All -Profile Full -Json
+bin/aicoding.exe full --json -Profile Full -Json
 ```
 
 ## Release
@@ -75,8 +75,8 @@ Release must not:
 Recommended release commands:
 
 ```powershell
-pwsh scripts/test-kit-fresh-clone.ps1 -Profile Release -Json
-pwsh scripts/aicoding-kit.ps1 export -All -Zip -Json
+bin/aicoding.exe fresh-clone -Profile Release -Json
+bin/aicoding.exe export -All -Zip -Json
 ```
 
 ## CI Policy
@@ -84,4 +84,4 @@ pwsh scripts/aicoding-kit.ps1 export -All -Zip -Json
 - PR and default branch workflows may run Smoke only.
 - Full may be used in manual jobs or local manual validation.
 - Release may be used only in manual dispatch, release jobs, or local release preparation.
-- `scripts/verify-kit-lifecycle.ps1` guards this policy by checking that default gates do not call Full or Release and that Smoke does not write `.aicoding/packages/`.
+- `bin/aicoding.exe full --json` and `bin/aicoding.exe release gate --json` guard this policy; Smoke-level checks remain Go-native and avoid package writes unless export/release explicitly requires them.

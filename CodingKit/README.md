@@ -1,4 +1,4 @@
-# CodingKit
+﻿# CodingKit
 
 CodingKit is the platform layer for local AI-assisted embedded development.
 
@@ -42,7 +42,7 @@ Plugin skills and hooks discover CodingKit assets by this protocol:
 git clone --recurse-submodules https://github.com/JiaxI2/AiCoding.git
 cd AiCoding
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps1
+bin/aicoding.exe lifecycle install --all --json
 ```
 
 After installing the plugin, open Codex `/hooks` and review/trust the plugin-bundled hooks.

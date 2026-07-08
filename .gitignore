@@ -47,3 +47,9 @@ Thumbs.db
 .aicoding/skill-cache/
 .aicoding/skill-quarantine/
 .aicoding/user-skills/
+
+# Go-native release export artifacts
+dist/aicoding-kit-*.zip
+dist/aicoding-kit-*.zip.manifest.json
+dist/aicoding-kit-*.zip.sha256
+dist/aicoding-kit-*.zip.*.tmp

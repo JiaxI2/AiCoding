@@ -30,25 +30,24 @@ tasks:
       - bin/aicoding.exe doctor perf --json
 
   full:
-    desc: Run explicit Full local validation through the legacy adapter path
+    desc: Run Go-native Full aggregate validation
     cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 test -All -Profile Full -Json
+      - bin/aicoding.exe full --json
 
   release:
-    desc: Run explicit Release gate and export package path
+    desc: Run Go-native Release gate
     cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-kit-fresh-clone.ps1 -Profile Release -Json
-      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 export -All -Zip -Json
+      - bin/aicoding.exe release gate --json
 
   skills:
-    desc: Verify all repo-scoped skills
+    desc: Verify all repo-scoped skills through Go
     cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 verify-skills -All -Json
+      - bin/aicoding.exe skill verify --all --profile Full --json
 
   rollback:
-    desc: Roll back Go Fast Path if rollback script exists
+    desc: Roll back last Go lifecycle state snapshot
     cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -Command "if (Test-Path 'scripts/rollback-fast-path-v1.ps1') { & 'scripts/rollback-fast-path-v1.ps1' -UnsetHooksPath -RemoveBinary } else { Write-Host 'scripts/rollback-fast-path-v1.ps1 not found; skipped.' }"
+      - bin/aicoding.exe lifecycle rollback --last --json
 
   tag:audit:
     desc: Audit current tag/release namespace classification

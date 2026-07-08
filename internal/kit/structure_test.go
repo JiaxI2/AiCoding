@@ -109,7 +109,7 @@ func TestVerifyStructureWarnsForMissingGeneratedPluginPackage(t *testing.T) {
 	repo := structureRepo(t, false)
 	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "install-codex-kit.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"aicoding-platform"})
-	writeLifecycleManifest(t, repo, "aicoding-platform", `"install":{"type":"powershell-script","path":"scripts/install-codex-kit.ps1","supportsDryRun":true}`, `"pluginRoot":"CodingKit/agents/skills/plugins/AiCoding"`)
+	writeLifecycleManifest(t, repo, "aicoding-platform", `"install":{"type":"builtin-lifecycle","lifecycleAction":"install","supportsDryRun":true}`, `"pluginRoot":"CodingKit/agents/skills/plugins/AiCoding"`)
 
 	entries, err := LoadRegistry(repo)
 	if err != nil {

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
   [string]$RepoRoot = "",
   [Parameter(Mandatory=$true)][string]$Feature,
@@ -85,7 +85,7 @@ $Description
 
 ## 约束
 
-- 保留 `scripts/aicoding-kit.ps1` 作为 lifecycle 入口。
+- 保留 `bin/aicoding.exe` 作为 lifecycle 入口。
 - 不新增 `*-all.ps1`。
 - 默认使用 Smoke 验证。
 - 写操作应在适用时支持 DryRun。

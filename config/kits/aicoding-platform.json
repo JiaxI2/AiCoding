@@ -17,9 +17,12 @@
   },
   "commands": {
     "install": {
-      "type": "powershell-script",
-      "path": "scripts/install-codex-kit.ps1",
-      "args": [],
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "CodingKit/agents/skills/plugins/AiCoding",
+        "config/codex-kit.json",
+        ".agents/plugins/marketplace.json"
+      ],
       "supportsJson": true,
       "supportsDryRun": true
     },
@@ -46,16 +49,22 @@
       ]
     },
     "update": {
-      "type": "powershell-script",
-      "path": "scripts/update-codex-kit.ps1",
-      "args": [],
-      "supportsJson": false,
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "CodingKit/agents/skills/plugins/AiCoding",
+        "config/codex-kit.json",
+        ".agents/plugins/marketplace.json"
+      ],
+      "supportsJson": true,
       "supportsDryRun": true
     },
     "uninstall": {
-      "type": "powershell-script",
-      "path": "scripts/uninstall-codex-kit.ps1",
-      "args": [],
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "CodingKit/agents/skills/plugins/AiCoding",
+        "config/codex-kit.json",
+        ".agents/plugins/marketplace.json"
+      ],
       "supportsJson": true,
       "supportsDryRun": true
     },

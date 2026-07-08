@@ -20,13 +20,12 @@
   },
   "commands": {
     "install": {
-      "type": "powershell-script",
-      "path": "scripts/install-codex-agent-powershell-skill-kit.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit",
+        ".agents/plugins/marketplace.json"
       ],
-      "supportsJson": false,
+      "supportsJson": true,
       "supportsDryRun": true
     },
     "status": {
@@ -57,31 +56,31 @@
       "supportsJson": true
     },
     "uninstall": {
-      "type": "powershell-script",
-      "path": "scripts/uninstall-codex-agent-powershell-skill-kit.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit",
+        ".agents/plugins/marketplace.json"
       ],
-      "supportsJson": false
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "update": {
-      "type": "composed",
-      "steps": [
-        "install",
-        "verify"
-      ]
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit",
+        ".agents/plugins/marketplace.json"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "export": {
       "type": "builtin-package",
       "include": [
         "dist/codex-agent-powershell-skill-kit/**",
         "config/codex-agent-powershell-skill-kit.json",
-        "scripts/install-codex-agent-powershell-skill-kit.ps1",
         "scripts/status-codex-agent-powershell-skill-kit.ps1",
         "scripts/verify-codex-agent-powershell-skill-kit.ps1",
-        "scripts/test-codex-agent-powershell-skill-kit.ps1",
-        "scripts/uninstall-codex-agent-powershell-skill-kit.ps1"
+        "scripts/test-codex-agent-powershell-skill-kit.ps1"
       ],
       "exclude": [
         "**/__pycache__/**",
@@ -126,11 +125,9 @@
     "include": [
       "dist/codex-agent-powershell-skill-kit/**",
       "config/codex-agent-powershell-skill-kit.json",
-      "scripts/install-codex-agent-powershell-skill-kit.ps1",
       "scripts/status-codex-agent-powershell-skill-kit.ps1",
       "scripts/verify-codex-agent-powershell-skill-kit.ps1",
-      "scripts/test-codex-agent-powershell-skill-kit.ps1",
-      "scripts/uninstall-codex-agent-powershell-skill-kit.ps1"
+      "scripts/test-codex-agent-powershell-skill-kit.ps1"
     ],
     "exclude": [
       "**/__pycache__/**",

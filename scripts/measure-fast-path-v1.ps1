@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [string]$RepoRoot = "",
     [switch]$Json
@@ -28,7 +28,7 @@ try {
     if (Get-Command pwsh -ErrorAction SilentlyContinue) {
         $cases += @(
             @{ name = 'go: governance lint'; command = { & $bin governance lint --json | Out-Null } },
-            @{ name = 'legacy: kit smoke'; command = { pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 test -All -Profile Smoke -Json | Out-Null } }
+            @{ name = 'go: full smoke'; command = { &  full --json | Out-Null } }
         )
     }
     $results = foreach ($case in $cases) {

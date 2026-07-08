@@ -1,4 +1,4 @@
-# AiCoding Fast Path V1 Kit Layer Constraints
+﻿# AiCoding Fast Path V1 Kit Layer Constraints
 
 ## 1. V1 分层原则
 
@@ -41,7 +41,7 @@ bin\aicoding.exe kit verify --all --profile Smoke --json
 继续由 PowerShell/Python 执行：
 
 ```powershell
-pwsh scripts/aicoding-kit.ps1 test -All -Profile Full -Json
+bin/aicoding.exe full --json -Profile Full -Json
 ```
 
 ### Release
@@ -49,7 +49,7 @@ pwsh scripts/aicoding-kit.ps1 test -All -Profile Full -Json
 继续由旧流程和 CI 执行：
 
 ```powershell
-pwsh scripts/test-kit-fresh-clone.ps1 -Profile Release -Json
+bin/aicoding.exe fresh-clone -Profile Release -Json
 ```
 
 ## 4. 禁止事项

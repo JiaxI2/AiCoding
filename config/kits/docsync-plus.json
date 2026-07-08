@@ -8,77 +8,77 @@
     "docsync-kit",
     "governance-kit"
   ],
-  "mode": "script-adapter",
+  "mode": "declarative",
   "description": "Semantic documentation drift detection kit for AiCoding repositories.",
   "paths": {
-    "entrypoint": "scripts/check-documentation-sync.ps1",
-    "moduleRoot": "scripts/docsync",
+    "entrypoint": "bin/aicoding.exe docsync",
+    "moduleRoot": "internal/docsync",
     "policy": "config/docs-sync.policy.json",
     "semanticPolicy": "config/docs-sync.semantic.json",
     "stateRoot": ".aicoding/state/kits/docsync-plus"
   },
   "commands": {
     "install": {
-      "type": "powershell-script",
-      "path": "scripts/install-docsync-plus.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "internal/docsync/docsync.go",
+        "internal/docsync/check.go",
+        "config/docs-sync.policy.json",
+        "config/docs-sync.semantic.json"
       ],
       "supportsJson": true,
       "supportsDryRun": true
     },
     "status": {
-      "type": "powershell-script",
-      "path": "scripts/status-docsync-plus.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
-      ],
-      "supportsJson": true
+      "type": "builtin-check",
+      "requiredPaths": [
+        "internal/docsync/docsync.go",
+        "internal/docsync/check.go",
+        "config/docs-sync.policy.json",
+        "config/docs-sync.semantic.json"
+      ]
     },
     "verify": {
-      "type": "powershell-script",
-      "path": "scripts/verify-docsync-plus.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
-      ],
-      "supportsJson": true
+      "type": "builtin-check",
+      "requiredPaths": [
+        "internal/docsync/docsync.go",
+        "internal/docsync/check.go",
+        "config/docs-sync.policy.json",
+        "config/docs-sync.semantic.json",
+        ".github/workflows/docs-sync.yml"
+      ]
     },
     "test": {
-      "type": "powershell-script",
-      "path": "scripts/test-docsync-plus.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
-      ],
-      "supportsJson": true
+      "type": "builtin-check",
+      "requiredPaths": [
+        "internal/docsync/classifier_test.go",
+        "internal/docsync/check.go"
+      ]
     },
     "uninstall": {
       "type": "unsupported",
       "reason": "DocSync Plus is integrated as repository governance files. Safe uninstall requires state-based ownership first."
     },
     "update": {
-      "type": "composed",
-      "steps": [
-        "install",
-        "verify"
-      ]
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "internal/docsync/docsync.go",
+        "internal/docsync/check.go",
+        "config/docs-sync.policy.json",
+        "config/docs-sync.semantic.json"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "export": {
       "type": "builtin-package",
       "include": [
-        "scripts/check-documentation-sync.ps1",
-        "scripts/docsync/**",
-        "scripts/install-docsync-plus.ps1",
-        "scripts/status-docsync-plus.ps1",
-        "scripts/verify-docsync-plus.ps1",
-        "scripts/test-docsync-plus.ps1",
+        "internal/docsync/**",
         "config/docs-sync.policy.json",
         "config/docs-sync.semantic.json",
         "docs/DOC_SYNC_PLUS_SPEC.md",
-        "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md"
+        "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md",
+        ".github/workflows/docs-sync.yml"
       ],
       "exclude": [],
       "outputName": "docsync-plus-${version}.zip"
@@ -92,7 +92,7 @@
       {
         "id": "docsync-pre-commit",
         "type": "pre-commit",
-        "path": "scripts/check-documentation-sync.ps1",
+        "path": "bin/aicoding.exe docsync staged --json",
         "enabledByDefault": true,
         "owner": "docsync-plus"
       }
@@ -102,16 +102,12 @@
   "commonDependencies": [],
   "export": {
     "include": [
-      "scripts/check-documentation-sync.ps1",
-      "scripts/docsync/**",
-      "scripts/install-docsync-plus.ps1",
-      "scripts/status-docsync-plus.ps1",
-      "scripts/verify-docsync-plus.ps1",
-      "scripts/test-docsync-plus.ps1",
+      "internal/docsync/**",
       "config/docs-sync.policy.json",
       "config/docs-sync.semantic.json",
       "docs/DOC_SYNC_PLUS_SPEC.md",
-      "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md"
+      "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md",
+      ".github/workflows/docs-sync.yml"
     ],
     "exclude": [],
     "outputName": "docsync-plus-${version}.zip"

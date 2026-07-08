@@ -6,7 +6,7 @@
       "owner": "docsync-plus",
       "type": "repo-hook",
       "trigger": "pre-commit",
-      "path": "scripts/check-documentation-sync.ps1",
+      "path": "bin/aicoding.exe docsync staged --json",
       "enabledByDefault": true,
       "machineReadable": true
     },

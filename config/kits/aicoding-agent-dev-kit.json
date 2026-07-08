@@ -21,11 +21,11 @@
   },
   "commands": {
     "install": {
-      "type": "powershell-script",
-      "path": "scripts/install-aicoding-agent-dev-kit.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit",
+        "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/assets/aicoding-agent-dev-kit",
+        ".agents/plugins/marketplace.json"
       ],
       "supportsJson": true,
       "supportsDryRun": true
@@ -58,30 +58,32 @@
       "supportsJson": true
     },
     "uninstall": {
-      "type": "powershell-script",
-      "path": "scripts/uninstall-aicoding-agent-dev-kit.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit",
+        "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/assets/aicoding-agent-dev-kit",
+        ".agents/plugins/marketplace.json"
       ],
-      "supportsJson": true
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "update": {
-      "type": "composed",
-      "steps": [
-        "install",
-        "verify"
-      ]
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit",
+        "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/assets/aicoding-agent-dev-kit",
+        ".agents/plugins/marketplace.json"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "export": {
       "type": "builtin-package",
       "include": [
         "dist/aicoding-agent-dev-kit/**",
-        "scripts/install-aicoding-agent-dev-kit.ps1",
         "scripts/status-aicoding-agent-dev-kit.ps1",
         "scripts/verify-aicoding-agent-dev-kit.ps1",
         "scripts/test-aicoding-agent-dev-kit.ps1",
-        "scripts/uninstall-aicoding-agent-dev-kit.ps1",
         "config/kits/aicoding-agent-dev-kit.json",
         ".agents/skills/aicoding-agent-dev-kit-plan-mode/**",
         "config/agent-dev-kit-plan-mode.registry.json",
@@ -148,11 +150,9 @@
   "export": {
     "include": [
       "dist/aicoding-agent-dev-kit/**",
-      "scripts/install-aicoding-agent-dev-kit.ps1",
       "scripts/status-aicoding-agent-dev-kit.ps1",
       "scripts/verify-aicoding-agent-dev-kit.ps1",
       "scripts/test-aicoding-agent-dev-kit.ps1",
-      "scripts/uninstall-aicoding-agent-dev-kit.ps1",
       "config/kits/aicoding-agent-dev-kit.json",
       ".agents/skills/aicoding-agent-dev-kit-plan-mode/**",
       "config/agent-dev-kit-plan-mode.registry.json",

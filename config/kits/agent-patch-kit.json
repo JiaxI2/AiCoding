@@ -19,13 +19,14 @@
   },
   "commands": {
     "install": {
-      "type": "powershell-script",
-      "path": "dist/agent-patch-kit/plugins/AiCodingAgentPatch/assets/scripts/install-agent-patch-kit.ps1",
-      "args": [
-        "-InstallMissing"
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/agent-patch-kit/plugins/AiCodingAgentPatch",
+        "dist/agent-patch-kit/plugins/AiCodingAgentPatch/assets",
+        ".agents/plugins/marketplace.json"
       ],
-      "supportsJson": false,
-      "supportsDryRun": false
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "status": {
       "type": "external-command",
@@ -59,17 +60,24 @@
       ]
     },
     "uninstall": {
-      "type": "powershell-script",
-      "path": "dist/agent-patch-kit/plugins/AiCodingAgentPatch/assets/scripts/uninstall-agent-patch-kit.ps1",
-      "args": [],
-      "supportsJson": false
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/agent-patch-kit/plugins/AiCodingAgentPatch",
+        "dist/agent-patch-kit/plugins/AiCodingAgentPatch/assets",
+        ".agents/plugins/marketplace.json"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "update": {
-      "type": "composed",
-      "steps": [
-        "install",
-        "verify"
-      ]
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/agent-patch-kit/plugins/AiCodingAgentPatch",
+        "dist/agent-patch-kit/plugins/AiCodingAgentPatch/assets",
+        ".agents/plugins/marketplace.json"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "export": {
       "type": "builtin-package",

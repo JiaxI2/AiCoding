@@ -1,4 +1,4 @@
-# Codex Kit Architecture
+﻿# Codex Kit Architecture
 
 AiCoding is the platform entrypoint. Codex-Skills is the single source of truth for skills, plugin assembly, and plugin-bundled Codex hooks.
 
@@ -40,7 +40,7 @@ Codex hooks live in the plugin and are reviewed through `/hooks`. They are auxil
 
 Git hooks live in `.githooks/` and enforce repository-local commit, changelog, and governance rules.
 
-Documentation synchronization is a Git hook and CI concern in AiCoding. scripts/check-documentation-sync.ps1, .githooks/pre-commit, and .github/workflows/docs-sync.yml enforce that code, script, config, hook, CI, and CodingKit changes receive documentation review.
+Documentation synchronization is a Git hook and CI concern in AiCoding. bin/aicoding.exe docsync, .githooks/pre-commit, and .github/workflows/docs-sync.yml enforce that code, script, config, hook, CI, and CodingKit changes receive documentation review.
 
 ## External Assets
 

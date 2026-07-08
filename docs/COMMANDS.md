@@ -1,21 +1,23 @@
 # Commands
 
-This document keeps the command matrix out of the README. Taskfile is the recommended human and agent entrypoint; it should route commands, not own business logic.
+This document keeps the command matrix out of the README. Taskfile is the recommended human and agent entrypoint; it routes to the Go CLI and does not own business logic.
 
 ## Default Local Commands
 
 | Purpose | Command | Lane |
 |---|---|---|
 | Bootstrap Go CLI | `go run ./cmd/aicoding bootstrap --json` | Go |
-| Smoke | `task smoke` | Go default |
+| Smoke | `task smoke` | Go |
 | Smart verify | `bin\aicoding.exe workflow smart-verify --json` | Go |
-| Performance probe | `task perf` | Go |
-| Status summary | `bin\aicoding.exe status --all --json` | Go |
-| PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` | Go |
-| Tag audit | `bin\aicoding.exe tag audit --json` | Go |
-| Release structure | `bin\aicoding.exe release verify --json` | Go |
-| Lifecycle dry-run planner | `bin\aicoding.exe kit lifecycle --action update --all --dry-run --json` | Go |
-| Lifecycle structure verify | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` | Go |
+| DocSync CI | `bin\aicoding.exe docsync ci --json` | Go |
+| Skill verification | `bin\aicoding.exe skill verify --all --profile Full --json` | Go |
+| Lifecycle plan | `bin\aicoding.exe lifecycle plan --action install --all --json` | Go |
+| Lifecycle install/update/uninstall | `bin\aicoding.exe lifecycle install --all --json` | Go |
+| Lifecycle rollback | `bin\aicoding.exe lifecycle rollback --last --json` | Go |
+| Export | `bin\aicoding.exe export --all --zip --json` | Go |
+| Fresh clone | `bin\aicoding.exe fresh-clone --profile Smoke --json` | Go |
+| Full aggregate | `bin\aicoding.exe full --json` | Go |
+| Release gate | `bin\aicoding.exe release gate --json` | Go |
 
 ## Go Native Checks
 
@@ -23,10 +25,17 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 |---|---|
 | Bootstrap binary | `bin\aicoding.exe bootstrap --json` |
 | Smart verify plan + selected checks | `bin\aicoding.exe workflow smart-verify --json` |
-| Cache status | `bin\aicoding.exe cache status --json` |
-| Cache clean | `bin\aicoding.exe cache clean --json` |
+| DocSync staged/all/ci/release | `bin\aicoding.exe docsync staged --json`; `bin\aicoding.exe docsync all --json`; `bin\aicoding.exe docsync ci --json`; `bin\aicoding.exe docsync release --json` |
+| Skill structure verification | `bin\aicoding.exe skill verify --all --profile Smoke --json` |
 | Kit Smoke | `bin\aicoding.exe kit verify --all --profile Smoke --json` |
 | Kit Lifecycle structure verify | `bin\aicoding.exe kit verify --all --profile Lifecycle --json` |
+| Lifecycle plan | `bin\aicoding.exe lifecycle plan --action update --all --json` |
+| Lifecycle apply | `bin\aicoding.exe lifecycle install --all --json`; `bin\aicoding.exe lifecycle update --all --json`; `bin\aicoding.exe lifecycle uninstall --all --json` |
+| Rollback last lifecycle snapshot | `bin\aicoding.exe lifecycle rollback --last --json` |
+| Export release bundle | `bin\aicoding.exe export --all --zip --json` |
+| Fresh clone profile gate | `bin\aicoding.exe fresh-clone --profile Smoke --json` |
+| Full aggregate | `bin\aicoding.exe full --json` |
+| Release aggregate | `bin\aicoding.exe release gate --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
@@ -37,7 +46,6 @@ This document keeps the command matrix out of the README. Taskfile is the recomm
 | PowerShell regex lint | `bin\aicoding.exe powershell regex-lint --staged --json` |
 | Tag namespace audit | `bin\aicoding.exe tag audit --json` |
 | Release structural verify | `bin\aicoding.exe release verify --json` |
-| Kit lifecycle dry-run planner | `bin\aicoding.exe kit lifecycle --action install --all --dry-run --json` |
 
 ## Default CI Smoke
 
@@ -54,7 +62,40 @@ go test ./...
 ./bin/aicoding doctor perf --json
 ```
 
-Legacy PowerShell fast-path scripts are retained for explicit parity or slow-path compatibility checks, not as the default CI smoke lane.
+DocSync CI builds the Go CLI and runs:
+
+```powershell
+bin\aicoding.exe docsync ci --json
+```
+
+## Taskfile Routes
+
+| Task | Meaning | Lane |
+|---|---|---|
+| `task setup` | Bootstrap the Go CLI binary | Go |
+| `task smoke` | Fast local Smoke gate | Go |
+| `task perf` | Go-native performance probes | Go |
+| `task full` | Full aggregate validation | Go |
+| `task release` | Release gate, including DocSync release, skill release, export, and fresh clone unless skipped by environment | Go |
+| `task skills` | Skill verification | Go |
+| `task rollback` | Roll back last lifecycle state snapshot | Go |
+| `task tag:audit` | Tag namespace audit | Go |
+| `task tag:plan` | Non-destructive tag correction plan | PowerShell compatibility |
+| `task tag:verify` | Release governance overlay compatibility check | PowerShell compatibility |
+
+## Export Artifacts
+
+`bin\aicoding.exe export --all --zip --json` writes:
+
+- `dist/aicoding-kit-<version>.zip`
+- `dist/aicoding-kit-<version>.zip.manifest.json`
+- `dist/aicoding-kit-<version>.zip.sha256`
+
+The export manifest records stable relative paths, file sizes, SHA-256 hashes, generated time, version, branch, and commit. Generated export artifacts are ignored by Git.
+
+## Compatibility PowerShell
+
+PowerShell remains only for workflows not fully replaced in Go, including tag migration planning, release governance overlay compatibility, PowerShell regex quality, external third-party skill install/audit, Plan Mode helper scripts, and safety-specific tooling.
 
 ## Link Checks
 
@@ -69,69 +110,6 @@ Full repository link audit remains explicit:
 ```powershell
 apatch links --mode offline --include-fragments full
 ```
-
-The default check excludes templates, generated plugin/submodule assets, runtime mirrors, cache/report output, and external fixtures from the blocker path.
-
-## Taskfile Routes
-
-| Task | Meaning | Lane |
-|---|---|---|
-| `task setup` | Bootstrap the Go Fast Path binary | Go |
-| `task smoke` | Fast local Smoke gate | Go |
-| `task perf` | Go-native performance probes | Go |
-| `task full` | Explicit Full validation | PowerShell slow path |
-| `task release` | Explicit Release and export gate | PowerShell slow path |
-| `task skills` | Skill verification | PowerShell slow path |
-| `task rollback` | Roll back Fast Path installation | PowerShell slow path |
-| `task tag:audit` | Tag namespace audit | Go |
-| `task tag:plan` | Non-destructive tag correction plan | PowerShell slow path |
-| `task tag:verify` | Release governance overlay compatibility check | PowerShell slow path |
-
-## Lifecycle Structure Verify
-
-Use this Go-native structural verifier as the default fast check for `config/codex-kit.json`, `config/kit-registry.json`, `config/kits/*.json`, lifecycle action envelopes, required paths, command paths, and dry-run skip policy. It does not execute real lifecycle adapters, export packages, refresh Marketplace, or run fresh clone gates.
-
-```powershell
-bin\aicoding.exe kit verify --all --profile Lifecycle --json
-```
-
-PowerShell `scripts/verify-codex-kit.ps1` and `scripts/verify-kit-lifecycle.ps1` remain explicit compatibility/full checks for adapter orchestration and fresh clone coverage.
-
-## Lifecycle Dry-Run Probes
-
-Use the Go planner as the default all-kit lifecycle dry-run/status aggregation path. It reads `config/kit-registry.json` and `config/kits/*.json`, reports unsupported or no-dry-run actions as `skipped`, warns when the generated AiCoding plugin package is missing in a fresh clone, and does not execute install/update/uninstall adapters.
-
-```powershell
-bin\aicoding.exe kit lifecycle --action install --all --dry-run --json
-bin\aicoding.exe kit lifecycle --action update --all --dry-run --json
-bin\aicoding.exe kit lifecycle --action uninstall --all --dry-run --json
-bin\aicoding.exe kit lifecycle --action status --all --json
-```
-
-## Explicit PowerShell Parity Checks
-
-These are compatibility checks, not default perf, Smoke, or Lifecycle structure verify routes:
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1 -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-kit-lifecycle.ps1 -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 update -All -DryRun -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 install -All -DryRun -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/measure-fast-path-v1.ps1 -Json
-```
-
-## Explicit Slow Paths
-
-Use these only when the workflow requires complete semantics:
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 test -All -Profile Full -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-kit-fresh-clone.ps1 -Profile Release -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 export -All -Zip -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-kit.ps1 verify-skills -All -Json
-```
-
-Real install, update, uninstall, rollback, fresh clone, release, export, DSS, and PSScriptAnalyzer workflows remain PowerShell/Python-owned.
 
 ## Tag Governance
 

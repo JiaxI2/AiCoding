@@ -1,4 +1,4 @@
-# Apply AiCoding Agent Dev Kit Plan Mode Overlay
+﻿# Apply AiCoding Agent Dev Kit Plan Mode Overlay
 
 ## 语言要求
 
@@ -11,7 +11,7 @@
 - 不新建分支。
 - 不修改 `CodingKit/agents/skills` submodule。
 - 不修改 Codex plugin cache。
-- 不替换 `scripts/aicoding-kit.ps1`。
+- 不替换 `bin/aicoding.exe`。
 - 不改变一个总 hook bridge + 多个 hook 子模块的设计。
 
 ## 执行顺序

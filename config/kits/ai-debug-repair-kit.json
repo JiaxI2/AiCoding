@@ -21,11 +21,11 @@
   },
   "commands": {
     "install": {
-      "type": "powershell-script",
-      "path": "scripts/install-ai-debug-repair-kit.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit",
+        "dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit/assets/ai-debug-repair-kit",
+        ".agents/plugins/marketplace.json"
       ],
       "supportsJson": true,
       "supportsDryRun": true
@@ -58,30 +58,32 @@
       "supportsJson": true
     },
     "uninstall": {
-      "type": "powershell-script",
-      "path": "scripts/uninstall-ai-debug-repair-kit.ps1",
-      "args": [
-        "-RepoRoot",
-        "${repoRoot}"
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit",
+        "dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit/assets/ai-debug-repair-kit",
+        ".agents/plugins/marketplace.json"
       ],
-      "supportsJson": true
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "update": {
-      "type": "composed",
-      "steps": [
-        "install",
-        "verify"
-      ]
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit",
+        "dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit/assets/ai-debug-repair-kit",
+        ".agents/plugins/marketplace.json"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
     },
     "export": {
       "type": "builtin-package",
       "include": [
         "dist/ai-debug-repair-kit/**",
-        "scripts/install-ai-debug-repair-kit.ps1",
         "scripts/status-ai-debug-repair-kit.ps1",
         "scripts/verify-ai-debug-repair-kit.ps1",
-        "scripts/test-ai-debug-repair-kit.ps1",
-        "scripts/uninstall-ai-debug-repair-kit.ps1"
+        "scripts/test-ai-debug-repair-kit.ps1"
       ],
       "exclude": [
         "**/__pycache__/**",
@@ -125,11 +127,9 @@
   "export": {
     "include": [
       "dist/ai-debug-repair-kit/**",
-      "scripts/install-ai-debug-repair-kit.ps1",
       "scripts/status-ai-debug-repair-kit.ps1",
       "scripts/verify-ai-debug-repair-kit.ps1",
-      "scripts/test-ai-debug-repair-kit.ps1",
-      "scripts/uninstall-ai-debug-repair-kit.ps1"
+      "scripts/test-ai-debug-repair-kit.ps1"
     ],
     "exclude": [
       "**/__pycache__/**",

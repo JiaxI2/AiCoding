@@ -1,0 +1,213 @@
+package kit
+
+import (
+	"bufio"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/JiaxI2/AiCoding/internal/platform"
+)
+
+type SkillVerifyReport struct {
+	SchemaVersion int                `json:"schemaVersion"`
+	Profile       string             `json:"profile"`
+	OK            bool               `json:"ok"`
+	Summary       SkillVerifySummary `json:"summary"`
+	Kits          []SkillKitResult   `json:"kits"`
+	Errors        []string           `json:"errors,omitempty"`
+	Warnings      []string           `json:"warnings,omitempty"`
+}
+
+type SkillVerifySummary struct {
+	Kits     int `json:"kits"`
+	Skills   int `json:"skills"`
+	OK       int `json:"ok"`
+	Failed   int `json:"failed"`
+	Warnings int `json:"warnings"`
+}
+
+type SkillKitResult struct {
+	ID       string       `json:"id"`
+	OK       bool         `json:"ok"`
+	Skills   []SkillEntry `json:"skills"`
+	Errors   []string     `json:"errors,omitempty"`
+	Warnings []string     `json:"warnings,omitempty"`
+}
+
+type SkillEntry struct {
+	ID          string   `json:"id"`
+	Role        string   `json:"role"`
+	Kind        string   `json:"kind"`
+	Path        string   `json:"path"`
+	Description string   `json:"description,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+}
+
+type rawSkills struct {
+	Umbrella *rawSkill  `json:"umbrella"`
+	Members  []rawSkill `json:"members"`
+}
+type rawSkill struct {
+	ID          string   `json:"id"`
+	Role        string   `json:"role"`
+	Path        string   `json:"path"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
+}
+
+func VerifySkills(repo string, entries []RegistryKit, profile string) SkillVerifyReport {
+	profile = strings.Title(strings.ToLower(strings.TrimSpace(profile)))
+	if profile == "" {
+		profile = "Smoke"
+	}
+	report := SkillVerifyReport{SchemaVersion: 1, Profile: profile, OK: true}
+	for _, entry := range entries {
+		kitResult := verifyKitSkills(repo, entry, profile)
+		report.Kits = append(report.Kits, kitResult)
+		report.Summary.Kits++
+		report.Summary.Skills += len(kitResult.Skills)
+		report.Summary.Warnings += len(kitResult.Warnings)
+		if kitResult.OK {
+			report.Summary.OK++
+		} else {
+			report.Summary.Failed++
+			report.OK = false
+		}
+		for _, err := range kitResult.Errors {
+			report.Errors = append(report.Errors, entry.ID+": "+err)
+		}
+		for _, warning := range kitResult.Warnings {
+			report.Warnings = append(report.Warnings, entry.ID+": "+warning)
+		}
+	}
+	return report
+}
+
+func verifyKitSkills(repo string, entry RegistryKit, profile string) SkillKitResult {
+	result := SkillKitResult{ID: entry.ID, OK: true}
+	manifest, err := LoadManifest(repo, entry.Manifest)
+	if err != nil {
+		result.OK = false
+		result.Errors = append(result.Errors, "cannot load manifest: "+err.Error())
+		return result
+	}
+	skills, errs := parseSkillEntries(manifest)
+	result.Skills = skills
+	result.Errors = append(result.Errors, errs...)
+	seen := map[string]bool{}
+	umbrella := 0
+	for _, skill := range skills {
+		if skill.ID == "" {
+			result.Errors = append(result.Errors, "empty skill id")
+			continue
+		}
+		if seen[skill.ID] {
+			result.Errors = append(result.Errors, "duplicate skill id: "+skill.ID)
+		}
+		seen[skill.ID] = true
+		if skill.Kind == "umbrella" {
+			umbrella++
+			if skill.Role != "router" && skill.Role != "umbrella" {
+				result.Errors = append(result.Errors, "invalid umbrella role: "+skill.ID+" -> "+skill.Role)
+			}
+		}
+		if skill.Kind == "member" && skill.Role != "subskill" {
+			result.Errors = append(result.Errors, "invalid member role: "+skill.ID+" -> "+skill.Role)
+		}
+		if skill.Path == "" {
+			result.Errors = append(result.Errors, "missing skill path: "+skill.ID)
+			continue
+		}
+		full := platform.RepoPath(repo, skill.Path)
+		front, ferrs := readSkillFrontmatter(full)
+		for _, e := range ferrs {
+			result.Errors = append(result.Errors, skill.ID+": "+e)
+		}
+		if name := front["name"]; name == "" {
+			result.Errors = append(result.Errors, skill.ID+": missing frontmatter.name")
+		}
+		if desc := front["description"]; desc == "" {
+			result.Errors = append(result.Errors, skill.ID+": missing frontmatter.description")
+		}
+		if profile == "Full" || profile == "Release" {
+			content, err := os.ReadFile(full)
+			if err == nil && !strings.Contains(string(content), "##") {
+				result.Warnings = append(result.Warnings, skill.ID+": SKILL.md has no section heading")
+			}
+			dir := filepath.Dir(full)
+			if platform.IsDir(filepath.Join(dir, "references")) {
+				result.Warnings = append(result.Warnings, skill.ID+": references directory present; content not deeply validated by Go")
+			}
+		}
+	}
+	if umbrella > 1 {
+		result.Errors = append(result.Errors, "more than one umbrella skill")
+	}
+	result.OK = len(result.Errors) == 0
+	return result
+}
+
+func parseSkillEntries(manifest Manifest) ([]SkillEntry, []string) {
+	if len(manifest.Skills) == 0 {
+		return nil, nil
+	}
+	b, err := json.Marshal(manifest.Skills)
+	if err != nil {
+		return nil, []string{err.Error()}
+	}
+	var raw rawSkills
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return nil, []string{err.Error()}
+	}
+	entries := []SkillEntry{}
+	if raw.Umbrella != nil {
+		entries = append(entries, skillEntry(*raw.Umbrella, "umbrella"))
+	}
+	for _, member := range raw.Members {
+		entries = append(entries, skillEntry(member, "member"))
+	}
+	return entries, nil
+}
+
+func skillEntry(raw rawSkill, kind string) SkillEntry {
+	return SkillEntry{ID: raw.ID, Role: raw.Role, Kind: kind, Path: filepath.ToSlash(raw.Path), Description: raw.Description, Tags: raw.Tags}
+}
+
+func readSkillFrontmatter(path string) (map[string]string, []string) {
+	file, err := os.Open(path)
+	if err != nil {
+		return map[string]string{}, []string{"missing SKILL.md"}
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	if !scanner.Scan() || strings.TrimSpace(scanner.Text()) != "---" {
+		return map[string]string{}, []string{"missing frontmatter"}
+	}
+	data := map[string]string{}
+	closed := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "---" {
+			closed = true
+			break
+		}
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		value := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
+		if key != "" {
+			data[key] = value
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return data, []string{err.Error()}
+	}
+	if !closed {
+		return data, []string{"unterminated frontmatter"}
+	}
+	return data, nil
+}

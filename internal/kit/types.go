@@ -43,6 +43,10 @@ type CommandDef struct {
 	SupportsJSON   *bool    `json:"supportsJson"`
 	SupportsDryRun bool     `json:"supportsDryRun"`
 	Reason         string   `json:"reason"`
+	Include        []string `json:"include"`
+	Exclude        []string `json:"exclude"`
+	OutputName     string   `json:"outputName"`
+	ExtraArgs      []string `json:"extraArgs"`
 }
 
 type View struct {

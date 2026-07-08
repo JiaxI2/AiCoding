@@ -17,7 +17,9 @@ type Result struct {
 	OK            bool        `json:"ok"`
 	Message       string      `json:"message,omitempty"`
 	RepoRoot      string      `json:"repoRoot,omitempty"`
+	Checked       interface{} `json:"checked,omitempty"`
 	Data          interface{} `json:"data,omitempty"`
+	Warnings      []string    `json:"warnings,omitempty"`
 	Errors        []string    `json:"errors,omitempty"`
 	ElapsedMS     int64       `json:"elapsedMs"`
 }

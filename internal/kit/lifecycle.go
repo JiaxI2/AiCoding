@@ -135,6 +135,19 @@ func planLifecycleKit(repo string, entry RegistryKit, action string, dryRun bool
 	}
 
 	switch command.Type {
+	case "builtin-lifecycle":
+		result.MissingRequiredPaths = missingRequiredPaths(repo, command.RequiredPaths)
+		if len(result.MissingRequiredPaths) > 0 {
+			result.OK = false
+			result.Status = "missing"
+			result.Reason = "missing required paths"
+		} else if dryRun {
+			result.Status = "planned"
+			result.Reason = "Go builtin lifecycle dry-run"
+		} else {
+			result.Status = "static"
+			result.Reason = "Go builtin lifecycle action"
+		}
 	case "builtin-check":
 		result.MissingRequiredPaths = missingRequiredPaths(repo, command.RequiredPaths)
 		if len(result.MissingRequiredPaths) > 0 {

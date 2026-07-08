@@ -66,7 +66,7 @@ func SmokeKits(repo string, entries []RegistryKit) []SmokeResult {
 					} else if !platform.IsFile(platform.RepoPath(repo, c.Path)) {
 						errs = append(errs, action+": missing command script: "+c.Path)
 					}
-				case "builtin-check":
+				case "builtin-check", "builtin-lifecycle":
 					for _, rel := range c.RequiredPaths {
 						if !platform.Exists(platform.RepoPath(repo, rel)) {
 							errs = append(errs, action+": missing required path: "+rel)

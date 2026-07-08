@@ -44,12 +44,24 @@ func Main() {
 		res, err = runBootstrap(os.Args[2:], start)
 	case "workflow":
 		res, err = runWorkflow(os.Args[2:], start)
+	case "docsync":
+		res, err = runDocSync(os.Args[2:], start)
+	case "skill":
+		res, err = runSkill(os.Args[2:], start)
+	case "lifecycle":
+		res, err = runLifecycle(os.Args[2:], start)
+	case "export":
+		res, err = runExport(os.Args[2:], start)
+	case "fresh-clone":
+		res, err = runFreshClone(os.Args[2:], start)
+	case "full":
+		res, err = runFull(os.Args[2:], start)
 	case "cache":
 		res, err = runCache(os.Args[2:], start)
 	case "tag":
 		res, err = runTag(os.Args[2:], start)
 	case "release":
-		res, err = runRelease(os.Args[2:], start)
+		res, err = runReleaseCommand(os.Args[2:], start)
 	case "kit":
 		res, err = runKit(os.Args[2:], start)
 	case "doctor":
@@ -91,10 +103,19 @@ Usage:
   aicoding hook commit-msg --file COMMIT_MSG [--repo-root PATH] [--json]
   aicoding bootstrap [--repo-root PATH] [--json]
   aicoding workflow smart-verify [--repo-root PATH] [--json]
+  aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]
+  aicoding skill verify --all --profile Smoke|Full|Release [--repo-root PATH] [--json]
+  aicoding lifecycle plan --action install|update|uninstall --all [--repo-root PATH] [--json]
+  aicoding lifecycle install|update|uninstall --all [--repo-root PATH] [--json]
+  aicoding lifecycle rollback --last [--repo-root PATH] [--json]
+  aicoding export --all --zip [--repo-root PATH] [--json]
+  aicoding fresh-clone --profile Smoke|Full|Release [--repo-root PATH] [--json]
+  aicoding full [--repo-root PATH] [--json]
   aicoding cache status [--repo-root PATH] [--json]
   aicoding cache clean [--repo-root PATH] [--json]
   aicoding tag audit [--repo-root PATH] [--json]
   aicoding release verify [--repo-root PATH] [--json]
+  aicoding release gate [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
@@ -111,8 +132,7 @@ Usage:
   aicoding powershell regex-lint --staged [--repo-root PATH] [--json]
   aicoding powershell regex-lint --path PATH [--repo-root PATH] [--json]
 
-This CLI accelerates Go-native hot-path checks.
-Full/Release gates remain in PowerShell/Python and CI.
+This CLI owns Go-native fast, lifecycle, export, DocSync, fresh-clone, Full, and Release control paths.
 `, version)
 	os.Exit(code)
 }
@@ -275,7 +295,7 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			return report.Fail("kit lifecycle", start, "unsupported lifecycle action", nil, action), fmt.Errorf("unsupported lifecycle action: %s", action)
 		}
 		if action != "status" && !*dryRunArg {
-			return report.Fail("kit lifecycle", start, "Go lifecycle planner only supports dry-run for install/update/uninstall", nil, "use --dry-run or scripts/aicoding-kit.ps1 for real lifecycle actions"), errors.New("lifecycle action requires --dry-run")
+			return report.Fail("kit lifecycle", start, "use top-level lifecycle install/update/uninstall for real Go lifecycle actions", nil, "use aicoding lifecycle "+action+" --all --json"), errors.New("use top-level lifecycle command")
 		}
 		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
 		if err != nil {
@@ -314,7 +334,7 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
 		}
 		if !strings.EqualFold(*profile, "Smoke") {
-			return report.Fail("kit "+sub, start, "fast CLI only handles Smoke/Lifecycle profiles", nil, "use scripts/aicoding-kit.ps1 for Full/Release"), errors.New("non-Smoke profile is not handled by fast CLI")
+			return report.Fail("kit "+sub, start, "kit command handles Smoke/Lifecycle only; use skill verify or full/release for broader Go gates", nil, "use aicoding skill verify --all --profile "+*profile+" --json"), errors.New("non-Smoke kit profile is not handled by kit subcommand")
 		}
 		results := kit.SmokeKits(repo, selected)
 		errs := []string{}

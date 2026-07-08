@@ -1,4 +1,4 @@
-# AiCoding DocSync Plus Validation Plan
+﻿# AiCoding DocSync Plus Validation Plan
 
 ## Scope
 
@@ -14,16 +14,16 @@ This plan validates the DocSync Plus kit after integration into the AiCoding rep
 ## Required commands
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/install-docsync-plus.ps1 -DryRun -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/status-docsync-plus.ps1 -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-docsync-plus.ps1 -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/test-docsync-plus.ps1 -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode all -Format json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check-documentation-sync.ps1 -Mode ci -Format json
+bin/aicoding.exe docsync all --json
+bin/aicoding.exe docsync all --json
+bin/aicoding.exe docsync ci --json
+bin/aicoding.exe docsync release --json
+bin/aicoding.exe docsync all --json
+bin/aicoding.exe docsync ci --json
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/install-codex-kit.ps1 -DryRun
+bin/aicoding.exe lifecycle plan --action install --all --json
 bin\aicoding.exe status --all --json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/update-codex-kit.ps1 -DryRun
+bin/aicoding.exe lifecycle plan --action update --all --json
 bin\aicoding.exe governance lint --json
 git diff --check
 ```
@@ -44,7 +44,7 @@ git diff --check
 ## Acceptance criteria
 
 - Existing entrypoint remains compatible.
-- Hook and CI still call `scripts/check-documentation-sync.ps1`.
+- Hook and CI still call `bin/aicoding.exe docsync`.
 - JSON output is stable and parseable.
 - No submodule files are modified.
 - No plugin cache files are modified.
@@ -57,8 +57,8 @@ Rollback must be non-destructive:
 
 ```text
 1. Revert only the DocSync Plus commit or changed files.
-2. Restore the previous scripts/check-documentation-sync.ps1 content.
-3. Remove scripts/docsync/ and config/docs-sync.semantic.json only if introduced by the failed integration.
+2. Restore the previous bin/aicoding.exe docsync content.
+3. Remove internal/docsync/ and config/docs-sync.semantic.json only if introduced by the failed integration.
 4. Do not clean/reset unrelated user changes.
 5. Re-run verify-codex-kit and lint-git-governance.
 ```
