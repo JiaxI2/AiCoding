@@ -1,126 +1,148 @@
-# AiCoding FOC Controller Template v0.7
+# AiCoding FOC Controller Template v1.0-flat
 
-这是一个去耦的 C99 FOC 通用模板。源码面向嵌入式实时控制，C 源码和示例使用 GBK 编码，文档和测试脚本使用 UTF-8。
+这是一个扁平化 C99 FOC 通用模板。源码主路径只保留 VF / IF 两种核心模式，以及 SENSOR / OPEN_LOOP 两种角度来源。三环 PID 直接复用 `common/controller/pid`，FOC 内部不再重复实现 PID。
 
-本版在 v0.6 的基础上增加 `foc_motion` 外环控制层，用于把位置、速度、输入滤波、前馈和齿槽补偿转换为 dq 电流指令，再送入 FOC 电流环。
+本模块不绑定 ADC / PWM / 编码器 / Hall / 观测器 / 状态机 / 故障保护 / 通信协议。上层负责提供电流、母线电压、真实角度或开环频率，并读取 `duty_a` / `duty_b` / `duty_c` 写入硬件。
 
-## 模块边界
-
-角度模块仍保留 `FOC_ANGLE_MODE_OPEN_LOOP`，主 FOC 仍保留 `FOC_CONTROL_MODE_CLOSED_CURRENT`；`foc_angle_update()` 负责角度更新，外环模块只负责生成 dq 电流指令。
-
+## 核心模式
 
 ```text
-foc_math   = Clarke / Park / 反 Park / 反 Clarke
-foc_svpwm  = SVPWM / duty 生成
-foc_angle  = 闭环角度、开环角度、固定角度、零位偏置
-foc_motion = 位置环、速度环、输入滤波、前馈、anti-cogging
-foc        = 电流环、dq 电压生成、反 Park、SVPWM 串联
+FOC_MODE_VF
+  dq 电压链路。最终使用 cmd_vd / cmd_vq，或用 V/f 参数自动生成 q 轴电压。
+
+FOC_MODE_IF
+  dq 电流链路。最终使用 cmd_id / cmd_iq，经 pid_id / pid_iq 输出 out_vd / out_vq。
 ```
 
-不包含：ADC 读取、PWM 写寄存器、编码器读取、Hall 读取、驱动对象、电机对象、故障状态机、通信协议。
+```text
+FOC_ANGLE_SENSOR
+  theta_e 由上层真实位置、编码器、Hall 插值或观测器提供。
 
-## 推荐控制链
+FOC_ANGLE_OPEN_LOOP
+  theta_e 由 foc_run() 根据 open_loop_freq_hz、dir 和 control_freq 积分。
+```
+
+典型组合：
 
 ```text
-上层命令
-  -> foc_motion 输入整形
-  -> 位置环
-  -> 速度环
-  -> 电流前馈 / 加速度前馈 / anti-cogging
-  -> dq 电流指令
-  -> foc 闭环电流环
-  -> 反 Park
+IF + SENSOR     = 正常三环闭环 FOC
+IF + OPEN_LOOP  = I/f 开环启动
+VF + OPEN_LOOP  = V/f 开环
+```
+
+## 扁平 API
+
+`Foc` 结构体现在是用户可直接访问的一层字段。核心扭矩电流命令是 `cmd_iq`；位置环和速度环只是 `cmd_iq` 的上游生成器。
+
+```c
+Foc foc;
+
+foc_init(&foc);
+
+foc.mode = FOC_MODE_IF;
+foc.angle_mode = FOC_ANGLE_SENSOR;
+foc.vbus = 24.0f;
+foc.ia = ia;
+foc.ib = ib;
+foc.ic = ic;
+foc.theta_e = theta;
+foc.cmd_iq = 2.0f;
+
+foc_run(&foc);
+
+pwm_a = foc.duty_a;
+pwm_b = foc.duty_b;
+pwm_c = foc.duty_c;
+```
+
+旧入口 `foc()` 仍保留，但只包装 `foc_run()`。
+
+## VF 执行路径
+
+```text
+foc_run
+  -> 可选 OPEN_LOOP 角度积分
+  -> offset 扣除
+  -> Clarke / Park 观测真实电流
+  -> out_vd = cmd_vd
+  -> out_vq = cmd_vq 或 cmd_vq + sign(dir) * V/f 电压
+  -> max_voltage 矢量限幅
+  -> inverse Park
   -> SVPWM
-  -> dutyA / dutyB / dutyC
+  -> duty_a / duty_b / duty_c
 ```
 
-## 新增外环控制模式
-
-```c
-FOC_MOTION_CONTROL_CURRENT
-FOC_MOTION_CONTROL_VELOCITY
-FOC_MOTION_CONTROL_POSITION
-```
-
-含义：
+当 `vf_gain_v_per_hz` 或 `vf_boost_v` 非零时，V/f 电压为：
 
 ```text
-CURRENT  = 直接输出 q 轴电流，可叠加限幅和 anti-cogging。
-VELOCITY = 速度误差经 P/I 输出 q 轴电流。
-POSITION = 位置误差先生成速度指令，再进入速度环。
+vf_v = vf_boost_v + vf_gain_v_per_hz * abs(open_loop_freq_hz)
+vf_v 限幅到 [vf_min_v, vf_max_v]
+out_vq = cmd_vq + sign(dir) * vf_v
 ```
 
-## 新增输入模式
-
-```c
-FOC_MOTION_INPUT_PASSTHROUGH
-FOC_MOTION_INPUT_POS_FILTER
-FOC_MOTION_INPUT_VEL_RAMP
-FOC_MOTION_INPUT_CURRENT_RAMP
-```
-
-`FOC_MOTION_INPUT_POS_FILTER` 是二阶位置输入滤波，用于让位置目标变得连续，并生成速度和加速度前馈。
-
-## anti-cogging 和前馈
-
-`foc_motion` 支持外部传入齿槽补偿表：
-
-```c
-controller.motion.config.enableAntiCogging = true;
-controller.motion.config.antiCoggingTable = table;
-controller.motion.config.antiCoggingTableLength = tableLength;
-```
-
-表项单位是 A，表示该位置需要叠加到 q 轴的电流前馈。表内存由上层提供，模板不分配内存，也不做标定流程。
-
-前馈包括：
+## IF 执行路径
 
 ```text
-qCurrentFeedforward      = q 轴电流前馈
- dCurrentFeedforward     = d 轴电流前馈
-inertiaFeedforwardGain   = 输入滤波或速度斜坡产生的加速度前馈系数
-voltageFeedforward       = foc 电流环内的 dq 电压前馈
+foc_run
+  -> SENSOR 使用上层 theta_e，OPEN_LOOP 由内部积分 theta_e
+  -> offset 扣除
+  -> Clarke / Park 得到 real_id / real_iq
+  -> 可选 pid_pos: cmd_pos - pos -> cmd_vel
+  -> 可选 pid_vel: cmd_vel - vel -> cmd_iq
+  -> 可选 pid_id: cmd_id - real_id -> out_vd，否则 out_vd = cmd_vd
+  -> 可选 pid_iq: cmd_iq - real_iq -> out_vq，否则 out_vq = cmd_vq
+  -> max_voltage 矢量限幅
+  -> inverse Park
+  -> SVPWM
+  -> duty_a / duty_b / duty_c
 ```
 
-## 和 foc() 的集成
+## PID 复用
 
-启用外环级联：
+FOC target 编译 `../pid/src/pid.c`，并通过 `#include "pid.h"` 使用现有 PID API。FOC 内部仅提供 error-only wrapper：
 
 ```c
-Foc controller;
-foc_init(&controller);
-
-controller.config.controlMode = FOC_CONTROL_MODE_MOTION_CURRENT;
-controller.config.enableMotionControl = true;
-
-controller.motion.config.controlMode = FOC_MOTION_CONTROL_POSITION;
-controller.motion.config.inputMode = FOC_MOTION_INPUT_POS_FILTER;
-
-controller.motion.input.positionSetpoint = 1.0f;
-controller.motion.input.positionFeedback = 0.2f;
-controller.motion.input.velocityFeedback = 0.0f;
-
-foc(&controller);
+controller->input.setpoint = error;
+controller->input.feedback = 0.0f;
+controller->input.feedforward = 0.0f;
+return pid(controller);
 ```
 
-`foc()` 会先调用 `foc_motion_update()` 生成 `currentSetpoint`，再进入闭环电流环。
-
-## 验证范围
-
-本包仍是 no-compile 验证，覆盖：
+四个 PID 字段分别是：
 
 ```text
-- 开环角度积分
-- 开环电压 duty 输出
-- 闭环电流 duty 输出
-- 零电流偏置扣除
-- 位置环 -> 速度环 -> 电流指令
-- 二阶位置输入滤波
-- 速度斜坡加速度前馈
-- anti-cogging 电流前馈
-- 外环级联进入 FOC 电流环
+pid_pos -> cmd_vel
+pid_vel -> cmd_iq
+pid_id  -> out_vd
+pid_iq  -> out_vq
 ```
 
-额外做过一次 CMake/GCC smoke compile，用于检查 C99 语法和库目标能否构建。
+## Legacy helper
 
-不包含真实硬件验证，不读取外设。
+`foc_angle.c/h` 和 `foc_motion.c/h` 第一版保留为 legacy helper，用于兼容旧示例或外部试验代码。新的主流程不再依赖它们；新 API 不再暴露 `FocInput` / `FocConfig` / `FocState` 深层嵌套。
+
+保留 legacy control mode enum 和映射函数：
+
+```c
+foc_set_legacy_control_mode(&foc, FOC_CONTROL_MODE_OPEN_VOLTAGE);   /* -> FOC_MODE_VF */
+foc_set_legacy_control_mode(&foc, FOC_CONTROL_MODE_CLOSED_CURRENT); /* -> FOC_MODE_IF */
+foc_set_legacy_control_mode(&foc, FOC_CONTROL_MODE_MOTION_CURRENT); /* -> FOC_MODE_IF */
+```
+
+## 验证
+
+静态验证入口：
+
+```bash
+python CodingKit/modules/common/controller/foc/tests/test_foc_flat_vf_if.py
+```
+
+建议同时运行 PID 模块验证和 FOC CMake smoke build：
+
+```bash
+python CodingKit/modules/common/controller/pid/tests/run_no_compile_validation.py
+cmake -S CodingKit/modules/common/controller/foc -B CodingKit/modules/common/controller/foc/build
+cmake --build CodingKit/modules/common/controller/foc/build
+```
+
+真实电机 bring-up 仍需覆盖相序、offset、电流方向、编码器方向/零位、开环 Vq、闭环 Id/Iq、速度闭环和位置闭环。本模块不声明硬件参数已调好。

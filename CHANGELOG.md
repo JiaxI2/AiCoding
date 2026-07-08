@@ -33,9 +33,10 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`docs(architecture)`、`test(governance)`、`perf(task)`、`perf(kit)`、`chore(coding-kit)`、`chore(pwsh)`。
+- 本轮已提交类型：`refactor(foc)`、`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`docs(architecture)`、`test(governance)`、`perf(task)`、`perf(kit)`、`chore(coding-kit)`、`chore(pwsh)`。
 
 ### Changed
+- **refactor(foc)**：将 `CodingKit/modules/common/controller/foc` 主路径扁平化为 VF / IF 双模式和 SENSOR / OPEN_LOOP 双角度来源，三环 PID 复用 `common/controller/pid`，并将 `foc_angle` / `foc_motion` 降级为 legacy helper；flatten the FOC main path to VF / IF modes and SENSOR / OPEN_LOOP angle sources, reuse the shared PID controller, and downgrade `foc_angle` / `foc_motion` to legacy helpers.
 - **chore(pwsh)**：删除已由 Go Fast Path V2 替代的 `scripts/legacy/fast-path-replaced/` PowerShell 脚本，并将 hook、性能测量和迁移文档改为 Go 默认路径；remove Go-replaced legacy fast-path PowerShell scripts and route hooks, perf measurement, and migration docs to Go defaults.
 - **chore(coding-kit)**：更新 `CodingKit/agents/skills` submodule 到 `4fd28b4`，纳入 Codex-Skills README 和 git-governance 文档标准更新；update the Codex-Skills submodule to `4fd28b4` with README and git-governance documentation standard updates.
 - **docs(architecture)**：更新架构总览 Layer Model，把 Codex-Skills 源、AiCoding submodule、Marketplace/runtime、Taskfile/Go/PowerShell、registry/manifest 和 CodingKit assets 分层关系放入同一张图；update the architecture overview Layer Model to show Codex-Skills source, AiCoding submodule, Marketplace/runtime, command paths, registry/manifests, and CodingKit assets in one diagram.
