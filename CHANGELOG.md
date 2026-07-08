@@ -33,9 +33,10 @@
 
 ### Commit Type
 
-- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`docs(architecture)`、`test(governance)`、`perf(task)`、`perf(kit)`。
+- 本轮已提交类型：`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`docs(architecture)`、`test(governance)`、`perf(task)`、`perf(kit)`、`chore(coding-kit)`。
 
 ### Changed
+- **chore(coding-kit)**：更新 `CodingKit/agents/skills` submodule 到 `4fd28b4`，纳入 Codex-Skills README 和 git-governance 文档标准更新；update the Codex-Skills submodule to `4fd28b4` with README and git-governance documentation standard updates.
 - **docs(architecture)**：更新架构总览 Layer Model，把 Codex-Skills 源、AiCoding submodule、Marketplace/runtime、Taskfile/Go/PowerShell、registry/manifest 和 CodingKit assets 分层关系放入同一张图；update the architecture overview Layer Model to show Codex-Skills source, AiCoding submodule, Marketplace/runtime, command paths, registry/manifests, and CodingKit assets in one diagram.
 - **perf(kit)**：新增 Go-native `kit verify --all --profile Lifecycle --json` 结构化验证，覆盖 codex-kit 配置、kit registry/manifest、requiredPaths、命令 envelope 和 dry-run skip 策略；PowerShell `verify-codex-kit.ps1` / `verify-kit-lifecycle.ps1` 保留为显式 compatibility/full 对照；add Go-native lifecycle structure verification while keeping PowerShell verify scripts explicit for compatibility/full checks.
 - **perf(task)**：将默认 `task perf` 收敛为 Go-native 性能检查，PowerShell parity comparison 改为显式兼容性对照，不再拖慢默认本地 perf；make default `task perf` Go-native while keeping PowerShell parity checks explicit.
