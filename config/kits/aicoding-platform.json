@@ -7,7 +7,7 @@
     "platform-kit",
     "plugin-kit"
   ],
-  "mode": "script-adapter",
+  "mode": "go-builtin",
   "description": "AiCoding platform integration, Codex plugin marketplace registration, CodingKit asset discovery, and submodule validation.",
   "paths": {
     "config": "config/codex-kit.json",
@@ -37,13 +37,17 @@
       "supportsJson": true
     },
     "verify": {
-      "type": "powershell-script",
-      "path": "scripts/verify-codex-kit.ps1",
-      "args": [],
+      "type": "builtin-check",
+      "requiredPaths": [
+        "config/codex-kit.json",
+        "config/kit-registry.json",
+        "internal/kit/structure.go",
+        "internal/cli/cli.go"
+      ],
       "supportsJson": true
     },
     "test": {
-      "type": "composed",
+      "type": "go-composed",
       "steps": [
         "verify"
       ]

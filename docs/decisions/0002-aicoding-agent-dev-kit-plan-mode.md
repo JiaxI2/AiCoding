@@ -27,7 +27,7 @@ Positive:
 - fewer silent architecture assumptions;
 - clearer user/Agent collaboration;
 - better traceability between requirement, plan, tasks, and verification;
-- compatible with the existing AiCoding lifecycle.
+- aligned with the current AiCoding lifecycle.
 
 Trade-offs:
 

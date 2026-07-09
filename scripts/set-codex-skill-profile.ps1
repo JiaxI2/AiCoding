@@ -19,7 +19,7 @@ function Expand-RuntimePath {
 
 function Resolve-StandaloneRoot {
     param($Config, [string]$RootName)
-    if ($RootName -eq 'codex') { return Expand-RuntimePath $Config.skillRuntime.legacyUserRoot }
+    if ($RootName -eq 'codex') { return Expand-RuntimePath $Config.skillRuntime.codexUserRoot }
     return Expand-RuntimePath $Config.skillRuntime.canonicalUserRoot
 }
 
@@ -53,7 +53,7 @@ function Ensure-Junction {
 $repo = Get-AiCodingRoot $PSScriptRoot
 $config = Read-CodexKitConfig $repo
 $agentsRoot = Expand-RuntimePath $config.skillRuntime.canonicalUserRoot
-$legacyRoot = Expand-RuntimePath $config.skillRuntime.legacyUserRoot
+$codexRoot = Expand-RuntimePath $config.skillRuntime.codexUserRoot
 $standaloneInstallRoot = Resolve-StandaloneRoot $config $StandaloneRoot
 if (-not $SourceRepository) { $SourceRepository = Resolve-CodexKitConfiguredPath -ConfigSection $config.skillRuntime -RepoRoot $repo }
 $actions = @()
@@ -116,7 +116,7 @@ $result = [pscustomobject]@{
     dryRun = [bool]$DryRun
     sourceRepository = $SourceRepository
     agentsRoot = $agentsRoot
-    legacyRoot = $legacyRoot
+    codexRoot = $codexRoot
     standaloneRoot = $StandaloneRoot
     standaloneInstallRoot = $standaloneInstallRoot
     actions = $actions

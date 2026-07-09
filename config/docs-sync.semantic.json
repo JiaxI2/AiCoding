@@ -41,7 +41,7 @@
       "AGENTS.md",
       "CHANGELOG.md"
     ],
-    ".github/workflows/docs-sync.yml": [
+    ".github/workflows/aicoding-ci.yml": [
       "docs/MAINTENANCE_METHOD.md",
       "AGENTS.md",
       "CHANGELOG.md"

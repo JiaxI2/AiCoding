@@ -9,7 +9,7 @@
     "workflow-kit",
     "quality-gate-kit"
   ],
-  "mode": "script-adapter",
+  "mode": "powershell-specialty",
   "description": "中文优先的 Agent Dev Kit workflow，覆盖 Spec Pack、SDD、TDD、顺序上下文加载、决策记忆、总 hook bridge、Plan Mode overlay 和质量门禁。",
   "paths": {
     "pluginRoot": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit",
@@ -31,7 +31,7 @@
       "supportsDryRun": true
     },
     "status": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/status-aicoding-agent-dev-kit.ps1",
       "args": [
         "-RepoRoot",
@@ -40,7 +40,7 @@
       "supportsJson": true
     },
     "verify": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/verify-aicoding-agent-dev-kit.ps1",
       "args": [
         "-RepoRoot",
@@ -49,7 +49,7 @@
       "supportsJson": true
     },
     "test": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/test-aicoding-agent-dev-kit.ps1",
       "args": [
         "-RepoRoot",

@@ -87,7 +87,7 @@ func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
 	checks := [][]string{}
 	switch profile {
 	case "Smoke":
-		checks = [][]string{{bin, "skill", "verify", "--all", "--profile", "Smoke", "--json"}, {bin, "docsync", "ci", "--json"}}
+		checks = [][]string{{bin, "smoke", "--json"}}
 	case "Full":
 		checks = [][]string{{bin, "full", "--json"}}
 	case "Release":

@@ -7,7 +7,7 @@
     "codingkit-module-kit",
     "asset-kit"
   ],
-  "mode": "script-adapter",
+  "mode": "go-builtin",
   "description": "Reusable C99 control modules under CodingKit/modules/common/controller.",
   "paths": {
     "moduleRoot": "CodingKit/modules/common/controller"
@@ -33,7 +33,7 @@
       ]
     },
     "test": {
-      "type": "composed",
+      "type": "go-composed",
       "steps": [
         "verify"
       ]

@@ -8,7 +8,7 @@
     "python-cli-kit",
     "workflow-kit"
   ],
-  "mode": "script-adapter",
+  "mode": "external-cli",
   "description": "Safe patch workflow, fixed-string scan/replace, transaction snapshots, and markdown link checks through the apatch CLI.",
   "paths": {
     "pluginRoot": "dist/agent-patch-kit/plugins/AiCodingAgentPatch",
@@ -44,7 +44,7 @@
       ]
     },
     "verify": {
-      "type": "composed",
+      "type": "go-composed",
       "steps": [
         "status",
         "doctor"

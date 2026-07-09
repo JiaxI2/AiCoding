@@ -21,7 +21,7 @@ func TestSingleQuotedCaptureReplacementPasses(t *testing.T) {
 }
 
 func TestLinePipelineReplaceFails(t *testing.T) {
-	issues := LintText("bad.ps1", `Get-Content file.ps1 | ForEach-Object { $_ -replace 'old', 'new' } | Set-Content file.ps1`)
+	issues := LintText("bad.ps1", `Get-Content file.ps1 | ForEach-Object { $_ -replace 'source', 'target' } | Set-Content file.ps1`)
 	if len(BlockingMessages(issues)) != 1 {
 		t.Fatalf("expected one blocking issue, got %#v", issues)
 	}
@@ -29,7 +29,7 @@ func TestLinePipelineReplaceFails(t *testing.T) {
 
 func TestRawBulkReplacePasses(t *testing.T) {
 	issues := LintText("good.ps1", `$c = Get-Content -LiteralPath file.ps1 -Raw
-$c = $c -creplace 'old', 'new'
+$c = $c -creplace 'source', 'target'
 Set-Content -LiteralPath file.ps1 -Value $c -NoNewline`)
 	if len(BlockingMessages(issues)) != 0 {
 		t.Fatalf("expected no blocking issue, got %#v", issues)

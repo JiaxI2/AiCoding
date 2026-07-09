@@ -5,12 +5,12 @@ import "testing"
 func TestClassifyTagNamespaces(t *testing.T) {
 	policy := DefaultPolicy()
 	cases := map[string]string{
-		"v0.2.0":                          "platform",
-		"kit/powershell-skill-kit/v1.3.0": "kit",
-		"milestone/2026.07.03-fast-path":  "milestone",
-		"v2026.07.03-fast-path-v1":        "legacy-historical",
-		"v1.3.0-powershell-skill-kit":     "legacy-component",
-		"bad/tag":                         "unknown",
+		"v2.4.6":                        "platform",
+		"kit/example-kit/v2.3.4":        "kit",
+		"milestone/2099.12.31-baseline": "milestone",
+		"v2099.12.31-baseline":          "noncurrent-date",
+		"v2.3.4-example-kit":            "noncurrent-component",
+		"bad/tag":                       "unknown",
 	}
 	for tag, want := range cases {
 		if got := Classify(tag, policy); got != want {
@@ -19,13 +19,13 @@ func TestClassifyTagNamespaces(t *testing.T) {
 	}
 }
 
-func TestAuditTagsReturnsWarningsForLegacyTags(t *testing.T) {
+func TestAuditTagsReturnsWarningsForNonCurrentTags(t *testing.T) {
 	policy := DefaultPolicy()
-	audit := AuditTags([]string{"v0.2.0", "v1.3.0-powershell-skill-kit"}, policy)
-	if audit.Total != 2 || audit.Counts["platform"] != 1 || audit.Counts["legacy-component"] != 1 {
+	audit := AuditTags([]string{"v2.4.6", "v2.3.4-example-kit"}, policy)
+	if audit.Total != 2 || audit.Counts["platform"] != 1 || audit.Counts["noncurrent-component"] != 1 {
 		t.Fatalf("unexpected audit counts: %#v", audit)
 	}
 	if len(audit.Warnings) == 0 {
-		t.Fatalf("expected legacy warning")
+		t.Fatalf("expected non-current warning")
 	}
 }

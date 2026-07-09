@@ -63,7 +63,7 @@ func Check(repo, mode string) CheckResult {
 
 			"config/docs-sync.policy.json",
 			"config/docs-sync.semantic.json",
-			".github/workflows/docs-sync.yml",
+			".github/workflows/aicoding-ci.yml",
 		})...)
 	}
 	if mode == "release" {

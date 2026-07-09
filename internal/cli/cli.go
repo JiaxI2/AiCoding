@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -21,8 +22,8 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/releasegate"
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 	"github.com/JiaxI2/AiCoding/internal/tagpolicy"
-	"github.com/JiaxI2/AiCoding/internal/workflow"
 )
 
 const version = "fast-path-v2"
@@ -43,8 +44,11 @@ func Main() {
 		res, err = runHook(os.Args[2:], start)
 	case "bootstrap":
 		res, err = runBootstrap(os.Args[2:], start)
-	case "workflow":
-		res, err = runWorkflow(os.Args[2:], start)
+	case "smoke":
+		res, err = runSmoke(os.Args[2:], start)
+	case "ci":
+		res, err = runCI(os.Args[2:], start)
+
 	case "docsync":
 		res, err = runDocSync(os.Args[2:], start)
 	case "skill":
@@ -59,8 +63,7 @@ func Main() {
 		res, err = runFull(os.Args[2:], start)
 	case "cache":
 		res, err = runCache(os.Args[2:], start)
-	case "cstyle":
-		res, err = runCStyle(os.Args[2:], start)
+
 	case "tag":
 		res, err = runTag(os.Args[2:], start)
 	case "release":
@@ -105,7 +108,9 @@ Usage:
   aicoding hook pre-commit [--repo-root PATH] [--json]
   aicoding hook commit-msg --file COMMIT_MSG [--repo-root PATH] [--json]
   aicoding bootstrap [--repo-root PATH] [--json]
-  aicoding workflow smart-verify [--repo-root PATH] [--json]
+
+  aicoding smoke [--repo-root PATH] [--json]
+  aicoding ci --profile Smoke|Full|Release [--repo-root PATH] [--json]
   aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]
   aicoding skill verify --all --profile Smoke|Full|Release [--repo-root PATH] [--json]
   aicoding skill c99-standard-c status [--repo-root PATH] [--json]
@@ -124,10 +129,7 @@ Usage:
   aicoding release verify [--repo-root PATH] [--json]
   aicoding release gate [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
-  aicoding cstyle status [--repo-root PATH] [--json]
-  aicoding cstyle templates [--repo-root PATH] [--json]
-  aicoding cstyle fmt --scope changed|staged|all|paths [--path PATH ...] [--preview] [--repo-root PATH] [--json]
-  aicoding cstyle check --scope changed|staged|all|paths [--path PATH ...] [--repo-root PATH] [--json]
+
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
@@ -166,10 +168,6 @@ func (m *multiFlag) String() string {
 func (m *multiFlag) Set(value string) error {
 	*m = append(*m, value)
 	return nil
-}
-
-func runCStyle(args []string, start time.Time) (report.Result, error) {
-	return runCStyleCommand("cstyle", cstyle.DefaultSkillID, args, start)
 }
 
 func runCStyleCommand(commandPrefix string, skillID string, args []string, start time.Time) (report.Result, error) {
@@ -274,14 +272,44 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		if err != nil {
 			return report.Fail("hook pre-commit", start, "cannot resolve repo root", nil, err.Error()), err
 		}
-		regexIssues, regexIssueErr := pwshregex.LintStaged(repo)
-		errs := governance.Lint(repo, "pre-commit", "")
-		errs = append(errs, docsync.LintStaged(repo)...)
-		if regexIssueErr != nil {
-			errs = append(errs, regexIssueErr.Error())
+
+		plan := runner.NewPlan(
+			runner.Task{ID: "governance pre-commit", Group: "hook", Run: func(context.Context) runner.TaskResult {
+				errs := governance.Lint(repo, "pre-commit", "")
+				return runner.TaskResult{OK: len(errs) == 0, Errors: errs}
+			}},
+			runner.Task{ID: "docsync staged", Group: "hook", Run: func(context.Context) runner.TaskResult {
+				errs := docsync.LintStaged(repo)
+				return runner.TaskResult{OK: len(errs) == 0, Errors: errs}
+			}},
+			runner.Task{ID: "powershell regex staged", Group: "hook", Run: func(context.Context) runner.TaskResult {
+				issues, scanErr := pwshregex.LintStaged(repo)
+				errs := []string{}
+				if scanErr != nil {
+					errs = append(errs, scanErr.Error())
+				}
+				errs = append(errs, pwshregex.BlockingMessages(issues)...)
+				return runner.TaskResult{OK: len(errs) == 0, Errors: errs, Data: issues}
+			}},
+			runner.Task{ID: "c99-standard-c staged check", Group: "hook", Run: func(context.Context) runner.TaskResult {
+				data, runErr := cstyle.CheckBySkill(cstyle.DefaultSkillID, cstyle.Options{RepoRoot: repo, Scope: cstyle.ScopeStaged})
+				errs := append([]string{}, data.Errors...)
+				if runErr != nil && len(errs) == 0 {
+					errs = append(errs, runErr.Error())
+				}
+				return runner.TaskResult{OK: len(errs) == 0, Errors: errs, Data: data}
+			}},
+		)
+		results := plan.Run(context.Background(), runner.Options{MaxParallel: 4})
+		errs := []string{}
+		for _, result := range results {
+			for _, e := range result.Errors {
+				if e != "" {
+					errs = append(errs, result.ID+": "+e)
+				}
+			}
 		}
-		errs = append(errs, pwshregex.BlockingMessages(regexIssues)...)
-		return report.Result{SchemaVersion: 1, Command: "hook pre-commit", OK: len(errs) == 0, Message: "pre-commit fast gate", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+		return report.Result{SchemaVersion: 1, Command: "hook pre-commit", OK: len(errs) == 0, Message: "pre-commit Go gate", RepoRoot: repo, Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	case "commit-msg":
 		fs := flag.NewFlagSet("hook commit-msg", flag.ContinueOnError)
 		repoArg := fs.String("repo-root", "", "repository root")
@@ -301,7 +329,6 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, fmt.Errorf("unsupported hook: %s", sub)
 	}
 }
-
 func runGovernance(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 || args[0] != "lint" {
 		return report.Result{}, errors.New("governance requires subcommand: lint")
@@ -562,22 +589,6 @@ func runBootstrap(args []string, start time.Time) (report.Result, error) {
 	}
 	status, errs := bootstrap.Bootstrap(repo, bootstrap.Options{Build: !*noBuild})
 	return report.Result{SchemaVersion: 1, Command: "bootstrap", OK: len(errs) == 0, Message: "bootstrap fast path binary", RepoRoot: repo, Data: status, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-}
-
-func runWorkflow(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 || args[0] != "smart-verify" {
-		return report.Result{}, errors.New("workflow requires subcommand: smart-verify")
-	}
-	fs := flag.NewFlagSet("workflow smart-verify", flag.ContinueOnError)
-	repoArg := fs.String("repo-root", "", "repository root")
-	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
-	repo, err := platform.ResolveRepoRoot(*repoArg)
-	if err != nil {
-		return report.Fail("workflow smart-verify", start, "cannot resolve repo root", nil, err.Error()), err
-	}
-	result, errs := workflow.SmartVerify(repo)
-	return report.Result{SchemaVersion: 1, Command: "workflow smart-verify", OK: len(errs) == 0, Message: "smart Go fast-path verification", RepoRoot: repo, Data: result, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 }
 
 func runCache(args []string, start time.Time) (report.Result, error) {

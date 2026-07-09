@@ -12,14 +12,13 @@ import (
 )
 
 type Policy struct {
-	SchemaVersion              int      `json:"schemaVersion"`
-	Name                       string   `json:"name"`
-	PlatformTagPattern         string   `json:"platformTagPattern"`
-	KitTagPattern              string   `json:"kitTagPattern"`
-	MilestoneTagPattern        string   `json:"milestoneTagPattern"`
-	LegacyHistoricalTagPattern string   `json:"legacyHistoricalTagPattern"`
-	LegacyExamples             []string `json:"legacyExamples"`
-	Rules                      []string `json:"rules"`
+	SchemaVersion            int      `json:"schemaVersion"`
+	Name                     string   `json:"name"`
+	PlatformTagPattern       string   `json:"platformTagPattern"`
+	KitTagPattern            string   `json:"kitTagPattern"`
+	MilestoneTagPattern      string   `json:"milestoneTagPattern"`
+	NonCurrentDateTagPattern string   `json:"nonCurrentDateTagPattern"`
+	Rules                    []string `json:"rules"`
 }
 
 type TagRecord struct {
@@ -37,12 +36,12 @@ type Audit struct {
 
 func DefaultPolicy() Policy {
 	return Policy{
-		SchemaVersion:              1,
-		Name:                       "AiCoding Tagging Policy",
-		PlatformTagPattern:         `^v(?![0-9]{4}\.)[0-9]+\.[0-9]+\.[0-9]+$`,
-		KitTagPattern:              `^kit/[A-Za-z0-9._-]+/v(?![0-9]{4}\.)[0-9]+\.[0-9]+\.[0-9]+$`,
-		MilestoneTagPattern:        `^milestone/[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[A-Za-z0-9._-]+$`,
-		LegacyHistoricalTagPattern: `^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}(-[A-Za-z0-9._-]+)?$`,
+		SchemaVersion:            1,
+		Name:                     "AiCoding Tagging Policy",
+		PlatformTagPattern:       `^v(?![0-9]{4}\.)[0-9]+\.[0-9]+\.[0-9]+$`,
+		KitTagPattern:            `^kit/[A-Za-z0-9._-]+/v(?![0-9]{4}\.)[0-9]+\.[0-9]+\.[0-9]+$`,
+		MilestoneTagPattern:      `^milestone/[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[A-Za-z0-9._-]+$`,
+		NonCurrentDateTagPattern: `^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}(-[A-Za-z0-9._-]+)?$`,
 	}
 }
 
@@ -86,7 +85,7 @@ func AuditTags(tags []string, policy Policy) Audit {
 		audit.Tags = append(audit.Tags, TagRecord{Name: tag, Category: category})
 		audit.Counts[category]++
 		audit.Total++
-		if strings.HasPrefix(category, "legacy") {
+		if strings.HasPrefix(category, "noncurrent") {
 			audit.Warnings = append(audit.Warnings, tag+": "+category)
 		}
 	}
@@ -101,10 +100,10 @@ func Classify(tag string, policy Policy) string {
 		return "kit"
 	case isMilestoneTag(tag):
 		return "milestone"
-	case isLegacyHistoricalTag(tag) || match(policy.LegacyHistoricalTagPattern, tag):
-		return "legacy-historical"
+	case isNonCurrentDateTag(tag) || match(policy.NonCurrentDateTagPattern, tag):
+		return "noncurrent-date"
 	case regexp.MustCompile(`^v[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9._-]+$`).MatchString(tag):
-		return "legacy-component"
+		return "noncurrent-component"
 	default:
 		return "unknown"
 	}
@@ -129,7 +128,7 @@ func isMilestoneTag(tag string) bool {
 	return regexp.MustCompile(`^milestone/[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[A-Za-z0-9._-]+$`).MatchString(tag)
 }
 
-func isLegacyHistoricalTag(tag string) bool {
+func isNonCurrentDateTag(tag string) bool {
 	return regexp.MustCompile(`^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}(-[A-Za-z0-9._-]+)?$`).MatchString(tag)
 }
 

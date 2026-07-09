@@ -14,16 +14,16 @@ function Invoke-Step($name, [scriptblock]$body) {
   try { & $body; Add-Result $name $true "passed" } catch { Add-Result $name $false $_.Exception.Message }
 }
 function Invoke-Cli([string[]]$CliArgs) {
-  $old = $env:PYTHONPATH
-  $oldNoBytecode = $env:PYTHONDONTWRITEBYTECODE
+  $savedPythonPath = $env:PYTHONPATH
+  $savedNoBytecode = $env:PYTHONDONTWRITEBYTECODE
   try {
     $env:PYTHONPATH = $srcPath
     $env:PYTHONDONTWRITEBYTECODE = "1"
     python -m aicoding_agent_kit.cli @CliArgs | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "CLI failed: $($CliArgs -join ' ')" }
   } finally {
-    $env:PYTHONPATH = $old
-    $env:PYTHONDONTWRITEBYTECODE = $oldNoBytecode
+    $env:PYTHONPATH = $savedPythonPath
+    $env:PYTHONDONTWRITEBYTECODE = $savedNoBytecode
   }
 }
 

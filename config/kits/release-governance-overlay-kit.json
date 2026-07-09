@@ -7,7 +7,7 @@
     "governance-kit",
     "overlay-kit"
   ],
-  "mode": "script-adapter",
+  "mode": "powershell-specialty",
   "description": "Tag/release namespace governance, Taskfile entry, and performance-loop overlay for AiCoding.",
   "paths": {
     "taggingPolicy": "docs/TAGGING_POLICY.md",
@@ -30,13 +30,13 @@
       ]
     },
     "verify": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/verify-release-governance-overlay.ps1",
       "args": [],
       "supportsJson": true
     },
     "test": {
-      "type": "composed",
+      "type": "go-composed",
       "steps": [
         "verify"
       ]

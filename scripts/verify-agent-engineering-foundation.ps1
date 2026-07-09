@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
   [string]$RepoRoot = "",
   [switch]$Json
@@ -79,7 +79,7 @@ try {
 
   $ok = ($errors.Count -eq 0)
   $code = if ($ok) { "OK" } else { "AEF_VERIFY_FAILED" }
-  $message = if ($ok) { "Agent Engineering Foundation 兼容验证通过。" } else { "Agent Engineering Foundation 兼容验证未通过。" }
+  $message = if ($ok) { "Agent Engineering Foundation 专项验证通过。" } else { "Agent Engineering Foundation 专项验证未通过。" }
   Out-Result $ok $code $message @{
     repoRoot = $RepoRoot
     checks = @($checks.ToArray())

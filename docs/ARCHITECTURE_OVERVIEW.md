@@ -1,111 +1,61 @@
 # Architecture Overview
 
-This document keeps architecture details that do not belong in the short README entry pages.
-
 ## Repository Role
 
-AiCoding is the platform repository around the local AI coding workflow. It owns integration and governance surfaces:
+AiCoding 是本地 AI coding 工作流的平台仓库。它拥有 kit registry、kit manifest、本地 hook、Taskfile 路由、Go CLI 控制面、发布治理文档和 CodingKit 平台资产。
 
-- kit registry and kit manifests;
-- local hook wrappers;
-- Taskfile command routing;
-- Go CLI control-plane integration;
-- PowerShell/Python compatibility and specialty tooling;
-- release and tag governance documentation;
-- CodingKit platform assets outside the installed plugin cache.
-
-AiCoding does not own embedded skill source code. The authoritative skill/plugin source is the `CodingKit/agents/skills` submodule and its generated package assets.
+AiCoding 不拥有嵌入式 skill 源码。权威 skill/plugin 源位于 `CodingKit/agents/skills` 子模块及其生成包资产。
 
 ## Layer Model
 
 ```mermaid
 flowchart TD
-  User["User / Agent"] --> Taskfile["Taskfile.yml"]
-
-  subgraph Source["Skill and plugin source"]
-    CodexSkills["Codex-Skills canonical sources"]
-    PluginPackage["plugins/AiCoding generated package"]
-    Submodule["CodingKit/agents/skills submodule"]
-  end
-
-  subgraph Runtime["Installed runtime"]
-    Marketplace["AiCoding Marketplace entry"]
-    CodexRuntime["Codex plugin cache and hooks"]
-  end
-
-  subgraph Platform["AiCoding platform repository"]
-    Taskfile --> GoCLI["cmd/aicoding -> bin/aicoding.exe"]
-    Taskfile -. compatibility .-> Scripts["scripts/*.ps1 specialty tools"]
-    GoCLI --> Internal["internal/* Go packages"]
-    Internal --> Registry["config/kit-registry.json"]
-    Scripts -. manifest compatibility .-> Registry
-    Registry --> Manifests["config/kits/*.json"]
-    Manifests --> Assets["CodingKit examples/modules/platforms/tests/tools"]
-  end
-
-  CodexSkills --> PluginPackage
-  PluginPackage --> Submodule
-  Submodule --> Marketplace
-  Marketplace --> CodexRuntime
-  CodexRuntime --> User
-  Assets --> CodexRuntime
+  User["User / Agent"] --> Taskfile["Taskfile.yml routing"]
+  Taskfile --> GoCLI["cmd/aicoding -> bin/aicoding.exe"]
+  GoCLI --> Runner["internal/runner Plan"]
+  Runner --> Gates["smoke / ci / full / release"]
+  GoCLI --> Internal["internal/* Go packages"]
+  Internal --> Registry["config/kit-registry.json"]
+  Registry --> Manifests["config/kits/*.json"]
+  Manifests --> Assets["CodingKit assets"]
+  Taskfile -. specialty .-> Scripts["PowerShell/Python specialty tools"]
+  Assets --> Runtime["installed plugin/runtime"]
 ```
 
 ## Go CLI Control Plane
 
-The Go CLI is the default control plane for local checks, CI smoke, and release gates. It provides stable JSON through the common `report.Result` envelope and owns these default entrypoints:
+Go CLI 是默认控制面，提供稳定 `report.Result` JSON。当前默认入口包括：
 
-- `bootstrap`;
-- `workflow smart-verify`;
-- `hook pre-commit` and `hook commit-msg`;
-- `status --all`;
-- `governance lint`;
-- `verify hooks`, `verify repo-text`, and `verify release-notes`;
-- `doctor perf`, `doctor pwsh`, and `doctor pwsh-budget`;
-- `skill c99-standard-c status|templates|fmt|check` with `cstyle` compatibility aliases;
-- `docsync staged|all|ci|release`;
-- `skill verify --all --profile Smoke|Full|Release`;
-- `lifecycle plan|install|update|uninstall|rollback`;
-- `export --all --zip`;
-- `fresh-clone --profile Smoke|Full|Release`;
-- `full --json`;
-- `release verify` and `release gate`.
+- `bootstrap`；
+- `smoke`；
+- `ci --profile Smoke`；
+- `hook pre-commit` 和 `hook commit-msg`；
+- `status --all`；
+- `governance lint`；
+- `verify hooks|repo-text|release-notes`；
+- `doctor perf|pwsh|pwsh-budget`；
+- `skill c99-standard-c status|templates|fmt|check`；
+- `docsync staged|all|ci|release`；
+- `skill verify --all --profile Smoke|Full|Release`；
+- `lifecycle plan|install|update|uninstall|rollback`；
+- `export --all --zip`；
+- `fresh-clone --profile Smoke|Full|Release`；
+- `full --json`；
+- `release verify` 和 `release gate`。
 
-Full and Release gates are Go-native aggregate gates. They verify registry and manifest structure, enabled kit consistency, lifecycle plans, skill structure, DocSync, export, release notes, hooks, repo text, and fresh-clone behavior according to profile.
+## Concurrent Plan Boundary
 
-## PowerShell/Python Compatibility Boundary
+`internal/runner` 提供可组合并发 Plan。只读检查通过任务 ID 注册到 Plan 中，有界并发执行并保持输出顺序。需要新增、替换或移除检查点时，修改 Plan 注册即可，不改调度器。
 
-PowerShell and Python remain only where they are the right tool or compatibility surface:
+写状态、写 ZIP、安装/卸载等有副作用路径保持在对应 Go 包中串行执行。
 
-- tag correction planning and release-governance overlay compatibility;
-- PowerShell AST, PSScriptAnalyzer, regex, and PowerShell-specific quality checks;
-- external third-party skill install/audit workflows;
-- Plan Mode and agent helper scripts;
-- safety-specific tooling;
-- hardware/toolchain-specific diagnostics such as DSS/XDS/flash-related flows;
-- manifest-declared compatibility commands that have not been migrated and are not default routes.
+## Manifest Contract
 
-PowerShell is not the default owner for Full, Release gate, lifecycle, export, fresh-clone, DocSync, or skill verification.
+Kit manifest 使用当前分类：
 
-## Registry And Manifest Contract
+- `mode`: `go-builtin`, `external-cli`, `powershell-specialty`, `declarative`。
+- `type`: `builtin-check`, `builtin-lifecycle`, `builtin-package`, `external-command`, `go-composed`, `specialty-pwsh`, `unsupported`。
 
-`config/kit-registry.json` lists enabled kits and points to `config/kits/*.json`. Manifests describe required paths, command surfaces, package outputs, runtime state, and release metadata. The Go CLI reads this structure and validates command envelopes without copying CodingKit assets into the plugin.
+## PowerShell/Python Boundary
 
-## Runtime Boundary
-
-The installed plugin and Codex runtime state are not edited directly. Install/update workflows preserve enabled state, validate package drift, refresh through supported Marketplace paths, and keep the submodule clean.
-
-## Command Boundary
-
-All new Go commands support `--json` and use stable process outcomes: `0` for `ok=true`, `1` for structural or execution failure, and `2` for usage errors. JSON output stays under the common `report.Result` envelope so automation can parse command, repo root, data, errors, and elapsed time consistently.
-
-Taskfile remains routing only. Business logic belongs in Go packages under `internal/*`; retained scripts are compatibility or specialty tools.
-
-## Documentation Map
-
-- Short entry: `README.md`, `README_CN.md`, `README_EN.md`
-- Command matrix: `docs/COMMANDS.md`
-- Fast Path commands: `docs/FAST_PATH_COMMANDS.md`
-- PowerShell migration map: `docs/POWERSHELL_MIGRATION.md`
-- Release governance: `docs/RELEASE_GOVERNANCE_OVERLAY.md`
-- Tag rules: `docs/TAGGING_POLICY.md`
+PowerShell/Python 只保留在专项边界：tag planning / overlay compatibility、PowerShell 质量、安全、Plan Mode、外部 skill 和硬件/工具链专项流程。它们不是默认 Full、Release、lifecycle、export、fresh-clone、DocSync 或 skill verify 控制面。

@@ -1,7 +1,7 @@
 version: '3'
 
 # AiCoding unified task entry.
-# Keep this file as command routing only. Business logic belongs in Go CLI; scripts are compatibility or specialty routes.
+# Keep this file as routing only. Business logic belongs in Go CLI; scripts are compatibility or specialty routes.
 
 tasks:
   default:
@@ -10,107 +10,63 @@ tasks:
       - task --list
 
   setup:
-    desc: Bootstrap AiCoding Go Fast Path binary
+    desc: Bootstrap AiCoding Go control-plane binary
     cmds:
       - go run ./cmd/aicoding bootstrap --json
 
   smoke:
-    desc: Run fast local Smoke gate
+    desc: Run Go-native Smoke aggregate
+    deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe kit verify --all --profile Smoke --json
-      - bin/aicoding.exe governance lint --json
-      - bin/aicoding.exe verify hooks --json
-      - bin/aicoding.exe verify repo-text --json
-      - bin/aicoding.exe verify release-notes --json
-      - bin/aicoding.exe doctor perf --json
+      - bin/aicoding.exe smoke --json
 
-  perf:
-    desc: Run fast path performance probes
+  ci:
+    desc: Run Go-native CI aggregate
+    deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe doctor perf --json
+      - bin/aicoding.exe ci --profile Smoke --json
 
   full:
     desc: Run Go-native Full aggregate validation
+    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe full --json
 
   release:
     desc: Run Go-native Release gate
+    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe release gate --json
 
-  skills:
-    desc: Verify all repo-scoped skills through Go
-    cmds:
-      - bin/aicoding.exe skill verify --all --profile Full --json
-
-  rollback:
-    desc: Roll back last Go lifecycle state snapshot
-    cmds:
-      - bin/aicoding.exe lifecycle rollback --last --json
-
-  tag:audit:
-    desc: Audit current tag/release namespace classification
-    deps: [ensure-bin]
-    cmds:
-      - bin/aicoding.exe tag audit --json
-
-  tag:plan:
-    desc: Generate non-destructive legacy tag migration plan
-    cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/aicoding-tag-governance.ps1 -Action Plan
-
-  tag:verify:
-    desc: Verify release governance overlay in non-strict legacy mode
-    cmds:
-      - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-release-governance-overlay.ps1 -Json
-
-
-
   style:c:status:
     desc: Check C99 Standard C skill formatter status
+    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe skill c99-standard-c status --json
 
   style:c:templates:
     desc: Validate C99 Standard C comment templates
+    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe skill c99-standard-c templates --json
 
   fmt:c:
-    desc: Format changed C/H files
+    desc: Format changed C/H files through C99 Standard C skill
+    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe skill c99-standard-c fmt --scope changed --json
 
   fmt-check:c:
-    desc: Check format for changed C/H files
+    desc: Check changed C/H files through C99 Standard C skill
+    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe skill c99-standard-c check --scope changed --json
 
   fmt-check-staged:c:
-    desc: Check format for staged C/H files
+    desc: Check staged C/H files through C99 Standard C skill
+    deps: [ensure-bin]
     cmds:
       - bin/aicoding.exe skill c99-standard-c check --scope staged --json
-
-  fmt-staged:c:
-    desc: Format staged C/H files
-    cmds:
-      - bin/aicoding.exe skill c99-standard-c fmt --scope staged --json
-
-  fmt-all:c:
-    desc: Format all repository C/H files
-    cmds:
-      - bin/aicoding.exe skill c99-standard-c fmt --scope all --json
-
-  fmt-check-all:c:
-    desc: Check format for all repository C/H files
-    cmds:
-      - bin/aicoding.exe skill c99-standard-c check --scope all --json
-
-  style:c:test:
-    desc: Run C99 Standard C style tests
-    cmds:
-      - go test ./internal/cstyle
 
   ensure-bin:
     internal: true

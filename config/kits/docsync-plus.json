@@ -45,7 +45,7 @@
         "internal/docsync/check.go",
         "config/docs-sync.policy.json",
         "config/docs-sync.semantic.json",
-        ".github/workflows/docs-sync.yml"
+        ".github/workflows/aicoding-ci.yml"
       ]
     },
     "test": {
@@ -78,7 +78,7 @@
         "config/docs-sync.semantic.json",
         "docs/DOC_SYNC_PLUS_SPEC.md",
         "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md",
-        ".github/workflows/docs-sync.yml"
+        ".github/workflows/aicoding-ci.yml"
       ],
       "exclude": [],
       "outputName": "docsync-plus-${version}.zip"
@@ -107,7 +107,7 @@
       "config/docs-sync.semantic.json",
       "docs/DOC_SYNC_PLUS_SPEC.md",
       "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md",
-      ".github/workflows/docs-sync.yml"
+      ".github/workflows/aicoding-ci.yml"
     ],
     "exclude": [],
     "outputName": "docsync-plus-${version}.zip"

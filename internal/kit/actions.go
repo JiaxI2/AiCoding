@@ -133,7 +133,7 @@ func runActionForKit(repo string, entry RegistryKit, action string, dryRun bool)
 			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{err.Error()}, Data: pkg}
 		}
 		return ActionResult{ID: entry.ID, Action: action, OK: true, Status: pkg.Status, Data: pkg}
-	case "composed":
+	case "go-composed":
 		results := []ActionResult{}
 		ok := true
 		for _, step := range command.Steps {
@@ -151,8 +151,8 @@ func runActionForKit(repo string, entry RegistryKit, action string, dryRun bool)
 		return runExternal(repo, entry.ID, action, command)
 	case "unsupported":
 		return ActionResult{ID: entry.ID, Action: action, OK: true, Status: "skipped", Message: command.Reason, Warnings: []string{command.Reason}}
-	case "powershell-script":
-		return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{"PowerShell command remains in manifest: " + command.Path}}
+	case "specialty-pwsh":
+		return ActionResult{ID: entry.ID, Action: action, OK: true, Status: "skipped", Message: "specialty PowerShell command is explicit and not executed by Go default", Warnings: []string{command.Path}}
 	default:
 		return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{"unsupported command type: " + command.Type}}
 	}
@@ -231,8 +231,8 @@ func writeInstallState(repo string, entry RegistryKit, manifest Manifest, action
 	}
 	now := time.Now().UTC()
 	state := installState{SchemaVersion: 1, KitID: entry.ID, Version: manifest.Version, Manifest: entry.Manifest, Action: action, InstalledAt: now, UpdatedAt: now}
-	if old, err := readInstallState(path); err == nil && old != nil {
-		state.InstalledAt = old.InstalledAt
+	if previousState, err := readInstallState(path); err == nil && previousState != nil {
+		state.InstalledAt = previousState.InstalledAt
 	}
 	return writeJSONFile(path, state)
 }

@@ -2,12 +2,14 @@ package kit
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/JiaxI2/AiCoding/internal/platform"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 )
 
 type SkillVerifyReport struct {
@@ -63,8 +65,22 @@ func VerifySkills(repo string, entries []RegistryKit, profile string) SkillVerif
 		profile = "Smoke"
 	}
 	report := SkillVerifyReport{SchemaVersion: 1, Profile: profile, OK: true}
+	tasks := make([]runner.Task, 0, len(entries))
 	for _, entry := range entries {
-		kitResult := verifyKitSkills(repo, entry, profile)
+		entry := entry
+		tasks = append(tasks, runner.Task{
+			ID:    entry.ID,
+			Group: "skill-verify",
+			Run: func(context.Context) runner.TaskResult {
+				return runner.TaskResult{ID: entry.ID, OK: true, Data: verifyKitSkills(repo, entry, profile)}
+			},
+		})
+	}
+	for _, taskResult := range runner.Run(context.Background(), tasks, runner.Options{}) {
+		kitResult, ok := taskResult.Data.(SkillKitResult)
+		if !ok {
+			kitResult = SkillKitResult{ID: taskResult.ID, OK: false, Errors: []string{"invalid skill verify result"}}
+		}
 		report.Kits = append(report.Kits, kitResult)
 		report.Summary.Kits++
 		report.Summary.Skills += len(kitResult.Skills)
@@ -76,10 +92,10 @@ func VerifySkills(repo string, entries []RegistryKit, profile string) SkillVerif
 			report.OK = false
 		}
 		for _, err := range kitResult.Errors {
-			report.Errors = append(report.Errors, entry.ID+": "+err)
+			report.Errors = append(report.Errors, kitResult.ID+": "+err)
 		}
 		for _, warning := range kitResult.Warnings {
-			report.Warnings = append(report.Warnings, entry.ID+": "+warning)
+			report.Warnings = append(report.Warnings, kitResult.ID+": "+warning)
 		}
 	}
 	return report

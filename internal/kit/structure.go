@@ -121,9 +121,9 @@ var allowedManifestCommandTypes = map[string]bool{
 	"builtin-check":     true,
 	"builtin-lifecycle": true,
 	"builtin-package":   true,
-	"composed":          true,
 	"external-command":  true,
-	"powershell-script": true,
+	"go-composed":       true,
+	"specialty-pwsh":    true,
 	"unsupported":       true,
 }
 
@@ -325,6 +325,8 @@ func (v structureVerifier) checkManifest(entry RegistryKit) {
 	}
 	if manifest.Mode == "" {
 		result.Errors = append(result.Errors, "manifest mode is empty")
+	} else if !allowedManifestModes[manifest.Mode] {
+		result.Errors = append(result.Errors, "unsupported manifest mode: "+manifest.Mode)
 	}
 	if len(manifest.Commands) == 0 {
 		result.Errors = append(result.Errors, "manifest commands are empty")
@@ -352,16 +354,16 @@ func (v structureVerifier) checkManifestCommands(manifest Manifest, result *Stru
 			commandResult.Errors = append(commandResult.Errors, "unsupported command type: "+command.Type)
 		}
 		switch command.Type {
-		case "powershell-script":
+		case "specialty-pwsh":
 			if command.Path == "" {
-				commandResult.Errors = append(commandResult.Errors, "powershell-script path is empty")
+				commandResult.Errors = append(commandResult.Errors, "specialty-pwsh path is empty")
 			} else {
 				rel := cleanRel(command.Path)
 				commandResult.Path = rel
 				if !platform.IsFile(platform.RepoPath(v.repo, rel)) {
-					commandResult.Errors = append(commandResult.Errors, "powershell script missing: "+rel)
+					commandResult.Errors = append(commandResult.Errors, "specialty PowerShell script missing: "+rel)
 				}
-				if warning := legacyFastPathPathWarning(rel); warning != "" {
+				if warning := specialtyPowerShellPathWarning(rel); warning != "" {
 					commandResult.Warnings = append(commandResult.Warnings, warning)
 				}
 			}
@@ -373,13 +375,13 @@ func (v structureVerifier) checkManifestCommands(manifest Manifest, result *Stru
 			for _, rel := range missingRequiredPaths(v.repo, command.RequiredPaths) {
 				commandResult.Errors = append(commandResult.Errors, "missing required path: "+rel)
 			}
-		case "composed":
+		case "go-composed":
 			if len(command.Steps) == 0 {
-				commandResult.Errors = append(commandResult.Errors, "composed command has no steps")
+				commandResult.Errors = append(commandResult.Errors, "go-composed command has no steps")
 			}
 			for _, step := range command.Steps {
 				if _, ok := manifest.Commands[step]; !ok {
-					commandResult.Errors = append(commandResult.Errors, "composed step not defined: "+step)
+					commandResult.Errors = append(commandResult.Errors, "go-composed step not defined: "+step)
 				}
 			}
 		case "unsupported":
@@ -565,7 +567,7 @@ func statusFromErrors(errs []string, ok string) string {
 	return "failed"
 }
 
-func legacyFastPathPathWarning(rel string) string {
+func specialtyPowerShellPathWarning(rel string) string {
 	return ""
 }
 

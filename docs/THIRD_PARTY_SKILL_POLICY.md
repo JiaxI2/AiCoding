@@ -1,6 +1,6 @@
 # Third-Party Skill Policy
 
-第三方 Skill 不是 AiCoding canonical source。MVP 阶段只处理三件事：下载过程可观察、安装状态可查询、完整仓库型 Skill 保留 repo 根目录依赖文件。
+第三方 Skill 不是 AiCoding canonical source。当前流程只处理三件事：下载过程可观察、安装状态可查询、完整仓库型 Skill 保留 repo 根目录依赖文件。
 
 ## Source Registry
 
@@ -30,19 +30,7 @@ Sources are tracked in `config/skill-sources.json`:
 
 ## Commands
 
-旧 action 保持兼容：
-
-```powershell
-pwsh scripts/aicoding-skill.ps1 sources -Json
-pwsh scripts/aicoding-skill.ps1 add-source -Name example -Url https://github.com/example/skills.git
-pwsh scripts/aicoding-skill.ps1 download -Source example -Skill skill-id
-pwsh scripts/aicoding-skill.ps1 verify -Skill skill-id -Json
-pwsh scripts/aicoding-skill.ps1 install -Skill skill-id -Json
-pwsh scripts/aicoding-skill.ps1 update -Skill skill-id -Pin tag-or-commit -Json
-pwsh scripts/aicoding-skill.ps1 remove -Skill skill-id -Force -Json
-```
-
-External MVP 只暴露三个主流程 action：
+当前外部 skill 主流程：
 
 ```powershell
 pwsh scripts/aicoding-skill.ps1 install-external -Source ppt-master -Target CodexUser -Json

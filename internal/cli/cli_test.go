@@ -53,19 +53,6 @@ func TestRunNewFastPathCommands(t *testing.T) {
 	}
 }
 
-func TestRunWorkflowSmartVerifyCommand(t *testing.T) {
-	repo := t.TempDir()
-	if out, err := exec.Command("git", "init", repo).CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v: %s", err, out)
-	}
-	mustWrite(t, filepath.Join(repo, "README.md"), "# test\n")
-
-	res, err := runWorkflow([]string{"smart-verify", "--repo-root", repo, "--json"}, time.Now())
-	if err == nil || res.OK {
-		t.Fatalf("expected workflow to fail on incomplete fixture repo, got res=%#v err=%v", res, err)
-	}
-}
-
 func resultErr(ok bool, err error) error {
 	if err != nil {
 		return err
@@ -81,7 +68,7 @@ func writeReleaseFixture(t *testing.T, repo string) {
 	mustWrite(t, filepath.Join(repo, "CHANGELOG.md"), "# CHANGELOG\n\n## [Unreleased]\n\n- **docs**: test fixture.\n")
 	mustWrite(t, filepath.Join(repo, ".github", "RELEASE_TEMPLATE.md"), "## 摘要 / Summary\n\n## 变更内容 / What's Changed\n\n## 可追溯性 / Traceability\n")
 	mustWrite(t, filepath.Join(repo, "docs", "TAGGING_POLICY.md"), "vMAJOR.MINOR.PATCH\nkit/<kit-id>/vMAJOR.MINOR.PATCH\nmilestone/YYYY.MM.DD-<name>\n")
-	mustWrite(t, filepath.Join(repo, "docs", "RELEASE_POLICY.md"), "Platform Release\nKit / Component Release\nMilestone / Historical Snapshot\n")
+	mustWrite(t, filepath.Join(repo, "docs", "RELEASE_POLICY.md"), "Platform Release\nKit / Component Release\nMilestone Release\n")
 	for _, rel := range []string{
 		"docs/RELEASE_GOVERNANCE_OVERLAY.md",
 		"scripts/aicoding-tag-governance.ps1",
@@ -123,6 +110,10 @@ func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
 	}
 	source := string(b)
 	for _, needle := range []string{
+		`case "smoke":`,
+		`res, err = runSmoke`,
+		`case "ci":`,
+		`res, err = runCI`,
 		`case "docsync":`,
 		`res, err = runDocSync`,
 		`case "skill":`,
@@ -147,6 +138,11 @@ func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
 	outdated := "Full/Release gates remain" + " in PowerShell/Python"
 	if strings.Contains(source, outdated) {
 		t.Fatal("usage still describes Full/Release as PowerShell/Python gates")
+	}
+	for _, forbidden := range []string{`case "workflow":`, `case "cstyle":`} {
+		if strings.Contains(source, forbidden) {
+			t.Fatalf("cli.go still exposes removed entry %q", forbidden)
+		}
 	}
 }
 
@@ -189,6 +185,14 @@ func TestGoControlPlaneCommandsUseRealGoImplementations(t *testing.T) {
 			res, err := runLifecycle([]string{"plan", "--action", "install", "--all", "--repo-root", repo, "--json"}, start)
 			return resultErr(res.OK && res.Command == "lifecycle plan", err)
 		}},
+		{"smoke", func() error {
+			res, err := runSmoke([]string{"--repo-root", repo, "--json"}, start)
+			return resultErr(res.OK && res.Command == "smoke", err)
+		}},
+		{"ci", func() error {
+			res, err := runCI([]string{"--profile", "Smoke", "--repo-root", repo, "--json"}, start)
+			return resultErr(res.OK && res.Command == "ci", err)
+		}},
 		{"full", func() error {
 			res, err := runFull([]string{"--repo-root", repo, "--json"}, start)
 			return resultErr(res.OK && res.Command == "full", err)
@@ -228,10 +232,6 @@ func TestC99StandardCSkillCommandsRouteToCStyle(t *testing.T) {
 		t.Fatalf("skill c99-standard-c templates failed: res=%#v err=%v", res, err)
 	}
 
-	legacy, err := runCStyle([]string{"templates", "--repo-root", repo, "--json"}, time.Now())
-	if err != nil || !legacy.OK || legacy.Command != "cstyle templates" {
-		t.Fatalf("legacy cstyle templates failed: res=%#v err=%v", legacy, err)
-	}
 }
 
 func writeC99SkillFixture(t *testing.T, repo string) {
@@ -280,7 +280,7 @@ func writeGoControlFixture(t *testing.T, repo string) {
 	mustWrite(t, filepath.Join(repo, "config", "tagging-policy.json"), "{\"schemaVersion\":1}\n")
 	mustWrite(t, filepath.Join(repo, "config", "docs-sync.policy.json"), "{}\n")
 	mustWrite(t, filepath.Join(repo, "config", "docs-sync.semantic.json"), "{}\n")
-	mustWrite(t, filepath.Join(repo, ".github", "workflows", "docs-sync.yml"), "name: docs\n")
+	mustWrite(t, filepath.Join(repo, ".github", "workflows", "aicoding-ci.yml"), "name: docs\n")
 	mustWrite(t, filepath.Join(repo, "internal", "docsync", "docsync.go"), "package docsync\n")
 	mustWrite(t, filepath.Join(repo, "internal", "docsync", "check.go"), "package docsync\n")
 	mustWrite(t, filepath.Join(repo, "docs", "COMMANDS.md"), "# Commands\n")
@@ -325,12 +325,12 @@ func minimalCodexKitConfig() string {
 
 func minimalKitManifest() string {
 	return "{\n" +
-		"  \"schemaVersion\": 1,\n" +
+		"  \"schemaVersion\": 2,\n" +
 		"  \"id\": \"sample-kit\",\n" +
 		"  \"name\": \"Sample Kit\",\n" +
 		"  \"version\": \"0.1.0\",\n" +
 		"  \"kind\": [\"test\"],\n" +
-		"  \"mode\": \"go\",\n" +
+		"  \"mode\": \"go-builtin\",\n" +
 		"  \"commands\": {\n" +
 		"    \"install\": {\"type\": \"builtin-lifecycle\", \"supportsDryRun\": true, \"requiredPaths\": [\"README.md\"]},\n" +
 		"    \"update\": {\"type\": \"builtin-lifecycle\", \"supportsDryRun\": true, \"requiredPaths\": [\"README.md\"]},\n" +

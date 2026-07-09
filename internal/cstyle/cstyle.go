@@ -128,14 +128,6 @@ func RunBySkill(skillID string, opts Options) (Result, error) {
 		return res, err
 	}
 
-	status := Status()
-	res.ClangFormat = status
-	if !status.Found {
-		res.ElapsedMS = time.Since(start).Milliseconds()
-		res.Errors = []string{"clang-format not found on PATH"}
-		return res, errors.New("clang-format not found on PATH")
-	}
-
 	files, err := CollectFilesWithExclusions(repoRoot, opts.Scope, opts.Paths, cfg.ExcludedDirectories)
 	if err != nil {
 		res.ElapsedMS = time.Since(start).Milliseconds()
@@ -143,6 +135,18 @@ func RunBySkill(skillID string, opts Options) (Result, error) {
 		return res, err
 	}
 	res.Files = files
+
+	status := Status()
+	res.ClangFormat = status
+	if len(files) == 0 {
+		res.ElapsedMS = time.Since(start).Milliseconds()
+		return res, nil
+	}
+	if !status.Found {
+		res.ElapsedMS = time.Since(start).Milliseconds()
+		res.Errors = []string{"clang-format not found on PATH"}
+		return res, errors.New("clang-format not found on PATH")
+	}
 
 	for _, file := range files {
 		changed, runErr := runOne(status.Path, formatterConfig, repoRoot, file, opts)

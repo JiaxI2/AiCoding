@@ -9,7 +9,7 @@ import (
 func TestVerifyStructureManifestMismatchFails(t *testing.T) {
 	repo := structureRepo(t, false)
 	writeLifecycleRegistry(t, repo, []string{"mismatch-kit"})
-	mustWriteLifecycle(t, filepath.Join(repo, "config", "kits", "mismatch-kit.json"), `{"schemaVersion":2,"id":"other-kit","name":"mismatch","version":"0.1.0","kind":["test"],"mode":"script-adapter","paths":{"root":"."},"commands":{"status":{"type":"builtin-check","requiredPaths":[]}}}`)
+	mustWriteLifecycle(t, filepath.Join(repo, "config", "kits", "mismatch-kit.json"), `{"schemaVersion":2,"id":"other-kit","name":"mismatch","version":"0.1.0","kind":["test"],"mode":"go-builtin","paths":{"root":"."},"commands":{"status":{"type":"builtin-check","requiredPaths":[]}}}`)
 
 	entries, err := LoadRegistry(repo)
 	if err != nil {
@@ -87,7 +87,7 @@ func TestVerifyStructureDryRunSkippedSemanticsStayOK(t *testing.T) {
 	writeLifecycleRegistry(t, repo, []string{"unsupported-kit", "missing-action-kit", "no-dry-run-kit", "release-governance-overlay-kit"})
 	writeLifecycleManifest(t, repo, "unsupported-kit", `"install":{"type":"unsupported","reason":"not installable"},"update":{"type":"unsupported","reason":"not updateable"}`, "")
 	writeLifecycleManifest(t, repo, "missing-action-kit", `"status":{"type":"builtin-check","requiredPaths":[]}`, "")
-	writeLifecycleManifest(t, repo, "no-dry-run-kit", `"install":{"type":"powershell-script","path":"scripts/install-no-dry-run.ps1","supportsDryRun":false}`, "")
+	writeLifecycleManifest(t, repo, "no-dry-run-kit", `"install":{"type":"specialty-pwsh","path":"scripts/install-no-dry-run.ps1","supportsDryRun":false}`, "")
 	writeLifecycleManifest(t, repo, "release-governance-overlay-kit", `"status":{"type":"builtin-check","requiredPaths":[]}`, "")
 
 	entries, err := LoadRegistry(repo)
@@ -130,7 +130,7 @@ func TestVerifyStructureAllValidManifestsOK(t *testing.T) {
 	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "install-agent-patch-kit.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"common-control-kit", "agent-patch-kit"})
 	writeLifecycleManifest(t, repo, "common-control-kit", `"status":{"type":"builtin-check","requiredPaths":["README.md"]},"install":{"type":"unsupported","reason":"asset kit"},"update":{"type":"unsupported","reason":"asset kit"}`, "")
-	writeLifecycleManifest(t, repo, "agent-patch-kit", `"install":{"type":"powershell-script","path":"scripts/install-agent-patch-kit.ps1","supportsDryRun":false},"status":{"type":"external-command","executable":"apatch"}`, "")
+	writeLifecycleManifest(t, repo, "agent-patch-kit", `"install":{"type":"specialty-pwsh","path":"scripts/install-agent-patch-kit.ps1","supportsDryRun":false},"status":{"type":"external-command","executable":"apatch"}`, "")
 
 	entries, err := LoadRegistry(repo)
 	if err != nil {

@@ -27,7 +27,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File dist\codex-agent-powershell-skill-
 
 ```powershell
 Invoke-SafeRegexReplace -InputText $text -Pattern '([a-z]+)(\d+)' -ReplaceToken '$1-$2'
-Update-FileContentBulk -FilePath .\file.ps1 -Pattern 'old' -ReplaceToken 'new'
+Update-FileContentBulk -FilePath .\file.ps1 -Pattern 'source' -ReplaceToken 'target'
 Update-CodeDynamically -SourceCode $source -Pattern '(?:^|_)(\w)' -Callback { param($m) $m.Groups[1].Value.ToUpperInvariant() }
 ```
 

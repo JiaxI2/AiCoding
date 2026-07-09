@@ -18,7 +18,7 @@ Hooks are declared in `config/hooks-registry.json` and may also be referenced fr
 bin\aicoding.exe verify hooks --json
 ```
 
-The default smoke gate checks that repository hooks exist and prefer the Go fast path. Use the PowerShell verifier only as a compatibility fallback.
+The default smoke gate checks that repository hooks exist and prefer the Go fast path. Use the PowerShell verifier only as an explicit specialty check.
 
 ## Rules
 

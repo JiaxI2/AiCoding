@@ -12,7 +12,7 @@ func TestPlanLifecycleSkipsUnsupportedMissingAndNoDryRun(t *testing.T) {
 	writeLifecycleRegistry(t, repo, []string{"unsupported-kit", "missing-action-kit", "no-dry-run-kit"})
 	writeLifecycleManifest(t, repo, "unsupported-kit", `"install":{"type":"unsupported","reason":"not installable"}`, "")
 	writeLifecycleManifest(t, repo, "missing-action-kit", `"status":{"type":"builtin-check","requiredPaths":[]}`, "")
-	writeLifecycleManifest(t, repo, "no-dry-run-kit", `"install":{"type":"powershell-script","path":"scripts/install-no-dry-run.ps1","supportsDryRun":false}`, "")
+	writeLifecycleManifest(t, repo, "no-dry-run-kit", `"install":{"type":"specialty-pwsh","path":"scripts/install-no-dry-run.ps1","supportsDryRun":false}`, "")
 
 	entries, err := LoadRegistry(repo)
 	if err != nil {
@@ -68,7 +68,7 @@ func TestPlanLifecycleAggregatesOK(t *testing.T) {
 	repo := t.TempDir()
 	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "install.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"script-kit", "asset-kit"})
-	writeLifecycleManifest(t, repo, "script-kit", `"install":{"type":"powershell-script","path":"scripts/install.ps1","supportsDryRun":true}`, "")
+	writeLifecycleManifest(t, repo, "script-kit", `"install":{"type":"specialty-pwsh","path":"scripts/install.ps1","supportsDryRun":true}`, "")
 	writeLifecycleManifest(t, repo, "asset-kit", `"install":{"type":"unsupported","reason":"repository asset only"}`, "")
 
 	entries, err := LoadRegistry(repo)
@@ -98,7 +98,7 @@ func writeLifecycleManifest(t *testing.T, repo, id, commands, paths string) {
 	if paths == "" {
 		paths = `"root":"."`
 	}
-	content := `{"schemaVersion":2,"id":"` + id + `","name":"` + id + `","version":"0.1.0","kind":["test"],"mode":"script-adapter","paths":{` + paths + `},"commands":{` + commands + `}}`
+	content := `{"schemaVersion":2,"id":"` + id + `","name":"` + id + `","version":"0.1.0","kind":["test"],"mode":"go-builtin","paths":{` + paths + `},"commands":{` + commands + `}}`
 	mustWriteLifecycle(t, filepath.Join(repo, "config", "kits", id+".json"), content)
 }
 

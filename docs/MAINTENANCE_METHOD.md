@@ -19,7 +19,7 @@ Meaning:
 1. `AGENTS.md` and nested `AGENTS.md` files define non-negotiable boundaries.
 2. The maintenance Skill defines task workflow and mode gates.
 3. Docs explain architecture and rationale.
-4. `config/` and retained scripts define executable compatibility surfaces.
+4. `config/` and retained scripts define executable specialty surfaces.
 5. CI, Git hooks, and local verification decide whether work can be considered complete.
 
 ## Maintenance Skill
@@ -60,7 +60,7 @@ read AGENTS
 -> inspect config, Go CLI, docs, and retained scripts
 -> modify AiCoding-owned files only
 -> verify through Go-native default gates
--> run explicit PowerShell compatibility checks only when the changed surface requires them
+-> run explicit PowerShell specialty checks only when the changed surface requires them
 -> update docs and CHANGELOG
 -> commit AiCoding
 ```
@@ -99,7 +99,7 @@ git diff --check
 
 Run `bin/aicoding.exe docsync all --json` or `bin/aicoding.exe docsync release --json` when a change specifically touches DocSync policy or release documentation.
 
-PowerShell checks are explicit compatibility or specialty gates. Keep them for tag planning, release overlay compatibility, PowerShell quality, Plan Mode, external skill workflows, safety, hardware/toolchain diagnostics, and Codex-Skills source/plugin work.
+PowerShell checks are explicit specialty gates. Keep them for tag planning, release overlay compatibility, PowerShell quality, Plan Mode, external skill workflows, safety, hardware/toolchain diagnostics, and Codex-Skills source/plugin work.
 
 For Codex-Skills changes, run the source repository gates in the Codex-Skills repository:
 
@@ -119,7 +119,7 @@ The user-maintained workflow is named `aicoding-user-skill-creator` and displaye
 
 When a task is about creating or validating AiCoding/user-maintained skills, use `aicoding-user-skill-creator`. When a task is about generic system guidance and no AiCoding-specific workflow is needed, the system `skill-creator` remains available.
 
-## Runtime Skill Root Optimization
+## Runtime Skill Exposure Audit
 
 The source repository, user-level standalone skills, and installed plugin cache are separate runtime layers:
 
@@ -132,16 +132,14 @@ AiCoding Plugin cache
 -> bundled aicoding-* runtime Skills
 ```
 
-Use these compatibility entrypoints before changing runtime exposure:
+Before changing runtime exposure, use the current audit/profile entrypoints:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit-runtime-skills.ps1 -Json
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-codex-skill-profile.ps1 -Profile runtime -DryRun -Json
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/migrate-skill-root.ps1 -Profile full -DryRun -Json
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/restore-legacy-skill-root.ps1 -DryRun -Json
 ```
 
-Do not move or delete the legacy `%USERPROFILE%\.codex\skills` tree until a dry-run migration report, runtime audit, plugin verification, rollback plan, and user approval exist.
+Do not move or delete user-level skill roots without a dry-run report, runtime audit, plugin verification, rollback plan, and user approval.
 
 ## Completion Rule
 

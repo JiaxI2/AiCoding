@@ -11,72 +11,78 @@ AiCoding is the platform integration, installation, governance, and CodingKit as
 
 [中文](README_CN.md) | [English](README_EN.md)
 
-## Project Positioning / 项目定位
+## Project Boundary
 
-- Platform repository: integrates CodingKit assets, kit registry, local hooks, Taskfile routing, release governance, and Go CLI checks.
+- Platform repository: integrates CodingKit assets, kit registry, local hooks, Taskfile routing, release governance, and Go CLI gates.
 - Source boundary: authoritative skill/plugin source lives in the `CodingKit/agents/skills` submodule and generated package assets.
 - Runtime boundary: installed plugin/runtime state is managed through install, update, and verify workflows, not direct Codex cache edits.
 - Release boundary: platform, kit/component, and milestone tags use separate namespaces.
 
-## Current Architecture / 当前架构
+## Current Architecture
 
-AiCoding uses the Go CLI as the default local control plane:
+The Go CLI is the default control plane. It owns bootstrap, Smoke, CI, hooks, status, repo text, release notes, tag/release structural checks, governance lint, DocSync, skill verify, lifecycle, export, fresh-clone, Full, and Release gate.
 
-- Go CLI: owns bootstrap, smart-verify, Smoke, hooks, status, repo text, release notes, tag/release structural checks, governance lint, DocSync, skill verify, lifecycle, export, fresh-clone, Full, and Release gate.
-- PowerShell/Python: retained for compatibility, specialty quality gates, safety checks, Plan Mode helpers, external skill workflows, tag planning, release overlay compatibility, and hardware/toolchain-specific flows.
+Taskfile is routing only. Business logic lives in Go packages under `internal/*`. PowerShell/Python remains for specialty quality, safety, Plan Mode helpers, external skill workflows, tag planning / overlay compatibility, and hardware or toolchain-specific flows.
 
-The Go lane reduces repeated PowerShell cold starts, emits stable JSON, and now owns the Full/Release aggregate gates.
+## Git Governance Standard
 
-## Quick Start / 快速开始
+AiCoding uses the repository Git Governance Standard.
+
+- Commit type taxonomy: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
+- Branch naming and environment mapping: `main`, `develop`, `feature`, `test`, `release`, `hotfix`.
+- Release typed notes: release notes are grouped by primary type and validated through `.github/RELEASE_TEMPLATE.md` and `bin/aicoding.exe verify release-notes --json`.
+
+## Quick Start
 
 ```powershell
 go run ./cmd/aicoding bootstrap --json
-bin\aicoding.exe workflow smart-verify --json
+bin\aicoding.exe smoke --json
+bin\aicoding.exe ci --profile Smoke --json
 task smoke
-bin\aicoding.exe docsync ci --json
-bin\aicoding.exe skill verify --all --profile Smoke --json
+bin\aicoding.exe full --json
 bin\aicoding.exe release gate --json
 ```
 
-Complete local validation and formal release gates route through `task full` and `task release`, both backed by the Go CLI.
+## Common Entrypoints
 
-## Architecture Diagram / 架构图
+| Scenario | Command | Notes |
+|---|---|---|
+| Bootstrap | `go run ./cmd/aicoding bootstrap --json` | Builds `bin/aicoding.exe` |
+| Local Smoke | `task smoke` | Routes to `bin/aicoding.exe smoke --json` |
+| CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go tests and default aggregate gates |
+| Full | `task full` | Go Full aggregate validation |
+| Release | `task release` | Go Release gate |
+| C99 C/H style | `task fmt-check:c` | Routes to `skill c99-standard-c` |
+
+## Architecture Diagram
 
 ```mermaid
 flowchart TD
-  User["User / Agent"] --> Taskfile["Taskfile<br/>routing"]
-  Taskfile --> GoCLI["Go CLI<br/>bin/aicoding.exe"]
-  GoCLI --> FastChecks["bootstrap / smart-verify<br/>smoke / hooks / status<br/>verify / lint / doctor"]
-  GoCLI --> Full["full / release<br/>lifecycle / export / rollback<br/>fresh clone / docsync / skills"]
-  GoCLI --> Registry["Kit registry<br/>config/kit-registry.json<br/>config/kits/*.json"]
-  Registry --> CodingKit["CodingKit assets<br/>skill submodule"]
+  User["User / Agent"] --> Taskfile["Taskfile routing"]
+  Taskfile --> GoCLI["Go CLI bin/aicoding.exe"]
+  GoCLI --> Runner["internal/runner concurrent plans"]
+  Runner --> Gates["smoke / ci / full / release"]
+  GoCLI --> Registry["config/kit-registry.json + config/kits/*.json"]
+  Registry --> CodingKit["CodingKit assets and skill submodule"]
+  Taskfile -. specialty .-> Scripts["PowerShell/Python specialty tools"]
 ```
 
-## Documentation Index / 文档索引
+## Documentation Index
 
-| Need | Document |
+| Topic | Document |
 |---|---|
 | Architecture overview | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
-| Fast Path commands | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| Full command matrix | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| Command matrix | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| Fast Path | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
 | C99 Standard C Skill | [docs/C99_STANDARD_C_SKILL.md](docs/C99_STANDARD_C_SKILL.md) |
-| PowerShell migration map | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
+| PowerShell boundary | [docs/POWERSHELL_BOUNDARY.md](docs/POWERSHELL_BOUNDARY.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
 | Release policy | [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) |
 
-## Git Governance Standard / Git 治理标准
+## Tag Rules Summary
 
-Commit type taxonomy: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`.
-
-Branch naming and environment mapping: `main` is the platform baseline; `develop`, `feature/*`, `test/*`, `release/*`, and `hotfix/*` describe integration, feature, test, release, and hotfix work.
-
-Release notes must be typed by primary change type, and platform Tag/Release notes default to Chinese-first bilingual text.
-
-## Release / Tag Short Rules / Release / Tag 简短规则
-
-- Platform release tags: `vMAJOR.MINOR.PATCH`, for example `v0.2.0`.
+- Platform release tags: `vMAJOR.MINOR.PATCH`.
 - Kit/component release tags: `kit/<kit-id>/vMAJOR.MINOR.PATCH`.
 - Milestone tags: `milestone/YYYY.MM.DD-<name>`.
-- Do not publish component versions as pseudo platform tags such as `v1.3.0-powershell-skill-kit`.
 - Do not move, overwrite, or reuse immutable release-bound tags.

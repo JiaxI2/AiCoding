@@ -1,7 +1,7 @@
 param(
     [switch]$Json,
     [switch]$Strict,
-    [switch]$AllowLegacyRoot,
+    [switch]$AllowCodexRoot,
     [string]$ExpectedProfile
 )
 $ErrorActionPreference = 'Stop'
@@ -70,14 +70,14 @@ function Test-PathUnder {
 $repo = Get-AiCodingRoot $PSScriptRoot
 $config = Read-CodexKitConfig $repo
 $agentsRoot = Resolve-CodexKitRuntimePath -RepoRoot $repo -PathValue $config.skillRuntime.canonicalUserRoot
-$legacyRoot = Resolve-CodexKitRuntimePath -RepoRoot $repo -PathValue $config.skillRuntime.legacyUserRoot
+$codexRoot = Resolve-CodexKitRuntimePath -RepoRoot $repo -PathValue $config.skillRuntime.codexUserRoot
 $sourceRepository = Resolve-CodexKitConfiguredPath -ConfigSection $config.skillRuntime -RepoRoot $repo
 $pluginCache = Join-Path $env:USERPROFILE '.codex\plugins\cache'
 
 $entries = @()
 $entries += Get-RootSkillEntries -Root $agentsRoot -SourceType 'agents-user-root'
-$legacyEntries = Get-RecursiveSkillEntries -Root $legacyRoot -SourceType 'legacy-codex-root'
-$entries += $legacyEntries
+$codexEntries = Get-RecursiveSkillEntries -Root $codexRoot -SourceType 'codex-user-root'
+$entries += $codexEntries
 $entries += Get-RecursiveSkillEntries -Root $pluginCache -SourceType 'codex-plugin-cache'
 
 $duplicateNames = @()
@@ -111,15 +111,15 @@ if (Test-Path -LiteralPath $agentsRoot) {
     }
 }
 
-$sourceRepositoryUnderSkillRoot = (Test-PathUnder $sourceRepository $agentsRoot) -or (Test-PathUnder $sourceRepository $legacyRoot)
-$legacyRootSkills = @($legacyEntries | Where-Object { $_.name }).Count
+$sourceRepositoryUnderSkillRoot = (Test-PathUnder $sourceRepository $agentsRoot) -or (Test-PathUnder $sourceRepository $codexRoot)
+$codexRootSkills = @($codexEntries | Where-Object { $_.name }).Count
 $profileKnown = $true
 if ($ExpectedProfile) {
     $profileKnown = [bool]($config.profiles.PSObject.Properties.Name -contains $ExpectedProfile)
 }
 
 $ok = ($duplicateNames.Count -eq 0) -and ($brokenLinks.Count -eq 0) -and ($wholeRepositoryLinks.Count -eq 0) -and ($generatedSkillLinks.Count -eq 0) -and (-not $sourceRepositoryUnderSkillRoot) -and ($profileKnown)
-if (-not $AllowLegacyRoot -and $legacyRootSkills -gt 0) { $ok = $false }
+if (-not $AllowCodexRoot -and $codexRootSkills -gt 0) { $ok = $false }
 
 $result = [pscustomobject]@{
     ok = $ok
@@ -127,8 +127,8 @@ $result = [pscustomobject]@{
     profileKnown = $profileKnown
     activeSkills = @($entries | Where-Object { $_.name }).Count
     duplicateNames = $duplicateNames
-    legacyRoot = $legacyRoot
-    legacyRootSkills = $legacyRootSkills
+    codexRoot = $codexRoot
+    codexRootSkills = $codexRootSkills
     agentsRoot = $agentsRoot
     pluginCache = $pluginCache
     sourceRepository = $sourceRepository

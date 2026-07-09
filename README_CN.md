@@ -7,87 +7,82 @@
 [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
 [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
 
-AiCoding 是本地 AI coding 工作流的平台集成、安装、治理与 CodingKit 资产仓库。
-它负责 kit 注册表、hook、验证入口、发布治理和 Go Fast Path；它不拥有嵌入式 skill 源码。
+AiCoding 是本地 AI coding 工作流的平台集成、安装、治理和 CodingKit 资产仓库。它负责 kit 注册表、hook、验证入口、发布治理和 Go CLI 控制面，不拥有嵌入式 skill 源码。
 
 [中文](README_CN.md) | [English](README_EN.md)
 
-## 项目定位 / Project Positioning
+## 项目边界
 
-- 平台仓库：集成 CodingKit 资产、kit registry、本地 hook、Taskfile 路由、发布治理和 Go Fast Path 检查。
+- 平台仓库：集成 CodingKit 资产、kit registry、本地 hook、Taskfile 路由、发布治理和 Go CLI 门禁。
 - 源码边界：权威 skill/plugin 源码位于 `CodingKit/agents/skills` 子模块和对应生成资产。
-- 运行边界：本地插件/runtime 状态通过安装、更新、验证流程管理，不直接修改 Codex cache。
-- 发布边界：平台版本、kit/component 版本、milestone tag 分命名空间。
+- 运行边界：插件 runtime 状态通过安装、更新和验证流程管理，不直接改 Codex cache。
+- 发布边界：平台版本、kit/component 版本和 milestone tag 使用独立命名空间。
 
-## 当前架构 / Current Architecture
+## 当前架构
 
-AiCoding 本地执行路径以 Go CLI 为默认控制面：
+Go CLI 是默认控制面，负责 bootstrap、Smoke、CI、hook、status、repo text、release notes、tag/release 结构检查、governance lint、DocSync、skill verify、lifecycle、export、fresh-clone、Full 和 Release gate。
 
-- Go CLI：承担 bootstrap、smart-verify、Smoke、hook、status、repo text、release-notes、tag/release、governance lint、DocSync、skill verify、lifecycle、export、fresh-clone、Full 和 Release gate。
-- PowerShell/Python：只保留尚未被本轮完整替代的兼容、专项质量、安全、计划模式和外部 skill 工作流。
+Taskfile 只做短路由，业务逻辑在 Go 的 `internal/*` 包中。PowerShell/Python 只保留专项质量、安全、计划模式（Plan Mode）、外部 skill、tag planning / overlay compatibility 和硬件/工具链专项流程。
 
-Go 路径用于减少 PowerShell 冷启动并输出稳定 JSON，Full/Release gate 现在也由 Go 聚合。
+## Git Governance Standard
 
-## 环境预览 / Environment Preview
+AiCoding 使用仓库内置 Git Governance Standard。
 
-| 区域 | 当前默认 | 说明 |
-|---|---|---|
-| 人机入口 | `task setup`, `task smoke`, `task full`, `task release` | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| Go CLI | `bin/aicoding.exe bootstrap/workflow/cache/tag/release/docsync/lifecycle/export/fresh-clone` | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| Full/Release | `bin/aicoding.exe full --json`, `bin/aicoding.exe release gate --json` | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| Kit 模型 | registry + manifests | [config/kit-registry.json](config/kit-registry.json) |
-| 发布治理 | tag namespace policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
+- commit type taxonomy：`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`。
+- branch naming and environment mapping：`main`, `develop`, `feature`, `test`, `release`, `hotfix`。
+- Release typed notes：发布说明按主类型汇总，并由 `.github/RELEASE_TEMPLATE.md` 和 `bin/aicoding.exe verify release-notes --json` 验证。
 
-## 快速开始 / Quick Start
+## 快速开始
 
 ```powershell
 go run ./cmd/aicoding bootstrap --json
-bin\aicoding.exe workflow smart-verify --json
+bin\aicoding.exe smoke --json
+bin\aicoding.exe ci --profile Smoke --json
 task smoke
-bin\aicoding.exe docsync ci --json
-bin\aicoding.exe skill verify --all --profile Smoke --json
+bin\aicoding.exe full --json
 bin\aicoding.exe release gate --json
 ```
 
-完整本地验证和正式发布门禁也通过 `task full`、`task release` 路由到 Go CLI。
+## 常用入口
 
-## 当前架构图 / Architecture Diagram
+| 场景 | 命令 | 说明 |
+|---|---|---|
+| 初始化 | `go run ./cmd/aicoding bootstrap --json` | 构建 `bin/aicoding.exe` |
+| 本地 Smoke | `task smoke` | 路由到 `bin/aicoding.exe smoke --json` |
+| CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go 测试和默认聚合门禁 |
+| Full | `task full` | Go Full 聚合验证 |
+| Release | `task release` | Go Release gate |
+| C99 C/H 风格 | `task fmt-check:c` | 路由到 `skill c99-standard-c` |
+
+## 架构图
 
 ```mermaid
 flowchart TD
-  User["User / Agent"] --> Taskfile["Taskfile<br/>routing"]
-  Taskfile --> GoCLI["Go CLI<br/>bin/aicoding.exe"]
-  GoCLI --> FastChecks["bootstrap / smart-verify<br/>smoke / hooks / status<br/>verify / lint / doctor"]
-  GoCLI --> Full["full / release<br/>lifecycle / export / rollback<br/>fresh clone / docsync / skills"]
-  GoCLI --> Registry["Kit registry<br/>config/kit-registry.json<br/>config/kits/*.json"]
-  Registry --> CodingKit["CodingKit assets<br/>skill submodule"]
+  User["User / Agent"] --> Taskfile["Taskfile routing"]
+  Taskfile --> GoCLI["Go CLI bin/aicoding.exe"]
+  GoCLI --> Runner["internal/runner concurrent plans"]
+  Runner --> Gates["smoke / ci / full / release"]
+  GoCLI --> Registry["config/kit-registry.json + config/kits/*.json"]
+  Registry --> CodingKit["CodingKit assets and skill submodule"]
+  Taskfile -. specialty .-> Scripts["PowerShell/Python specialty tools"]
 ```
 
-## 重要文档索引 / Documentation Index
+## 文档索引
 
-| 需求 | 文档 |
+| 主题 | 文档 |
 |---|---|
 | 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
-| Fast Path 命令 | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| 完整命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| 命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| Fast Path | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
 | C99 Standard C Skill | [docs/C99_STANDARD_C_SKILL.md](docs/C99_STANDARD_C_SKILL.md) |
-| PowerShell 迁移分类 | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
+| PowerShell 当前边界 | [docs/POWERSHELL_BOUNDARY.md](docs/POWERSHELL_BOUNDARY.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
 | Release policy | [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) |
 
-## Git 治理标准 / Git Governance Standard
+## Tag 规则摘要
 
-Commit type taxonomy：`feat`、`fix`、`docs`、`style`、`refactor`、`perf`、`test`、`build`、`ci`、`chore`。
-
-Branch naming and environment mapping：`main` 是平台基线；`develop`、`feature/*`、`test/*`、`release/*`、`hotfix/*` 分别表示集成、功能、测试、发布和热修复工作。
-
-Release notes 必须按主类型汇总；平台 Tag/Release 默认中文优先双语。
-
-## Release / Tag 简短规则
-
-- 平台发布 tag：`vMAJOR.MINOR.PATCH`，例如 `v0.2.0`。
+- 平台发布 tag：`vMAJOR.MINOR.PATCH`。
 - Kit/component 发布 tag：`kit/<kit-id>/vMAJOR.MINOR.PATCH`。
 - Milestone tag：`milestone/YYYY.MM.DD-<name>`。
-- 禁止继续把组件版本发布成 `v1.3.0-powershell-skill-kit` 这类伪平台 tag。
-- 不移动、不覆盖、不复用已绑定 release 的 immutable tag。
+- 不移动、不覆盖、不复用已经绑定 release 的 immutable tag。

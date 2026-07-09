@@ -22,7 +22,7 @@ type PwshCall struct {
 	Line                 int    `json:"line"`
 	Text                 string `json:"text"`
 	Category             string `json:"category"`
-	Migration            string `json:"migration"`
+	Recommendation       string `json:"recommendation"`
 	SuggestedReplacement string `json:"suggestedReplacement,omitempty"`
 }
 
@@ -92,13 +92,13 @@ func ScanPwsh(repo string) ([]PwshCall, []string) {
 				continue
 			}
 			category := categorizePwsh(rel, line)
-			migration, replacement := migrationAdvice(category, rel, line)
+			recommendation, replacement := routeAdvice(category, rel, line)
 			calls = append(calls, PwshCall{
 				Path:                 rel,
 				Line:                 i + 1,
 				Text:                 strings.TrimSpace(line),
 				Category:             category,
-				Migration:            migration,
+				Recommendation:       recommendation,
 				SuggestedReplacement: replacement,
 			})
 		}
@@ -108,7 +108,7 @@ func ScanPwsh(repo string) ([]PwshCall, []string) {
 
 func isPwshInvocationLine(lower string) bool {
 	trimmed := strings.TrimSpace(lower)
-	if strings.Contains(lower, "powershell-script") {
+	if strings.Contains(lower, "specialty-pwsh") {
 		return true
 	}
 	for _, token := range []string{"powershell.exe", "powershell -", "powershell\t-", "powershell`"} {
@@ -242,7 +242,7 @@ func VerifyReleaseNotes(repo string) ([]ReleaseNotesCheck, []string) {
 	checkContains("CHANGELOG.md", "[Unreleased]")
 	checkReleaseNotesBody(".github/RELEASE_TEMPLATE.md", "摘要 / Summary", "变更内容 / What's Changed", "可追溯性 / Traceability")
 	checkContains("docs/TAGGING_POLICY.md", "vMAJOR.MINOR.PATCH", "kit/<kit-id>/vMAJOR.MINOR.PATCH", "milestone/YYYY.MM.DD-<name>")
-	checkContains("docs/RELEASE_POLICY.md", "Platform Release", "Kit / Component Release", "Milestone / Historical Snapshot")
+	checkContains("docs/RELEASE_POLICY.md", "Platform Release", "Kit / Component Release", "Milestone Release")
 	for _, rel := range []string{
 		"docs/RELEASE_GOVERNANCE_OVERLAY.md",
 		"scripts/aicoding-tag-governance.ps1",
@@ -303,7 +303,7 @@ func StatusAll(repo string) (RepoStatus, []string) {
 						ms.Errors = append(ms.Errors, action+": missing required path: "+rel)
 					}
 				}
-				if cmd.Type == "powershell-script" && cmd.Path != "" && !platform.IsFile(platform.RepoPath(repo, cmd.Path)) {
+				if cmd.Type == "specialty-pwsh" && cmd.Path != "" && !platform.IsFile(platform.RepoPath(repo, cmd.Path)) {
 					ms.OK = false
 					ms.Errors = append(ms.Errors, action+": missing script: "+cmd.Path)
 				}
@@ -497,7 +497,7 @@ func categorizePwsh(path, line string) string {
 	return "unknown"
 }
 
-func migrationAdvice(category, path, line string) (string, string) {
+func routeAdvice(category, path, line string) (string, string) {
 	lower := strings.ToLower(path + " " + line)
 	if containsAny(lower, "profile full", "profile release", "test-kit-fresh-clone", " export ", " install", " uninstall", " rollback", "dss", "xds", "flash", "erase", "write-memory") {
 		return "keep-pwsh", "keep PowerShell/Python slow path"
@@ -602,7 +602,7 @@ type PwshBudgetCall struct {
 	Text                 string `json:"text"`
 	Category             string `json:"category"`
 	Budget               string `json:"budget"`
-	Migration            string `json:"migration"`
+	Recommendation       string `json:"recommendation"`
 	SuggestedReplacement string `json:"suggestedReplacement,omitempty"`
 }
 
@@ -621,15 +621,15 @@ func ScanPwshBudget(repo string) (PwshBudget, []string) {
 				continue
 			}
 			category := categorizePwsh(rel, line)
-			migration, replacement := migrationAdvice(category, rel, line)
-			bucket := classifyPwshBudget(rel, line, category, migration)
+			recommendation, replacement := routeAdvice(category, rel, line)
+			bucket := classifyPwshBudget(rel, line, category, recommendation)
 			budget.Calls = append(budget.Calls, PwshBudgetCall{
 				Path:                 rel,
 				Line:                 i + 1,
 				Text:                 strings.TrimSpace(line),
 				Category:             category,
 				Budget:               bucket,
-				Migration:            migration,
+				Recommendation:       recommendation,
 				SuggestedReplacement: replacement,
 			})
 			budget.Counts[bucket]++
@@ -693,7 +693,7 @@ func pwshBudgetScanFiles(repo string) ([]string, []string) {
 	return files, errs
 }
 
-func classifyPwshBudget(path, line, category, migration string) string {
+func classifyPwshBudget(path, line, category, recommendation string) string {
 	lowerPath := strings.ToLower(path)
 	lower := strings.ToLower(path + " " + line)
 	if strings.HasPrefix(lowerPath, "docs/") {
@@ -712,7 +712,7 @@ func classifyPwshBudget(path, line, category, migration string) string {
 	if containsAny(lower, "profile full", "profile release", "test-kit-fresh-clone", " export ", " install", " uninstall", " rollback", "dss", "xds", "flash", "erase", "write-memory", "psscriptanalyzer") {
 		return "slow-path"
 	}
-	if migration == "go-now" || containsAny(lower, "profile smoke", "task smoke", "governance lint", "verify hooks", "verify release-notes", "verify repo-text") {
+	if recommendation == "go-now" || containsAny(lower, "profile smoke", "task smoke", "governance lint", "verify hooks", "verify release-notes", "verify repo-text") {
 		return "hot-path"
 	}
 	if category == "release" || category == "install" || category == "uninstall" || category == "rollback" || category == "export" || category == "dss" {

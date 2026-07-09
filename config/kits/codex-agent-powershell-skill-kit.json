@@ -9,7 +9,7 @@
     "quality-gate-kit",
     "regex-optimization-kit"
   ],
-  "mode": "script-adapter",
+  "mode": "powershell-specialty",
   "description": "PowerShell 7-first agent guard with AST, safe rewrite, runtime, regex optimization, and PSScriptAnalyzer gates.",
   "paths": {
     "pluginRoot": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit",
@@ -29,7 +29,7 @@
       "supportsDryRun": true
     },
     "status": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/status-codex-agent-powershell-skill-kit.ps1",
       "args": [
         "-RepoRoot",
@@ -38,7 +38,7 @@
       "supportsJson": true
     },
     "verify": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/verify-codex-agent-powershell-skill-kit.ps1",
       "args": [
         "-RepoRoot",
@@ -47,7 +47,7 @@
       "supportsJson": true
     },
     "test": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/test-codex-agent-powershell-skill-kit.ps1",
       "args": [
         "-RepoRoot",

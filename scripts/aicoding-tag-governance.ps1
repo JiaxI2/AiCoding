@@ -49,35 +49,15 @@ function Get-TagSha {
     return $sha.Trim()
 }
 
-function Get-LegacySuggestion {
+function Get-CurrentTagSuggestion {
     param([Parameter(Mandatory = $true)][string]$Tag)
-
-    $known = @{
-        'v1.3.0-powershell-skill-kit' = 'kit/powershell-skill-kit/v1.3.0'
-        'v2.0.0-kit-system' = 'kit/system/v2.0.0'
-        'v0.11.1-agent-dev-kit' = 'kit/agent-dev-kit/v0.11.1'
-        'v2026.07.03-fast-path-v1' = 'milestone/2026.07.03-fast-path-v1'
-        'v2026.07.03-skill-external-mvp' = 'milestone/2026.07.03-skill-external-mvp'
-        'v2026.07.03-agent-dev-kit-plan-mode' = 'milestone/2026.07.03-agent-dev-kit-plan-mode'
-        'v2026.07.03-agent-dev-kit-plan-mode-zh-cn-patch' = 'milestone/2026.07.03-agent-dev-kit-plan-mode-zh-cn-patch'
-        'v2026.07.01-common-control' = 'milestone/2026.07.01-common-control'
-        'v2026.07.01-ai-debug-repair-kit' = 'milestone/2026.07.01-ai-debug-repair-kit'
-        'v2026.06.29-ai-debug-repair-kit' = 'milestone/2026.06.29-ai-debug-repair-kit'
-        'v2026.06.26-runtime' = 'milestone/2026.06.26-runtime'
-        'v2026.06.27' = 'milestone/2026.06.27-platform-snapshot'
-        'v2026.06.26' = 'milestone/2026.06.26-platform-snapshot'
-    }
-
-    if ($known.ContainsKey($Tag)) {
-        return $known[$Tag]
-    }
 
     if ($Tag -match '^v(\d{4}\.\d{2}\.\d{2})-(.+)$') {
         return "milestone/$($Matches[1])-$($Matches[2])"
     }
 
     if ($Tag -match '^v(\d{4}\.\d{2}\.\d{2})$') {
-        return "milestone/$($Matches[1])-platform-snapshot"
+        return "milestone/$($Matches[1])-snapshot"
     }
 
     if ($Tag -match '^v(?!\d{4}\.)(\d+\.\d+\.\d+)-(.+)$') {
@@ -94,7 +74,7 @@ function Classify-Tag {
     param([Parameter(Mandatory = $true)][string]$Tag)
 
     $kind = 'unknown'
-    $reason = 'Does not match platform, kit, milestone, legacy component, or historical date policy.'
+    $reason = 'Does not match the current platform, kit, or milestone tag policy.'
     $suggestion = ''
 
     if ($Tag -match '^kit/[A-Za-z0-9._-]+/v(?!\d{4}\.)(\d+)\.(\d+)\.(\d+)$') {
@@ -104,13 +84,13 @@ function Classify-Tag {
         $kind = 'milestone'
         $reason = 'Namespaced date milestone tag.'
     } elseif ($Tag -match '^v(?!\d{4}\.)(\d+)\.(\d+)\.(\d+)-[A-Za-z0-9._-]+$') {
-        $kind = 'legacy-misnamed'
-        $reason = 'Legacy component tag used the platform v* namespace.'
-        $suggestion = Get-LegacySuggestion -Tag $Tag
+        $kind = 'noncurrent-component'
+        $reason = 'Component tag is outside the current kit/<kit-id>/vMAJOR.MINOR.PATCH namespace.'
+        $suggestion = Get-CurrentTagSuggestion -Tag $Tag
     } elseif (($Tag -match '^v\d{4}\.\d{2}\.\d{2}$') -or ($Tag -match '^v\d{4}\.\d{2}\.\d{2}-[A-Za-z0-9._-]+$')) {
-        $kind = 'legacy-historical'
-        $reason = 'Legacy bare-date or date-suffixed tag retained as a historical snapshot, not a platform semver release.'
-        $suggestion = Get-LegacySuggestion -Tag $Tag
+        $kind = 'noncurrent-date'
+        $reason = 'Date tag is outside the current milestone/YYYY.MM.DD-<name> namespace.'
+        $suggestion = Get-CurrentTagSuggestion -Tag $Tag
     } elseif ($Tag -match '^v(?!\d{4}\.)(\d+)\.(\d+)\.(\d+)$') {
         $kind = 'platform'
         $reason = 'Strict platform semantic version tag.'
@@ -141,8 +121,8 @@ function Write-AuditFiles {
         platform = @($Rows | Where-Object { $_.kind -eq 'platform' }).Count
         kit = @($Rows | Where-Object { $_.kind -eq 'kit' }).Count
         milestone = @($Rows | Where-Object { $_.kind -eq 'milestone' }).Count
-        historical = @($Rows | Where-Object { $_.kind -eq 'legacy-historical' }).Count
-        legacyMisnamed = @($Rows | Where-Object { $_.kind -eq 'legacy-misnamed' }).Count
+        nonCurrentDate = @($Rows | Where-Object { $_.kind -eq 'noncurrent-date' }).Count
+        nonCurrentComponent = @($Rows | Where-Object { $_.kind -eq 'noncurrent-component' }).Count
         unknown = @($Rows | Where-Object { $_.kind -eq 'unknown' }).Count
         tags = $Rows
     }
@@ -177,21 +157,21 @@ function Write-PlanFile {
         New-Item -ItemType Directory -Path $OutputRoot -Force | Out-Null
     }
 
-    $legacyRows = @($Rows | Where-Object { ($_.kind -eq 'legacy-misnamed' -or $_.kind -eq 'legacy-historical') -and -not [string]::IsNullOrWhiteSpace($_.suggestion) })
+    $nonCurrentRows = @($Rows | Where-Object { ($_.kind -eq 'noncurrent-component' -or $_.kind -eq 'noncurrent-date') -and -not [string]::IsNullOrWhiteSpace($_.suggestion) })
     $lines = New-Object System.Collections.Generic.List[string]
-    $lines.Add('# Tag Migration Plan')
+    $lines.Add('# Tag Alignment Plan')
     $lines.Add('')
     $lines.Add('This plan is non-destructive. It does not delete, force-update, or push tags by itself.')
     $lines.Add('Review every command before running it.')
     $lines.Add('')
 
-    if ($legacyRows.Count -eq 0) {
-        $lines.Add('No legacy misnamed tags with automatic suggestions were found.')
+    if ($nonCurrentRows.Count -eq 0) {
+        $lines.Add('No non-current tags with automatic suggestions were found.')
     } else {
         $lines.Add('## Suggested local tag creation commands')
         $lines.Add('')
         $lines.Add('```powershell')
-        foreach ($row in $legacyRows) {
+        foreach ($row in $nonCurrentRows) {
             if (-not [string]::IsNullOrWhiteSpace($row.sha)) {
                 $lines.Add(('git tag {0} {1} # from {2}' -f $row.suggestion, $row.sha, $row.tag))
             }
@@ -201,19 +181,19 @@ function Write-PlanFile {
         $lines.Add('## Suggested push commands after human confirmation')
         $lines.Add('')
         $lines.Add('```powershell')
-        foreach ($row in $legacyRows) {
+        foreach ($row in $nonCurrentRows) {
             $lines.Add(('git push origin {0}' -f $row.suggestion))
         }
         $lines.Add('```')
         $lines.Add('')
-        $lines.Add('## Legacy tags retained')
+        $lines.Add('## Non-current tags retained')
         $lines.Add('')
-        foreach ($row in $legacyRows) {
+        foreach ($row in $nonCurrentRows) {
             $lines.Add(('- `{0}` -> `{1}`' -f $row.tag, $row.suggestion))
         }
     }
 
-    $path = Join-Path $OutputRoot 'tag-migration-plan.md'
+    $path = Join-Path $OutputRoot 'tag-alignment-plan.md'
     Set-Content -LiteralPath $path -Value $lines -Encoding UTF8
     return $path
 }
@@ -242,13 +222,13 @@ try {
     if ($Action -eq 'Plan') {
         $planPath = Write-PlanFile -Rows $rows -OutputRoot $outputRoot
         if (-not $Json) {
-            Write-Host "Migration plan written: $planPath"
+            Write-Host "Alignment plan written: $planPath"
         }
     }
 
     if ($Action -eq 'Verify' -and $Strict) {
-        if ($summary.legacyMisnamed -gt 0 -or $summary.unknown -gt 0) {
-            throw "Strict tag governance failed. legacyMisnamed=$($summary.legacyMisnamed), unknown=$($summary.unknown)"
+        if ($summary.nonCurrentDate -gt 0 -or $summary.nonCurrentComponent -gt 0 -or $summary.unknown -gt 0) {
+            throw "Strict tag governance failed. nonCurrentDate=$($summary.nonCurrentDate), nonCurrentComponent=$($summary.nonCurrentComponent), unknown=$($summary.unknown)"
         }
     }
 
@@ -256,9 +236,9 @@ try {
         $summary | ConvertTo-Json -Depth 8
     } else {
         Write-Host "Tag audit written: $outputRoot"
-        Write-Host "Total=$($summary.total) Platform=$($summary.platform) Kit=$($summary.kit) Milestone=$($summary.milestone) Historical=$($summary.historical) Legacy=$($summary.legacyMisnamed) Unknown=$($summary.unknown)"
-        if ($summary.legacyMisnamed -gt 0) {
-            Write-Host ("Legacy misnamed tags were found. Run -Action Plan and review {0}." -f (Join-Path $outputRoot 'tag-migration-plan.md'))
+        Write-Host "Total=$($summary.total) Platform=$($summary.platform) Kit=$($summary.kit) Milestone=$($summary.milestone) NonCurrentDate=$($summary.nonCurrentDate) NonCurrentComponent=$($summary.nonCurrentComponent) Unknown=$($summary.unknown)"
+        if ($summary.nonCurrentDate -gt 0 -or $summary.nonCurrentComponent -gt 0) {
+            Write-Host ("Non-current tags were found. Run -Action Plan and review {0}." -f (Join-Path $outputRoot 'tag-alignment-plan.md'))
         }
     }
 } finally {

@@ -21,7 +21,7 @@
   },
   "skillRuntime": {
     "canonicalUserRoot": "%USERPROFILE%\\.agents\\skills",
-    "legacyUserRoot": "%USERPROFILE%\\.codex\\skills",
+    "codexUserRoot": "%USERPROFILE%\\.codex\\skills",
     "sourceRepositoryEnv": "AICODING_SKILL_SOURCE_REPO",
     "defaultSourceRepository": "../Codex-Skills",
     "sourceRepositoryMustNotBeUnderSkillRoot": true,

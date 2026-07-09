@@ -16,7 +16,7 @@ func TestCheckModesExposeFileClasses(t *testing.T) {
 	writeDocSyncTestFile(t, repo, "internal/docsync/check.go", "package docsync\n")
 	writeDocSyncTestFile(t, repo, "config/docs-sync.policy.json", "{}\n")
 	writeDocSyncTestFile(t, repo, "config/docs-sync.semantic.json", "{}\n")
-	writeDocSyncTestFile(t, repo, ".github/workflows/docs-sync.yml", "name: docs\n")
+	writeDocSyncTestFile(t, repo, ".github/workflows/aicoding-ci.yml", "name: docs\n")
 	writeDocSyncTestFile(t, repo, "docs/COMMANDS.md", "# Commands\n")
 	writeDocSyncTestFile(t, repo, "docs/DOC_SYNC_PLUS_SPEC.md", "# Spec\n")
 	writeDocSyncTestFile(t, repo, "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md", "# Plan\n")

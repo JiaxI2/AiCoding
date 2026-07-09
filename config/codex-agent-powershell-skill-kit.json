@@ -11,7 +11,7 @@
     "rewritePlan": ".agents/skills/codex-agent-powershell-skill-kit/tools/Invoke-SafeRewritePlan.ps1",
     "psscriptAnalyzerGate": ".agents/skills/codex-agent-powershell-skill-kit/tools/Invoke-PSScriptAnalyzerGate.ps1"
   },
-  "integrationPattern": "Agent Patch Kit / AI Debug Repair Kit compatible lifecycle; AiCoding stores package/config/scripts, installer materializes repo-scoped runtime mirror.",
+  "integrationPattern": "Agent Patch Kit / AI Debug Repair Kit aligned lifecycle; AiCoding stores package/config/scripts, installer materializes repo-scoped runtime mirror.",
   "nonDestructiveDefault": true,
   "packagedSkillPath": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/codex-agent-powershell-skill-kit",
   "sourceOwnership": {

@@ -9,7 +9,7 @@
     "debug-kit",
     "repair-kit"
   ],
-  "mode": "script-adapter",
+  "mode": "external-cli",
   "description": "Bounded build/test repair loop and non-invasive TI DSS debug workflows through the airepair CLI.",
   "paths": {
     "pluginRoot": "dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit",
@@ -31,7 +31,7 @@
       "supportsDryRun": true
     },
     "status": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/status-ai-debug-repair-kit.ps1",
       "args": [
         "-RepoRoot",
@@ -40,7 +40,7 @@
       "supportsJson": true
     },
     "verify": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/verify-ai-debug-repair-kit.ps1",
       "args": [
         "-RepoRoot",
@@ -49,7 +49,7 @@
       "supportsJson": true
     },
     "test": {
-      "type": "powershell-script",
+      "type": "specialty-pwsh",
       "path": "scripts/test-ai-debug-repair-kit.ps1",
       "args": [
         "-RepoRoot",

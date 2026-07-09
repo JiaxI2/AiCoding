@@ -2,6 +2,7 @@ package kit
 
 import (
 	"archive/zip"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 )
 
 type ExportOptions struct {
@@ -327,18 +329,45 @@ func writeZip(repo, out string, rels []string) error {
 }
 
 func fileManifestEntries(repo string, rels []string) ([]FileManifestEntry, error) {
-	entries := make([]FileManifestEntry, 0, len(rels))
+	tasks := make([]runner.Task, 0, len(rels))
 	for _, rel := range rels {
-		full := platform.RepoPath(repo, rel)
-		info, err := os.Stat(full)
-		if err != nil {
-			return nil, err
+		rel := rel
+		tasks = append(tasks, runner.Task{
+			ID:    rel,
+			Group: "export-manifest",
+			Run: func(context.Context) runner.TaskResult {
+				full := platform.RepoPath(repo, rel)
+				info, err := os.Stat(full)
+				if err != nil {
+					return runner.TaskResult{OK: false, Errors: []string{err.Error()}}
+				}
+				sha, err := fileSHA256(full)
+				if err != nil {
+					return runner.TaskResult{OK: false, Errors: []string{err.Error()}}
+				}
+				return runner.TaskResult{OK: true, Data: FileManifestEntry{Path: rel, Size: info.Size(), SHA256: sha}}
+			},
+		})
+	}
+
+	entries := make([]FileManifestEntry, 0, len(rels))
+	errs := []string{}
+	for _, result := range runner.Run(context.Background(), tasks, runner.Options{}) {
+		if !result.OK {
+			for _, errText := range result.Errors {
+				errs = append(errs, result.ID+": "+errText)
+			}
+			continue
 		}
-		sha, err := fileSHA256(full)
-		if err != nil {
-			return nil, err
+		entry, ok := result.Data.(FileManifestEntry)
+		if !ok {
+			errs = append(errs, result.ID+": invalid export manifest result")
+			continue
 		}
-		entries = append(entries, FileManifestEntry{Path: rel, Size: info.Size(), SHA256: sha})
+		entries = append(entries, entry)
+	}
+	if len(errs) > 0 {
+		return nil, errorsf(strings.Join(errs, "; "))
 	}
 	return entries, nil
 }

@@ -1,9 +1,11 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 )
 
 type aggregateCheck struct {
@@ -147,6 +150,40 @@ func runFreshClone(args []string, start time.Time) (report.Result, error) {
 	return report.Result{SchemaVersion: 1, Command: "fresh-clone", OK: res.OK, Message: "Go fresh clone gate", RepoRoot: repo, Data: res, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
 }
 
+func runSmoke(args []string, start time.Time) (report.Result, error) {
+	fs := flag.NewFlagSet("smoke", flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args)
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("smoke", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	checks := runAggregate(repo, "Smoke", false)
+	errs, warnings := aggregateErrors(checks)
+	return report.Result{SchemaVersion: 1, Command: "smoke", OK: len(errs) == 0, Message: "Go Smoke aggregate", RepoRoot: repo, Data: checks, Warnings: warnings, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+}
+
+func runCI(args []string, start time.Time) (report.Result, error) {
+	fs := flag.NewFlagSet("ci", flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
+	_ = fs.Bool("json", false, "json output")
+	_ = fs.Parse(args)
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("ci", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	plan := runner.NewPlan(goTestTask(repo))
+	aggregatePlan := buildAggregatePlan(repo, *profile, strings.EqualFold(*profile, "Release"))
+	for _, task := range aggregatePlan.Tasks() {
+		plan.Add(task)
+	}
+	checks := aggregateChecks(plan.Run(context.Background(), runner.Options{MaxParallel: 4}))
+	errs, warnings := aggregateErrors(checks)
+	return report.Result{SchemaVersion: 1, Command: "ci", OK: len(errs) == 0, Message: "Go CI aggregate", RepoRoot: repo, Data: checks, Warnings: warnings, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+}
+
 func runFull(args []string, start time.Time) (report.Result, error) {
 	fs := flag.NewFlagSet("full", flag.ContinueOnError)
 	repoArg := fs.String("repo-root", "", "repository root")
@@ -185,45 +222,110 @@ func runReleaseCommand(args []string, start time.Time) (report.Result, error) {
 }
 
 func runAggregate(repo, profile string, release bool) []aggregateCheck {
-	checks := []aggregateCheck{}
+	plan := buildAggregatePlan(repo, profile, release)
+	return aggregateChecks(plan.Run(context.Background(), runner.Options{MaxParallel: 4}))
+}
+
+func buildAggregatePlan(repo, profile string, release bool) runner.Plan {
+	plan := runner.NewPlan()
 	dsMode := "ci"
 	if release {
 		dsMode = "release"
 	}
-	ds := docsync.Check(repo, dsMode)
-	checks = append(checks, aggregateCheck{Name: "docsync " + dsMode, OK: ds.OK, Errors: ds.Errors, Warnings: ds.Warnings, Data: ds})
+	plan.Add(runner.Task{ID: "docsync " + dsMode, Group: "docsync", Run: func(context.Context) runner.TaskResult {
+		ds := docsync.Check(repo, dsMode)
+		return runner.TaskResult{OK: ds.OK, Errors: ds.Errors, Warnings: ds.Warnings, Data: ds}
+	}})
+
 	entries, err := kit.LoadRegistry(repo)
 	if err != nil {
-		checks = append(checks, aggregateCheck{Name: "load registry", OK: false, Errors: []string{err.Error()}})
-		return checks
+		plan.Add(staticFailureTask("load registry", err.Error()))
+		return plan
 	}
 	selected, err := kit.SelectKits(entries, "", true)
 	if err != nil {
-		checks = append(checks, aggregateCheck{Name: "select kits", OK: false, Errors: []string{err.Error()}})
-		return checks
+		plan.Add(staticFailureTask("select kits", err.Error()))
+		return plan
 	}
-	skills := kit.VerifySkills(repo, selected, profile)
-	checks = append(checks, aggregateCheck{Name: "skill verify " + profile, OK: skills.OK, Errors: skills.Errors, Warnings: skills.Warnings, Data: skills})
-	structure := kit.VerifyStructure(repo, selected)
-	checks = append(checks, aggregateCheck{Name: "kit structure", OK: structure.OK, Errors: structure.Errors, Warnings: structure.Warnings, Data: structure})
-	checks = append(checks, aggregateCheck{Name: "governance lint", OK: len(governance.Lint(repo, "all", "")) == 0, Errors: governance.Lint(repo, "all", "")})
-	_, hookErrs := repohealth.VerifyHooks(repo)
-	checks = append(checks, aggregateCheck{Name: "verify hooks", OK: len(hookErrs) == 0, Errors: hookErrs})
-	_, textErrs := repohealth.VerifyRepoText(repo)
-	checks = append(checks, aggregateCheck{Name: "verify repo-text", OK: len(textErrs) == 0, Errors: textErrs})
-	_, releaseErrs := repohealth.VerifyReleaseNotes(repo)
-	checks = append(checks, aggregateCheck{Name: "verify release-notes", OK: len(releaseErrs) == 0, Errors: releaseErrs})
+
+	plan.Add(runner.Task{ID: "skill verify " + profile, Group: "kit", Run: func(context.Context) runner.TaskResult {
+		skills := kit.VerifySkills(repo, selected, profile)
+		return runner.TaskResult{OK: skills.OK, Errors: skills.Errors, Warnings: skills.Warnings, Data: skills}
+	}})
+	plan.Add(runner.Task{ID: "kit structure", Group: "kit", Run: func(context.Context) runner.TaskResult {
+		structure := kit.VerifyStructure(repo, selected)
+		return runner.TaskResult{OK: structure.OK, Errors: structure.Errors, Warnings: structure.Warnings, Data: structure}
+	}})
+	plan.Add(runner.Task{ID: "governance lint", Group: "governance", Run: func(context.Context) runner.TaskResult {
+		errs := governance.Lint(repo, "all", "")
+		return runner.TaskResult{OK: len(errs) == 0, Errors: errs}
+	}})
+	plan.Add(runner.Task{ID: "verify hooks", Group: "repohealth", Run: func(context.Context) runner.TaskResult {
+		checks, errs := repohealth.VerifyHooks(repo)
+		return runner.TaskResult{OK: len(errs) == 0, Errors: errs, Data: checks}
+	}})
+	plan.Add(runner.Task{ID: "verify repo-text", Group: "repohealth", Run: func(context.Context) runner.TaskResult {
+		checks, errs := repohealth.VerifyRepoText(repo)
+		return runner.TaskResult{OK: len(errs) == 0, Errors: errs, Data: checks}
+	}})
+	plan.Add(runner.Task{ID: "verify release-notes", Group: "repohealth", Run: func(context.Context) runner.TaskResult {
+		checks, errs := repohealth.VerifyReleaseNotes(repo)
+		return runner.TaskResult{OK: len(errs) == 0, Errors: errs, Data: checks}
+	}})
+	plan.Add(runner.Task{ID: "doctor perf", Group: "repohealth", Run: func(context.Context) runner.TaskResult {
+		res, err := runDoctor([]string{"perf", "--repo-root", repo}, time.Now())
+		return taskResultFromReport(res, err)
+	}})
 	if release {
-		exp, err := kit.ExportBundle(repo, "")
-		errs := []string{}
-		if err != nil {
-			errs = append(errs, err.Error())
-		}
-		checks = append(checks, aggregateCheck{Name: "export", OK: err == nil, Errors: errs, Data: exp})
+		plan.Add(runner.Task{ID: "export", Group: "release", Run: func(context.Context) runner.TaskResult {
+			exp, err := kit.ExportBundle(repo, "")
+			errs := []string{}
+			if err != nil {
+				errs = append(errs, err.Error())
+			}
+			return runner.TaskResult{OK: err == nil, Errors: errs, Data: exp}
+		}})
 		if os.Getenv("AICODING_SKIP_FRESH_CLONE") != "1" {
-			fc := kit.FreshClone(repo, "Release", false)
-			checks = append(checks, aggregateCheck{Name: "fresh-clone Release", OK: fc.OK, Errors: fc.Errors, Data: fc})
+			plan.Add(runner.Task{ID: "fresh-clone Release", Group: "release", Run: func(context.Context) runner.TaskResult {
+				fc := kit.FreshClone(repo, "Release", false)
+				return runner.TaskResult{OK: fc.OK, Errors: fc.Errors, Data: fc}
+			}})
 		}
+	}
+	return plan
+}
+
+func goTestTask(repo string) runner.Task {
+	return runner.Task{ID: "go test ./...", Group: "go", Critical: true, Timeout: 5 * time.Minute, Run: func(ctx context.Context) runner.TaskResult {
+		cmd := exec.CommandContext(ctx, "go", "test", "./...")
+		cmd.Dir = repo
+		out, err := cmd.CombinedOutput()
+		data := map[string]string{"output": strings.TrimSpace(string(out))}
+		if err != nil {
+			return runner.TaskResult{OK: false, Errors: []string{err.Error()}, Data: data}
+		}
+		return runner.TaskResult{OK: true, Data: data}
+	}}
+}
+
+func staticFailureTask(id, errText string) runner.Task {
+	return runner.Task{ID: id, Group: "setup", Run: func(context.Context) runner.TaskResult {
+		return runner.TaskResult{OK: false, Errors: []string{errText}}
+	}}
+}
+
+func taskResultFromReport(res report.Result, err error) runner.TaskResult {
+	errs := append([]string{}, res.Errors...)
+	if err != nil && len(errs) == 0 {
+		errs = append(errs, err.Error())
+	}
+	return runner.TaskResult{OK: err == nil && res.OK, Errors: errs, Warnings: res.Warnings, Data: res.Data}
+}
+
+func aggregateChecks(results []runner.TaskResult) []aggregateCheck {
+	checks := make([]aggregateCheck, 0, len(results))
+	for _, result := range results {
+		checks = append(checks, aggregateCheck{Name: result.ID, OK: result.OK, Errors: result.Errors, Warnings: result.Warnings, Data: result.Data})
 	}
 	return checks
 }
@@ -243,12 +345,14 @@ func selectedKits(repoArg, kitArg string, allArg bool) (string, []kit.RegistryKi
 	}
 	return repo, selected, nil
 }
+
 func selectionMode(all bool) string {
 	if all {
 		return "all"
 	}
 	return "kit"
 }
+
 func lifecyclePlanErrors(plan kit.LifecyclePlan) []string {
 	errs := []string{}
 	for _, item := range plan.Kits {
@@ -258,6 +362,7 @@ func lifecyclePlanErrors(plan kit.LifecyclePlan) []string {
 	}
 	return errs
 }
+
 func aggregateErrors(checks []aggregateCheck) ([]string, []string) {
 	errs := []string{}
 	warnings := []string{}

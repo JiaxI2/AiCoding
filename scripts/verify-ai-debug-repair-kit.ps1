@@ -57,7 +57,7 @@ function Quote-ProcessArgument {
     return $s
   }
 
-  # Windows command-line quoting compatible with .NET Framework ProcessStartInfo.Arguments.
+  # Windows command-line quoting aligned with .NET Framework ProcessStartInfo.Arguments.
   $s = $s -replace '(\\*)"', '$1$1\"'
   $s = $s -replace '(\\+)$', '$1$1'
   return '"' + $s + '"'

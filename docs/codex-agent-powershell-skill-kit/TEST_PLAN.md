@@ -1,8 +1,8 @@
-# Codex Agent PowerShell Skill Kit v1.2.1 Test Plan
+# Codex Agent PowerShell Skill Kit Test Plan
 
 ## Purpose
 
-Validate that the kit prevents the recent high-frequency PowerShell agent failures:
+Validate that the kit prevents high-frequency PowerShell agent failures:
 
 - wrong PowerShell runtime assumptions;
 - missing AST syntax validation;
@@ -22,51 +22,53 @@ pwsh -NoProfile -Command '$PSVersionTable.PSVersion; $PSVersionTable.PSEdition'
 ```
 
 Expected:
+
 - Major version is `7` or newer.
 - Edition is `Core`.
 
-## Install / update
+## Install / Update
 
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\codex-agent-powershell-skill-kit-v1.2.1\aicoding-overlay\scripts\install-codex-agent-powershell-skill-kit.ps1 -RepoRoot . -InstallMissingTools
-```
+Use the current package path and installation script for the checked-out kit. Do not install from a version-stamped temporary directory.
 
-Expected:
-- `.agents/skills/codex-agent-powershell-skill-kit/SKILL.md` exists.
+Expected after install:
+
+- `.agents/skills/codex-agent-powershell-skill-kit/SKILL.md` exists when the runtime mirror is materialized.
 - `config/codex-agent-powershell-skill-kit.json` exists.
 - `scripts/verify-codex-agent-powershell-skill-kit.ps1` exists.
-- `dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/.codex-plugin/plugin.json` exists.
-- `.codex-agent-powershell-skill-kit/install-state.json` exists.
+- `dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/.codex-plugin/plugin.json` exists when the package is present.
+- `.codex-agent-powershell-skill-kit/install-state.json` exists after installation.
 
-## Verification gate
+## Verification Gate
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-codex-agent-powershell-skill-kit.ps1 -InstallMissingTools
 ```
 
 Expected:
+
 - Runtime gate passes.
 - AST gate passes on kit scripts.
 - Safety gate passes on kit scripts.
 - PSScriptAnalyzer is installed or installed automatically with `-InstallMissingTools`.
 - PSScriptAnalyzer gate passes or reports actionable diagnostics.
 
-## Test cases
+## Test Cases
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-codex-agent-powershell-skill-kit.ps1 -InstallMissingTools
 ```
 
 Expected:
+
 - `good/Valid-*.ps1` passes all gates.
 - `bad/Syntax-MissingBrace.ps1` fails AST gate.
 - `bad/Linux-Aliases.ps1` fails safety gate.
 - `bad/Unsafe-RemoveItem.ps1` fails safety gate.
 - Rewrite examples produce a plan and do not execute destructive actions.
 
-## Manual smoke tests
+## Manual Smoke Tests
 
-### AST syntax failure
+### AST Syntax Failure
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\.agents\skills\codex-agent-powershell-skill-kit\tools\Invoke-PowerShellAstGate.ps1 -ScriptDefinition 'if ($true) { Write-Output "missing"'
@@ -74,7 +76,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\.agents\skills\codex-agent-power
 
 Expected: fails with parse error.
 
-### Bash leakage rewrite
+### Bash Leakage Rewrite
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\.agents\skills\codex-agent-powershell-skill-kit\tools\Invoke-SafeRewritePlan.ps1 -Command 'ls -la | grep test && rm -rf temp' -Format Markdown
@@ -82,7 +84,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\.agents\skills\codex-agent-power
 
 Expected: outputs rewrite plan. Does not execute command.
 
-### PSScriptAnalyzer gate
+### PSScriptAnalyzer Gate
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\.agents\skills\codex-agent-powershell-skill-kit\tools\Invoke-PSScriptAnalyzerGate.ps1 -Path .\.agents\skills\codex-agent-powershell-skill-kit\tests\cases\good -Recurse
@@ -90,7 +92,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\.agents\skills\codex-agent-power
 
 Expected: passes or only emits allowed warnings depending on config.
 
-## AiCoding integration checks
+## AiCoding Integration Checks
 
 ```powershell
 Test-Path .\.agents\skills\codex-agent-powershell-skill-kit\SKILL.md
@@ -99,15 +101,16 @@ Test-Path .\dist\codex-agent-powershell-skill-kit\plugins\AiCodingPowerShellSkil
 Test-Path .\.agents\plugins\marketplace.json
 ```
 
-Expected: all `True`.
+Expected: all required current paths are present for the selected install mode.
 
-## Existing AiCoding verification
+## Existing AiCoding Verification
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-codex-kit.ps1
+bin\aicoding.exe smoke --json
+bin\aicoding.exe doctor pwsh-budget --json
 ```
 
-Expected: existing AiCoding kit still verifies. If it fails, classify whether the failure is unrelated pre-existing state or caused by this kit.
+Expected: AiCoding default Go gate still verifies, and PowerShell remains inside specialty boundaries.
 
 ## Rollback
 
@@ -116,14 +119,14 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\scripts\uninstall-codex-agent-po
 ```
 
 Expected:
+
 - Skill directory is removed.
 - Dist directory is removed.
 - Config sidecar is removed.
 - Marketplace entry is removed or disabled.
 - `.codex-agent-powershell-skill-kit/install-state.json` is preserved only if `-KeepState` is used.
 
-
-## Source ownership verification
+## Source Ownership Verification
 
 After install, verify that AiCoding did not become canonical owner of the skill source:
 

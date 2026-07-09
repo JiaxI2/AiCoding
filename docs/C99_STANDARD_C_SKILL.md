@@ -1,20 +1,18 @@
 # C99 Standard C Skill
 
-This repository exposes C/H style as part of the `c99-standard-c` skill, not as a standalone formatting kit.
+C/H 风格能力属于 `c99-standard-c` skill，不作为独立 formatting kit 暴露。
 
-## Boundary
+## 配置边界
 
-- Skill configuration: `config/skills/c99-standard-c/skill.json`
-- Style backend config: `config/skills/c99-standard-c/style/clang-format.yaml`
-- Comment templates: `config/skills/c99-standard-c/templates/comment-templates.json`
-- Embedded C rules: `config/skills/c99-standard-c/rules/embedded-c-rules.md`
-- Go implementation: `internal/cstyle`
+- Skill 配置：`config/skills/c99-standard-c/skill.json`
+- 机械格式：`config/skills/c99-standard-c/style/clang-format.yaml`
+- 注释模板：`config/skills/c99-standard-c/templates/comment-templates.json`
+- 嵌入式 C 规则：`config/skills/c99-standard-c/rules/embedded-c-rules.md`
+- Go 实现：`internal/cstyle`
 
-The formatter backend is an implementation detail. The source of truth is the C skill configuration. The root `.clang-format` file is kept only as a compatibility projection for existing tools.
+根目录 `.clang-format` 只是工具投影；source of truth 是 skill 配置。`.vscode` 不入仓。
 
-`.vscode` is not tracked by this repository. Editor adapters are local generated artifacts or future optional adapters, not core skill capability.
-
-## Taskfile Entrypoints
+## Taskfile 入口
 
 ```bash
 task style:c:status
@@ -24,9 +22,7 @@ task fmt-check:c
 task fmt-check-staged:c
 ```
 
-Taskfile remains routing only. The logic lives in Go under `internal/cstyle`.
-
-## Skill CLI
+## Go CLI 入口
 
 ```bash
 bin/aicoding.exe skill c99-standard-c status --json
@@ -37,24 +33,18 @@ bin/aicoding.exe skill c99-standard-c check --scope staged --json
 bin/aicoding.exe skill c99-standard-c check --scope paths --path tests/style-samples/foc_sample.c --json
 ```
 
-`aicoding cstyle status|templates|fmt|check` remains as a compatibility alias, but the preferred user-facing entry is the skill command.
+当前用户入口只保留 `skill c99-standard-c` 和 Taskfile 短路由。
 
-## Scopes
+## 范围
 
-- `changed`: modified and untracked C/H files.
-- `staged`: staged C/H files.
-- `paths`: explicit paths supplied by `--path`.
-- `all`: all repository C/H files except excluded directories.
+- `changed`: modified 和 untracked C/H 文件。
+- `staged`: staged C/H 文件。
+- `paths`: `--path` 显式路径。
+- `all`: 全仓 C/H 文件，但不作为默认 Taskfile 路由。
 
-Default excluded directories are defined in `skill.json`: `vendor`, `third_party`, `generated`, `Drivers`, `device`, `build`, `out`, and `dist`.
+默认排除目录来自 `skill.json`：`vendor`, `third_party`, `generated`, `Drivers`, `device`, `build`, `out`, `dist`。
 
-## Templates And Rules
-
-`templates/comment-templates.json` validates Doxygen-style file headers, function headers, section dividers, struct comments, enum comments, and common C includes. The default author remains `HU JIAXUAN`.
-
-`rules/embedded-c-rules.md` keeps the C skill aligned with C99 embedded rules, staged checks, and ISR/current-loop constraints.
-
-## Validation
+## 验证
 
 ```bash
 go test ./internal/cstyle

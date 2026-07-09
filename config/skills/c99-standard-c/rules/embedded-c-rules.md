@@ -5,7 +5,7 @@
 ## 配置来源
 
 - 机械格式来源：`config/skills/c99-standard-c/style/clang-format.yaml`。
-- 根目录 `.clang-format` 仅作为现有工具兼容投影，不是 source of truth。
+- 根目录 `.clang-format` 仅作为工具投影，不是 source of truth。
 - C/H 注释模板来源：`config/skills/c99-standard-c/templates/comment-templates.json`。
 - Go CLI 通过 `internal/cstyle` 读取 `config/skills/c99-standard-c/skill.json` 后执行格式化、检查和模板校验。
 
@@ -14,7 +14,7 @@
 - 修改 `.c` 或 `.h` 文件后运行 `task fmt:c`，除非当前任务明确禁止格式化或只允许检查。
 - 提交前优先运行 `task fmt-check-staged:c`，只检查 staged C/H 文件。
 - 不格式化 `vendor/`、`third_party/`、`generated/`、`Drivers/`、`device/`、`build/`、`out/`、`dist/` 路径。
-- 不为了迁移历史代码而格式化无关 C/H 文件。
+- 不因本次改动格式化无关 C/H 文件。
 - 保持 C99、嵌入式风格和 Doxygen 注释。
 
 ## 实时路径约束

@@ -1,26 +1,22 @@
-# Agent Patch Kit Deployment Evaluation
+# Agent Patch Kit Evaluation
 
 ## Scope
 
-This evaluation records the Agent Patch Kit v2.2 deployment into the AiCoding repository on 2026-06-29. It focuses on repository-agent workflow cost, not model quality.
+This document records the current Agent Patch Kit role inside AiCoding. It focuses on repository-agent patch workflow cost, not model quality.
 
 ## Capability Check
 
-Agent Patch Kit v2.2 is not only an AiCoding component definition. The provided kit includes:
+Agent Patch Kit provides:
 
-- standalone non-editable user-mode Python CLI installation through scripts/install-agent-patch-kit.ps1;
-- apatch and agent-patch console commands;
-- user, project, and system deployment scopes;
-- repo-scoped Skill deployment to .agents/skills/aicoding-agent-patch-kit;
-- uninstall support through scripts/uninstall-agent-patch-kit.ps1;
-- AiCoding plugin packaging through apatch package aicoding-plugin;
-- marketplace sidecar generation through integrations/aicoding/package-marketplace.ps1.
+- non-editable user-mode CLI installation;
+- `apatch` and `agent-patch` console commands;
+- user, project, and system enable/disable scopes;
+- repo-scoped Skill deployment for `aicoding-agent-patch-kit`;
+- uninstall support;
+- AiCoding plugin packaging support;
+- marketplace sidecar generation support.
 
-The AiCoding deployment used the project/repo-scoped path and did not modify CodingKit/agents/skills.
-
-## v2.2 Repair Validation
-
-The v2.2 repair replaced the previous editable v2.1 install with a non-editable user-mode wheel install. The validated runtime module path is under the Python user site-packages directory, and the bundle assets are packaged under agent_patch/_bundle. After apatch install doctor reports OK, the original zip file and extracted v2.2 source directory can be deleted without breaking the apatch CLI.
+The AiCoding deployment uses the project/repo-scoped path and does not modify `CodingKit/agents/skills`.
 
 ## Test Method
 
@@ -28,58 +24,39 @@ The comparison uses deterministic local measurements:
 
 - token estimate: ceiling(character_count / 4);
 - baseline context: existing AiCoding maintenance entry files an agent normally reads before platform changes;
-- installed context: apatch brief --format md, apatch state status, and the generated repo snippet;
-- timing: PowerShell 7 Measure-Command for apatch brief and apatch state status.
+- installed context: `apatch brief --format md`, `apatch state status`, and the generated repo snippet;
+- timing: PowerShell 7 `Measure-Command` for `apatch brief` and `apatch state status`.
 
 This measures context-entry and guardrail overhead. It does not claim a benchmark for reasoning quality, bug rate, or end-to-end coding speed.
 
-## Results
-
-Before Agent Patch Kit:
-
-- Entry context: AiCoding architecture, maintenance, CodingKit docs, config, and marketplace.
-- Lines measured: 505.
-- Estimated tokens: 4479.
-- Measured command time: manual read path.
-
-After Agent Patch Kit:
-
-- apatch brief --format md: 40 lines, 489 estimated tokens, 467.0 ms.
-- Generated AGENTS snippet: 30 lines, 184 estimated tokens, static file.
-- apatch state status: 4 effective scope rows, small output, 474.1 ms.
-
-## Pain Point Comparison
+## Current Workflow Value
 
 First-read token cost:
 
-- Before: agents rely on several repo governance docs, about 4479 estimated tokens for the measured entry set.
-- After: apatch brief provides the patch workflow in about 489 estimated tokens.
+- Without the kit: agents rely on several repo governance docs for patch-operation rules.
+- With the kit: `apatch brief --format md` exposes the patch workflow in a compact command-oriented form.
 
 Edit safety:
 
-- Before: safety rules are distributed across AGENTS, maintenance docs, and agent behavior guidance.
-- After: state gate, status, scan, preview, apply, verify, and summary are exposed as a single command workflow.
+- State gate, status, scan, preview, apply, verify, and summary are exposed as a single command workflow.
 
 Disable control:
 
-- Before: no dedicated patch-workflow enable/disable state.
-- After: system, user, and project scopes are available; missing state defaults to enabled.
+- System, user, and project scopes are available; missing state defaults to enabled.
 
 Marketplace exposure:
 
-- Before: AiCoding marketplace only exposed the main AiCoding plugin.
-- After: a sidecar and merged local plugin entry expose Agent Patch Kit without editing the Codex-Skills submodule.
+- A sidecar and merged local plugin entry expose Agent Patch Kit without editing the Codex-Skills submodule.
 
-Remaining cost:
+Remaining boundary:
 
-- Before: repo governance docs are still required for platform boundary decisions.
-- After: Agent Patch Kit reduces patch-operation overhead but does not replace AiCoding architecture and release governance.
+- Agent Patch Kit reduces patch-operation overhead but does not replace AiCoding architecture, release governance, or submodule policy.
 
 ## Deployment Artifacts
 
-- .agents/skills/aicoding-agent-patch-kit/
-- config/agent-patch-kit.json
-- docs/agent-patch-kit-agents-snippet.md
-- .agents/plugins/agent-patch-marketplace.json
-- dist/agent-patch-kit/
-- .agents/plugins/marketplace.json
+- `.agents/skills/aicoding-agent-patch-kit/`
+- `config/agent-patch-kit.json`
+- `docs/agent-patch-kit-agents-snippet.md`
+- `.agents/plugins/agent-patch-marketplace.json`
+- `dist/agent-patch-kit/`
+- `.agents/plugins/marketplace.json`

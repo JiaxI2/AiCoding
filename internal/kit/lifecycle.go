@@ -1,11 +1,13 @@
 package kit
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/platform"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 )
 
 type LifecycleOptions struct {
@@ -62,8 +64,29 @@ func PlanLifecycle(repo string, entries []RegistryKit, opts LifecycleOptions) Li
 		OK:            true,
 		Kits:          []LifecycleKitPlan{},
 	}
+	tasks := make([]runner.Task, 0, len(entries))
 	for _, entry := range entries {
-		result := planLifecycleKit(repo, entry, action, opts.DryRun)
+		entry := entry
+		tasks = append(tasks, runner.Task{
+			ID:    entry.ID,
+			Group: "lifecycle-plan",
+			Run: func(context.Context) runner.TaskResult {
+				return runner.TaskResult{ID: entry.ID, OK: true, Data: planLifecycleKit(repo, entry, action, opts.DryRun)}
+			},
+		})
+	}
+	for _, taskResult := range runner.Run(context.Background(), tasks, runner.Options{}) {
+		result, ok := taskResult.Data.(LifecycleKitPlan)
+		if !ok {
+			result = LifecycleKitPlan{
+				ID:     taskResult.ID,
+				Action: action,
+				DryRun: opts.DryRun,
+				OK:     false,
+				Status: "failed",
+				Reason: "invalid lifecycle plan result",
+			}
+		}
 		plan.Kits = append(plan.Kits, result)
 		plan.Summary.Total++
 		if result.OK {
@@ -158,32 +181,32 @@ func planLifecycleKit(repo string, entry RegistryKit, action string, dryRun bool
 			result.Status = "ok"
 			result.Reason = "required paths are present"
 		}
-	case "powershell-script":
+	case "specialty-pwsh":
 		if command.Path == "" {
 			result.OK = false
 			result.Status = "failed"
-			result.Reason = "powershell-script path is empty"
+			result.Reason = "specialty-pwsh path is empty"
 			break
 		}
 		if !platform.IsFile(platform.RepoPath(repo, command.Path)) {
 			result.OK = false
 			result.Status = "missing"
-			result.Reason = "command script missing: " + command.Path
+			result.Reason = "specialty script missing: " + command.Path
 			break
 		}
 		if dryRun {
 			result.Status = "planned"
-			result.Reason = "dry-run plan; PowerShell script not executed"
+			result.Reason = "dry-run plan; specialty PowerShell script not executed"
 		} else {
 			result.Status = "static"
-			result.Reason = "PowerShell status script present; not executed by Go planner"
+			result.Reason = "specialty PowerShell script present; not executed by Go planner"
 		}
 	case "external-command":
 		result.Status = "static"
 		result.Reason = "external command not executed by Go planner"
-	case "composed":
+	case "go-composed":
 		result.Status = "static"
-		result.Reason = "composed command not executed by Go planner"
+		result.Reason = "go-composed command not executed by Go planner"
 	default:
 		result.OK = false
 		result.Status = "failed"
