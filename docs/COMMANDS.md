@@ -62,9 +62,9 @@ C/H formatting commands are documented in [C Style Format Kit](C_STYLE_FORMAT_KI
 | Tag namespace audit | `bin\aicoding.exe tag audit --json` |
 | Release structural verify | `bin\aicoding.exe release verify --json` |
 
-## Default CI Smoke
+## Current CI Smoke
 
-PR/push CI uses this Go-native chain on Windows:
+`.github/workflows/fast-path.yml` uses this Go-native chain on Windows for PR and push:
 
 ```powershell
 go test ./...

@@ -11,12 +11,14 @@ import (
 )
 
 type CheckResult struct {
-	OK       bool     `json:"ok"`
-	Command  string   `json:"command"`
-	Mode     string   `json:"mode"`
-	Checked  []string `json:"checked"`
-	Warnings []string `json:"warnings,omitempty"`
-	Errors   []string `json:"errors,omitempty"`
+	OK        bool     `json:"ok"`
+	Command   string   `json:"command"`
+	Mode      string   `json:"mode"`
+	Checked   []string `json:"checked"`
+	RiskFiles []string `json:"riskFiles"`
+	DocFiles  []string `json:"docFiles"`
+	Warnings  []string `json:"warnings"`
+	Errors    []string `json:"errors"`
 }
 
 func Check(repo, mode string) CheckResult {
@@ -24,20 +26,34 @@ func Check(repo, mode string) CheckResult {
 	if mode == "" {
 		mode = "staged"
 	}
-	result := CheckResult{OK: true, Command: "docsync " + mode, Mode: mode, Checked: []string{}}
+	result := CheckResult{
+		OK:        true,
+		Command:   "docsync " + mode,
+		Mode:      mode,
+		Checked:   []string{},
+		RiskFiles: []string{},
+		DocFiles:  []string{},
+		Warnings:  []string{},
+		Errors:    []string{},
+	}
 	var files []string
 	var errs []string
 	switch mode {
 	case "staged":
 		files, errs = stagedFiles(repo)
-	case "all", "ci", "release":
+	case "all":
+		files, errs = allFiles(repo)
+	case "ci":
 		files, errs = changedFiles(repo)
+	case "release":
+		files, errs = allFiles(repo)
 	default:
 		result.OK = false
 		result.Errors = []string{"unsupported docsync mode: " + mode}
 		return result
 	}
 	result.Checked = append(result.Checked, files...)
+	result.RiskFiles, result.DocFiles = classifyFiles(files)
 	result.Errors = append(result.Errors, errs...)
 	result.Errors = append(result.Errors, policyErrors(files)...)
 	if mode == "ci" || mode == "release" {
@@ -79,8 +95,8 @@ func changedFiles(repo string) ([]string, []string) {
 		out = append(out, files...)
 	}
 	for _, args := range [][]string{
-		{"diff", "--name-only", "--diff-filter=ACMR"},
-		{"ls-files", "--others", "--exclude-standard"},
+		{"-c", "core.quotePath=false", "diff", "--name-only", "--diff-filter=ACMR"},
+		{"-c", "core.quotePath=false", "ls-files", "--others", "--exclude-standard"},
 	} {
 		text, err := gitx.Run(repo, args...)
 		if err != nil {
@@ -88,12 +104,47 @@ func changedFiles(repo string) ([]string, []string) {
 			continue
 		}
 		for _, line := range strings.Split(text, "\n") {
-			if line = strings.TrimSpace(line); line != "" {
+			if line = strings.TrimSpace(line); line != "" && platform.Exists(platform.RepoPath(repo, filepath.ToSlash(line))) {
 				out = append(out, line)
 			}
 		}
 	}
 	return uniqueSorted(out), compact(errs)
+}
+
+func allFiles(repo string) ([]string, []string) {
+	out := []string{}
+	errs := []string{}
+	for _, args := range [][]string{
+		{"-c", "core.quotePath=false", "ls-files"},
+		{"-c", "core.quotePath=false", "ls-files", "--others", "--exclude-standard"},
+	} {
+		text, err := gitx.Run(repo, args...)
+		if err != nil {
+			errs = append(errs, err.Error())
+			continue
+		}
+		for _, line := range strings.Split(text, "\n") {
+			if line = strings.TrimSpace(line); line != "" && platform.Exists(platform.RepoPath(repo, filepath.ToSlash(line))) {
+				out = append(out, line)
+			}
+		}
+	}
+	return uniqueSorted(out), compact(errs)
+}
+
+func classifyFiles(files []string) ([]string, []string) {
+	riskFiles := []string{}
+	docFiles := []string{}
+	for _, file := range files {
+		if IsDocSyncRiskPath(file) {
+			riskFiles = append(riskFiles, file)
+		}
+		if IsDocPath(file) {
+			docFiles = append(docFiles, file)
+		}
+	}
+	return uniqueSorted(riskFiles), uniqueSorted(docFiles)
 }
 
 func policyErrors(files []string) []string {

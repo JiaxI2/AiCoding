@@ -5,7 +5,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
-[![clang-forma](https://img.shields.io/badge/clangforma-17.0.2-blue)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
+[![clang-format](https://img.shields.io/badge/clang--format-17.0.2-blue)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
 [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
 
 AiCoding 是本地 AI coding 工作流的平台集成、安装、治理与 CodingKit 资产仓库。
@@ -71,12 +71,11 @@ flowchart TD
 | 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | Fast Path 命令 | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
 | 完整命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| C Style Format Kit | [docs/C_STYLE_FORMAT_KIT.md](docs/C_STYLE_FORMAT_KIT.md);
+| C Style Format Kit | [docs/C_STYLE_FORMAT_KIT.md](docs/C_STYLE_FORMAT_KIT.md) |
 | PowerShell 迁移分类 | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
 | Release policy | [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) |
-| Fast Path architecture v1 (historical) | [docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md](docs/AICODING_FAST_PATH_ARCHITECTURE_V1.md) |
 
 ## Git 治理标准 / Git Governance Standard
 

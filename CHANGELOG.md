@@ -33,6 +33,7 @@
 
 ### Commit Type
 
+- **refactor(go)**：收敛 Go CLI 默认控制面、DocSync mode 输出、README/docs/Taskfile/CI 口径，并删除 Go 已替代的 Fast Path V1 历史文档和包装脚本；converge Go-native command boundaries, DocSync mode payloads, documentation, Taskfile/CI wording, and remove Go-replaced Fast Path V1 historical wrappers.
 - 本轮已发布到 `v0.4.0`；后续提交继续在本节记录。
 
 ## [v0.4.0] - 2026-07-09

@@ -708,9 +708,7 @@ func classifyPwshBudget(path, line, category, migration string) string {
 	if strings.Contains(lower, "verify-release-governance-overlay.ps1") || strings.Contains(lower, "verify-skills") {
 		return "slow-path"
 	}
-	if strings.HasPrefix(lowerPath, "scripts/measure-fast-path-v1.ps1") {
-		return "fallback"
-	}
+
 	if containsAny(lower, "profile full", "profile release", "test-kit-fresh-clone", " export ", " install", " uninstall", " rollback", "dss", "xds", "flash", "erase", "write-memory", "psscriptanalyzer") {
 		return "slow-path"
 	}

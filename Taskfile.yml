@@ -1,7 +1,7 @@
 version: '3'
 
 # AiCoding unified task entry.
-# Keep this file as command routing only. Business logic belongs in Go CLI or scripts/.
+# Keep this file as command routing only. Business logic belongs in Go CLI; scripts are compatibility or specialty routes.
 
 tasks:
   default:

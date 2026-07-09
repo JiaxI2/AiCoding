@@ -1,6 +1,6 @@
 # Fast Path Commands
 
-Go Fast Path commands are the default local hot path for repeated development checks. Fast Path V2 keeps the checks structural, JSON-readable, and Go-native while preserving PowerShell/Python as the explicit slow path for complete lifecycle and release semantics.
+Go Fast Path commands are the default local hot path for repeated development checks. After Go-native consolidation, the same Go CLI also owns the default Full, Release gate, lifecycle, export, fresh-clone, DocSync, and skill verification routes. PowerShell/Python remains explicit compatibility and specialty tooling.
 
 ## Bootstrap
 
@@ -17,7 +17,7 @@ bin\aicoding.exe bootstrap --json
 bin\aicoding.exe workflow smart-verify --json
 ```
 
-`workflow smart-verify` reads staged, changed, and untracked files from Git, builds a file-type plan, and executes only Go fast checks for the first V2 loop. It does not call Full, Release, install, uninstall, export, rollback, fresh clone, DSS, or PSScriptAnalyzer paths.
+`workflow smart-verify` reads staged, changed, and untracked files from Git, builds a file-type plan, and executes selected Go checks. It stays fast and does not run release export, fresh clone, DSS/XDS, or PSScriptAnalyzer paths.
 
 Selected checks include:
 
@@ -33,7 +33,7 @@ bin\aicoding.exe cache status --json
 bin\aicoding.exe cache clean --json
 ```
 
-The V2 cache is stored under `.aicoding/cache/fast-path-v2`. The parent `.aicoding/cache/` directory is ignored and must not be committed. In this first version it is reporting-only and cleanup-only; cache state never changes pass/fail results.
+The V2 cache is stored under `.aicoding/cache/fast-path-v2`. The parent `.aicoding/cache/` directory is ignored and must not be committed. Cache state is reporting-only and cleanup-only; cache state never changes pass/fail results.
 
 ## Recommended Smoke Chain
 
@@ -48,20 +48,19 @@ bin\aicoding.exe verify release-notes --json
 bin\aicoding.exe doctor perf --json
 ```
 
-CI fast smoke builds the Linux binary and runs Go tests before the same Smoke checks:
+The default CI smoke workflow on Windows builds the Go CLI and runs:
 
-```bash
-go build -o bin/aicoding ./cmd/aicoding
+```powershell
 go test ./...
-./bin/aicoding kit verify --all --profile Smoke --json
-./bin/aicoding governance lint --json
-./bin/aicoding verify hooks --json
-./bin/aicoding verify repo-text --json
-./bin/aicoding verify release-notes --json
-./bin/aicoding doctor perf --json
+go build -o bin/aicoding.exe ./cmd/aicoding
+bin\aicoding.exe docsync ci --json
+bin\aicoding.exe skill verify --all --profile Smoke --json
+bin\aicoding.exe lifecycle plan --action install --all --json
+bin\aicoding.exe full --json
+bin\aicoding.exe export --all --zip --json
 ```
 
-Default Smoke does not call PowerShell. Full and Release remain explicit slow-path tasks.
+Default Smoke does not call PowerShell. Full and Release are explicit Go aggregate tasks.
 
 ## Kit Lifecycle Structure Verify
 
@@ -71,18 +70,22 @@ bin\aicoding.exe kit verify --all --profile Lifecycle --json
 
 `kit verify --profile Lifecycle` is the Go-native default for codex-kit and kit lifecycle structural verification. It checks `config/codex-kit.json`, the kit registry, manifests, command envelopes, required paths, generated package warnings, and all-kit dry-run skip policy without running PowerShell adapters or fresh clone gates.
 
-PowerShell `verify-codex-kit.ps1` and `verify-kit-lifecycle.ps1` remain explicit compatibility/full verification paths.
+PowerShell `verify-codex-kit.ps1` remains an explicit compatibility check and is not the default gate.
 
-## Kit Lifecycle Planner
+## Lifecycle, Export, And Fresh Clone
 
 ```powershell
-bin\aicoding.exe kit lifecycle --action install --all --dry-run --json
-bin\aicoding.exe kit lifecycle --action update --all --dry-run --json
-bin\aicoding.exe kit lifecycle --action uninstall --all --dry-run --json
-bin\aicoding.exe kit lifecycle --action status --all --json
+bin\aicoding.exe lifecycle plan --action install --all --json
+bin\aicoding.exe lifecycle plan --action update --all --json
+bin\aicoding.exe lifecycle install --all --json
+bin\aicoding.exe lifecycle update --all --json
+bin\aicoding.exe lifecycle uninstall --all --json
+bin\aicoding.exe lifecycle rollback --last --json
+bin\aicoding.exe export --all --zip --json
+bin\aicoding.exe fresh-clone --profile Smoke --json
 ```
 
-`kit lifecycle` is the Go-native default for lifecycle dry-run/status aggregation. It does not run PowerShell adapters, initialize submodules, refresh Marketplace, create runtime mirrors, or write `.aicoding/cache`. Real install/update/uninstall/export/rollback remain explicit PowerShell slow paths.
+These are Go CLI default routes. They use registry and manifest data, produce JSON envelopes, and keep Taskfile as routing only. Manifest-declared PowerShell commands may remain for compatibility or specialty workflows, but they are not the default lifecycle/export/fresh-clone entrypoints.
 
 ## Status And Doctor
 
@@ -102,11 +105,12 @@ Default `task perf` maps to Go-native `doctor perf` only. Run PowerShell parity 
 ```powershell
 bin\aicoding.exe tag audit --json
 bin\aicoding.exe release verify --json
+bin\aicoding.exe release gate --json
 ```
 
 `tag audit` classifies local tags into platform, kit, milestone, legacy, and unknown namespaces. Legacy tags are warnings in the JSON payload, not failures.
 
-`release verify` is a structural fast check for CHANGELOG, release template, tag policy docs, overlay files, and malformed release-note text. It does not replace `scripts/verify-release-governance-overlay.ps1` or Release profile gates.
+`release verify` is a structural check for CHANGELOG, release template, tag policy docs, overlay files, and malformed release-note text. `release gate` is the Go-native release aggregate.
 
 ## Verify Commands
 
@@ -151,8 +155,15 @@ apatch links --mode offline --include-fragments full --input README.md --input R
 
 Run full repository link audit explicitly with `apatch links --mode offline --include-fragments full` when templates, generated assets, fixtures, and historical archives must be included.
 
-## PowerShell Slow Path Boundary
+## PowerShell Boundary
 
-PowerShell remains the explicit owner for Full/Release profiles, real install/update/uninstall/export/rollback, fresh clone validation, skill verification, release overlay compatibility, PSScriptAnalyzer/PowerShell AST gates, and DSS/XDS/hardware-related flows.
+PowerShell remains for compatibility and specialty workflows only:
 
-Go-replaced fast-path PowerShell scripts have been removed after Go Fast Path V2 parity. Remaining PowerShell slow-path scripts stay in place for Full/Release, lifecycle, export, rollback, fresh clone, and compatibility workflows.
+- tag planning and release-governance overlay compatibility;
+- PowerShell AST, PSScriptAnalyzer, regex, and PowerShell-specific quality gates;
+- external third-party skill install/audit flows;
+- Plan Mode helper scripts;
+- safety-specific tooling;
+- DSS/XDS/hardware or toolchain diagnostics.
+
+Go-replaced Fast Path V1 wrapper/install/test/measure scripts are removed from current source. Remaining PowerShell scripts stay because they map to one of the compatibility or specialty categories above.
