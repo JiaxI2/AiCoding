@@ -5,7 +5,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
-[![clang-forma](https://img.shields.io/badge/clang-forma-blue)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
+[![clang-forma](https://img.shields.io/badge/clangforma-17.0.2-blue)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
 [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
 
 AiCoding 是本地 AI coding 工作流的平台集成、安装、治理与 CodingKit 资产仓库。
