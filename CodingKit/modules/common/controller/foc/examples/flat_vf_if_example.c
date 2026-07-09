@@ -1,9 +1,10 @@
 /**
  * @file flat_vf_if_example.c
  * @brief Flat VF/IF FOC usage examples.
+ * @author HU JIAXUAN
  */
 
-#include "foc.h"
+#include "../src/foc.h"
 
 static volatile float g_pwm_a;
 static volatile float g_pwm_b;
@@ -27,7 +28,7 @@ void app_foc_vf_open_loop_example(void)
     foc.vf_min_v = 0.0f;
     foc.vf_max_v = 6.0f;
 
-    if (foc_run(&foc)) {
+    if (foc_loop(&foc)) {
         g_pwm_a = foc.duty_a;
         g_pwm_b = foc.duty_b;
         g_pwm_c = foc.duty_c;
@@ -53,7 +54,7 @@ void app_foc_if_open_loop_startup_example(void)
     foc.pid_id.config.kp = 2.0f;
     foc.pid_iq.config.kp = 2.0f;
 
-    if (foc_run(&foc)) {
+    if (foc_loop(&foc)) {
         g_pwm_a = foc.duty_a;
         g_pwm_b = foc.duty_b;
         g_pwm_c = foc.duty_c;
@@ -86,7 +87,7 @@ void app_foc_if_three_loop_example(void)
     foc.pid_id.config.kp = 2.0f;
     foc.pid_iq.config.kp = 2.0f;
 
-    if (foc_run(&foc)) {
+    if (foc_loop(&foc)) {
         g_pwm_a = foc.duty_a;
         g_pwm_b = foc.duty_b;
         g_pwm_c = foc.duty_c;

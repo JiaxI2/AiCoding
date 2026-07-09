@@ -2,7 +2,7 @@
 
 ## 目标
 
-本设计把 `CodingKit/modules/common/controller/foc` 的主 API 收敛为一层 `Foc` 字段，避免 `config/input/state/motion` 深层访问成为用户主路径。FOC 只保留两种核心模式：
+本设计把 `CodingKit/modules/common/controller/foc` 的主 API 收敛为一层 `Foc` 字段，避免深层结构访问成为用户主路径。FOC 只保留两种核心模式：
 
 ```text
 FOC_MODE_VF = dq 电压链路
@@ -13,7 +13,7 @@ FOC_MODE_IF = dq 电流链路
 
 ```text
 FOC_ANGLE_SENSOR = 上层提供真实电角度
-FOC_ANGLE_OPEN_LOOP = foc_run() 内部按频率积分电角度
+FOC_ANGLE_OPEN_LOOP = foc_loop() 内部按频率积分电角度
 ```
 
 ## 模式组合
@@ -31,7 +31,7 @@ VF + OPEN_LOOP
 
 ## 主流程
 
-`foc_run()` 的顺序固定为：
+`foc_loop()` 的顺序固定为：
 
 ```text
 1. 检查 controller、control_freq、vbus。
@@ -49,7 +49,7 @@ VF + OPEN_LOOP
 
 ## PID 复用
 
-FOC 不再实现电流 PI。四个环路全部复用 `common/controller/pid`：
+FOC 不再实现独立电流 PI。四个环路全部复用 `common/controller/pid`：
 
 ```text
 pid_pos: cmd_pos - pos -> cmd_vel
@@ -60,17 +60,9 @@ pid_iq : cmd_iq - real_iq -> out_vq
 
 FOC 内部 wrapper 仅把 error-only 调用转换为现有 PID API 的 setpoint/feedback/feedforward 输入格式，不修改 PID 模块。
 
-## Legacy 边界
+## 架构边界
 
-`foc_angle.c/h` 与 `foc_motion.c/h` 保留为 legacy helper。它们可以继续被旧代码直接使用，但新的 `foc_run()` 主流程不再依赖这些 helper，也不再恢复 `FocInput` / `FocConfig` / `FocState` 深层嵌套。
-
-`FocControlMode` 只作为兼容类型保留。`foc_set_legacy_control_mode()` 映射如下：
-
-```text
-OPEN_VOLTAGE   -> FOC_MODE_VF
-CLOSED_CURRENT -> FOC_MODE_IF
-MOTION_CURRENT -> FOC_MODE_IF
-```
+当前目录只表达 v1.0-flat VF/IF 主架构，不保留历史兼容层、旧入口或旧控制模式映射。需要查看第一版实现时，应通过 Git history / tag 回溯。
 
 ## 非目标
 

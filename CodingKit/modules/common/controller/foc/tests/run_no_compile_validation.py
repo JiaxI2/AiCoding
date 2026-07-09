@@ -24,12 +24,12 @@ def run(cmd):
 
 def perf():
     sys.path.insert(0, str(ROOT / "tests"))
-    from foc_model import foc_voltage_mode
+    from foc_model import foc_vf
     count = 100000
     start = time.perf_counter()
     checksum = 0.0
     for i in range(count):
-        out = foc_voltage_mode(24.0, 0.001 * i, 0.0, 3.0, 12.0)
+        out = foc_vf(24.0, 0.001 * i, 0.0, 3.0, 12.0)
         checksum += out["duty"][0]
     elapsed = time.perf_counter() - start
     return {

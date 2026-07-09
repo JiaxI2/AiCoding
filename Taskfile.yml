@@ -66,6 +66,52 @@ tasks:
       - pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-release-governance-overlay.ps1 -Json
 
 
+
+  style:c:status:
+    desc: Check C style formatter kit status
+    cmds:
+      - bin/aicoding.exe cstyle status --json
+
+  style:c:templates:
+    desc: Validate C comment template config
+    cmds:
+      - bin/aicoding.exe cstyle templates --json
+
+  fmt:c:
+    desc: Format changed C/H files
+    cmds:
+      - bin/aicoding.exe cstyle fmt --scope changed --json
+
+  fmt-check:c:
+    desc: Check format for changed C/H files
+    cmds:
+      - bin/aicoding.exe cstyle check --scope changed --json
+
+  fmt-check-staged:c:
+    desc: Check format for staged C/H files
+    cmds:
+      - bin/aicoding.exe cstyle check --scope staged --json
+
+  fmt-staged:c:
+    desc: Format staged C/H files
+    cmds:
+      - bin/aicoding.exe cstyle fmt --scope staged --json
+
+  fmt-all:c:
+    desc: Format all repository C/H files
+    cmds:
+      - bin/aicoding.exe cstyle fmt --scope all --json
+
+  fmt-check-all:c:
+    desc: Check format for all repository C/H files
+    cmds:
+      - bin/aicoding.exe cstyle check --scope all --json
+
+  style:c:test:
+    desc: Run C style format kit tests
+    cmds:
+      - go test ./internal/cstyle
+
   ensure-bin:
     internal: true
     cmds:

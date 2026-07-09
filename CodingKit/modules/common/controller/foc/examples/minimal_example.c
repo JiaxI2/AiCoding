@@ -1,40 +1,31 @@
 /**
  * @file minimal_example.c
- * @brief FOC 开环电压模式最小示例。
+ * @brief Minimal flat VF open-loop voltage example.
  * @author HU JIAXUAN
  */
 
 #include "../src/foc.h"
 
-void app_foc_open_voltage_example(void)
+void app_foc_vf_minimal_example(void)
 {
     Foc focCtl;
-    FocAngle angle;
 
     (void)foc_init(&focCtl);
-    (void)foc_angle_init(&angle);
 
-    angle.config.mode = FOC_ANGLE_MODE_OPEN_LOOP;
-    angle.config.polePairs = 4U;
-    angle.config.direction = 1;
-    angle.config.controlFreq = 20000.0f;
-    angle.input.openLoopElectricalSpeedRadPerSec = 100.0f;
-    (void)foc_angle_update(&angle);
+    focCtl.mode = FOC_MODE_VF;
+    focCtl.angle_mode = FOC_ANGLE_OPEN_LOOP;
+    focCtl.control_freq = 20000.0f;
+    focCtl.vbus = 24.0f;
+    focCtl.open_loop_freq_hz = 15.0f;
+    focCtl.dir = 1.0f;
+    focCtl.cmd_vd = 0.0f;
+    focCtl.cmd_vq = 3.0f;
+    focCtl.max_voltage = 12.0f;
+    focCtl.modulation_limit = FOC_SQRT3_BY_2;
 
-    focCtl.config.controlMode = FOC_CONTROL_MODE_OPEN_VOLTAGE;
-    focCtl.config.controlFreq = 20000.0f;
-    focCtl.config.maxVoltage = 12.0f;
-    focCtl.config.modulationLimit = FOC_SQRT3_BY_2;
-
-    focCtl.input.vbusVoltage = 24.0f;
-    focCtl.input.electricalAngleRad = angle.state.electricalAngleRad;
-    focCtl.input.voltageFeedforward.d = 0.0f;
-    focCtl.input.voltageFeedforward.q = 3.0f;
-
-    if (foc(&focCtl)) {
-        /* 将 dutyA/dutyB/dutyC 交给平台 PWM 层。 */
-        (void)focCtl.state.dutyA;
-        (void)focCtl.state.dutyB;
-        (void)focCtl.state.dutyC;
+    if (foc_loop(&focCtl)) {
+        (void)focCtl.duty_a;
+        (void)focCtl.duty_b;
+        (void)focCtl.duty_c;
     }
 }

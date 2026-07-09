@@ -33,11 +33,17 @@
 
 ### Commit Type
 
+- 本轮已发布到 `v0.4.0`；后续提交继续在本节记录。
+
+## [v0.4.0] - 2026-07-09
+
+### Commit Type
+
 - 本轮已提交类型：`refactor(foc)`、`feat(coding-kit)`、`docs(ai-debug-kit)`、`feat(docs-sync)`、`docs(repo)`、`feat(git-governance)`、`feat(ai-debug-repair-kit)`、`feat(docsync)`、`feat(kit-lifecycle)`、`feat(aicoding-agent-dev-kit)`、`fix(aicoding-agent-dev-kit)`、`feat(fast-path)`、`fix(kit-lifecycle)`、`fix(git-governance)`、`refactor(go)`、`feat(powershell)`、`perf(go)`、`ci(fast-path)`、`chore(test)`、`fix(release)`、`docs(readme)`、`docs(architecture)`、`test(governance)`、`perf(task)`、`perf(kit)`、`chore(coding-kit)`、`chore(pwsh)`。
 
 ### Changed
 - **feat(go)**：将 export、DocSync all/ci/release、skill verify、fresh-clone、lifecycle plan/install/update/uninstall/rollback、Full 和 Release gate 迁移到 Go-native CLI，Taskfile 默认路由切到 `bin/aicoding.exe`，PowerShell 仅保留未完整替代的兼容、安全、计划模式、外部 skill 和专项质量脚本。
-- **refactor(foc)**：将 `CodingKit/modules/common/controller/foc` 主路径扁平化为 VF / IF 双模式和 SENSOR / OPEN_LOOP 双角度来源，三环 PID 复用 `common/controller/pid`，并将 `foc_angle` / `foc_motion` 降级为 legacy helper；flatten the FOC main path to VF / IF modes and SENSOR / OPEN_LOOP angle sources, reuse the shared PID controller, and downgrade `foc_angle` / `foc_motion` to legacy helpers.
+- **refactor(foc)**：将 `CodingKit/modules/common/controller/foc` 主路径收敛为 v1.0-flat VF / IF 双模式和 SENSOR / OPEN_LOOP 双角度来源，三环 PID 复用 `common/controller/pid`，并移除第一版角度/外环辅助模块、旧入口和旧控制模式映射；keep the FOC main path on the v1.0-flat VF / IF architecture and remove the first-version helper modules, entry point, and control-mode mapping.
 - **chore(pwsh)**：删除已由 Go Fast Path V2 替代的 `scripts/legacy/fast-path-replaced/` PowerShell 脚本，并将 hook、性能测量和迁移文档改为 Go 默认路径；remove Go-replaced legacy fast-path PowerShell scripts and route hooks, perf measurement, and migration docs to Go defaults.
 - **chore(coding-kit)**：更新 `CodingKit/agents/skills` submodule 到 `4fd28b4`，纳入 Codex-Skills README 和 git-governance 文档标准更新；update the Codex-Skills submodule to `4fd28b4` with README and git-governance documentation standard updates.
 - **docs(architecture)**：更新架构总览 Layer Model，把 Codex-Skills 源、AiCoding submodule、Marketplace/runtime、Taskfile/Go/PowerShell、registry/manifest 和 CodingKit assets 分层关系放入同一张图；update the architecture overview Layer Model to show Codex-Skills source, AiCoding submodule, Marketplace/runtime, command paths, registry/manifests, and CodingKit assets in one diagram.
@@ -67,6 +73,7 @@
 - **fix(ai-debug-repair-kit)**：补齐 `test-ai-debug-repair-kit.ps1` 生命周期脚本，并为 `install-ai-debug-repair-kit.ps1` 增加真实 `-DryRun` 路径，dry-run 只输出安装计划、不复制插件、不改 Marketplace、不执行 pip、不写 install-state；add the missing `test-ai-debug-repair-kit.ps1` lifecycle script and implement a real `-DryRun` path for `install-ai-debug-repair-kit.ps1` that reports the install plan without copying the plugin, changing Marketplace, running pip, or writing install-state.
 
 ### Added
+- **feat(c-style-format-kit)**：集成 Go-native C Style Format Kit，新增 `.clang-format`、仓库原生 C 注释模板、C99 skill overlay、`internal/cstyle`、`aicoding cstyle status|templates|fmt|check` 命令、Taskfile 路由和 kit registry/manifest；add the Go-native changed-file C/H format gate and repository-native embedded C comment templates.
 - **feat(fast-path-v2)**：新增 Fast Path V2 最小闭环，提供 `bootstrap`、`workflow smart-verify`、`cache status/clean`、`doctor pwsh-budget`、`tag audit` 和 `release verify` Go 原生命令，所有新增命令支持 `--json` 并保持稳定 exit code；add the Fast Path V2 minimal loop with Go-native bootstrap, smart verify, cache, PowerShell budget, tag audit, and release verify commands, all with `--json` and stable exit codes.
 - **tooling(task)**：`task setup` 和 `ensure-bin` 改为通过 Go bootstrap 构建 `bin/aicoding.exe`，`task tag:audit` 改走 Go tag audit；route setup/ensure-bin and tag audit through the Go fast path while preserving Full/Release and lifecycle PowerShell slow paths.
 - **perf(go)**：扩展 Go Fast Path，新增 `doctor pwsh`、`verify hooks`、`verify repo-text`、`verify release-notes` 和 `status --all`，并让 `task smoke` 默认走 Go native verify 链路，减少 Smoke/status/verify/lint/doctor 阶段的 PowerShell 冷启动；expand the Go Fast Path with native doctor, verify, and status commands while keeping Full/Release on the PowerShell/Python slow path.

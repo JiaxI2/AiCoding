@@ -4,6 +4,8 @@
 
 本模块不绑定 ADC / PWM / 编码器 / Hall / 观测器 / 状态机 / 故障保护 / 通信协议。上层负责提供电流、母线电压、真实角度或开环频率，并读取 `duty_a` / `duty_b` / `duty_c` 写入硬件。
 
+本目录不保留历史兼容层，旧版请通过 Git history / tag 查看。
+
 ## 核心模式
 
 ```text
@@ -19,7 +21,7 @@ FOC_ANGLE_SENSOR
   theta_e 由上层真实位置、编码器、Hall 插值或观测器提供。
 
 FOC_ANGLE_OPEN_LOOP
-  theta_e 由 foc_run() 根据 open_loop_freq_hz、dir 和 control_freq 积分。
+  theta_e 由 foc_loop() 根据 open_loop_freq_hz、dir 和 control_freq 积分。
 ```
 
 典型组合：
@@ -48,19 +50,19 @@ foc.ic = ic;
 foc.theta_e = theta;
 foc.cmd_iq = 2.0f;
 
-foc_run(&foc);
+foc_loop(&foc);
 
 pwm_a = foc.duty_a;
 pwm_b = foc.duty_b;
 pwm_c = foc.duty_c;
 ```
 
-旧入口 `foc()` 仍保留，但只包装 `foc_run()`。
+唯一执行入口是 `foc_loop(Foc *controller)`。
 
 ## VF 执行路径
 
 ```text
-foc_run
+foc_loop
   -> 可选 OPEN_LOOP 角度积分
   -> offset 扣除
   -> Clarke / Park 观测真实电流
@@ -83,7 +85,7 @@ out_vq = cmd_vq + sign(dir) * vf_v
 ## IF 执行路径
 
 ```text
-foc_run
+foc_loop
   -> SENSOR 使用上层 theta_e，OPEN_LOOP 由内部积分 theta_e
   -> offset 扣除
   -> Clarke / Park 得到 real_id / real_iq
@@ -115,18 +117,6 @@ pid_pos -> cmd_vel
 pid_vel -> cmd_iq
 pid_id  -> out_vd
 pid_iq  -> out_vq
-```
-
-## Legacy helper
-
-`foc_angle.c/h` 和 `foc_motion.c/h` 第一版保留为 legacy helper，用于兼容旧示例或外部试验代码。新的主流程不再依赖它们；新 API 不再暴露 `FocInput` / `FocConfig` / `FocState` 深层嵌套。
-
-保留 legacy control mode enum 和映射函数：
-
-```c
-foc_set_legacy_control_mode(&foc, FOC_CONTROL_MODE_OPEN_VOLTAGE);   /* -> FOC_MODE_VF */
-foc_set_legacy_control_mode(&foc, FOC_CONTROL_MODE_CLOSED_CURRENT); /* -> FOC_MODE_IF */
-foc_set_legacy_control_mode(&foc, FOC_CONTROL_MODE_MOTION_CURRENT); /* -> FOC_MODE_IF */
 ```
 
 ## 验证

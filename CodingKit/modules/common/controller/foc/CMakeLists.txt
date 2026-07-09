@@ -8,8 +8,6 @@ set(AICODING_PID_DIR "${CMAKE_CURRENT_LIST_DIR}/../pid")
 add_library(aicoding_foc_controller
     src/foc_math.c
     src/foc_svpwm.c
-    src/foc_angle.c
-    src/foc_motion.c
     src/foc.c
     ${AICODING_PID_DIR}/src/pid.c
 )

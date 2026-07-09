@@ -11,6 +11,7 @@ import (
 
 	"github.com/JiaxI2/AiCoding/internal/bootstrap"
 	"github.com/JiaxI2/AiCoding/internal/cache"
+	"github.com/JiaxI2/AiCoding/internal/cstyle"
 	"github.com/JiaxI2/AiCoding/internal/docsync"
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/governance"
@@ -58,6 +59,8 @@ func Main() {
 		res, err = runFull(os.Args[2:], start)
 	case "cache":
 		res, err = runCache(os.Args[2:], start)
+	case "cstyle":
+		res, err = runCStyle(os.Args[2:], start)
 	case "tag":
 		res, err = runTag(os.Args[2:], start)
 	case "release":
@@ -117,6 +120,9 @@ Usage:
   aicoding release verify [--repo-root PATH] [--json]
   aicoding release gate [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
+  aicoding cstyle status [--repo-root PATH] [--json]
+  aicoding cstyle fmt --scope changed|staged|all|paths [--path PATH ...] [--preview] [--repo-root PATH] [--json]
+  aicoding cstyle check --scope changed|staged|all|paths [--path PATH ...] [--repo-root PATH] [--json]
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
@@ -144,6 +150,98 @@ func jsonRequested(args []string) bool {
 		}
 	}
 	return false
+}
+
+type multiFlag []string
+
+func (m *multiFlag) String() string {
+	return strings.Join(*m, ",")
+}
+
+func (m *multiFlag) Set(value string) error {
+	*m = append(*m, value)
+	return nil
+}
+
+func runCStyle(args []string, start time.Time) (report.Result, error) {
+	if len(args) < 1 {
+		return report.Result{}, errors.New("cstyle requires subcommand: status, templates, fmt, or check")
+	}
+
+	sub := args[0]
+	fs := flag.NewFlagSet("cstyle "+sub, flag.ContinueOnError)
+	repoArg := fs.String("repo-root", "", "repository root")
+	scopeArg := fs.String("scope", "changed", "changed, staged, all, or paths")
+	previewArg := fs.Bool("preview", false, "preview formatting changes without writing files")
+	_ = fs.Bool("json", false, "json output")
+
+	var pathArgs multiFlag
+	fs.Var(&pathArgs, "path", "explicit path for --scope paths; can be repeated")
+	_ = fs.Parse(args[1:])
+
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("cstyle "+sub, start, "cannot resolve repo root", nil, err.Error()), err
+	}
+
+	switch sub {
+	case "status":
+		status := cstyle.Status()
+		errs := []string{}
+		if !status.Found {
+			errs = append(errs, "clang-format not found on PATH")
+		}
+		return report.Result{
+			SchemaVersion: 1,
+			Command:       "cstyle status",
+			OK:            status.Found,
+			Message:       "C style formatter status",
+			RepoRoot:      repo,
+			Data:          status,
+			Errors:        errs,
+			ElapsedMS:     report.Elapsed(start),
+		}, report.BoolErr(errs)
+
+	case "templates":
+		data, validationErr := cstyle.ValidateTemplates(repo)
+		return report.Result{
+			SchemaVersion: 1,
+			Command:       "cstyle templates",
+			OK:            validationErr == nil,
+			Message:       "C style comment templates validation",
+			RepoRoot:      repo,
+			Data:          data,
+			Errors:        data.Errors,
+			ElapsedMS:     report.Elapsed(start),
+		}, validationErr
+
+	case "fmt", "check":
+		data, runErr := cstyle.Run(cstyle.Options{
+			RepoRoot: repo,
+			Scope:    cstyle.Scope(*scopeArg),
+			Paths:    pathArgs,
+			Check:    sub == "check",
+			Preview:  *previewArg,
+		})
+		message := "C style format completed"
+		if sub == "check" {
+			message = "C style check completed"
+		}
+		return report.Result{
+			SchemaVersion: 1,
+			Command:       "cstyle " + sub,
+			OK:            runErr == nil,
+			Message:       message,
+			RepoRoot:      repo,
+			Checked:       data.Files,
+			Data:          data,
+			Errors:        data.Errors,
+			ElapsedMS:     report.Elapsed(start),
+		}, runErr
+
+	default:
+		return report.Result{}, fmt.Errorf("unsupported cstyle subcommand: %s", sub)
+	}
 }
 
 func runHook(args []string, start time.Time) (report.Result, error) {

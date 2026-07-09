@@ -1,7 +1,8 @@
 /**
  * @file foc.c
- * @brief Flat VF/IF FOC controller implementation.
+ * @brief v1.0-flat VF/IF FOC 控制器实现。
  * @author HU JIAXUAN
+ *
  */
 
 #include "foc.h"
@@ -10,6 +11,23 @@
 #include <math.h>
 #include <stdint.h>
 
+static float foc_abs(float value);
+static float foc_sign(float value);
+static float foc_wrap_angle(float angle);
+static void foc_sync_pid_freq(Foc *controller);
+static float foc_pid_error(Pid *controller, float error);
+static FocDq foc_limit_voltage(FocDq voltage, float maxVoltage, bool *saturated);
+static void foc_update_open_loop_angle(Foc *controller);
+static FocPhase foc_correct_phase_current(const Foc *controller);
+static void foc_update_vf(Foc *controller);
+static void foc_update_if(Foc *controller);
+static bool foc_update_svpwm(Foc *controller);
+
+/**
+ * @brief 计算浮点绝对值。
+ * @param[in] value 输入值，单位由调用方决定。
+ * @return 非负绝对值，单位同输入。
+ */
 static float foc_abs(float value)
 {
     if (value < 0.0f) {
@@ -19,6 +37,11 @@ static float foc_abs(float value)
     return value;
 }
 
+/**
+ * @brief 计算浮点符号。
+ * @param[in] value 输入值，单位由调用方决定。
+ * @return 正数返回 1，负数返回 -1，零返回 0；无单位。
+ */
 static float foc_sign(float value)
 {
     if (value > 0.0f) {
@@ -31,6 +54,11 @@ static float foc_sign(float value)
     return 0.0f;
 }
 
+/**
+ * @brief 将电角度包装到 [0, 2*pi) 区间。
+ * @param[in] angle 输入角度，单位 rad。
+ * @return 包装后的角度，单位 rad。
+ */
 static float foc_wrap_angle(float angle)
 {
     while (angle >= FOC_TWO_PI) {
@@ -43,6 +71,10 @@ static float foc_wrap_angle(float angle)
     return angle;
 }
 
+/**
+ * @brief 将 FOC 控制频率同步到四个 PID 控制器。
+ * @param[in,out] controller FOC 控制器对象；调用方保证非空。
+ */
 static void foc_sync_pid_freq(Foc *controller)
 {
     controller->pid_pos.config.controlFreq = controller->control_freq;
@@ -51,6 +83,12 @@ static void foc_sync_pid_freq(Foc *controller)
     controller->pid_iq.config.controlFreq = controller->control_freq;
 }
 
+/**
+ * @brief 用 error-only 方式调用通用 PID 控制器。
+ * @param[in,out] controller PID 控制器对象；为空时输出 0。
+ * @param[in] error 控制误差，单位由具体环路决定。
+ * @return PID 输出，单位由具体环路决定。
+ */
 static float foc_pid_error(Pid *controller, float error)
 {
     if (controller == 0) {
@@ -64,6 +102,13 @@ static float foc_pid_error(Pid *controller, float error)
     return pid(controller);
 }
 
+/**
+ * @brief 对 dq 电压矢量做幅值限制。
+ * @param[in] voltage 输入 dq 电压，单位 V。
+ * @param[in] maxVoltage 最大电压幅值，单位 V；小于等于 0 表示不限制。
+ * @param[out] saturated 发生限幅时写 true；允许为空。
+ * @return 限幅后的 dq 电压，单位 V。
+ */
 static FocDq foc_limit_voltage(FocDq voltage, float maxVoltage, bool *saturated)
 {
     FocDq result = voltage;
@@ -87,6 +132,10 @@ static FocDq foc_limit_voltage(FocDq voltage, float maxVoltage, bool *saturated)
     return result;
 }
 
+/**
+ * @brief 按开环频率积分更新电角度和电角速度。
+ * @param[in,out] controller FOC 控制器对象；调用方保证非空且 control_freq 大于 0。
+ */
 static void foc_update_open_loop_angle(Foc *controller)
 {
     const float angleStep = controller->dir * FOC_TWO_PI * controller->open_loop_freq_hz / controller->control_freq;
@@ -95,6 +144,11 @@ static void foc_update_open_loop_angle(Foc *controller)
     controller->omega_e = controller->dir * FOC_TWO_PI * controller->open_loop_freq_hz;
 }
 
+/**
+ * @brief 扣除三相电流 offset。
+ * @param[in] controller FOC 控制器对象；调用方保证非空。
+ * @return offset 校正后的三相电流，单位 A。
+ */
 static FocPhase foc_correct_phase_current(const Foc *controller)
 {
     FocPhase result;
@@ -106,6 +160,10 @@ static FocPhase foc_correct_phase_current(const Foc *controller)
     return result;
 }
 
+/**
+ * @brief 更新 VF 模式下的 dq 输出电压。
+ * @param[in,out] controller FOC 控制器对象；调用方保证非空。
+ */
 static void foc_update_vf(Foc *controller)
 {
     float vfVoltage = 0.0f;
@@ -123,6 +181,10 @@ static void foc_update_vf(Foc *controller)
     }
 }
 
+/**
+ * @brief 更新 IF 模式下的位置、速度和电流环。
+ * @param[in,out] controller FOC 控制器对象；调用方保证非空。
+ */
 static void foc_update_if(Foc *controller)
 {
     bool saturated = false;
@@ -154,6 +216,11 @@ static void foc_update_if(Foc *controller)
     controller->saturated = controller->saturated || saturated;
 }
 
+/**
+ * @brief 将 alpha-beta 输出电压转换为三相 SVPWM duty。
+ * @param[in,out] controller FOC 控制器对象；调用方保证非空且 vbus 大于 0。
+ * @return SVPWM 更新成功返回 true；初始化或计算失败返回 false。
+ */
 static bool foc_update_svpwm(Foc *controller)
 {
     FocSvpwm svpwm;
@@ -179,6 +246,11 @@ static bool foc_update_svpwm(Foc *controller)
     return true;
 }
 
+/**
+ * @brief 初始化 v1.0-flat FOC 控制器对象。
+ * @param[out] controller FOC 控制器对象；不能为空。
+ * @return 初始化成功返回 true；controller 为空返回 false。
+ */
 bool foc_init(Foc *controller)
 {
     if (controller == 0) {
@@ -204,6 +276,11 @@ bool foc_init(Foc *controller)
     return true;
 }
 
+/**
+ * @brief 清除三相电流 offset 估计值。
+ * @param[in,out] controller FOC 控制器对象；不能为空。
+ * @return 清除成功返回 true；controller 为空返回 false。
+ */
 bool foc_current_offset_clear(Foc *controller)
 {
     if (controller == 0) {
@@ -219,6 +296,12 @@ bool foc_current_offset_clear(Foc *controller)
     return true;
 }
 
+/**
+ * @brief 将一组三相电流样本累加到 offset 递推平均值。
+ * @param[in,out] controller FOC 控制器对象；不能为空。
+ * @param[in] sample 三相电流样本，单位 A。
+ * @return 累加成功返回 true；controller 为空返回 false。
+ */
 bool foc_current_offset_accumulate(Foc *controller, FocPhase sample)
 {
     float sampleCount;
@@ -240,6 +323,12 @@ bool foc_current_offset_accumulate(Foc *controller, FocPhase sample)
     return true;
 }
 
+/**
+ * @brief 直接设置三相电流 offset。
+ * @param[in,out] controller FOC 控制器对象；不能为空。
+ * @param[in] offset 三相电流 offset，单位 A。
+ * @return 设置成功返回 true；controller 为空返回 false。
+ */
 bool foc_current_offset_set(Foc *controller, FocPhase offset)
 {
     if (controller == 0) {
@@ -255,26 +344,12 @@ bool foc_current_offset_set(Foc *controller, FocPhase offset)
     return true;
 }
 
-bool foc_set_legacy_control_mode(Foc *controller, FocControlMode mode)
-{
-    if (controller == 0) {
-        return false;
-    }
-
-    switch (mode) {
-    case FOC_CONTROL_MODE_OPEN_VOLTAGE:
-        controller->mode = FOC_MODE_VF;
-        return true;
-    case FOC_CONTROL_MODE_CLOSED_CURRENT:
-    case FOC_CONTROL_MODE_MOTION_CURRENT:
-        controller->mode = FOC_MODE_IF;
-        return true;
-    default:
-        return false;
-    }
-}
-
-bool foc_run(Foc *controller)
+/**
+ * @brief 执行一次 v1.0-flat FOC 控制循环。
+ * @param[in,out] controller FOC 控制器对象；不能为空。
+ * @return duty 输出有效返回 true；输入非法、模式非法或 SVPWM 更新失败返回 false。
+ */
+bool foc_loop(Foc *controller)
 {
     FocPhase correctedCurrent;
     FocAb currentAb;
@@ -337,9 +412,4 @@ bool foc_run(Foc *controller)
 
     controller->valid = true;
     return true;
-}
-
-bool foc(Foc *controller)
-{
-    return foc_run(controller);
 }

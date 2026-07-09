@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "description": "Repository-native C comment templates for AiCoding C99 embedded style.",
+  "templates": [
+    {
+      "id": "c-file-header-professional",
+      "title": "C File Header (Professional)",
+      "description": "工程级 C 文件头注释模板。",
+      "language": "c",
+      "kind": "file-header",
+      "body": [
+        "/**",
+        " * @file      {{file}}",
+        " * @brief     {{brief}}",
+        " *",
+        " * @details",
+        " * {{details}}",
+        " *",
+        " * @author    {{author}}",
+        " * @date      {{date}}",
+        " * @version   {{version}}",
+        " *",
+        " * @copyright",
+        " * Copyright (c) {{year}} {{company}}",
+        " *",
+        " * @note",
+        " * {{note}}",
+        " */"
+      ],
+      "variables": {
+        "file": { "description": "当前 C/H 文件名。", "default": "" },
+        "brief": { "description": "文件简要说明。", "default": "文件简要说明", "required": true },
+        "details": { "description": "文件详细功能、设计背景和使用注意事项。", "default": "本文件的详细功能描述、设计背景、使用说明等" },
+        "author": { "description": "作者。", "default": "HU JIAXUAN" },
+        "date": { "description": "日期，建议格式 YYYY-MM-DD。", "default": "{{current_date}}" },
+        "version": { "description": "文件或模块版本号。", "default": "1.0.0" },
+        "year": { "description": "版权年份。", "default": "{{current_year}}" },
+        "company": { "description": "版权归属单位。", "default": "YourCompany" },
+        "note": { "description": "MISRA-C、嵌入式约束或调用注意事项。", "default": "This file follows MISRA-C / Embedded C coding conventions." }
+      }
+    },
+    {
+      "id": "c-file-header-cn",
+      "title": "C File Header (CN)",
+      "description": "中文 C 文件头注释模板。",
+      "language": "c",
+      "kind": "file-header",
+      "body": [
+        "/**",
+        " * @file      {{file}}",
+        " * @brief     {{brief}}",
+        " *",
+        " * @details",
+        " * {{details}}",
+        " *",
+        " * @author    {{author}}",
+        " * @date      {{date}}",
+        " * @version   {{version}}",
+        " *",
+        " * @copyright",
+        " * Copyright (c) {{year}} {{company}}",
+        " */"
+      ],
+      "variables": {
+        "file": { "description": "当前 C/H 文件名。", "default": "" },
+        "brief": { "description": "文件简要说明。", "default": "文件简要说明", "required": true },
+        "details": { "description": "文件详细功能、设计背景和使用说明。", "default": "本文件的详细功能描述、设计背景、使用说明等" },
+        "author": { "description": "作者。", "default": "HU JIAXUAN" },
+        "date": { "description": "日期，建议格式 YYYY-MM-DD。", "default": "{{current_date}}" },
+        "version": { "description": "文件或模块版本号。", "default": "1.0.0" },
+        "year": { "description": "版权年份。", "default": "{{current_year}}" },
+        "company": { "description": "版权归属单位。", "default": "YourCompany" }
+      }
+    },
+    {
+      "id": "c-function-header-full",
+      "title": "C Function Header (Full)",
+      "description": "带输入、输出、返回值和注意事项的完整函数注释模板。",
+      "language": "c",
+      "kind": "function-header",
+      "body": [
+        "/**",
+        " * @brief {{brief}}",
+        " *",
+        " * @details",
+        " * {{details}}",
+        " *",
+        " * @param[in]  {{param_in}}   {{param_in_desc}}",
+        " * @param[out] {{param_out}}  {{param_out_desc}}",
+        " *",
+        " * @return {{return_type}}",
+        " * @retval {{retval_success}} 成功",
+        " * @retval {{retval_error}}   失败 / 参数错误",
+        " *",
+        " * @note",
+        " * {{note}}",
+        " */"
+      ],
+      "variables": {
+        "brief": { "description": "函数功能简述。", "default": "函数功能简述", "required": true },
+        "details": { "description": "函数行为、算法和边界条件说明。", "default": "对函数行为、算法、边界条件的详细说明" },
+        "param_in": { "description": "输入参数名。", "default": "param_in" },
+        "param_in_desc": { "description": "输入参数说明，包含单位或取值范围。", "default": "输入参数说明" },
+        "param_out": { "description": "输出参数名。", "default": "param_out" },
+        "param_out_desc": { "description": "输出参数说明，包含单位或取值范围。", "default": "输出参数说明" },
+        "return_type": { "description": "返回类型或返回值含义。", "default": "int32_t" },
+        "retval_success": { "description": "成功返回值。", "default": "0" },
+        "retval_error": { "description": "失败返回值。", "default": "-1" },
+        "note": { "description": "中断上下文、线程安全、实时性等调用约束。", "default": "是否可在中断中调用、是否线程安全等" }
+      }
+    },
+    {
+      "id": "c-function-header-void",
+      "title": "C Function Header (Void)",
+      "description": "void 返回值函数注释模板。",
+      "language": "c",
+      "kind": "function-header",
+      "body": [
+        "/**",
+        " * @brief {{brief}}",
+        " *",
+        " * @details",
+        " * {{details}}",
+        " *",
+        " * @param[in] {{param}} {{param_desc}}",
+        " *",
+        " * @note",
+        " * {{note}}",
+        " */"
+      ],
+      "variables": {
+        "brief": { "description": "函数功能简述。", "default": "函数功能简述", "required": true },
+        "details": { "description": "函数详细行为说明。", "default": "函数的详细行为说明" },
+        "param": { "description": "输入参数名。", "default": "param" },
+        "param_desc": { "description": "输入参数说明，包含单位或取值范围。", "default": "参数说明" },
+        "note": { "description": "调用约束或注意事项。", "default": "调用约束或注意事项" }
+      }
+    },
+    {
+      "id": "c-section-divider",
+      "title": "C Section Divider",
+      "description": "工程级代码分块注释模板。",
+      "language": "c",
+      "kind": "section",
+      "body": [
+        "/* ========================================================================== */",
+        "/* {{section_name}}                                                          */",
+        "/* ========================================================================== */"
+      ],
+      "variables": {
+        "section_name": { "description": "代码分块名称，建议使用英文大写短语。", "default": "SECTION NAME", "required": true }
+      }
+    },
+    {
+      "id": "c-struct-brief",
+      "title": "C Struct Brief",
+      "description": "结构体定义及说明模板。",
+      "language": "c",
+      "kind": "struct",
+      "body": [
+        "/**",
+        " * @brief {{brief}}",
+        " *",
+        " * @details",
+        " * {{details}}",
+        " */",
+        "typedef struct",
+        "{",
+        "    {{members}}",
+        "} {{type_name}};"
+      ],
+      "variables": {
+        "brief": { "description": "结构体名称或用途简述。", "default": "结构体名称", "required": true },
+        "details": { "description": "结构体用途、字段含义及使用场景说明。", "default": "结构体用途、字段含义及使用场景说明" },
+        "members": { "description": "结构体成员列表，成员应逐项说明单位和范围。", "default": "/* members */" },
+        "type_name": { "description": "结构体类型名。", "default": "type_name_t" }
+      }
+    },
+    {
+      "id": "c-enum-brief",
+      "title": "C Enum Brief",
+      "description": "枚举类型定义模板。",
+      "language": "c",
+      "kind": "enum",
+      "body": [
+        "/**",
+        " * @brief {{brief}}",
+        " */",
+        "typedef enum",
+        "{",
+        "    {{enum_item_0}} = 0,",
+        "    {{enum_item_1}},",
+        "    {{enum_item_2}}",
+        "} {{type_name}};"
+      ],
+      "variables": {
+        "brief": { "description": "枚举类型说明。", "default": "枚举类型说明", "required": true },
+        "enum_item_0": { "description": "第一个枚举值。", "default": "ENUM_ITEM_0" },
+        "enum_item_1": { "description": "第二个枚举值。", "default": "ENUM_ITEM_1" },
+        "enum_item_2": { "description": "第三个枚举值。", "default": "ENUM_ITEM_2" },
+        "type_name": { "description": "枚举类型名。", "default": "enum_name_t" }
+      }
+    },
+    {
+      "id": "c-common-includes",
+      "title": "C Common Includes",
+      "description": "嵌入式 C 常用标准头文件模板。",
+      "language": "c",
+      "kind": "includes",
+      "body": [
+        "#include <stdint.h>",
+        "#include <stdbool.h>",
+        "#include <stddef.h>"
+      ],
+      "variables": {}
+    }
+  ]
+}

@@ -70,6 +70,7 @@ flowchart TD
 | 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | Fast Path 命令 | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
 | 完整命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| C Style Format Kit / clang-format 17.0.2 | [docs/C_STYLE_FORMAT_KIT.md](docs/C_STYLE_FORMAT_KIT.md); [LLVM 17.0.2](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2) |
 | PowerShell 迁移分类 | [docs/POWERSHELL_MIGRATION.md](docs/POWERSHELL_MIGRATION.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
