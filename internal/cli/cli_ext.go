@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/cstyle"
 	"github.com/JiaxI2/AiCoding/internal/docsync"
 	"github.com/JiaxI2/AiCoding/internal/governance"
 	"github.com/JiaxI2/AiCoding/internal/kit"
@@ -41,8 +42,11 @@ func runDocSync(args []string, start time.Time) (report.Result, error) {
 }
 
 func runSkill(args []string, start time.Time) (report.Result, error) {
+	if len(args) >= 1 && args[0] == cstyle.DefaultSkillID {
+		return runCStyleCommand("skill "+cstyle.DefaultSkillID, cstyle.DefaultSkillID, args[1:], start)
+	}
 	if len(args) < 1 || args[0] != "verify" {
-		return report.Result{}, errors.New("skill requires subcommand: verify")
+		return report.Result{}, errors.New("skill requires subcommand: verify or c99-standard-c")
 	}
 	fs := flag.NewFlagSet("skill verify", flag.ContinueOnError)
 	repoArg := fs.String("repo-root", "", "repository root")

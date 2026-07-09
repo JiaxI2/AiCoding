@@ -62,7 +62,7 @@ The Go CLI is the default control plane for local checks, CI smoke, and release 
 - `governance lint`;
 - `verify hooks`, `verify repo-text`, and `verify release-notes`;
 - `doctor perf`, `doctor pwsh`, and `doctor pwsh-budget`;
-- `cstyle status|templates|fmt|check`;
+- `skill c99-standard-c status|templates|fmt|check` with `cstyle` compatibility aliases;
 - `docsync staged|all|ci|release`;
 - `skill verify --all --profile Smoke|Full|Release`;
 - `lifecycle plan|install|update|uninstall|rollback`;

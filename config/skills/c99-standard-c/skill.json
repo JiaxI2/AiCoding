@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "c99-standard-c",
+  "title": "C99 Standard C Skill",
+  "language": "c",
+  "standard": "c99",
+  "formatter": {
+    "id": "clang-format",
+    "config": "style/clang-format.yaml"
+  },
+  "commentTemplates": "templates/comment-templates.json",
+  "rules": "rules/embedded-c-rules.md",
+  "excludedDirectories": [
+    "vendor",
+    "third_party",
+    "generated",
+    "Drivers",
+    "device",
+    "build",
+    "out",
+    "dist"
+  ]
+}

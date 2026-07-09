@@ -33,6 +33,7 @@
 
 ### Commit Type
 
+- **refactor(c-style)**：将 C/H 格式化、模板和嵌入式 C 规则收敛进 `c99-standard-c` skill 配置，保留 `cstyle` 兼容入口但默认文档和 Taskfile 改走 skill 命令；converge C/H formatting, templates, and embedded C rules into the `c99-standard-c` skill configuration while keeping `cstyle` as a compatibility entry.
 - **refactor(go)**：收敛 Go CLI 默认控制面、DocSync mode 输出、README/docs/Taskfile/CI 口径，并删除 Go 已替代的 Fast Path V1 历史文档和包装脚本；converge Go-native command boundaries, DocSync mode payloads, documentation, Taskfile/CI wording, and remove Go-replaced Fast Path V1 historical wrappers.
 - 本轮已发布到 `v0.4.0`；后续提交继续在本节记录。
 

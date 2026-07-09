@@ -138,6 +138,7 @@ func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
 		`case "release":`,
 		`res, err = runReleaseCommand`,
 		`aicoding release gate`,
+		`aicoding skill c99-standard-c status`,
 	} {
 		if !strings.Contains(source, needle) {
 			t.Fatalf("cli.go is missing %q", needle)
@@ -216,6 +217,54 @@ func TestFreshCloneCommandReportsGoPathErrors(t *testing.T) {
 	if err == nil || res.OK || res.Command != "fresh-clone" {
 		t.Fatalf("expected fresh-clone to report a Go command error, res=%#v err=%v", res, err)
 	}
+}
+
+func TestC99StandardCSkillCommandsRouteToCStyle(t *testing.T) {
+	repo := t.TempDir()
+	writeC99SkillFixture(t, repo)
+
+	res, err := runSkill([]string{"c99-standard-c", "templates", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !res.OK || res.Command != "skill c99-standard-c templates" {
+		t.Fatalf("skill c99-standard-c templates failed: res=%#v err=%v", res, err)
+	}
+
+	legacy, err := runCStyle([]string{"templates", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !legacy.OK || legacy.Command != "cstyle templates" {
+		t.Fatalf("legacy cstyle templates failed: res=%#v err=%v", legacy, err)
+	}
+}
+
+func writeC99SkillFixture(t *testing.T, repo string) {
+	t.Helper()
+	mustWrite(t, filepath.Join(repo, "config", "skills", "c99-standard-c", "skill.json"), `{
+  "schemaVersion": 1,
+  "id": "c99-standard-c",
+  "title": "C99 Standard C Skill",
+  "language": "c",
+  "standard": "c99",
+  "formatter": { "id": "clang-format", "config": "style/clang-format.yaml" },
+  "commentTemplates": "templates/comment-templates.json",
+  "rules": "rules/embedded-c-rules.md",
+  "excludedDirectories": ["vendor", "third_party", "generated", "Drivers", "device", "build", "out", "dist"]
+}
+`)
+	mustWrite(t, filepath.Join(repo, "config", "skills", "c99-standard-c", "style", "clang-format.yaml"), "BasedOnStyle: LLVM\n")
+	mustWrite(t, filepath.Join(repo, "config", "skills", "c99-standard-c", "templates", "comment-templates.json"), `{
+  "schemaVersion": 1,
+  "templates": [
+    {
+      "id": "c-file-header-cn",
+      "title": "C File Header (CN)",
+      "description": "中文 C 文件头注释模板。",
+      "language": "c",
+      "kind": "file-header",
+      "body": ["/**", " * @brief {{brief}}", " */"],
+      "variables": { "author": { "description": "作者。", "default": "HU JIAXUAN" } }
+    }
+  ]
+}
+`)
+	mustWrite(t, filepath.Join(repo, "config", "skills", "c99-standard-c", "rules", "embedded-c-rules.md"), "# rules\n")
 }
 
 func writeGoControlFixture(t *testing.T, repo string) {

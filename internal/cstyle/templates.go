@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 )
 
-const CommentTemplatesPath = "config/cstyle/comment-templates.json"
+const CommentTemplatesPath = "config/skills/c99-standard-c/templates/comment-templates.json"
 
 type TemplateConfig struct {
 	SchemaVersion int               `json:"schemaVersion"`
@@ -50,32 +49,48 @@ type TemplateValidation struct {
 }
 
 func ValidateTemplates(repoRoot string) (TemplateValidation, error) {
+	return ValidateCommentTemplates(repoRoot, DefaultSkillID)
+}
+
+func ValidateCommentTemplates(repoRoot string, skillID string) (TemplateValidation, error) {
 	root, err := resolveRepoRoot(repoRoot)
 	if err != nil {
 		return TemplateValidation{Path: CommentTemplatesPath, Valid: false, Errors: []string{err.Error()}}, err
 	}
 
-	fullPath := filepath.Join(root, filepath.FromSlash(CommentTemplatesPath))
+	cfg, err := LoadSkillConfig(root, skillID)
+	if err != nil {
+		res := TemplateValidation{Path: skillConfigPath(skillID), Valid: false, Errors: []string{err.Error()}}
+		return res, err
+	}
+
+	fullPath, err := ResolveCommentTemplatesPath(root, cfg)
+	if err != nil {
+		res := TemplateValidation{Path: cfg.CommentTemplates, Valid: false, Errors: []string{err.Error()}}
+		return res, err
+	}
+	pathLabel := relativeRepoPath(root, fullPath)
+
 	raw, err := os.ReadFile(fullPath)
 	if err != nil {
-		res := TemplateValidation{Path: CommentTemplatesPath, Valid: false, Errors: []string{err.Error()}}
+		res := TemplateValidation{Path: pathLabel, Valid: false, Errors: []string{err.Error()}}
 		return res, err
 	}
 
-	var cfg TemplateConfig
-	if err := json.Unmarshal(raw, &cfg); err != nil {
-		res := TemplateValidation{Path: CommentTemplatesPath, Valid: false, Errors: []string{err.Error()}}
+	var cfgTemplates TemplateConfig
+	if err := json.Unmarshal(raw, &cfgTemplates); err != nil {
+		res := TemplateValidation{Path: pathLabel, Valid: false, Errors: []string{err.Error()}}
 		return res, err
 	}
 
-	res := TemplateValidation{Path: CommentTemplatesPath}
+	res := TemplateValidation{Path: pathLabel}
 	seen := map[string]int{}
 
-	if len(cfg.Templates) == 0 {
+	if len(cfgTemplates.Templates) == 0 {
 		res.Errors = append(res.Errors, "templates must not be empty")
 	}
 
-	for i, tmpl := range cfg.Templates {
+	for i, tmpl := range cfgTemplates.Templates {
 		idx := i + 1
 		id := strings.TrimSpace(tmpl.ID)
 		kind := strings.TrimSpace(tmpl.Kind)

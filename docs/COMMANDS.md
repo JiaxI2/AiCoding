@@ -2,7 +2,7 @@
 
 This document keeps the command matrix out of the README. Taskfile is the recommended human and agent entrypoint; it routes to the Go CLI and does not own business logic.
 
-C/H formatting commands are documented in [C Style Format Kit](C_STYLE_FORMAT_KIT.md).
+C/H style commands are documented in [C99 Standard C Skill](C99_STANDARD_C_SKILL.md).
 
 ## Default Local Commands
 
@@ -48,10 +48,10 @@ C/H formatting commands are documented in [C Style Format Kit](C_STYLE_FORMAT_KI
 | Full aggregate | `bin\aicoding.exe full --json` |
 | Release aggregate | `bin\aicoding.exe release gate --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
-| C style formatter status | `bin\aicoding.exe cstyle status --json` |
-| C style comment template validation | `bin\aicoding.exe cstyle templates --json` |
-| C style format changed files | `bin\aicoding.exe cstyle fmt --scope changed --json` |
-| C style check changed files | `bin\aicoding.exe cstyle check --scope changed --json` |
+| C99 skill formatter status | `bin\aicoding.exe skill c99-standard-c status --json` |
+| C99 skill comment template validation | `bin\aicoding.exe skill c99-standard-c templates --json` |
+| C99 skill format changed files | `bin\aicoding.exe skill c99-standard-c fmt --scope changed --json` |
+| C99 skill check changed files | `bin\aicoding.exe skill c99-standard-c check --scope changed --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
 | Release notes/overlay verification | `bin\aicoding.exe verify release-notes --json` |
@@ -96,9 +96,9 @@ bin\aicoding.exe docsync ci --json
 | `task skills` | Skill verification | Go |
 | `task rollback` | Roll back last lifecycle state snapshot | Go |
 | `task tag:audit` | Tag namespace audit | Go |
-| `task style:c:status` | C style formatter status | Go |
-| `task fmt:c` | Format changed C/H files | Go |
-| `task fmt-check:c` | Check changed C/H file formatting | Go |
+| `task style:c:status` | C99 skill formatter status | Go |
+| `task fmt:c` | Format changed C/H files through C99 skill | Go |
+| `task fmt-check:c` | Check changed C/H files through C99 skill | Go |
 | `task tag:plan` | Non-destructive tag correction plan | PowerShell compatibility |
 | `task tag:verify` | Release governance overlay compatibility check | PowerShell compatibility |
 

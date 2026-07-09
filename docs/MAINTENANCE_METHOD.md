@@ -88,7 +88,7 @@ go build -o bin/aicoding.exe ./cmd/aicoding
 bin/aicoding.exe status --all --json
 bin/aicoding.exe doctor pwsh --json
 bin/aicoding.exe doctor pwsh-budget --json
-bin/aicoding.exe cstyle status --json
+bin/aicoding.exe skill c99-standard-c status --json
 bin/aicoding.exe docsync ci --json
 bin/aicoding.exe skill verify --all --profile Smoke --json
 bin/aicoding.exe lifecycle plan --action install --all --json

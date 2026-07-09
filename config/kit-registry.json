@@ -50,12 +50,6 @@
       "enabled": true,
       "order": 80,
       "manifest": "config/kits/release-governance-overlay-kit.json"
-    },
-    {
-      "id": "c-style-format-kit",
-      "enabled": true,
-      "order": 90,
-      "manifest": "config/kits/c-style-format-kit.json"
     }
   ]
 }

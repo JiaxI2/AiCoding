@@ -37,13 +37,15 @@ type ToolStatus struct {
 }
 
 type Result struct {
-	Scope       Scope      `json:"scope"`
-	RepoRoot    string     `json:"repoRoot"`
-	Files       []string   `json:"files"`
-	Changed     []string   `json:"changed,omitempty"`
-	Errors      []string   `json:"errors,omitempty"`
-	ClangFormat ToolStatus `json:"clangFormat"`
-	ElapsedMS   int64      `json:"elapsedMs"`
+	SkillID         string     `json:"skillId"`
+	Scope           Scope      `json:"scope"`
+	RepoRoot        string     `json:"repoRoot"`
+	FormatterConfig string     `json:"formatterConfig"`
+	Files           []string   `json:"files"`
+	Changed         []string   `json:"changed,omitempty"`
+	Errors          []string   `json:"errors,omitempty"`
+	ClangFormat     ToolStatus `json:"clangFormat"`
+	ElapsedMS       int64      `json:"elapsedMs"`
 }
 
 var defaultExcludedDirs = map[string]bool{
@@ -72,22 +74,29 @@ func Status() ToolStatus {
 }
 
 func Run(opts Options) (Result, error) {
+	return RunBySkill(DefaultSkillID, opts)
+}
+
+func FormatBySkill(skillID string, opts Options) (Result, error) {
+	opts.Check = false
+	return RunBySkill(skillID, opts)
+}
+
+func CheckBySkill(skillID string, opts Options) (Result, error) {
+	opts.Check = true
+	return RunBySkill(skillID, opts)
+}
+
+func RunBySkill(skillID string, opts Options) (Result, error) {
 	start := time.Now()
 	if opts.Scope == "" {
 		opts.Scope = ScopeChanged
 	}
 
-	status := Status()
+	id := normalizeSkillID(skillID)
 	res := Result{
-		Scope:       opts.Scope,
-		RepoRoot:    opts.RepoRoot,
-		ClangFormat: status,
-	}
-
-	if !status.Found {
-		res.ElapsedMS = time.Since(start).Milliseconds()
-		res.Errors = []string{"clang-format not found on PATH"}
-		return res, errors.New("clang-format not found on PATH")
+		SkillID: id,
+		Scope:   opts.Scope,
 	}
 
 	repoRoot, err := resolveRepoRoot(opts.RepoRoot)
@@ -98,7 +107,36 @@ func Run(opts Options) (Result, error) {
 	}
 	res.RepoRoot = repoRoot
 
-	files, err := CollectFiles(repoRoot, opts.Scope, opts.Paths)
+	cfg, err := LoadSkillConfig(repoRoot, id)
+	if err != nil {
+		res.ElapsedMS = time.Since(start).Milliseconds()
+		res.Errors = []string{err.Error()}
+		return res, err
+	}
+
+	formatterConfig, err := ResolveFormatterConfig(repoRoot, cfg)
+	if err != nil {
+		res.ElapsedMS = time.Since(start).Milliseconds()
+		res.Errors = []string{err.Error()}
+		return res, err
+	}
+	res.FormatterConfig = relativeRepoPath(repoRoot, formatterConfig)
+	if !fileExists(formatterConfig) {
+		err := fmt.Errorf("formatter config not found: %s", res.FormatterConfig)
+		res.ElapsedMS = time.Since(start).Milliseconds()
+		res.Errors = []string{err.Error()}
+		return res, err
+	}
+
+	status := Status()
+	res.ClangFormat = status
+	if !status.Found {
+		res.ElapsedMS = time.Since(start).Milliseconds()
+		res.Errors = []string{"clang-format not found on PATH"}
+		return res, errors.New("clang-format not found on PATH")
+	}
+
+	files, err := CollectFilesWithExclusions(repoRoot, opts.Scope, opts.Paths, cfg.ExcludedDirectories)
 	if err != nil {
 		res.ElapsedMS = time.Since(start).Milliseconds()
 		res.Errors = []string{err.Error()}
@@ -107,7 +145,7 @@ func Run(opts Options) (Result, error) {
 	res.Files = files
 
 	for _, file := range files {
-		changed, runErr := runOne(status.Path, repoRoot, file, opts)
+		changed, runErr := runOne(status.Path, formatterConfig, repoRoot, file, opts)
 		if runErr != nil {
 			res.Errors = append(res.Errors, fmt.Sprintf("%s: %v", file, runErr))
 			continue
@@ -126,12 +164,16 @@ func Run(opts Options) (Result, error) {
 }
 
 func CollectFiles(repoRoot string, scope Scope, explicitPaths []string) ([]string, error) {
+	return CollectFilesWithExclusions(repoRoot, scope, explicitPaths, nil)
+}
+
+func CollectFilesWithExclusions(repoRoot string, scope Scope, explicitPaths []string, excludedDirs []string) ([]string, error) {
 	var raw []string
 	var err error
 
 	switch scope {
 	case ScopeAll:
-		raw, err = allCFiles(repoRoot)
+		raw, err = allCFiles(repoRoot, excludedDirs)
 	case ScopeStaged:
 		raw, err = gitLines(repoRoot, "diff", "--cached", "--name-only", "--diff-filter=ACMRTUXB", "--", "*.c", "*.h")
 	case ScopeChanged:
@@ -145,10 +187,11 @@ func CollectFiles(repoRoot string, scope Scope, explicitPaths []string) ([]strin
 		return nil, err
 	}
 
+	excluded := excludedSet(excludedDirs)
 	seen := map[string]bool{}
 	var out []string
 	for _, item := range raw {
-		rel, ok := normalizeCandidate(repoRoot, item)
+		rel, ok := normalizeCandidate(repoRoot, item, excluded)
 		if !ok {
 			continue
 		}
@@ -180,7 +223,8 @@ func changedCFiles(repoRoot string) ([]string, error) {
 	return append(changed, untracked...), nil
 }
 
-func allCFiles(repoRoot string) ([]string, error) {
+func allCFiles(repoRoot string, excludedDirs []string) ([]string, error) {
+	excluded := excludedSet(excludedDirs)
 	var out []string
 	err := filepath.WalkDir(repoRoot, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -194,13 +238,13 @@ func allCFiles(repoRoot string) ([]string, error) {
 		rel = filepath.ToSlash(rel)
 
 		if d.IsDir() {
-			if rel != "." && isExcluded(rel) {
+			if rel != "." && isExcluded(rel, excluded) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		if isCHeaderOrSource(rel) && !isExcluded(rel) {
+		if isCHeaderOrSource(rel) && !isExcluded(rel, excluded) {
 			out = append(out, rel)
 		}
 		return nil
@@ -208,7 +252,7 @@ func allCFiles(repoRoot string) ([]string, error) {
 	return out, err
 }
 
-func normalizeCandidate(repoRoot string, item string) (string, bool) {
+func normalizeCandidate(repoRoot string, item string, excluded map[string]bool) (string, bool) {
 	item = strings.TrimSpace(item)
 	if item == "" {
 		return "", false
@@ -227,7 +271,7 @@ func normalizeCandidate(repoRoot string, item string) (string, bool) {
 	if rel == "." || strings.HasPrefix(rel, "../") || filepath.IsAbs(rel) {
 		return "", false
 	}
-	if !isCHeaderOrSource(rel) || isExcluded(rel) {
+	if !isCHeaderOrSource(rel) || isExcluded(rel, excluded) {
 		return "", false
 	}
 
@@ -242,21 +286,47 @@ func isCHeaderOrSource(path string) bool {
 	return ext == ".c" || ext == ".h"
 }
 
-func isExcluded(rel string) bool {
+func isExcluded(rel string, excluded map[string]bool) bool {
 	parts := strings.Split(filepath.ToSlash(rel), "/")
 	for _, p := range parts {
-		if defaultExcludedDirs[p] {
+		if excluded[p] {
 			return true
 		}
 	}
 	return false
 }
 
-func runOne(clangPath, repoRoot, rel string, opts Options) (bool, error) {
+func excludedSet(excludedDirs []string) map[string]bool {
+	out := map[string]bool{".git": true}
+	source := excludedDirs
+	if len(source) == 0 {
+		for dir := range defaultExcludedDirs {
+			source = append(source, dir)
+		}
+	}
+	for _, dir := range source {
+		dir = strings.TrimSpace(filepath.ToSlash(dir))
+		if dir == "" {
+			continue
+		}
+		for _, part := range strings.Split(dir, "/") {
+			if part != "" && part != "." {
+				out[part] = true
+			}
+		}
+	}
+	return out
+}
+
+func runOne(clangPath, formatterConfig, repoRoot, rel string, opts Options) (bool, error) {
 	full := filepath.Join(repoRoot, filepath.FromSlash(rel))
+	styleArg := "--style=file"
+	if strings.TrimSpace(formatterConfig) != "" {
+		styleArg = "--style=file:" + formatterConfig
+	}
 
 	if opts.Check {
-		cmd := exec.Command(clangPath, "--dry-run", "--Werror", "--style=file", full)
+		cmd := exec.Command(clangPath, "--dry-run", "--Werror", styleArg, full)
 		cmd.Dir = repoRoot
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -274,7 +344,7 @@ func runOne(clangPath, repoRoot, rel string, opts Options) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		cmd := exec.Command(clangPath, "--style=file", full)
+		cmd := exec.Command(clangPath, styleArg, full)
 		cmd.Dir = repoRoot
 		after, err := cmd.Output()
 		if err != nil {
@@ -286,7 +356,7 @@ func runOne(clangPath, repoRoot, rel string, opts Options) (bool, error) {
 		return !bytes.Equal(before, after), nil
 	}
 
-	cmd := exec.Command(clangPath, "-i", "--style=file", full)
+	cmd := exec.Command(clangPath, "-i", styleArg, full)
 	cmd.Dir = repoRoot
 	out, err := cmd.CombinedOutput()
 	if err != nil {

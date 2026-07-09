@@ -108,6 +108,10 @@ Usage:
   aicoding workflow smart-verify [--repo-root PATH] [--json]
   aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]
   aicoding skill verify --all --profile Smoke|Full|Release [--repo-root PATH] [--json]
+  aicoding skill c99-standard-c status [--repo-root PATH] [--json]
+  aicoding skill c99-standard-c templates [--repo-root PATH] [--json]
+  aicoding skill c99-standard-c fmt --scope changed|staged|all|paths [--path PATH ...] [--preview] [--repo-root PATH] [--json]
+  aicoding skill c99-standard-c check --scope changed|staged|all|paths [--path PATH ...] [--repo-root PATH] [--json]
   aicoding lifecycle plan --action install|update|uninstall --all [--repo-root PATH] [--json]
   aicoding lifecycle install|update|uninstall --all [--repo-root PATH] [--json]
   aicoding lifecycle rollback --last [--repo-root PATH] [--json]
@@ -121,6 +125,7 @@ Usage:
   aicoding release gate [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
   aicoding cstyle status [--repo-root PATH] [--json]
+  aicoding cstyle templates [--repo-root PATH] [--json]
   aicoding cstyle fmt --scope changed|staged|all|paths [--path PATH ...] [--preview] [--repo-root PATH] [--json]
   aicoding cstyle check --scope changed|staged|all|paths [--path PATH ...] [--repo-root PATH] [--json]
   aicoding kit list [--repo-root PATH] [--json]
@@ -164,12 +169,16 @@ func (m *multiFlag) Set(value string) error {
 }
 
 func runCStyle(args []string, start time.Time) (report.Result, error) {
+	return runCStyleCommand("cstyle", cstyle.DefaultSkillID, args, start)
+}
+
+func runCStyleCommand(commandPrefix string, skillID string, args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("cstyle requires subcommand: status, templates, fmt, or check")
+		return report.Result{}, fmt.Errorf("%s requires subcommand: status, templates, fmt, or check", commandPrefix)
 	}
 
 	sub := args[0]
-	fs := flag.NewFlagSet("cstyle "+sub, flag.ContinueOnError)
+	fs := flag.NewFlagSet(commandPrefix+" "+sub, flag.ContinueOnError)
 	repoArg := fs.String("repo-root", "", "repository root")
 	scopeArg := fs.String("scope", "changed", "changed, staged, all, or paths")
 	previewArg := fs.Bool("preview", false, "preview formatting changes without writing files")
@@ -181,21 +190,27 @@ func runCStyle(args []string, start time.Time) (report.Result, error) {
 
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
-		return report.Fail("cstyle "+sub, start, "cannot resolve repo root", nil, err.Error()), err
+		return report.Fail(commandPrefix+" "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
 
 	switch sub {
 	case "status":
-		status := cstyle.Status()
+		status, statusErr := cstyle.SkillStatus(repo, skillID)
 		errs := []string{}
-		if !status.Found {
+		if statusErr != nil {
+			errs = append(errs, statusErr.Error())
+		}
+		if !status.ClangFormat.Found {
 			errs = append(errs, "clang-format not found on PATH")
+		}
+		if status.SkillID != "" && !status.FormatterConfigExists {
+			errs = append(errs, "formatter config not found: "+status.FormatterConfig)
 		}
 		return report.Result{
 			SchemaVersion: 1,
-			Command:       "cstyle status",
-			OK:            status.Found,
-			Message:       "C style formatter status",
+			Command:       commandPrefix + " status",
+			OK:            len(errs) == 0,
+			Message:       "C99 Standard C skill formatter status",
 			RepoRoot:      repo,
 			Data:          status,
 			Errors:        errs,
@@ -203,12 +218,12 @@ func runCStyle(args []string, start time.Time) (report.Result, error) {
 		}, report.BoolErr(errs)
 
 	case "templates":
-		data, validationErr := cstyle.ValidateTemplates(repo)
+		data, validationErr := cstyle.ValidateCommentTemplates(repo, skillID)
 		return report.Result{
 			SchemaVersion: 1,
-			Command:       "cstyle templates",
+			Command:       commandPrefix + " templates",
 			OK:            validationErr == nil,
-			Message:       "C style comment templates validation",
+			Message:       "C99 Standard C skill comment templates validation",
 			RepoRoot:      repo,
 			Data:          data,
 			Errors:        data.Errors,
@@ -216,20 +231,20 @@ func runCStyle(args []string, start time.Time) (report.Result, error) {
 		}, validationErr
 
 	case "fmt", "check":
-		data, runErr := cstyle.Run(cstyle.Options{
+		data, runErr := cstyle.RunBySkill(skillID, cstyle.Options{
 			RepoRoot: repo,
 			Scope:    cstyle.Scope(*scopeArg),
 			Paths:    pathArgs,
 			Check:    sub == "check",
 			Preview:  *previewArg,
 		})
-		message := "C style format completed"
+		message := "C99 Standard C skill format completed"
 		if sub == "check" {
-			message = "C style check completed"
+			message = "C99 Standard C skill check completed"
 		}
 		return report.Result{
 			SchemaVersion: 1,
-			Command:       "cstyle " + sub,
+			Command:       commandPrefix + " " + sub,
 			OK:            runErr == nil,
 			Message:       message,
 			RepoRoot:      repo,
@@ -240,7 +255,7 @@ func runCStyle(args []string, start time.Time) (report.Result, error) {
 		}, runErr
 
 	default:
-		return report.Result{}, fmt.Errorf("unsupported cstyle subcommand: %s", sub)
+		return report.Result{}, fmt.Errorf("unsupported %s subcommand: %s", commandPrefix, sub)
 	}
 }
 
