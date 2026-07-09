@@ -5,6 +5,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
+[![clang-format](https://img.shields.io/badge/clang--format-17.0.2-5C2D91?logo=llvm&logoColor=white)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
 [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
 
 AiCoding 是本地 AI coding 工作流的平台集成、安装、治理和 CodingKit 资产仓库。它负责 kit 注册表、hook、验证入口、发布治理和 Go CLI 控制面，不拥有嵌入式 skill 源码。
@@ -52,19 +53,16 @@ bin\aicoding.exe release gate --json
 | CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go 测试和默认聚合门禁 |
 | Full | `task full` | Go Full 聚合验证 |
 | Release | `task release` | Go Release gate |
-| C99 C/H 风格 | `task fmt-check:c` | 路由到 `skill c99-standard-c` |
 
 ## 架构图
 
-```mermaid
-flowchart TD
-  User["User / Agent"] --> Taskfile["Taskfile routing"]
-  Taskfile --> GoCLI["Go CLI bin/aicoding.exe"]
-  GoCLI --> Runner["internal/runner concurrent plans"]
-  Runner --> Gates["smoke / ci / full / release"]
-  GoCLI --> Registry["config/kit-registry.json + config/kits/*.json"]
-  Registry --> CodingKit["CodingKit assets and skill submodule"]
-  Taskfile -. specialty .-> Scripts["PowerShell/Python specialty tools"]
+```text
+User / Agent
+  -> Taskfile routing
+     -> Go CLI (bin/aicoding.exe)
+        -> runner plans -> smoke / ci / full / release
+        -> kit registry -> CodingKit assets + skill submodule
+     -> specialty scripts -> quality / safety / Plan Mode / toolchain
 ```
 
 ## 文档索引
@@ -74,7 +72,6 @@ flowchart TD
 | 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | 命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
 | Fast Path | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| C99 Standard C Skill | [docs/C99_STANDARD_C_SKILL.md](docs/C99_STANDARD_C_SKILL.md) |
 | PowerShell 当前边界 | [docs/POWERSHELL_BOUNDARY.md](docs/POWERSHELL_BOUNDARY.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |

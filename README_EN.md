@@ -5,6 +5,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
+[![clang-format](https://img.shields.io/badge/clang--format-17.0.2-5C2D91?logo=llvm&logoColor=white)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
 [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
 
 AiCoding is the platform integration, installation, governance, and CodingKit asset repository for the local AI coding workflow. It owns kit registration, hooks, verification entrypoints, release governance, and the Go CLI control plane. It does not own embedded skill source code.
@@ -52,19 +53,16 @@ bin\aicoding.exe release gate --json
 | CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go tests and default aggregate gates |
 | Full | `task full` | Go Full aggregate validation |
 | Release | `task release` | Go Release gate |
-| C99 C/H style | `task fmt-check:c` | Routes to `skill c99-standard-c` |
 
 ## Architecture Diagram
 
-```mermaid
-flowchart TD
-  User["User / Agent"] --> Taskfile["Taskfile routing"]
-  Taskfile --> GoCLI["Go CLI bin/aicoding.exe"]
-  GoCLI --> Runner["internal/runner concurrent plans"]
-  Runner --> Gates["smoke / ci / full / release"]
-  GoCLI --> Registry["config/kit-registry.json + config/kits/*.json"]
-  Registry --> CodingKit["CodingKit assets and skill submodule"]
-  Taskfile -. specialty .-> Scripts["PowerShell/Python specialty tools"]
+```text
+User / Agent
+  -> Taskfile routing
+     -> Go CLI (bin/aicoding.exe)
+        -> runner plans -> smoke / ci / full / release
+        -> kit registry -> CodingKit assets + skill submodule
+     -> specialty scripts -> quality / safety / Plan Mode / toolchain
 ```
 
 ## Documentation Index
@@ -74,7 +72,6 @@ flowchart TD
 | Architecture overview | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | Command matrix | [docs/COMMANDS.md](docs/COMMANDS.md) |
 | Fast Path | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| C99 Standard C Skill | [docs/C99_STANDARD_C_SKILL.md](docs/C99_STANDARD_C_SKILL.md) |
 | PowerShell boundary | [docs/POWERSHELL_BOUNDARY.md](docs/POWERSHELL_BOUNDARY.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |

@@ -171,7 +171,14 @@ Source skills may have generated package copies in the repository, but a Skill n
 
 AiCoding workflow skills for SDD, MVP, BDD, architecture-first scaffolding, TDD fallback, and documentation synchronization are bundled through the AiCoding plugin only. Superpowers is optional acceleration, not a required dependency.
 
-Documentation synchronization is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/docs-sync.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit no-doc-change review note with a meaningful reason; see `docs/DOC_SYNC_PLUS_SPEC.md` for the marker format.
+Documentation synchronization is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/aicoding-ci.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit no-doc-change review note with a meaningful reason; see `docs/DOC_SYNC_PLUS_SPEC.md` for the marker format.
+
+## README 和工具链可见性策略 / README And Toolchain Visibility Policy
+
+- `README.md`、`README_CN.md`、`README_EN.md` 是架构入口，只描述平台、kit、plugin、skill 母级边界，不列具体 leaf skill 命令。
+- 具体 skill 命令、专项格式化命令和 Taskfile 子命令放在 `docs/COMMANDS.md` 或对应专项文档中。
+- 新增稳定工具链、运行体系或默认验证体系时，必须同步三份 README 顶部 badge，并链接到权威 URL。
+- README 架构图优先使用短文本图；如果使用 Mermaid，节点标签必须短，不写长路径、不写具体 leaf skill 名，避免渲染裁剪。
 
 ## 语言策略 / Language Policy
 
