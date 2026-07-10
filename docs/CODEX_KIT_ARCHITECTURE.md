@@ -24,8 +24,8 @@ Plugin runtime state is managed through supported install/update/verify flows. D
 ```powershell
 bin\aicoding.exe smoke --json
 bin\aicoding.exe ci --profile Smoke --json
-bin\aicoding.exe full --json
-bin\aicoding.exe release gate --json
+bin\aicoding.exe test full --json
+bin\aicoding.exe test release --json
 ```
 
 DocSync is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/aicoding-ci.yml`.

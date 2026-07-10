@@ -48,6 +48,8 @@ func Main() {
 		res, err = runSmoke(os.Args[2:], start)
 	case "ci":
 		res, err = runCI(os.Args[2:], start)
+	case "test":
+		res, err = runTest(os.Args[2:], start)
 
 	case "docsync":
 		res, err = runDocSync(os.Args[2:], start)
@@ -111,6 +113,8 @@ Usage:
 
   aicoding smoke [--repo-root PATH] [--json]
   aicoding ci --profile Smoke|Full|Release [--repo-root PATH] [--json]
+  aicoding test full|release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]
+  aicoding test latest [--repo-root PATH] [--json]
   aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]
   aicoding skill verify --all --profile Smoke|Full|Release [--repo-root PATH] [--json]
   aicoding skill c99-standard-c status [--repo-root PATH] [--json]
@@ -204,28 +208,47 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 		if status.SkillID != "" && !status.FormatterConfigExists {
 			errs = append(errs, "formatter config not found: "+status.FormatterConfig)
 		}
+		elapsed := report.Elapsed(start)
+		data := standardReport(commandPrefix+" status", skillID, elapsed, map[string]interface{}{
+			"skill_id":                status.SkillID,
+			"language":                status.Language,
+			"standard":                status.Standard,
+			"formatter":               status.Formatter,
+			"formatter_config_exists": status.FormatterConfigExists,
+			"templates_exists":        status.CommentTemplatesExists,
+			"rules_exists":            status.RulesExists,
+			"errors":                  len(errs),
+		}, nil, errs, status)
 		return report.Result{
 			SchemaVersion: 1,
 			Command:       commandPrefix + " status",
 			OK:            len(errs) == 0,
 			Message:       "C99 Standard C skill formatter status",
 			RepoRoot:      repo,
-			Data:          status,
+			Data:          data,
 			Errors:        errs,
-			ElapsedMS:     report.Elapsed(start),
+			ElapsedMS:     elapsed,
 		}, report.BoolErr(errs)
 
 	case "templates":
 		data, validationErr := cstyle.ValidateCommentTemplates(repo, skillID)
+		elapsed := report.Elapsed(start)
+		errs := append([]string{}, data.Errors...)
+		standard := standardReport(commandPrefix+" templates", skillID, elapsed, map[string]interface{}{
+			"path":      data.Path,
+			"valid":     data.Valid,
+			"templates": data.Count,
+			"errors":    len(errs),
+		}, nil, errs, data)
 		return report.Result{
 			SchemaVersion: 1,
 			Command:       commandPrefix + " templates",
 			OK:            validationErr == nil,
 			Message:       "C99 Standard C skill comment templates validation",
 			RepoRoot:      repo,
-			Data:          data,
+			Data:          standard,
 			Errors:        data.Errors,
-			ElapsedMS:     report.Elapsed(start),
+			ElapsedMS:     elapsed,
 		}, validationErr
 
 	case "fmt", "check":
@@ -240,6 +263,14 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 		if sub == "check" {
 			message = "C99 Standard C skill check completed"
 		}
+		elapsed := report.Elapsed(start)
+		standard := standardReport(commandPrefix+" "+sub, skillID, elapsed, map[string]interface{}{
+			"skill_id": data.SkillID,
+			"scope":    string(data.Scope),
+			"files":    len(data.Files),
+			"changed":  len(data.Changed),
+			"errors":   len(data.Errors),
+		}, nil, data.Errors, data)
 		return report.Result{
 			SchemaVersion: 1,
 			Command:       commandPrefix + " " + sub,
@@ -247,9 +278,9 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 			Message:       message,
 			RepoRoot:      repo,
 			Checked:       data.Files,
-			Data:          data,
+			Data:          standard,
 			Errors:        data.Errors,
-			ElapsedMS:     report.Elapsed(start),
+			ElapsedMS:     elapsed,
 		}, runErr
 
 	default:

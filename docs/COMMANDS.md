@@ -1,6 +1,6 @@
 # Commands
 
-Taskfile 是人机短路由；Go CLI 是默认控制面；业务逻辑位于 Go 的 `internal/*` 包中。PowerShell/Python 只作为专项工具保留，不承载默认 Smoke、CI、Full 或 Release gate。
+Taskfile 是人机短路由；Go CLI 是默认控制面；业务逻辑位于 Go 的 `internal/*` 包中。PowerShell/Python 只作为专项工具保留，不承载默认 Smoke、CI、Full 或 Release profile。
 
 C/H 风格命令见 [C99 Standard C Skill](C99_STANDARD_C_SKILL.md)。
 
@@ -11,10 +11,9 @@ C/H 风格命令见 [C99 Standard C Skill](C99_STANDARD_C_SKILL.md)。
 | Bootstrap | `go run ./cmd/aicoding bootstrap --json` | Go |
 | 本地 Smoke | `task smoke` | Go |
 | CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go |
-| Full | `task full` | Go |
-| Release | `task release` | Go |
-| C99 C/H 检查 | `task fmt-check:c` | Go |
-| C99 C/H staged 检查 | `task fmt-check-staged:c` | Go |
+| Full profile | `task full` | Go |
+| Release profile | `task release` | Go |
+| 最近测试报告 | `bin\aicoding.exe test latest` | Go |
 
 ## Go CLI
 
@@ -23,6 +22,9 @@ C/H 风格命令见 [C99 Standard C Skill](C99_STANDARD_C_SKILL.md)。
 | Bootstrap | `bin\aicoding.exe bootstrap --json` |
 | Smoke 聚合 | `bin\aicoding.exe smoke --json` |
 | CI 聚合 | `bin\aicoding.exe ci --profile Smoke --json` |
+| 官方 Full 测试 | `bin\aicoding.exe test full --json` |
+| 官方 Release 测试 | `bin\aicoding.exe test release --json` |
+| 最近测试报告 | `bin\aicoding.exe test latest` |
 | DocSync staged/all/ci/release | `bin\aicoding.exe docsync staged|all|ci|release --json` |
 | Skill verify | `bin\aicoding.exe skill verify --all --profile Smoke|Full|Release --json` |
 | C99 skill status | `bin\aicoding.exe skill c99-standard-c status --json` |
@@ -50,8 +52,9 @@ C/H 风格命令见 [C99 Standard C Skill](C99_STANDARD_C_SKILL.md)。
 | `task setup` | `go run ./cmd/aicoding bootstrap --json` |
 | `task smoke` | `bin/aicoding.exe smoke --json` |
 | `task ci` | `bin/aicoding.exe ci --profile Smoke --json` |
-| `task full` | `bin/aicoding.exe full --json` |
-| `task release` | `bin/aicoding.exe release gate --json` |
+| `task full` | `bin/aicoding.exe test full --json` |
+| `task release` | `bin/aicoding.exe test release --json` |
+| `task test:latest` | `bin/aicoding.exe test latest` |
 | `task style:c:status` | `bin/aicoding.exe skill c99-standard-c status --json` |
 | `task style:c:templates` | `bin/aicoding.exe skill c99-standard-c templates --json` |
 | `task fmt:c` | `bin/aicoding.exe skill c99-standard-c fmt --scope changed --json` |
@@ -70,7 +73,7 @@ bin\aicoding.exe ci --profile Smoke --json
 手动或定时 release job 运行：
 
 ```powershell
-bin\aicoding.exe release gate --json
+bin\aicoding.exe test release --json
 ```
 
 ## PowerShell 专项入口

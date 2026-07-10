@@ -27,16 +27,22 @@ tasks:
       - bin/aicoding.exe ci --profile Smoke --json
 
   full:
-    desc: Run Go-native Full aggregate validation
+    desc: Run official AiCoding Full test profile
     deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe full --json
+      - bin/aicoding.exe test full --json
 
   release:
-    desc: Run Go-native Release gate
+    desc: Run official AiCoding Release test profile
     deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe release gate --json
+      - bin/aicoding.exe test release --json
+
+  test:latest:
+    desc: Show latest official AiCoding test report
+    deps: [ensure-bin]
+    cmds:
+      - bin/aicoding.exe test latest
 
   style:c:status:
     desc: Check C99 Standard C skill formatter status

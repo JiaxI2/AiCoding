@@ -92,8 +92,8 @@ bin/aicoding.exe skill c99-standard-c status --json
 bin/aicoding.exe docsync ci --json
 bin/aicoding.exe skill verify --all --profile Smoke --json
 bin/aicoding.exe lifecycle plan --action install --all --json
-bin/aicoding.exe full --json
-bin/aicoding.exe release gate --json
+bin/aicoding.exe test full --json
+bin/aicoding.exe test release --json
 git diff --check
 ```
 

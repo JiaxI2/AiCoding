@@ -21,7 +21,7 @@ AiCoding 是本地 AI coding 工作流的平台集成、安装、治理和 Codin
 
 ## 当前架构
 
-Go CLI 是默认控制面，负责 bootstrap、Smoke、CI、hook、status、repo text、release notes、tag/release 结构检查、governance lint、DocSync、skill verify、lifecycle、export、fresh-clone、Full 和 Release gate。
+Go CLI 是默认控制面，负责 bootstrap、Smoke、CI、官方测试 profile、hook、status、repo text、release notes、tag/release 结构检查、governance lint、DocSync、skill verify、lifecycle、export 和 fresh-clone。
 
 Taskfile 只做短路由，业务逻辑在 Go 的 `internal/*` 包中。PowerShell/Python 只保留专项质量、安全、计划模式（Plan Mode）、外部 skill、tag planning / overlay compatibility 和硬件/工具链专项流程。
 
@@ -40,8 +40,8 @@ go run ./cmd/aicoding bootstrap --json
 bin\aicoding.exe smoke --json
 bin\aicoding.exe ci --profile Smoke --json
 task smoke
-bin\aicoding.exe full --json
-bin\aicoding.exe release gate --json
+bin\aicoding.exe test full --json
+bin\aicoding.exe test release --json
 ```
 
 ## 常用入口
@@ -51,8 +51,9 @@ bin\aicoding.exe release gate --json
 | 初始化 | `go run ./cmd/aicoding bootstrap --json` | 构建 `bin/aicoding.exe` |
 | 本地 Smoke | `task smoke` | 路由到 `bin/aicoding.exe smoke --json` |
 | CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go 测试和默认聚合门禁 |
-| Full | `task full` | Go Full 聚合验证 |
-| Release | `task release` | Go Release gate |
+| Full | `task full` | 路由到官方 Full 测试 profile |
+| Release | `task release` | 路由到官方 Release 测试 profile |
+| 最近测试报告 | `bin\aicoding.exe test latest` | 查看最近一次官方测试摘要 |
 
 ## 架构图
 
@@ -60,7 +61,8 @@ bin\aicoding.exe release gate --json
 User / Agent
   -> Taskfile routing
      -> Go CLI (bin/aicoding.exe)
-        -> runner plans -> smoke / ci / full / release
+        -> runner plans -> smoke / ci
+        -> test profiles -> full / release / latest
         -> kit registry -> CodingKit assets + skill submodule
      -> specialty scripts -> quality / safety / Plan Mode / toolchain
 ```
@@ -72,6 +74,7 @@ User / Agent
 | 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | 命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
 | Fast Path | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
+| 官方测试 | [docs/testing/GLOBAL_TEST_PLAN.md](docs/testing/GLOBAL_TEST_PLAN.md) |
 | PowerShell 当前边界 | [docs/POWERSHELL_BOUNDARY.md](docs/POWERSHELL_BOUNDARY.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |

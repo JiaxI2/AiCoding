@@ -21,7 +21,7 @@ AiCoding is the platform integration, installation, governance, and CodingKit as
 
 ## Current Architecture
 
-The Go CLI is the default control plane. It owns bootstrap, Smoke, CI, hooks, status, repo text, release notes, tag/release structural checks, governance lint, DocSync, skill verify, lifecycle, export, fresh-clone, Full, and Release gate.
+The Go CLI is the default control plane. It owns bootstrap, Smoke, CI, official test profiles, hooks, status, repo text, release notes, tag/release structural checks, governance lint, DocSync, skill verify, lifecycle, export, and fresh-clone.
 
 Taskfile is routing only. Business logic lives in Go packages under `internal/*`. PowerShell/Python remains for specialty quality, safety, Plan Mode helpers, external skill workflows, tag planning / overlay compatibility, and hardware or toolchain-specific flows.
 
@@ -40,8 +40,8 @@ go run ./cmd/aicoding bootstrap --json
 bin\aicoding.exe smoke --json
 bin\aicoding.exe ci --profile Smoke --json
 task smoke
-bin\aicoding.exe full --json
-bin\aicoding.exe release gate --json
+bin\aicoding.exe test full --json
+bin\aicoding.exe test release --json
 ```
 
 ## Common Entrypoints
@@ -51,8 +51,9 @@ bin\aicoding.exe release gate --json
 | Bootstrap | `go run ./cmd/aicoding bootstrap --json` | Builds `bin/aicoding.exe` |
 | Local Smoke | `task smoke` | Routes to `bin/aicoding.exe smoke --json` |
 | CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go tests and default aggregate gates |
-| Full | `task full` | Go Full aggregate validation |
-| Release | `task release` | Go Release gate |
+| Full | `task full` | Routes to the official Full test profile |
+| Release | `task release` | Routes to the official Release test profile |
+| Latest test report | `bin\aicoding.exe test latest` | Shows the latest official test summary |
 
 ## Architecture Diagram
 
@@ -60,7 +61,8 @@ bin\aicoding.exe release gate --json
 User / Agent
   -> Taskfile routing
      -> Go CLI (bin/aicoding.exe)
-        -> runner plans -> smoke / ci / full / release
+        -> runner plans -> smoke / ci
+        -> test profiles -> full / release / latest
         -> kit registry -> CodingKit assets + skill submodule
      -> specialty scripts -> quality / safety / Plan Mode / toolchain
 ```
@@ -72,6 +74,7 @@ User / Agent
 | Architecture overview | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | Command matrix | [docs/COMMANDS.md](docs/COMMANDS.md) |
 | Fast Path | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
+| Official testing | [docs/testing/GLOBAL_TEST_PLAN.md](docs/testing/GLOBAL_TEST_PLAN.md) |
 | PowerShell boundary | [docs/POWERSHELL_BOUNDARY.md](docs/POWERSHELL_BOUNDARY.md) |
 | Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |

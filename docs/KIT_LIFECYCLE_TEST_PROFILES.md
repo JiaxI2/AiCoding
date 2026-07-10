@@ -12,8 +12,8 @@ Smoke must:
 - validate registry and enabled manifest consistency;
 - verify PowerShell script command paths exist;
 - verify declared Kit skills, common registry declarations, and hook registry declarations;
-- keep `bin/aicoding.exe fresh-clone` on `-Profile Smoke` by default;
-- keep `bin/aicoding.exe kit verify --all --profile Smoke --json` and `bin/aicoding.exe full --json` equivalent to `-Profile Smoke` by default.
+- keep `bin/aicoding.exe fresh-clone --profile Smoke --json` on Smoke by default;
+- keep `bin/aicoding.exe kit verify --all --profile Smoke --json` on Smoke by default.
 
 Smoke must not:
 
@@ -27,9 +27,8 @@ Recommended commands:
 
 ```powershell
 pwsh scripts/verify-codex-kit.ps1
-bin/aicoding.exe kit verify --all --profile Smoke --json -Profile Smoke -Json
 bin\aicoding.exe kit verify --all --profile Smoke --json
-bin/aicoding.exe fresh-clone -Profile Smoke -Json
+bin/aicoding.exe fresh-clone --profile Smoke --json
 ```
 
 ## Full
@@ -51,7 +50,7 @@ Full must not:
 Recommended command:
 
 ```powershell
-bin/aicoding.exe full --json -Profile Full -Json
+bin/aicoding.exe test full --json
 ```
 
 ## Release
@@ -75,8 +74,8 @@ Release must not:
 Recommended release commands:
 
 ```powershell
-bin/aicoding.exe fresh-clone -Profile Release -Json
-bin/aicoding.exe export -All -Zip -Json
+bin/aicoding.exe fresh-clone --profile Release --json
+bin/aicoding.exe export --all --zip --json
 ```
 
 ## CI Policy
@@ -84,4 +83,4 @@ bin/aicoding.exe export -All -Zip -Json
 - PR and default branch workflows may run Smoke only.
 - Full may be used in manual jobs or local manual validation.
 - Release may be used only in manual dispatch, release jobs, or local release preparation.
-- `bin/aicoding.exe full --json` and `bin/aicoding.exe release gate --json` guard this policy; Smoke-level checks remain Go-native and avoid package writes unless export/release explicitly requires them.
+- `bin/aicoding.exe test full --json` and `bin/aicoding.exe test release --json` guard this policy; Smoke-level checks remain Go-native and avoid package writes unless export/release explicitly requires them.

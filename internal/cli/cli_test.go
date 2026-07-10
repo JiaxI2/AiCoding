@@ -1,12 +1,15 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/JiaxI2/AiCoding/internal/report"
 )
 
 func TestRunNewFastPathCommands(t *testing.T) {
@@ -114,6 +117,8 @@ func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
 		`res, err = runSmoke`,
 		`case "ci":`,
 		`res, err = runCI`,
+		`case "test":`,
+		`res, err = runTest`,
 		`case "docsync":`,
 		`res, err = runDocSync`,
 		`case "skill":`,
@@ -128,6 +133,7 @@ func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
 		`res, err = runFull`,
 		`case "release":`,
 		`res, err = runReleaseCommand`,
+		`aicoding test full|release`,
 		`aicoding release gate`,
 		`aicoding skill c99-standard-c status`,
 	} {
@@ -175,7 +181,13 @@ func TestGoControlPlaneCommandsUseRealGoImplementations(t *testing.T) {
 		}},
 		{"docsync release", func() error {
 			res, err := runDocSync([]string{"release", "--repo-root", repo, "--json"}, start)
-			return resultErr(res.OK && res.Command == "docsync release", err)
+			if err != nil || !res.OK || res.Command != "docsync release" {
+				return resultErr(false, err)
+			}
+			if _, ok := res.Data.(report.StandardReport); !ok {
+				return os.ErrInvalid
+			}
+			return nil
 		}},
 		{"skill verify", func() error {
 			res, err := runSkill([]string{"verify", "--all", "--profile", "Smoke", "--repo-root", repo, "--json"}, start)
@@ -231,7 +243,47 @@ func TestC99StandardCSkillCommandsRouteToCStyle(t *testing.T) {
 	if err != nil || !res.OK || res.Command != "skill c99-standard-c templates" {
 		t.Fatalf("skill c99-standard-c templates failed: res=%#v err=%v", res, err)
 	}
+	if data, ok := res.Data.(report.StandardReport); !ok || data.Status != "PASS" || data.Profile != "c99-standard-c" {
+		t.Fatalf("expected standard C99 report data, got %#v", res.Data)
+	}
 
+}
+
+func TestRunTestProfileWrapsRepoTester(t *testing.T) {
+	repo := t.TempDir()
+	writeFakeGlobalTester(t, repo)
+
+	res, err := runTest([]string{"full", "--repo-root", repo, "--runner-timeout-sec", "30", "--json"}, time.Now())
+	if err != nil || !res.OK || res.Command != "test full" {
+		t.Fatalf("test full failed: res=%#v err=%v", res, err)
+	}
+	data, ok := res.Data.(report.StandardReport)
+	if !ok {
+		t.Fatalf("expected standard report data, got %#v", res.Data)
+	}
+	if data.Status != "PASS" || data.Profile != "full" {
+		t.Fatalf("unexpected test data: %#v", data)
+	}
+	if _, err := os.Stat(filepath.Join(repo, "test-results")); err != nil {
+		t.Fatalf("expected test-results output: %v", err)
+	}
+}
+
+func TestRunTestLatestReadsLatestReport(t *testing.T) {
+	repo := t.TempDir()
+	older := filepath.Join(repo, "test-results", "aicoding-global-test-20260101-000000")
+	newer := filepath.Join(repo, "test-results", "aicoding-global-test-20260102-000000")
+	writeGlobalTestReport(t, older, "full", "PASS", 1)
+	writeGlobalTestReport(t, newer, "release", "PASS", 2)
+
+	res, err := runTest([]string{"latest", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !res.OK || res.Command != "test latest" {
+		t.Fatalf("test latest failed: res=%#v err=%v", res, err)
+	}
+	data := res.Data.(report.StandardReport)
+	if data.Profile != "release" {
+		t.Fatalf("expected latest release report, got %#v", data)
+	}
 }
 
 func writeC99SkillFixture(t *testing.T, repo string) {
@@ -295,6 +347,89 @@ func writeGoControlFixture(t *testing.T, repo string) {
 		if err := os.MkdirAll(filepath.Join(repo, filepath.FromSlash(dir)), 0o755); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+func writeFakeGlobalTester(t *testing.T, repo string) {
+	t.Helper()
+	mustWrite(t, filepath.Join(repo, "go.mod"), "module example.com/global-tester-fixture\n\ngo 1.22\n")
+	mustWrite(t, filepath.Join(repo, "tools", "aicoding-global-tester", "main.go"), `package main
+
+import (
+	"encoding/json"
+	"flag"
+	"os"
+	"path/filepath"
+)
+
+func main() {
+	var repo string
+	var profile string
+	var out string
+	flag.StringVar(&repo, "repo", ".", "")
+	flag.StringVar(&profile, "profile", "full", "")
+	flag.StringVar(&out, "out", "", "")
+	flag.Int("timeout-sec", 180, "")
+	flag.Int("long-timeout-sec", 600, "")
+	flag.Int("concurrency", 4, "")
+	flag.Bool("strict", false, "")
+	flag.Bool("no-json-check", false, "")
+	flag.Parse()
+	if out == "" {
+		out = filepath.Join(repo, "test-results", "aicoding-global-test-fixture")
+	}
+	_ = os.MkdirAll(filepath.Join(out, "logs"), 0o755)
+	summary := map[string]interface{}{"repo": repo, "profile": profile, "started_at": "2026-07-09T00:00:00+08:00", "ended_at": "2026-07-09T00:00:01+08:00", "duration_ms": 1, "total": 1, "pass": 1, "fail": 0, "warn": 0, "skip": 0, "conclusion": "PASS"}
+	report := map[string]interface{}{"summary": summary, "results": []map[string]interface{}{{"id": "FIX-001", "category": "FIXTURE", "title": "fixture", "status": "PASS", "severity": "REQUIRED", "duration_ms": 1, "exit_code": 0, "timed_out": false, "json_valid": true, "command": "fixture", "reason": "command passed", "profile": profile}}}
+	b, _ := json.MarshalIndent(report, "", "  ")
+	_ = os.WriteFile(filepath.Join(out, "results.json"), b, 0o644)
+	s, _ := json.MarshalIndent(summary, "", "  ")
+	_ = os.WriteFile(filepath.Join(out, "summary.json"), s, 0o644)
+	_ = os.WriteFile(filepath.Join(out, "report.md"), []byte("# fixture\n"), 0o644)
+}
+`)
+}
+
+func writeGlobalTestReport(t *testing.T, dir string, profile string, conclusion string, pass int) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Join(dir, "logs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	summary := globalTestSummary{
+		Repo:       filepath.Dir(filepath.Dir(dir)),
+		Profile:    profile,
+		StartedAt:  "2026-07-09T00:00:00+08:00",
+		EndedAt:    "2026-07-09T00:00:01+08:00",
+		DurationMS: 1,
+		Total:      pass,
+		Pass:       pass,
+		Conclusion: conclusion,
+	}
+	fileReport := globalTestFileReport{Summary: summary, Results: []globalTestCaseResult{{
+		ID:       "FIX-001",
+		Category: "FIXTURE",
+		Title:    "fixture",
+		Status:   "PASS",
+		Severity: "REQUIRED",
+		Reason:   "command passed",
+		Profile:  profile,
+	}}}
+	raw, err := json.MarshalIndent(fileReport, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "results.json"), raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	summaryRaw, err := json.MarshalIndent(summary, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "summary.json"), summaryRaw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "report.md"), []byte("# fixture\n"), 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 

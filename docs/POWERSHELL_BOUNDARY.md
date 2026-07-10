@@ -7,8 +7,8 @@
 ```powershell
 bin\aicoding.exe smoke --json
 bin\aicoding.exe ci --profile Smoke --json
-bin\aicoding.exe full --json
-bin\aicoding.exe release gate --json
+bin\aicoding.exe test full --json
+bin\aicoding.exe test release --json
 ```
 
 Go CLI 同时拥有 hook、governance、repohealth、DocSync、skill verify、lifecycle、export、fresh-clone 和 C99 C/H style gate。

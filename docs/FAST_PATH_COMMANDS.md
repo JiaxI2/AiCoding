@@ -1,6 +1,6 @@
 # Fast Path Commands
 
-Fast Path 是 Go CLI 默认控制面。当前 main 的重复开发检查、CI Smoke、Full、Release gate、DocSync、skill verify、lifecycle、export 和 fresh-clone 都由 `bin/aicoding.exe` 承担。
+Fast Path 是 Go CLI 默认控制面。当前 main 的重复开发检查、CI Smoke、官方 Full/Release 测试 profile、DocSync、skill verify、lifecycle、export 和 fresh-clone 都由 `bin/aicoding.exe` 承担。
 
 ## Bootstrap
 
@@ -25,11 +25,12 @@ bin\aicoding.exe ci --profile Smoke --json
 ## Full And Release
 
 ```powershell
-bin\aicoding.exe full --json
-bin\aicoding.exe release gate --json
+bin\aicoding.exe test full --json
+bin\aicoding.exe test release --json
+bin\aicoding.exe test latest
 ```
 
-Full 和 Release 是 Go-native aggregate gates。Release gate 额外覆盖 export 和 fresh-clone Release 路径。
+`test full` 和 `test release` 是官方测试 profile，负责运行仓库内 `tools/aicoding-global-tester` 的有界超时用例，并输出 Markdown/JSON 报告。底层 `full --json` 和 `release gate --json` 仍作为聚合 gate 被测试 profile 覆盖。
 
 ## Lifecycle, Export, Fresh Clone
 

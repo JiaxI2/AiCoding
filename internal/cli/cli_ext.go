@@ -41,7 +41,16 @@ func runDocSync(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("docsync "+mode, start, "cannot resolve repo root", nil, err.Error()), err
 	}
 	res := docsync.Check(repo, mode)
-	return report.Result{SchemaVersion: 1, Command: "docsync " + mode, OK: res.OK, Message: "Go DocSync gate", RepoRoot: repo, Checked: res.Checked, Data: res, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
+	elapsed := report.Elapsed(start)
+	data := standardReport("docsync "+mode, mode, elapsed, map[string]interface{}{
+		"mode":       res.Mode,
+		"checked":    len(res.Checked),
+		"risk_files": len(res.RiskFiles),
+		"doc_files":  len(res.DocFiles),
+		"warnings":   len(res.Warnings),
+		"errors":     len(res.Errors),
+	}, res.Warnings, res.Errors, res)
+	return report.Result{SchemaVersion: 1, Command: "docsync " + mode, OK: res.OK, Message: "Go DocSync gate", RepoRoot: repo, Checked: res.Checked, Data: data, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: elapsed}, report.BoolErr(res.Errors)
 }
 
 func runSkill(args []string, start time.Time) (report.Result, error) {

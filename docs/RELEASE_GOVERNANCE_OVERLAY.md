@@ -11,14 +11,14 @@
 ```powershell
 task setup
 task smoke
-task perf
+task ci
 task full
 task release
-task skills
-task rollback
-task tag:audit
-task tag:plan
-task tag:verify
+task test:latest
+task style:c:status
+task style:c:templates
+task fmt-check:c
+task fmt-check-staged:c
 ```
 
 Taskfile 只做命令路由，不承载复杂业务逻辑。
@@ -39,7 +39,6 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-tag-governance.ps
 
 ```powershell
 bin\aicoding.exe doctor perf --json
-task perf
 ```
 
 动态报告写入 `.aicoding/reports/` 时不作为长期文档提交。cache 和 smart verify 不属于本轮收口范围；Full / Release 不使用本地热路径优化。

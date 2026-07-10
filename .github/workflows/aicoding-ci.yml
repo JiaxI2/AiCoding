@@ -50,6 +50,6 @@ jobs:
         shell: pwsh
         run: go build -o bin/aicoding.exe ./cmd/aicoding
 
-      - name: Release gate
+      - name: Release test profile
         shell: pwsh
-        run: bin/aicoding.exe release gate --json
+        run: bin/aicoding.exe test release --json
