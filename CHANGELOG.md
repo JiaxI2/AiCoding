@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
-- **feat(governance)**: 新增可复用模块登记与证据门禁；以 Go CLI 接入 Skill Verify、hook、CI、DocSync 和 lifecycle，首轮仅采用可回滚的原生实现。
+## [0.7.0] - 2026-07-10
 
-- **ci**: 修复 Windows GitHub Actions 的相对 CLI 路径，避免 `cmd` 将 `bin/aicoding.exe` 解析为命令加参数。
+- **feat(governance)**: 新增可复用模块登记与证据门禁；以 Go CLI 接入 Skill Verify、hook、CI、DocSync 和 lifecycle，首轮仅采用可回滚的原生实现。 / Adds a reusable-module evidence gate integrated with the Go control plane.
+
+- **ci**: 修复 Windows GitHub Actions 的相对 CLI 路径，避免 `cmd` 将 `bin/aicoding.exe` 解析为命令加参数。 / Fixes Go CLI invocation from Windows CI.
 
 ## [0.6.0] - 2026-07-10
 
