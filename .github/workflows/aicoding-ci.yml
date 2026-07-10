@@ -32,6 +32,10 @@ jobs:
         shell: cmd
         run: .\bin\aicoding.exe governance layout --json
 
+      - name: Reuse governance gate
+        shell: cmd
+        run: .\bin\aicoding.exe governance reuse --json
+
       - name: Go CI Smoke
         shell: cmd
         run: .\bin\aicoding.exe ci --profile Smoke --json
@@ -57,6 +61,10 @@ jobs:
       - name: Repository layout gate
         shell: cmd
         run: .\bin\aicoding.exe governance layout --json
+
+      - name: Reuse governance gate
+        shell: cmd
+        run: .\bin\aicoding.exe governance reuse --json
 
       - name: Release test profile
         shell: cmd

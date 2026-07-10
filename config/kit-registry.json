@@ -16,6 +16,12 @@
       "manifest": "config/kits/docsync-plus.json"
     },
     {
+      "id": "reuse-governance",
+      "enabled": true,
+      "order": 60,
+      "manifest": "config/kits/reuse-governance.json"
+    },
+    {
       "id": "common-control-kit",
       "enabled": true,
       "order": 70,

@@ -39,6 +39,7 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | Release gate | `bin\aicoding.exe release gate --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
 | Repository layout gate | `bin\aicoding.exe governance layout --json` |
+| Reuse governance evidence | `bin\aicoding.exe governance reuse --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
 | Release notes verification | `bin\aicoding.exe verify release-notes --json` |

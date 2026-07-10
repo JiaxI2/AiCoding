@@ -338,9 +338,11 @@ func writeGoControlFixture(t *testing.T, repo string) {
 	mustWrite(t, filepath.Join(repo, "docs", "COMMANDS.md"), "# Commands\n")
 	mustWrite(t, filepath.Join(repo, "docs", "architecture", "DOC_SYNC_PLUS_SPEC.md"), "# DocSync Spec\n")
 	mustWrite(t, filepath.Join(repo, "docs", "operations", "DOC_SYNC_PLUS_VALIDATION_PLAN.md"), "# DocSync Validation\n")
+	mustWrite(t, filepath.Join(repo, "docs", "operations", "THIRD_PARTY_REUSE_GOVERNANCE.md"), "DocSync\n")
 	mustWrite(t, filepath.Join(repo, "config", "codex-kit.json"), minimalCodexKitConfig())
 	mustWrite(t, filepath.Join(repo, ".agents", "plugins", "marketplace.json"), "{\"plugins\":[{\"name\":\"aicoding\",\"source\":{\"path\":\"CodingKit/agents/skills/plugins/AiCoding\"}}]}\n")
 	mustWrite(t, filepath.Join(repo, "config", "kit-registry.json"), "{\"schemaVersion\":1,\"name\":\"test\",\"defaultMode\":\"all\",\"kits\":[{\"id\":\"sample-kit\",\"enabled\":true,\"order\":1,\"manifest\":\"config/kits/sample-kit.json\"}]}\n")
+	mustWrite(t, filepath.Join(repo, "config", "reuse-governance.json"), minimalReuseGovernanceConfig())
 	mustWrite(t, filepath.Join(repo, "config", "kits", "sample-kit.json"), minimalKitManifest())
 	mustWrite(t, filepath.Join(repo, "skills", "sample", "SKILL.md"), "---\nname: sample-skill\ndescription: Sample skill for tests.\n---\n\n# Sample\n")
 	for _, dir := range []string{"CodingKit/agents/skills", "CodingKit/examples", "CodingKit/modules", "CodingKit/platforms", "CodingKit/tests", "CodingKit/tools"} {
@@ -476,4 +478,38 @@ func minimalKitManifest() string {
 		"    \"umbrella\": {\"id\": \"sample-skill\", \"role\": \"router\", \"path\": \"skills/sample/SKILL.md\"}\n" +
 		"  }\n" +
 		"}\n"
+}
+
+func minimalReuseGovernanceConfig() string {
+	return `{
+  "schemaVersion": 1,
+  "policy": {
+    "requireAttributionForCopiedContent": true,
+    "requireIndependentRuntime": true,
+    "requireRollback": true,
+    "requireNoPublicAPI": true
+  },
+  "modules": [
+    {
+      "id": "evidence-gate",
+      "classification": "reimplemented",
+      "state": "pilot",
+      "literalExternalContent": false,
+      "runtimeDependency": false,
+      "publicAPI": false,
+      "integrations": ["go-cli", "skill-verify", "hook", "ci", "docsync", "lifecycle"],
+      "requiredPaths": ["config/reuse-governance.json"],
+      "evidence": [
+        {"integration": "go-cli", "path": "README.md", "contains": "AiCoding"},
+        {"integration": "skill-verify", "path": "docs/COMMANDS.md", "contains": "Commands"},
+        {"integration": "hook", "path": ".githooks/pre-commit", "contains": "hook pre-commit"},
+        {"integration": "ci", "path": ".github/workflows/aicoding-ci.yml", "contains": "name: docs"},
+        {"integration": "docsync", "path": "docs/operations/THIRD_PARTY_REUSE_GOVERNANCE.md", "contains": "DocSync"},
+        {"integration": "lifecycle", "path": "config/kit-registry.json", "contains": "sample-kit"}
+      ],
+      "rollback": {"strategy": "remove", "statePath": ".aicoding/state/kits/reuse-governance"}
+    }
+  ]
+}
+`
 }

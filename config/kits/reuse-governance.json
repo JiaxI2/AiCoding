@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 2,
+  "id": "reuse-governance",
+  "name": "Reuse Governance",
+  "version": "0.1.0",
+  "kind": [
+    "governance-kit",
+    "declarative-policy"
+  ],
+  "mode": "declarative",
+  "description": "Declarative governance for independently integrated reusable modules.",
+  "paths": {
+    "config": "config/reuse-governance.json",
+    "implementation": "internal/reuse/reuse.go",
+    "guide": "docs/operations/THIRD_PARTY_REUSE_GOVERNANCE.md"
+  },
+  "commands": {
+    "install": {
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "config/reuse-governance.json",
+        "internal/reuse/reuse.go",
+        "docs/operations/THIRD_PARTY_REUSE_GOVERNANCE.md"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
+    },
+    "status": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "config/reuse-governance.json",
+        "internal/reuse/reuse.go",
+        "docs/operations/THIRD_PARTY_REUSE_GOVERNANCE.md"
+      ],
+      "supportsJson": true
+    },
+    "verify": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "config/reuse-governance.json",
+        "config/kits/reuse-governance.json",
+        "internal/reuse/reuse.go",
+        "internal/cli/cli.go",
+        "internal/cli/cli_ext.go"
+      ],
+      "supportsJson": true
+    },
+    "test": {
+      "type": "go-composed",
+      "steps": [
+        "verify"
+      ]
+    },
+    "update": {
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "config/reuse-governance.json",
+        "internal/reuse/reuse.go",
+        "docs/operations/THIRD_PARTY_REUSE_GOVERNANCE.md"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
+    },
+    "uninstall": {
+      "type": "builtin-lifecycle",
+      "requiredPaths": [
+        "config/reuse-governance.json",
+        "internal/reuse/reuse.go",
+        "docs/operations/THIRD_PARTY_REUSE_GOVERNANCE.md"
+      ],
+      "supportsJson": true,
+      "supportsDryRun": true
+    }
+  },
+  "state": {
+    "root": ".aicoding/state/kits/reuse-governance",
+    "installState": ".aicoding/state/kits/reuse-governance/install-state.json"
+  },
+  "trust": {
+    "level": "first-party",
+    "source": "AiCoding",
+    "thirdParty": false,
+    "updatePolicy": "manual"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 5
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true
+    }
+  }
+}

@@ -22,6 +22,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/releasegate"
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/reuse"
 	"github.com/JiaxI2/AiCoding/internal/runner"
 	"github.com/JiaxI2/AiCoding/internal/tagpolicy"
 )
@@ -134,6 +135,7 @@ Usage:
   aicoding release gate [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
   aicoding governance layout [--repo-root PATH] [--json]
+  aicoding governance reuse [--repo-root PATH] [--json]
 
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
@@ -314,6 +316,10 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 				errs := docsync.LintStaged(repo)
 				return runner.TaskResult{OK: len(errs) == 0, Errors: errs}
 			}},
+			runner.Task{ID: "reuse governance", Group: "hook", Run: func(context.Context) runner.TaskResult {
+				check := reuse.Verify(repo)
+				return runner.TaskResult{OK: check.OK, Errors: check.Errors, Warnings: check.Warnings, Data: check}
+			}},
 			runner.Task{ID: "powershell regex staged", Group: "hook", Run: func(context.Context) runner.TaskResult {
 				issues, scanErr := pwshregex.LintStaged(repo)
 				errs := []string{}
@@ -363,7 +369,7 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 }
 func runGovernance(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("governance requires subcommand: lint or layout")
+		return report.Result{}, errors.New("governance requires subcommand: lint, layout, or reuse")
 	}
 	sub := args[0]
 	fs := flag.NewFlagSet("governance "+sub, flag.ContinueOnError)
@@ -382,6 +388,9 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 	case "layout":
 		layout := governance.CheckLayout(repo)
 		return report.Result{SchemaVersion: 1, Command: "governance layout", OK: len(layout.Errors) == 0, Message: "repository layout gate", RepoRoot: repo, Data: layout, Errors: layout.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(layout.Errors)
+	case "reuse":
+		check := reuse.Verify(repo)
+		return report.Result{SchemaVersion: 1, Command: "governance reuse", OK: check.OK, Message: "reuse governance evidence gate", RepoRoot: repo, Data: check, Warnings: check.Warnings, Errors: check.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(check.Errors)
 	default:
 		return report.Result{}, fmt.Errorf("unsupported governance subcommand: %s", sub)
 	}

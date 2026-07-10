@@ -16,6 +16,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/reuse"
 	"github.com/JiaxI2/AiCoding/internal/runner"
 )
 
@@ -72,6 +73,14 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("skill verify", start, "kit selection failed", nil, err.Error()), err
 	}
 	res := kit.VerifySkills(repo, entries, *profile)
+	reuseCheck := reuse.Verify(repo)
+	for _, issue := range reuseCheck.Errors {
+		res.Errors = append(res.Errors, "reuse governance: "+issue)
+	}
+	for _, warning := range reuseCheck.Warnings {
+		res.Warnings = append(res.Warnings, "reuse governance: "+warning)
+	}
+	res.OK = res.OK && reuseCheck.OK
 	return report.Result{SchemaVersion: 1, Command: "skill verify", OK: res.OK, Message: "Go skill structure verification", RepoRoot: repo, Data: res, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
 }
 
@@ -244,6 +253,10 @@ func buildAggregatePlan(repo, profile string, release bool) runner.Plan {
 	plan.Add(runner.Task{ID: "docsync " + dsMode, Group: "docsync", Run: func(context.Context) runner.TaskResult {
 		ds := docsync.Check(repo, dsMode)
 		return runner.TaskResult{OK: ds.OK, Errors: ds.Errors, Warnings: ds.Warnings, Data: ds}
+	}})
+	plan.Add(runner.Task{ID: "reuse governance", Group: "governance", Run: func(context.Context) runner.TaskResult {
+		check := reuse.Verify(repo)
+		return runner.TaskResult{OK: check.OK, Errors: check.Errors, Warnings: check.Warnings, Data: check}
 	}})
 
 	entries, err := kit.LoadRegistry(repo)
