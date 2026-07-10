@@ -1,8 +1,0 @@
-[project]
-name = "aicoding-agent-dev-kit"
-version = "0.11.1"
-description = "AiCoding Agent Development Kit CLI"
-requires-python = ">=3.10"
-
-[project.scripts]
-aicoding-agent-kit = "aicoding_agent_kit.cli:main"

@@ -46,7 +46,7 @@ Disable control:
 
 Marketplace exposure:
 
-- A sidecar and merged local plugin entry expose Agent Patch Kit without editing the Codex-Skills submodule.
+- Agent Patch Kit is a user-installed external CLI in this repository; it has no repository-managed Marketplace package.
 
 Remaining boundary:
 
@@ -54,9 +54,6 @@ Remaining boundary:
 
 ## Deployment Artifacts
 
-- `.agents/skills/aicoding-agent-patch-kit/`
-- `config/agent-patch-kit.json`
-- `docs/agent-patch-kit-agents-snippet.md`
-- `.agents/plugins/agent-patch-marketplace.json`
-- `dist/agent-patch-kit/`
-- `.agents/plugins/marketplace.json`
+- user-level `apatch` installation and its state scopes;
+- `.agents/skills/aicoding-agent-patch-kit/` runtime guidance;
+- `docs/agent-patch-kit-agents-snippet.md`.

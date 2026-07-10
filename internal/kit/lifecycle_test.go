@@ -12,7 +12,7 @@ func TestPlanLifecycleSkipsUnsupportedMissingAndNoDryRun(t *testing.T) {
 	writeLifecycleRegistry(t, repo, []string{"unsupported-kit", "missing-action-kit", "no-dry-run-kit"})
 	writeLifecycleManifest(t, repo, "unsupported-kit", `"install":{"type":"unsupported","reason":"not installable"}`, "")
 	writeLifecycleManifest(t, repo, "missing-action-kit", `"status":{"type":"builtin-check","requiredPaths":[]}`, "")
-	writeLifecycleManifest(t, repo, "no-dry-run-kit", `"install":{"type":"specialty-pwsh","path":"scripts/install-no-dry-run.ps1","supportsDryRun":false}`, "")
+	writeLifecycleManifest(t, repo, "no-dry-run-kit", `"install":{"type":"specialty-pwsh","path":"tools/specialty/install-no-dry-run.ps1","supportsDryRun":false}`, "")
 
 	entries, err := LoadRegistry(repo)
 	if err != nil {
@@ -29,7 +29,7 @@ func TestPlanLifecycleSkipsUnsupportedMissingAndNoDryRun(t *testing.T) {
 
 func TestPlanLifecycleWarnsForMissingGeneratedPluginPackage(t *testing.T) {
 	repo := t.TempDir()
-	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "install-codex-kit.ps1"), "param()\n")
+	mustWriteLifecycle(t, filepath.Join(repo, "tools", "specialty", "install-codex-kit.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"aicoding-platform"})
 	writeLifecycleManifest(t, repo, "aicoding-platform", `"install":{"type":"builtin-lifecycle","lifecycleAction":"install","supportsDryRun":true}`, `"pluginRoot":"CodingKit/agents/skills/plugins/AiCoding"`)
 
@@ -66,9 +66,9 @@ func TestPlanLifecycleRequiredPathsMissingFails(t *testing.T) {
 
 func TestPlanLifecycleAggregatesOK(t *testing.T) {
 	repo := t.TempDir()
-	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "install.ps1"), "param()\n")
+	mustWriteLifecycle(t, filepath.Join(repo, "tools", "specialty", "install.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"script-kit", "asset-kit"})
-	writeLifecycleManifest(t, repo, "script-kit", `"install":{"type":"specialty-pwsh","path":"scripts/install.ps1","supportsDryRun":true}`, "")
+	writeLifecycleManifest(t, repo, "script-kit", `"install":{"type":"specialty-pwsh","path":"tools/specialty/install.ps1","supportsDryRun":true}`, "")
 	writeLifecycleManifest(t, repo, "asset-kit", `"install":{"type":"unsupported","reason":"repository asset only"}`, "")
 
 	entries, err := LoadRegistry(repo)

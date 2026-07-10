@@ -26,7 +26,7 @@ Smoke must not:
 Recommended commands:
 
 ```powershell
-pwsh scripts/verify-codex-kit.ps1
+pwsh tools/specialty/verify-codex-kit.ps1
 bin\aicoding.exe kit verify --all --profile Smoke --json
 bin/aicoding.exe fresh-clone --profile Smoke --json
 ```

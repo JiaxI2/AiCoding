@@ -33,9 +33,9 @@ Sources are tracked in `config/skill-sources.json`:
 当前外部 skill 主流程：
 
 ```powershell
-pwsh scripts/aicoding-skill.ps1 install-external -Source ppt-master -Target CodexUser -Json
-pwsh scripts/aicoding-skill.ps1 status-external -Source ppt-master -Json
-pwsh scripts/aicoding-skill.ps1 verify-external -Source ppt-master -Target CodexUser -Json
+pwsh tools/specialty/aicoding-skill.ps1 install-external -Source ppt-master -Target CodexUser -Json
+pwsh tools/specialty/aicoding-skill.ps1 status-external -Source ppt-master -Json
+pwsh tools/specialty/aicoding-skill.ps1 verify-external -Source ppt-master -Target CodexUser -Json
 ```
 
 如果 builtin quick audit 返回 `warn`，默认停止并提示：
@@ -47,7 +47,7 @@ audit returned warn; re-run with -AllowWarn to install
 用户确认后可继续：
 
 ```powershell
-pwsh scripts/aicoding-skill.ps1 install-external -Source ppt-master -Target CodexUser -AllowWarn -Json
+pwsh tools/specialty/aicoding-skill.ps1 install-external -Source ppt-master -Target CodexUser -AllowWarn -Json
 ```
 
 ## Directory Protocol

@@ -11,20 +11,11 @@
       "machineReadable": true
     },
     {
-      "id": "aicoding-agent-stop-quality-gate",
-      "owner": "aicoding-agent-dev-kit",
-      "type": "agent-hook",
-      "trigger": "stop",
-      "path": "dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit/hooks/stop.ps1",
-      "enabledByDefault": true,
-      "machineReadable": true
-    },
-    {
       "id": "plan-mode-gate",
       "owner": "aicoding-agent-dev-kit",
       "type": "agent-hook",
       "trigger": "pre-implementation",
-      "path": "scripts/hooks/aef/plan-mode-gate.ps1",
+      "path": "tools/specialty/hooks/aef/plan-mode-gate.ps1",
       "enabledByDefault": true,
       "machineReadable": true,
       "mode": "enforce",
@@ -35,7 +26,7 @@
       "owner": "aicoding-agent-dev-kit",
       "type": "agent-hook",
       "trigger": "post-tool-use",
-      "path": "scripts/hooks/aef/spec-artifact-gate.ps1",
+      "path": "tools/specialty/hooks/aef/spec-artifact-gate.ps1",
       "enabledByDefault": true,
       "machineReadable": true,
       "mode": "warn",

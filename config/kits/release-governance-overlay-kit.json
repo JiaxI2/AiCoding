@@ -23,15 +23,15 @@
         "docs/TAGGING_POLICY.md",
         "docs/RELEASE_POLICY.md",
         "docs/RELEASE_GOVERNANCE_OVERLAY.md",
-        "scripts/aicoding-tag-governance.ps1",
-        "scripts/verify-release-governance-overlay.ps1",
+        "tools/specialty/aicoding-tag-governance.ps1",
+        "tools/specialty/verify-release-governance-overlay.ps1",
         "config/tagging-policy.json",
         "config/kits/release-governance-overlay-kit.json"
       ]
     },
     "verify": {
       "type": "specialty-pwsh",
-      "path": "scripts/verify-release-governance-overlay.ps1",
+      "path": "tools/specialty/verify-release-governance-overlay.ps1",
       "args": [],
       "supportsJson": true
     },
@@ -48,8 +48,8 @@
         "docs/TAGGING_POLICY.md",
         "docs/RELEASE_POLICY.md",
         "docs/RELEASE_GOVERNANCE_OVERLAY.md",
-        "scripts/aicoding-tag-governance.ps1",
-        "scripts/verify-release-governance-overlay.ps1",
+        "tools/specialty/aicoding-tag-governance.ps1",
+        "tools/specialty/verify-release-governance-overlay.ps1",
         "config/tagging-policy.json",
         "config/kits/release-governance-overlay-kit.json"
       ],
@@ -72,8 +72,8 @@
       "docs/TAGGING_POLICY.md",
       "docs/RELEASE_POLICY.md",
       "docs/RELEASE_GOVERNANCE_OVERLAY.md",
-      "scripts/aicoding-tag-governance.ps1",
-      "scripts/verify-release-governance-overlay.ps1",
+      "tools/specialty/aicoding-tag-governance.ps1",
+      "tools/specialty/verify-release-governance-overlay.ps1",
       "config/tagging-policy.json",
       "config/kits/release-governance-overlay-kit.json"
     ],

@@ -30,7 +30,7 @@ bin/aicoding.exe skill c99-standard-c templates --json
 bin/aicoding.exe skill c99-standard-c fmt --scope changed --json
 bin/aicoding.exe skill c99-standard-c check --scope changed --json
 bin/aicoding.exe skill c99-standard-c check --scope staged --json
-bin/aicoding.exe skill c99-standard-c check --scope paths --path tests/style-samples/foc_sample.c --json
+bin/aicoding.exe skill c99-standard-c check --scope paths --path testdata/style-samples/foc_sample.c --json
 ```
 
 当前用户入口只保留 `skill c99-standard-c` 和 Taskfile 短路由。

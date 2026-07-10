@@ -36,7 +36,7 @@
 |---|---|---|---|---|
 | C99-001 | C99 skill status | `bin/aicoding.exe skill c99-standard-c status --json` | 输出 JSON，包含 skill 状态 | REQUIRED |
 | C99-002 | 注释模板校验 | `bin/aicoding.exe skill c99-standard-c templates --json` | 模板 JSON 合法，退出码 0 | REQUIRED |
-| C99-003 | 样例路径格式检查 | `bin/aicoding.exe skill c99-standard-c check --scope paths --path tests/style-samples/foc_sample.c --json` | 样例存在时退出码 0 | REQUIRED |
+| C99-003 | 样例路径格式检查 | `bin/aicoding.exe skill c99-standard-c check --scope paths --path testdata/style-samples/foc_sample.c --json` | 样例存在时退出码 0 | REQUIRED |
 | C99-004 | staged C/H 检查入口 | `bin/aicoding.exe skill c99-standard-c check --scope staged --json` | 退出码 0 或明确无 staged 文件 | REQUIRED |
 | C99-005 | source-of-truth 配置 | 检查 `config/skills/c99-standard-c/*` 与 `.clang-format` | 配置文件存在，投影包含关键字段 | REQUIRED |
 | C99-006 | 排除目录策略 | 解析 `skill.json` | 包含 vendor/third_party/generated/Drivers/device/build/out/dist | REQUIRED |

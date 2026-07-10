@@ -1,6 +1,0 @@
-# Project-scoped Codex config for AiCoding Agent Dev Kit.
-# Keep AGENTS.md short and use the sequential loader for context.
-
-[agents]
-max_threads = 6
-max_depth = 1

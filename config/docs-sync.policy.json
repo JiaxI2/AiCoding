@@ -14,7 +14,7 @@
   "rules": [
     {
       "name": "source-or-script-change-requires-doc-review",
-      "changed": ["**/*.c", "**/*.h", "**/*.cpp", "**/*.hpp", "**/*.py", "**/*.ps1", "**/*.sh", "src/**", "scripts/**"],
+      "changed": ["**/*.c", "**/*.h", "**/*.cpp", "**/*.hpp", "**/*.py", "**/*.ps1", "**/*.sh", "src/**", "tools/specialty/**"],
       "requiresAnyDoc": true,
       "allowNoDocMarker": "DOCSYNC-NO-DOC-CHANGE"
     },

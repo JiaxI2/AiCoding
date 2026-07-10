@@ -18,12 +18,12 @@ The useful habits are:
 
 | Superpower-style habit | AiCoding implementation |
 |---|---|
-| Mode awareness | `spec/PLAN_MODE.md` and Agent response header |
+| Mode awareness | `docs/spec/PLAN_MODE.md` and Agent response header |
 | Context loading | `aicoding-agent-kit load --repo . --auto` |
-| Stepwise progress | `spec/TASKS.md` and `.agent-dev-kit` progress |
-| Stop condition | `spec/NEEDS_USER_DECISION.md` |
-| Decision memory | `.agent-memory/DECISIONS.md` |
-| Handoff | final response + `spec/TRACEABILITY.md` |
+| Stepwise progress | `docs/spec/TASKS.md` and `.agent-dev-kit` progress |
+| Stop condition | `docs/spec/NEEDS_USER_DECISION.md` |
+| Decision memory | `.aicoding/memory/DECISIONS.md` |
+| Handoff | final response + `docs/spec/TRACEABILITY.md` |
 
 ## Agent response contract
 

@@ -226,7 +226,7 @@ func buildTests(cfg Config) []TestCase {
 
 		{ID: "C99-001", Category: "C99_SKILL", Title: "C99 skill status", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "status", "--json"}, ExpectJSON: true},
 		{ID: "C99-002", Category: "C99_SKILL", Title: "C99 注释模板校验", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "templates", "--json"}, ExpectJSON: true},
-		{ID: "C99-003", Category: "C99_SKILL", Title: "C99 样例路径格式检查", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "check", "--scope", "paths", "--path", "tests/style-samples/foc_sample.c", "--json"}, OptionalPath: "tests/style-samples/foc_sample.c", ExpectJSON: true},
+		{ID: "C99-003", Category: "C99_SKILL", Title: "C99 样例路径格式检查", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "check", "--scope", "paths", "--path", "testdata/style-samples/foc_sample.c", "--json"}, OptionalPath: "testdata/style-samples/foc_sample.c", ExpectJSON: true},
 		{ID: "C99-004", Category: "C99_SKILL", Title: "C99 staged 检查入口", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "check", "--scope", "staged", "--json"}, ExpectJSON: true},
 		{ID: "C99-005", Category: "C99_SKILL", Title: "C99 source-of-truth 配置", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "C99-006", Category: "C99_SKILL", Title: "C99 排除目录策略", Severity: Required, Profiles: allProfiles(), Kind: "static"},

@@ -25,11 +25,15 @@ jobs:
           cache: true
 
       - name: Build Go CLI
-        shell: pwsh
+        shell: cmd
         run: go build -o bin/aicoding.exe ./cmd/aicoding
 
+      - name: Repository layout gate
+        shell: cmd
+        run: bin/aicoding.exe governance layout --json
+
       - name: Go CI Smoke
-        shell: pwsh
+        shell: cmd
         run: bin/aicoding.exe ci --profile Smoke --json
 
   release-gate:
@@ -47,9 +51,13 @@ jobs:
           cache: true
 
       - name: Build Go CLI
-        shell: pwsh
+        shell: cmd
         run: go build -o bin/aicoding.exe ./cmd/aicoding
 
+      - name: Repository layout gate
+        shell: cmd
+        run: bin/aicoding.exe governance layout --json
+
       - name: Release test profile
-        shell: pwsh
+        shell: cmd
         run: bin/aicoding.exe test release --json

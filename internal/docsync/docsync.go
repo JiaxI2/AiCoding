@@ -44,7 +44,7 @@ func IsDocSyncRiskPath(f string) bool {
 	if strings.HasPrefix(f, ".git/") || strings.Contains(f, "/__pycache__/") || strings.Contains(f, "/.pytest_cache/") {
 		return false
 	}
-	if strings.HasPrefix(f, "cmd/") || strings.HasPrefix(f, "internal/") || strings.HasPrefix(f, "scripts/") || strings.HasPrefix(f, "src/") || strings.HasPrefix(f, "config/") || strings.HasPrefix(f, ".githooks/") || strings.HasPrefix(f, ".github/workflows/") || strings.HasPrefix(f, ".agents/") || strings.HasPrefix(f, "CodingKit/") || strings.HasPrefix(f, "skills/") || strings.HasPrefix(f, "codex-skills/") {
+	if strings.HasPrefix(f, "cmd/") || strings.HasPrefix(f, "internal/") || strings.HasPrefix(f, "tools/specialty/") || strings.HasPrefix(f, "src/") || strings.HasPrefix(f, "config/") || strings.HasPrefix(f, ".githooks/") || strings.HasPrefix(f, ".github/workflows/") || strings.HasPrefix(f, ".agents/") || strings.HasPrefix(f, "CodingKit/") || strings.HasPrefix(f, "skills/") || strings.HasPrefix(f, "codex-skills/") {
 		return true
 	}
 	for _, ext := range []string{".c", ".h", ".cpp", ".hpp", ".py", ".ps1", ".sh"} {

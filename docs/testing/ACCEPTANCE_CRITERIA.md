@@ -15,7 +15,7 @@
 
 1. `skill c99-standard-c status --json` 成功。
 2. `skill c99-standard-c templates --json` 成功。
-3. `check --scope paths --path tests/style-samples/foc_sample.c --json` 成功，或报告明确样例不存在。
+3. `check --scope paths --path testdata/style-samples/foc_sample.c --json` 成功，或报告明确样例不存在。
 4. `config/skills/c99-standard-c/skill.json` 指向 style、templates、rules。
 5. `.clang-format` 明确是投影，source-of-truth 为 skill 配置。
 6. 排除目录包含 vendor/third_party/generated/Drivers/device/build/out/dist。

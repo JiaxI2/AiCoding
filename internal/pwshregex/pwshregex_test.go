@@ -73,7 +73,7 @@ func TestBadFixturePathDetection(t *testing.T) {
 	if isBadFixturePath("dist/kit/tests/cases/good/Regex-SafeBulkReplace.ps1") {
 		t.Fatal("good fixture path must not be skipped")
 	}
-	if isBadFixturePath("scripts/BadButRealScript.ps1") {
+	if isBadFixturePath("tools/specialty/BadButRealScript.ps1") {
 		t.Fatal("ordinary scripts must not be skipped")
 	}
 }

@@ -6,32 +6,32 @@
   "phases": [
     {
       "id": "clarify",
-      "artifact": "spec/PRD_OPTIONS.md",
+      "artifact": "docs/spec/PRD_OPTIONS.md",
       "requiredWhen": "requirement is fuzzy"
     },
     {
       "id": "specify",
-      "artifact": "spec/PLAN_MODE.md",
+      "artifact": "docs/spec/PLAN_MODE.md",
       "requiredWhen": "non-trivial work"
     },
     {
       "id": "plan",
-      "artifact": "spec/IMPLEMENTATION_PLAN.md",
+      "artifact": "docs/spec/IMPLEMENTATION_PLAN.md",
       "requiredWhen": "implementation changes"
     },
     {
       "id": "decision",
-      "artifact": "spec/SELECTED_SOLUTION.md",
+      "artifact": "docs/spec/SELECTED_SOLUTION.md",
       "requiredWhen": "multiple architecture options exist"
     },
     {
       "id": "tasks",
-      "artifact": "spec/TASKS.md",
+      "artifact": "docs/spec/TASKS.md",
       "requiredWhen": "implementation changes"
     },
     {
       "id": "traceability",
-      "artifact": "spec/TRACEABILITY.md",
+      "artifact": "docs/spec/TRACEABILITY.md",
       "requiredWhen": "implementation changes"
     },
     {
@@ -41,11 +41,11 @@
     }
   ],
   "stopFiles": [
-    "spec/NEEDS_USER_DECISION.md"
+    "docs/spec/NEEDS_USER_DECISION.md"
   ],
   "acceptedDecisionArtifacts": [
-    "spec/SELECTED_SOLUTION.md",
-    ".agent-memory/DECISIONS.md",
+    "docs/spec/SELECTED_SOLUTION.md",
+    ".aicoding/memory/DECISIONS.md",
     "docs/decisions",
     "docs/adr"
   ],
@@ -53,12 +53,10 @@
     "config/kits/",
     "config/*.registry.json",
     "config/schemas/",
-    "scripts/",
-    "scripts/lib/",
-    "scripts/hooks/",
+    "tools/specialty/",
+    "tools/specialty/lib/",
+    "tools/specialty/hooks/",
     ".agents/skills/",
-    "dist/*/plugins/*/skills/",
-    "dist/*/plugins/*/hooks/",
     "CodingKit/modules/",
     "docs/AGENT_",
     "Taskfile",

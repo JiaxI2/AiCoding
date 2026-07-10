@@ -27,11 +27,11 @@ Clarify -> Specify -> Plan -> User Decision -> Tasks -> Implement -> Verify -> H
 
 | Mode | Agent may do | Agent must not do |
 |---|---|---|
-| Clarify | ask questions, inspect repo read-only, create `spec/PRD_OPTIONS.md` | edit implementation files |
+| Clarify | ask questions, inspect repo read-only, create `docs/spec/PRD_OPTIONS.md` | edit implementation files |
 | Specify | write user intent, acceptance criteria, constraints | choose architecture silently |
-| Plan | write `spec/IMPLEMENTATION_PLAN.md`, risks, validation, rollback | implement code |
+| Plan | write `docs/spec/IMPLEMENTATION_PLAN.md`, risks, validation, rollback | implement code |
 | User Decision | show 2-5 options and wait | continue implementation |
-| Tasks | write `spec/TASKS.md` and `spec/TRACEABILITY.md` | skip test/verify tasks |
+| Tasks | write `docs/spec/TASKS.md` and `docs/spec/TRACEABILITY.md` | skip test/verify tasks |
 | Implement | change files according to selected plan | change plan silently |
 | Verify | run Smoke/golden/schema/lint checks | hide failures |
 | Handoff | summarize evidence and rollback path | claim unverified success |
@@ -41,23 +41,23 @@ Clarify -> Specify -> Plan -> User Decision -> Tasks -> Implement -> Verify -> H
 For fuzzy architecture:
 
 ```text
-spec/PRD_OPTIONS.md
-spec/NEEDS_USER_DECISION.md
+docs/spec/PRD_OPTIONS.md
+docs/spec/NEEDS_USER_DECISION.md
 ```
 
 For selected architecture:
 
 ```text
-spec/SELECTED_SOLUTION.md
-.agent-memory/DECISIONS.md
+docs/spec/SELECTED_SOLUTION.md
+.aicoding/memory/DECISIONS.md
 ```
 
 For implementation:
 
 ```text
-spec/IMPLEMENTATION_PLAN.md
-spec/TASKS.md
-spec/TRACEABILITY.md
+docs/spec/IMPLEMENTATION_PLAN.md
+docs/spec/TASKS.md
+docs/spec/TRACEABILITY.md
 ```
 
 ## Fuzzy architecture rule
@@ -74,7 +74,7 @@ The Agent must show 2-5 options with:
 - risk;
 - recommendation.
 
-No implementation may continue while `spec/NEEDS_USER_DECISION.md` exists.
+No implementation may continue while `docs/spec/NEEDS_USER_DECISION.md` exists.
 
 ## Codex Plan Mode adaptation
 
@@ -94,9 +94,9 @@ In AiCoding, Plan Mode means:
 This workflow is enforced by:
 
 ```text
-scripts/verify-agent-dev-kit-plan-mode.ps1
-scripts/hooks/aef/plan-mode-gate.ps1
-scripts/hooks/aef/spec-artifact-gate.ps1
+tools/specialty/verify-agent-dev-kit-plan-mode.ps1
+tools/specialty/hooks/aef/plan-mode-gate.ps1
+tools/specialty/hooks/aef/spec-artifact-gate.ps1
 config/agent-dev-kit-plan-mode.registry.json
 config/agent-hook-modules.registry.json
 ```

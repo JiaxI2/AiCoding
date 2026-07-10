@@ -77,8 +77,8 @@
       "include": [
         "config/codex-kit.json",
         ".agents/plugins/marketplace.json",
-        "scripts/*codex-kit.ps1",
-        "scripts/lib/CodexKit.psm1",
+        "tools/specialty/*codex-kit.ps1",
+        "tools/specialty/lib/CodexKit.psm1",
         "CodingKit/README.md"
       ],
       "exclude": [
@@ -121,8 +121,8 @@
     "include": [
       "config/codex-kit.json",
       ".agents/plugins/marketplace.json",
-      "scripts/*codex-kit.ps1",
-      "scripts/lib/CodexKit.psm1",
+      "tools/specialty/*codex-kit.ps1",
+      "tools/specialty/lib/CodexKit.psm1",
       "CodingKit/README.md"
     ],
     "exclude": [

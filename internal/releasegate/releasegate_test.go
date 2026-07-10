@@ -14,8 +14,8 @@ func TestVerifyChecksReleaseStructure(t *testing.T) {
 	mustWrite(t, filepath.Join(repo, "docs", "RELEASE_POLICY.md"), "Platform Release\nKit / Component Release\nMilestone Release\n")
 	for _, rel := range []string{
 		"docs/RELEASE_GOVERNANCE_OVERLAY.md",
-		"scripts/aicoding-tag-governance.ps1",
-		"scripts/verify-release-governance-overlay.ps1",
+		"tools/specialty/aicoding-tag-governance.ps1",
+		"tools/specialty/verify-release-governance-overlay.ps1",
 		"config/tagging-policy.json",
 		"config/kits/release-governance-overlay-kit.json",
 		"Taskfile.yml",

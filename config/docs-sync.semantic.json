@@ -16,8 +16,8 @@
     "linkDrift": 10
   },
   "publicSurfaces": [
-    "scripts/**/*.ps1:param",
-    "scripts/**/*.ps1:function",
+    "tools/specialty/**/*.ps1:param",
+    "tools/specialty/**/*.ps1:function",
     "config/docs-sync.policy.json:rules",
     "config/docs-sync.semantic.json:thresholds",
     ".githooks/**",

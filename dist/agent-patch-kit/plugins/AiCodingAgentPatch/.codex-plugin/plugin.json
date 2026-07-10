@@ -1,7 +1,0 @@
-{
-  "name": "aicoding-agent-patch-kit",
-  "version": "0.2.2",
-  "displayName": "AiCoding Agent Patch Kit",
-  "description": "Safe patch workflow skill and CLI assets for Codex/AiCoding agents, with state gates and developer fast-read brief.",
-  "category": "Developer Tools"
-}

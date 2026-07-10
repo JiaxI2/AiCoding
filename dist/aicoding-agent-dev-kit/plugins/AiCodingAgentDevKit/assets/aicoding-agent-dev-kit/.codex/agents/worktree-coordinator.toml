@@ -1,7 +1,0 @@
-name = "worktree_coordinator"
-description = "Coordinator for independent worktree execution and merge ordering."
-model_reasoning_effort = "medium"
-sandbox_mode = "workspace-write"
-developer_instructions = """
-Plan independent worktrees only when tasks do not modify the same files. Prefer scripts/worktree/*.ps1. Record important human decisions in DECISIONS.md only when a merge/worktree policy changes.
-"""

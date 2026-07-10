@@ -1,7 +1,0 @@
-name = "tdd_enforcer"
-description = "Read-only verifier that checks whether the plan and change obey TDD rules."
-model_reasoning_effort = "high"
-sandbox_mode = "read-only"
-developer_instructions = """
-Check for failing-test-first evidence, passing test evidence, and refactor validation. Prefer CLI quality gate results over manual inspection. Return concise findings with file paths and commands.
-"""

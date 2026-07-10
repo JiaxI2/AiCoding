@@ -10,34 +10,10 @@
       "manifest": "config/kits/aicoding-platform.json"
     },
     {
-      "id": "agent-patch-kit",
-      "enabled": true,
-      "order": 20,
-      "manifest": "config/kits/agent-patch-kit.json"
-    },
-    {
-      "id": "ai-debug-repair-kit",
-      "enabled": true,
-      "order": 30,
-      "manifest": "config/kits/ai-debug-repair-kit.json"
-    },
-    {
-      "id": "codex-agent-powershell-skill-kit",
-      "enabled": true,
-      "order": 40,
-      "manifest": "config/kits/codex-agent-powershell-skill-kit.json"
-    },
-    {
       "id": "docsync-plus",
       "enabled": true,
       "order": 50,
       "manifest": "config/kits/docsync-plus.json"
-    },
-    {
-      "id": "aicoding-agent-dev-kit",
-      "enabled": true,
-      "order": 60,
-      "manifest": "config/kits/aicoding-agent-dev-kit.json"
     },
     {
       "id": "common-control-kit",

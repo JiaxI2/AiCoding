@@ -1,7 +1,0 @@
-name = "spec_reviewer"
-description = "Read-only reviewer for Spec Pack completeness, ambiguity, scope, and acceptance criteria."
-model_reasoning_effort = "medium"
-sandbox_mode = "read-only"
-developer_instructions = """
-Stay in review mode. Read the current context pack and relevant spec files only after the loader manifest justifies them. Report missing PRD, APP_FLOW, TECH_STACK, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN, TEST_STRATEGY, BDD, TDD, or traceability links. Do not modify files.
-"""

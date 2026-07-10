@@ -16,7 +16,7 @@ func Verify(repo string) (Result, []string) {
 		Checks: checks,
 		Scope:  "structural-fast-check",
 		Notes: []string{
-			"does not replace scripts/verify-release-governance-overlay.ps1",
+			"does not replace tools/specialty/verify-release-governance-overlay.ps1",
 			"does not run Full or Release slow path",
 		},
 	}

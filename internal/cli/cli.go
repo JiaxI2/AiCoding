@@ -133,6 +133,7 @@ Usage:
   aicoding release verify [--repo-root PATH] [--json]
   aicoding release gate [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
+  aicoding governance layout [--repo-root PATH] [--json]
 
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
@@ -361,20 +362,29 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 	}
 }
 func runGovernance(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 || args[0] != "lint" {
-		return report.Result{}, errors.New("governance requires subcommand: lint")
+	if len(args) < 1 {
+		return report.Result{}, errors.New("governance requires subcommand: lint or layout")
 	}
-	fs := flag.NewFlagSet("governance lint", flag.ContinueOnError)
+	sub := args[0]
+	fs := flag.NewFlagSet("governance "+sub, flag.ContinueOnError)
 	repoArg := fs.String("repo-root", "", "repository root")
-	mode := fs.String("mode", "all", "all or pre-commit")
+	mode := fs.String("mode", "all", "all or pre-commit; lint only")
 	_ = fs.Bool("json", false, "json output")
 	_ = fs.Parse(args[1:])
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
-		return report.Fail("governance lint", start, "cannot resolve repo root", nil, err.Error()), err
+		return report.Fail("governance "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
-	errs := governance.Lint(repo, *mode, "")
-	return report.Result{SchemaVersion: 1, Command: "governance lint", OK: len(errs) == 0, Message: "governance fast lint", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	switch sub {
+	case "lint":
+		errs := governance.Lint(repo, *mode, "")
+		return report.Result{SchemaVersion: 1, Command: "governance lint", OK: len(errs) == 0, Message: "governance fast lint", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	case "layout":
+		layout := governance.CheckLayout(repo)
+		return report.Result{SchemaVersion: 1, Command: "governance layout", OK: len(layout.Errors) == 0, Message: "repository layout gate", RepoRoot: repo, Data: layout, Errors: layout.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(layout.Errors)
+	default:
+		return report.Result{}, fmt.Errorf("unsupported governance subcommand: %s", sub)
+	}
 }
 
 func runPowerShell(args []string, start time.Time) (report.Result, error) {

@@ -13,14 +13,14 @@ Therefore AiCoding should adapt Spec Kit as a pattern, not vendor it wholesale.
 | Spec Kit concept | AiCoding adaptation |
 |---|---|
 | constitution | `docs/AGENT_ENGINEERING_FOUNDATION.md`, `docs/AGENT_WORKFLOW_STANDARD.md`, `AGENTS.md` |
-| specify | `spec/PRD_OPTIONS.md`, requirements sections in `spec/IMPLEMENTATION_PLAN.md` |
+| specify | `docs/spec/PRD_OPTIONS.md`, requirements sections in `docs/spec/IMPLEMENTATION_PLAN.md` |
 | clarify | AiCoding Agent Dev Kit fuzzy requirement gate |
-| plan | `spec/IMPLEMENTATION_PLAN.md` |
-| tasks | `spec/TASKS.md` |
-| analyze | `scripts/verify-agent-dev-kit-plan-mode.ps1` and hook submodules |
-| checklist | `spec/CHECKLIST.md`, golden tests, Smoke verify |
+| plan | `docs/spec/IMPLEMENTATION_PLAN.md` |
+| tasks | `docs/spec/TASKS.md` |
+| analyze | `tools/specialty/verify-agent-dev-kit-plan-mode.ps1` and hook submodules |
+| checklist | `docs/spec/CHECKLIST.md`, golden tests, Smoke verify |
 | implement | only after selected solution and approved plan |
-| converge | update `spec/TRACEABILITY.md`, changelog, docs, and remaining tasks |
+| converge | update `docs/spec/TRACEABILITY.md`, changelog, docs, and remaining tasks |
 
 ## AiCoding-specific additions
 
@@ -36,12 +36,12 @@ AiCoding adds embedded/agent safety requirements:
 ## Artifact lifecycle
 
 ```text
-spec/PRD_OPTIONS.md          # options if fuzzy
-spec/NEEDS_USER_DECISION.md  # blocks implementation
-spec/SELECTED_SOLUTION.md    # user selection
-.agent-memory/DECISIONS.md   # decision memory
-spec/IMPLEMENTATION_PLAN.md  # technical plan
-spec/TASKS.md                # execution tasks
-spec/TRACEABILITY.md         # requirement-plan-task-verify links
-spec/CHECKLIST.md            # quality checklist
+docs/spec/PRD_OPTIONS.md          # options if fuzzy
+docs/spec/NEEDS_USER_DECISION.md  # blocks implementation
+docs/spec/SELECTED_SOLUTION.md    # user selection
+.aicoding/memory/DECISIONS.md     # decision memory
+docs/spec/IMPLEMENTATION_PLAN.md  # technical plan
+docs/spec/TASKS.md                # execution tasks
+docs/spec/TRACEABILITY.md         # requirement-plan-task-verify links
+docs/spec/CHECKLIST.md            # quality checklist
 ```

@@ -16,7 +16,7 @@ func TestCategorizePwshPriority(t *testing.T) {
 		{"Taskfile.yml", "bin/aicoding.exe docsync ci --json", "unknown"},
 		{"Taskfile.yml", "bin/aicoding.exe kit verify --all --profile Smoke --json", "verify"},
 		{"Taskfile.yml", "bin/aicoding.exe fresh-clone --profile Release --json", "release"},
-		{"README.md", "pwsh -File scripts/uninstall-safety-profile.ps1", "uninstall"},
+		{"README.md", "pwsh -File tools/specialty/uninstall-safety-profile.ps1", "uninstall"},
 		{"README.md", "TI DSS / XDS / flash / erase / write-memory", "dss"},
 	}
 	for _, tc := range cases {
@@ -31,7 +31,7 @@ func TestIsPwshInvocationLine(t *testing.T) {
 		line string
 		want bool
 	}{
-		{"pwsh -File scripts/verify-release-governance-overlay.ps1", true},
+		{"pwsh -File tools/specialty/verify-release-governance-overlay.ps1", true},
 		{"\"type\": \"specialty-pwsh\"", true},
 		{"if (Get-Command pwsh -ErrorAction SilentlyContinue) {}", true},
 		{"PowerShell / Python slow path remains available", false},
@@ -46,8 +46,8 @@ func TestIsPwshInvocationLine(t *testing.T) {
 
 func TestVerifyHooksFastFirst(t *testing.T) {
 	repo := t.TempDir()
-	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "bin/aicoding.exe hook pre-commit\npwsh -File scripts/lint.ps1\n")
-	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "go run ./cmd/aicoding hook commit-msg --file $1\npwsh -File scripts/lint.ps1\n")
+	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "bin/aicoding.exe hook pre-commit\npwsh -File tools/specialty/lint.ps1\n")
+	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "go run ./cmd/aicoding hook commit-msg --file $1\npwsh -File tools/specialty/lint.ps1\n")
 	checks, errs := VerifyHooks(repo)
 	if len(errs) != 0 {
 		t.Fatalf("VerifyHooks errs = %v", errs)
@@ -82,8 +82,8 @@ func TestVerifyReleaseNotes(t *testing.T) {
 	mustWrite(t, filepath.Join(repo, "docs", "RELEASE_POLICY.md"), "Platform Release\nKit / Component Release\nMilestone Release\n")
 	for _, rel := range []string{
 		"docs/RELEASE_GOVERNANCE_OVERLAY.md",
-		"scripts/aicoding-tag-governance.ps1",
-		"scripts/verify-release-governance-overlay.ps1",
+		"tools/specialty/aicoding-tag-governance.ps1",
+		"tools/specialty/verify-release-governance-overlay.ps1",
 		"config/tagging-policy.json",
 		"config/kits/release-governance-overlay-kit.json",
 		"Taskfile.yml",

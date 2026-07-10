@@ -104,10 +104,10 @@ PowerShell checks are explicit specialty gates. Keep them for tag planning, rele
 For Codex-Skills changes, run the source repository gates in the Codex-Skills repository:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-plugin.ps1 -Plugin AiCoding -Configuration Development -Clean -Verify
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/compare-generated.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-plugin.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-skills.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File CodingKit/agents/skills/scripts/build-plugin.ps1 -Plugin AiCoding -Configuration Development -Clean -Verify
+powershell -NoProfile -ExecutionPolicy Bypass -File CodingKit/agents/skills/scripts/compare-generated.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File CodingKit/agents/skills/scripts/verify-plugin.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File CodingKit/agents/skills/scripts/verify-skills.ps1
 git diff --check
 ```
 
@@ -135,8 +135,8 @@ AiCoding Plugin cache
 Before changing runtime exposure, use the current audit/profile entrypoints:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit-runtime-skills.ps1 -Json
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/set-codex-skill-profile.ps1 -Profile runtime -DryRun -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/audit-runtime-skills.ps1 -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/set-codex-skill-profile.ps1 -Profile runtime -DryRun -Json
 ```
 
 Do not move or delete user-level skill roots without a dry-run report, runtime audit, plugin verification, rollback plan, and user approval.

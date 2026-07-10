@@ -41,7 +41,7 @@ Plugin skills and hooks discover CodingKit assets by this protocol:
 ```powershell
 git clone --recurse-submodules https://github.com/JiaxI2/AiCoding.git
 cd AiCoding
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-codex-kit.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/verify-codex-kit.ps1
 bin/aicoding.exe lifecycle install --all --json
 ```
 
@@ -65,5 +65,5 @@ When compatibility mode keeps `%USERPROFILE%\.codex\skills`, keep `.system` and 
 Run the runtime audit before and after install, update, migration, profile switching, or uninstall work:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/audit-runtime-skills.ps1 -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/audit-runtime-skills.ps1 -Json
 ```

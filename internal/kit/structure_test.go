@@ -83,11 +83,11 @@ func TestVerifyStructureMissingCodexAssetDirsWarnOnly(t *testing.T) {
 }
 func TestVerifyStructureDryRunSkippedSemanticsStayOK(t *testing.T) {
 	repo := structureRepo(t, false)
-	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "install-no-dry-run.ps1"), "param()\n")
+	mustWriteLifecycle(t, filepath.Join(repo, "tools", "specialty", "install-no-dry-run.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"unsupported-kit", "missing-action-kit", "no-dry-run-kit", "release-governance-overlay-kit"})
 	writeLifecycleManifest(t, repo, "unsupported-kit", `"install":{"type":"unsupported","reason":"not installable"},"update":{"type":"unsupported","reason":"not updateable"}`, "")
 	writeLifecycleManifest(t, repo, "missing-action-kit", `"status":{"type":"builtin-check","requiredPaths":[]}`, "")
-	writeLifecycleManifest(t, repo, "no-dry-run-kit", `"install":{"type":"specialty-pwsh","path":"scripts/install-no-dry-run.ps1","supportsDryRun":false}`, "")
+	writeLifecycleManifest(t, repo, "no-dry-run-kit", `"install":{"type":"specialty-pwsh","path":"tools/specialty/install-no-dry-run.ps1","supportsDryRun":false}`, "")
 	writeLifecycleManifest(t, repo, "release-governance-overlay-kit", `"status":{"type":"builtin-check","requiredPaths":[]}`, "")
 
 	entries, err := LoadRegistry(repo)
@@ -107,7 +107,7 @@ func TestVerifyStructureDryRunSkippedSemanticsStayOK(t *testing.T) {
 
 func TestVerifyStructureWarnsForMissingGeneratedPluginPackage(t *testing.T) {
 	repo := structureRepo(t, false)
-	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "install-codex-kit.ps1"), "param()\n")
+	mustWriteLifecycle(t, filepath.Join(repo, "tools", "specialty", "install-codex-kit.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"aicoding-platform"})
 	writeLifecycleManifest(t, repo, "aicoding-platform", `"install":{"type":"builtin-lifecycle","lifecycleAction":"install","supportsDryRun":true}`, `"pluginRoot":"CodingKit/agents/skills/plugins/AiCoding"`)
 
@@ -127,10 +127,10 @@ func TestVerifyStructureWarnsForMissingGeneratedPluginPackage(t *testing.T) {
 func TestVerifyStructureAllValidManifestsOK(t *testing.T) {
 	repo := structureRepo(t, true)
 	mustWriteLifecycle(t, filepath.Join(repo, "README.md"), "test\n")
-	mustWriteLifecycle(t, filepath.Join(repo, "scripts", "install-agent-patch-kit.ps1"), "param()\n")
+	mustWriteLifecycle(t, filepath.Join(repo, "tools", "specialty", "install-agent-patch-kit.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"common-control-kit", "agent-patch-kit"})
 	writeLifecycleManifest(t, repo, "common-control-kit", `"status":{"type":"builtin-check","requiredPaths":["README.md"]},"install":{"type":"unsupported","reason":"asset kit"},"update":{"type":"unsupported","reason":"asset kit"}`, "")
-	writeLifecycleManifest(t, repo, "agent-patch-kit", `"install":{"type":"specialty-pwsh","path":"scripts/install-agent-patch-kit.ps1","supportsDryRun":false},"status":{"type":"external-command","executable":"apatch"}`, "")
+	writeLifecycleManifest(t, repo, "agent-patch-kit", `"install":{"type":"specialty-pwsh","path":"tools/specialty/install-agent-patch-kit.ps1","supportsDryRun":false},"status":{"type":"external-command","executable":"apatch"}`, "")
 
 	entries, err := LoadRegistry(repo)
 	if err != nil {

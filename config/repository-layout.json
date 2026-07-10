@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "root": {
+    "allowDirectories": [
+      ".aicoding",
+      ".agents",
+      ".codex",
+      ".github",
+      ".githooks",
+      "CodingKit",
+      "cmd",
+      "config",
+      "docs",
+      "internal",
+      "testdata",
+      "tools"
+    ],
+    "forbiddenDirectories": [
+      ".agent-memory",
+      "patches",
+      "prompts",
+      "scripts",
+      "spec",
+      "templates",
+      "tests"
+    ],
+    "transientDirectories": [
+      "bin",
+      "dist",
+      "test-results"
+    ]
+  },
+  "directoryClasses": {
+    "source-of-truth": [
+      "CodingKit",
+      "cmd",
+      "config",
+      "internal",
+      ".aicoding/memory"
+    ],
+    "generated-projection": [
+      "bin",
+      "dist",
+      "test-results"
+    ],
+    "runtime-state": [
+      ".aicoding",
+      ".agents",
+      ".codex"
+    ],
+    "build-artifact": [
+      "bin",
+      "dist",
+      "test-results"
+    ],
+    "documentation": [
+      "docs"
+    ],
+    "test-fixture": [
+      "testdata"
+    ],
+    "migration-tooling": [
+      ".github",
+      ".githooks",
+      "tools"
+    ]
+  },
+  "documentation": {
+    "root": "docs",
+    "allowedRootFiles": [
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "README.md",
+      "README_CN.md",
+      "README_EN.md"
+    ],
+    "allowedOutsideRoots": [
+      ".agents",
+      ".codex",
+      ".github",
+      "CodingKit",
+      "testdata",
+      "tools/aicoding-global-tester/templates",
+      "tools/skill-template"
+    ]
+  },
+  "prompts": {
+    "allowedRoots": [
+      ".agents/prompts",
+      ".agents/skills",
+      "tools"
+    ],
+    "forbiddenRoot": "prompts"
+  },
+  "testFixtures": {
+    "root": "testdata",
+    "forbiddenRoot": "tests"
+  },
+  "generatedArtifacts": {
+    "directories": [
+      "bin/",
+      "dist/",
+      "test-results/"
+    ],
+    "extensions": [
+      ".exe",
+      ".zip"
+    ]
+  },
+  "skills": {
+    "authoritativeRoots": [
+      "CodingKit/agents/skills"
+    ],
+    "excludedRoots": [
+      "CodingKit/agents/skills/.build",
+      "CodingKit/agents/skills/plugins"
+    ],
+    "runtimeMirrors": [
+      ".agents/skills",
+      ".codex/skills"
+    ]
+  }
+}

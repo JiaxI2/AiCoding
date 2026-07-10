@@ -15,61 +15,6 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Developer Tools"
-    },
-    {
-      "name": "aicoding-agent-patch-kit",
-      "source": {
-        "source": "local",
-        "path": "./dist/agent-patch-kit/plugins/AiCodingAgentPatch"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "aicoding-ai-debug-repair-kit",
-      "source": {
-        "source": "local",
-        "path": "./dist/ai-debug-repair-kit/plugins/AiCodingAIDebugRepairKit"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "aicoding-agent-dev-kit",
-      "source": {
-        "source": "local",
-        "path": "./dist/aicoding-agent-dev-kit/plugins/AiCodingAgentDevKit"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Developer Tools"
-    },
-    {
-      "name": "codex-agent-powershell-skill-kit",
-      "displayName": "Codex Agent PowerShell Skill Kit",
-      "version": "1.2.1",
-      "description": "PS7-first PowerShell AST, safe rewrite, and PSScriptAnalyzer gate for Codex/AiCoding agents.",
-      "path": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit",
-      "skillPath": ".agents/skills/codex-agent-powershell-skill-kit",
-      "entrypoint": ".codex-plugin/plugin.json",
-      "tags": [
-        "powershell",
-        "codex",
-        "aicoding",
-        "agent-guard",
-        "psscriptanalyzer",
-        "ast"
-      ],
-      "skillPathRole": "generated-runtime-mirror",
-      "packagedSkillPath": "dist/codex-agent-powershell-skill-kit/plugins/AiCodingPowerShellSkillKit/skills/codex-agent-powershell-skill-kit"
     }
   ]
 }

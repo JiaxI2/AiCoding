@@ -74,8 +74,8 @@ func writeReleaseFixture(t *testing.T, repo string) {
 	mustWrite(t, filepath.Join(repo, "docs", "RELEASE_POLICY.md"), "Platform Release\nKit / Component Release\nMilestone Release\n")
 	for _, rel := range []string{
 		"docs/RELEASE_GOVERNANCE_OVERLAY.md",
-		"scripts/aicoding-tag-governance.ps1",
-		"scripts/verify-release-governance-overlay.ps1",
+		"tools/specialty/aicoding-tag-governance.ps1",
+		"tools/specialty/verify-release-governance-overlay.ps1",
 		"config/kits/release-governance-overlay-kit.json",
 		".aicoding/templates/perf-cache-plan.json",
 	} {
@@ -326,8 +326,8 @@ func writeGoControlFixture(t *testing.T, repo string) {
 	mustWrite(t, filepath.Join(repo, "README_EN.md"), "# AiCoding\n\nGit Governance Standard\n\nfeat fix docs style refactor perf test build ci chore\n")
 	writeReleaseFixture(t, repo)
 	mustWrite(t, filepath.Join(repo, ".github", "repository-governance.toml"), "[readme]\nprimary_language = \"zh-CN\"\nsecondary_language_surface = \"top-file-language-switch-and-github-about\"\nenglish_language_file = \"README_EN.md\"\nquick_environment_preview = true\n\n[github_about]\nrequire_bilingual = true\n\n[release]\nnotes_template = \".github/RELEASE_TEMPLATE.md\"\nnotes_validator = \"bin/aicoding.exe verify release-notes --json\"\nrequired_bilingual_sections = [\"Summary\"]\n\n[changelog]\nmode = \"unreleased\"\n")
-	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "bin/aicoding.exe hook pre-commit --json\npwsh -File scripts/fallback.ps1\n")
-	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "go run ./cmd/aicoding hook commit-msg --file $1\npwsh -File scripts/fallback.ps1\n")
+	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "bin/aicoding.exe hook pre-commit --json\npwsh -File tools/specialty/fallback.ps1\n")
+	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "go run ./cmd/aicoding hook commit-msg --file $1\npwsh -File tools/specialty/fallback.ps1\n")
 	mustWrite(t, filepath.Join(repo, "Taskfile.yml"), "version: '3'\n")
 	mustWrite(t, filepath.Join(repo, "config", "tagging-policy.json"), "{\"schemaVersion\":1}\n")
 	mustWrite(t, filepath.Join(repo, "config", "docs-sync.policy.json"), "{}\n")

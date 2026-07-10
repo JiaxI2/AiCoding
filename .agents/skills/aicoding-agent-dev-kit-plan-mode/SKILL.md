@@ -35,8 +35,8 @@ Planned artifacts: 计划产物
 先创建或更新：
 
 ```text
-spec/PRD_OPTIONS.md
-spec/NEEDS_USER_DECISION.md
+docs/spec/PRD_OPTIONS.md
+docs/spec/NEEDS_USER_DECISION.md
 ```
 
 然后向用户展示 2-5 个技术路线选项，并请求用户选择。
@@ -44,8 +44,8 @@ spec/NEEDS_USER_DECISION.md
 只有在以下记录存在后才能继续：
 
 ```text
-spec/SELECTED_SOLUTION.md
-.agent-memory/DECISIONS.md
+docs/spec/SELECTED_SOLUTION.md
+.aicoding/memory/DECISIONS.md
 ```
 
 ## Spec Kit 适配

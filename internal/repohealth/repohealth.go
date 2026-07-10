@@ -245,8 +245,8 @@ func VerifyReleaseNotes(repo string) ([]ReleaseNotesCheck, []string) {
 	checkContains("docs/RELEASE_POLICY.md", "Platform Release", "Kit / Component Release", "Milestone Release")
 	for _, rel := range []string{
 		"docs/RELEASE_GOVERNANCE_OVERLAY.md",
-		"scripts/aicoding-tag-governance.ps1",
-		"scripts/verify-release-governance-overlay.ps1",
+		"tools/specialty/aicoding-tag-governance.ps1",
+		"tools/specialty/verify-release-governance-overlay.ps1",
 		"config/tagging-policy.json",
 		"config/kits/release-governance-overlay-kit.json",
 		"Taskfile.yml",
@@ -348,7 +348,7 @@ func pwshScanFiles(repo string) ([]string, []string) {
 	}
 	addGlob(".githooks/*")
 	addGlob("config/kits/*.json")
-	addGlob("scripts/*.ps1")
+	addGlob("tools/specialty/*.ps1")
 	sort.Strings(files)
 	return files, errs
 }
@@ -670,7 +670,7 @@ func pwshBudgetScanFiles(repo string) ([]string, []string) {
 	}
 	addGlob(".githooks/*")
 	addGlob(".github/workflows/*")
-	addGlob("scripts/*.ps1")
+	addGlob("tools/specialty/*.ps1")
 	docsRoot := platform.RepoPath(repo, "docs")
 	if platform.IsDir(docsRoot) {
 		if err := filepath.WalkDir(docsRoot, func(path string, d fs.DirEntry, err error) error {
