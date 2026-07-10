@@ -62,11 +62,12 @@ PowerShell/Python 只保留在专项边界：tag planning / overlay compatibilit
 
 ## 目录治理
 
-`config/repository-layout.json` 是唯一机器配置；`aicoding governance layout --json` 据此校验根目录 allowlist、遗留目录、暂存生成物、文档位置、Prompt 归属、`tests`/`testdata` 重叠和 Skill 多 source-of-truth。
+`config/repository-layout.json` 是目录治理门禁的唯一机器配置；`aicoding governance layout --json` 据此校验根目录 allowlist、遗留目录、暂存生成物、文档位置、Prompt 归属、`tests`/`testdata` 重叠和 Skill 多 source-of-truth。`config/repository-navigation.json` 仅供 IA 导航生成器生成 hub 和 README 标记区，不引入第二个运行时门禁。
 
 - `cmd`、`config`、`internal`、`CodingKit` 与 `.aicoding/memory` 是 source-of-truth；
 - `docs` 是文档域，`testdata` 是测试夹具域，`tools` 是迁移与专项工具域；
 - `.agents`、`.codex`、`.github`、`.githooks` 是平台固定集成路径，不移动其根目录；
+- `.git` 是 Git 必需的元数据目录，不是业务目录，也不参与 human navigation；
 - `bin`、`dist`、`test-results` 是忽略的短生命周期生成目录，不能暂存或提交；
 - `tools/skill-template` 是 `skill-template` 的临时归属：待 Codex-Skills 在子模块上游提供对应模板域后，再按跨仓库升级流程迁入；
 - C Skill V3 本轮不部署；后续经上游验证后唯一允许的运行时挂载点是 `CodingKit/agents/skills/plugins/AiCoding/skills/aicoding-c99-standard-c`，不能再建立顶层或 standalone 镜像。

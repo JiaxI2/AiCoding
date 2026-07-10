@@ -14,7 +14,7 @@ $runtimeMarker = Join-Path $runtimeSkill '.runtime-mirror.json'
 $skill = if (Test-Path -LiteralPath $runtimeMarker) { $runtimeSkill } else { $packagedSkill }
 $tool = Join-Path $skill 'tools\\Invoke-PowerShellSkillKitGate.ps1'
 $regexTool = Join-Path $skill 'tools\\Invoke-PowerShellRegexOptimizationGate.ps1'
-$statusScript = Join-Path $repo 'scripts\\status-codex-agent-powershell-skill-kit.ps1'
+$statusScript = Join-Path $repo 'tools\\specialty\\status-codex-agent-powershell-skill-kit.ps1'
 
 $results = New-Object System.Collections.Generic.List[object]
 function Add-Check { param([string]$Name, [bool]$Ok, [string]$Message) $results.Add([pscustomobject]@{ Name=$Name; Ok=$Ok; Message=$Message }) | Out-Null }
@@ -45,11 +45,9 @@ if (Test-Path -LiteralPath $runtimeMarker) {
 Invoke-Check 'packaged-skill-ast-safety-analyzer' { & $tool -Path @((Join-Path $packagedSkill 'tools'), (Join-Path $packagedSkill 'hooks'), (Join-Path $packagedSkill 'tests\\cases\\good')) -Recurse -InstallMissingTools:$InstallMissingTools -FailOnWarning:$FailOnWarning | Out-Null }
 Invoke-Check 'packaged-skill-regex-gate' { & $regexTool -Path @((Join-Path $packagedSkill 'tools'), (Join-Path $packagedSkill 'tests\\cases\\good')) -Recurse -Format Json -FailOnWarning:$FailOnWarning | Out-Null }
 $kitScripts = @(
-    (Join-Path $repo 'scripts\\install-codex-agent-powershell-skill-kit.ps1'),
-    (Join-Path $repo 'scripts\\status-codex-agent-powershell-skill-kit.ps1'),
-    (Join-Path $repo 'scripts\\uninstall-codex-agent-powershell-skill-kit.ps1'),
-    (Join-Path $repo 'scripts\\verify-codex-agent-powershell-skill-kit.ps1'),
-    (Join-Path $repo 'scripts\\test-codex-agent-powershell-skill-kit.ps1')
+    (Join-Path $repo 'tools\\specialty\\status-codex-agent-powershell-skill-kit.ps1'),
+    (Join-Path $repo 'tools\\specialty\\verify-codex-agent-powershell-skill-kit.ps1'),
+    (Join-Path $repo 'tools\\specialty\\test-codex-agent-powershell-skill-kit.ps1')
 )
 Invoke-Check 'repo-kit-scripts-ast-safety-analyzer' { & $tool -Path $kitScripts -InstallMissingTools:$InstallMissingTools -FailOnWarning:$FailOnWarning | Out-Null }
 

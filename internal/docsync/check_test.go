@@ -18,8 +18,8 @@ func TestCheckModesExposeFileClasses(t *testing.T) {
 	writeDocSyncTestFile(t, repo, "config/docs-sync.semantic.json", "{}\n")
 	writeDocSyncTestFile(t, repo, ".github/workflows/aicoding-ci.yml", "name: docs\n")
 	writeDocSyncTestFile(t, repo, "docs/COMMANDS.md", "# Commands\n")
-	writeDocSyncTestFile(t, repo, "docs/DOC_SYNC_PLUS_SPEC.md", "# Spec\n")
-	writeDocSyncTestFile(t, repo, "docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md", "# Plan\n")
+	writeDocSyncTestFile(t, repo, "docs/architecture/DOC_SYNC_PLUS_SPEC.md", "# Spec\n")
+	writeDocSyncTestFile(t, repo, "docs/operations/DOC_SYNC_PLUS_VALIDATION_PLAN.md", "# Plan\n")
 	if out, err := exec.Command("git", "-C", repo, "add", ".").CombinedOutput(); err != nil {
 		t.Fatalf("git add: %v: %s", err, out)
 	}

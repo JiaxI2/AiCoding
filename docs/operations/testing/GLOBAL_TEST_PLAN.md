@@ -10,7 +10,7 @@
 2. **C 语言 skill 是否可验证风格一致性**：`c99-standard-c` 的 status、templates、fmt/check、`.clang-format` 投影与 source-of-truth 是否一致。
 3. **下载安装外部 skill / 创建用户 skill 相关流程是否规范**：kit registry、manifest、lifecycle plan、export、rollback/fresh-clone 路径是否可检查。
 4. **Go 并发是否可靠**：runner 并发计划、race 检查、CLI 并发只读调用是否稳定。
-5. **README 与文档是否同步**：README/README_CN/README_EN、COMMANDS、FAST_PATH、C99 skill 文档、DocSync gate 是否对齐。
+5. **README 与文档是否同步**：README/README_CN/README_EN、COMMANDS、C99 skill 文档、DocSync gate 是否对齐。
 6. **Git 仓库治理是否可执行**：hook、repo-text、release-notes、tag audit、governance lint 是否可重复执行并输出 JSON。
 7. **测试结果是否可交付给用户检查**：输出标准 Markdown 报告、JSON 结果、原始 stdout/stderr。
 
@@ -109,4 +109,4 @@
 
 ## 8. README / leaf skill 文档边界
 
-README.md 只作为顶层入口文档，测试只要求它索引稳定 hub 文档，例如 `docs/COMMANDS.md` 与 `docs/FAST_PATH_COMMANDS.md`。具体 leaf skill 文档，例如 `docs/C99_STANDARD_C_SKILL.md`，由 `DOCS-005` 和 `docs/COMMANDS.md` 覆盖，不要求 README 逐个列出。
+README.md 只作为顶层入口文档，测试只要求它索引稳定 hub 文档，例如 `docs/COMMANDS.md`。具体 leaf skill 文档，例如 `docs/guides/C99_STANDARD_C_SKILL.md`，由 `DOCS-005` 和 `docs/COMMANDS.md` 覆盖，不要求 README 逐个列出。

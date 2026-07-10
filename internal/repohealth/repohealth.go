@@ -241,10 +241,10 @@ func VerifyReleaseNotes(repo string) ([]ReleaseNotesCheck, []string) {
 	}
 	checkContains("CHANGELOG.md", "[Unreleased]")
 	checkReleaseNotesBody(".github/RELEASE_TEMPLATE.md", "摘要 / Summary", "变更内容 / What's Changed", "可追溯性 / Traceability")
-	checkContains("docs/TAGGING_POLICY.md", "vMAJOR.MINOR.PATCH", "kit/<kit-id>/vMAJOR.MINOR.PATCH", "milestone/YYYY.MM.DD-<name>")
-	checkContains("docs/RELEASE_POLICY.md", "Platform Release", "Kit / Component Release", "Milestone Release")
+	checkContains("docs/governance/TAGGING_POLICY.md", "vMAJOR.MINOR.PATCH", "kit/<kit-id>/vMAJOR.MINOR.PATCH", "milestone/YYYY.MM.DD-<name>")
+	checkContains("docs/governance/RELEASE_POLICY.md", "Platform Release", "Kit / Component Release", "Milestone Release")
 	for _, rel := range []string{
-		"docs/RELEASE_GOVERNANCE_OVERLAY.md",
+		"docs/governance/RELEASE_GOVERNANCE_OVERLAY.md",
 		"tools/specialty/aicoding-tag-governance.ps1",
 		"tools/specialty/verify-release-governance-overlay.ps1",
 		"config/tagging-policy.json",

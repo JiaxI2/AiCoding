@@ -56,4 +56,4 @@ Remaining boundary:
 
 - user-level `apatch` installation and its state scopes;
 - `.agents/skills/aicoding-agent-patch-kit/` runtime guidance;
-- `docs/agent-patch-kit-agents-snippet.md`.
+- `docs/guides/agent-patch-kit-agents-snippet.md`.

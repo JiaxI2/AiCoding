@@ -14,8 +14,8 @@ through a Git submodule.
 
 Before making changes, read:
 
-- `docs/CODEX_KIT_ARCHITECTURE.md`
-- `docs/MAINTENANCE_METHOD.md`
+- `docs/architecture/CODEX_KIT_ARCHITECTURE.md`
+- `docs/operations/MAINTENANCE_METHOD.md`
 - `CodingKit/README.md`
 - `config/codex-kit.json`
 - `CodingKit/AGENTS.md` for CodingKit asset changes
@@ -171,7 +171,7 @@ Source skills may have generated package copies in the repository, but a Skill n
 
 AiCoding workflow skills for SDD, MVP, BDD, architecture-first scaffolding, TDD fallback, and documentation synchronization are bundled through the AiCoding plugin only. Superpowers is optional acceleration, not a required dependency.
 
-Documentation synchronization is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/aicoding-ci.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit no-doc-change review note with a meaningful reason; see `docs/DOC_SYNC_PLUS_SPEC.md` for the marker format.
+Documentation synchronization is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/aicoding-ci.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit no-doc-change review note with a meaningful reason; see `docs/architecture/DOC_SYNC_PLUS_SPEC.md` for the marker format.
 
 ## README 和工具链可见性策略 / README And Toolchain Visibility Policy
 

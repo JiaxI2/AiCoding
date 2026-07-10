@@ -110,7 +110,7 @@ $Description
 ## Phase 0: 决策 / 计划
 
 - [ ] 确认是否需要用户选择技术路线。
-- [ ] 如需要，将用户选择记录到 `docs/spec/SELECTED_SOLUTION.md` 和 `.aicoding/memory/DECISIONS.md`。
+- [ ] 如需要，将用户选择记录到 `docs/decisions/plan-mode-overlay/SELECTED_SOLUTION.md` 和 `.aicoding/memory/DECISIONS.md`。
 
 ## Phase 1: 实现
 
@@ -197,7 +197,7 @@ Created: $now
 
 Agent 检测到架构路线存在歧义，或存在多条可行实现路径。
 
-需要用户操作：请从 `docs/spec/PRD_OPTIONS.md` 中选择一个技术路线。
+需要用户操作：请从 `docs/decisions/plan-mode-overlay/PRD_OPTIONS.md` 中选择一个技术路线。
 
 用户选择后执行：
 

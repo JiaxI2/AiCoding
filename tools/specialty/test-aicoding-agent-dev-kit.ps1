@@ -29,7 +29,7 @@ function Invoke-Cli([string[]]$CliArgs) {
 
 try {
   New-Item -ItemType Directory -Force -Path $temp | Out-Null
-  Invoke-Step "verify-package" { & (Join-Path $RepoRoot "scripts\verify-aicoding-agent-dev-kit.ps1") -RepoRoot $RepoRoot -Json | Out-Null }
+  Invoke-Step "verify-package" { & (Join-Path $RepoRoot "tools\specialty\verify-aicoding-agent-dev-kit.ps1") -RepoRoot $RepoRoot -Json | Out-Null }
   Invoke-Step "cli-install" { Invoke-Cli @("install", "--repo", $temp, "--spec-pack", "--memory", "--workflow", "--thin-skill", "--subagents") }
   Invoke-Step "cli-verify" { Invoke-Cli @("verify", "--repo", $temp) }
   Invoke-Step "cli-load" { Invoke-Cli @("load", "--repo", $temp, "--auto") }

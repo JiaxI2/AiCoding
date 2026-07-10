@@ -26,9 +26,9 @@ Taskfile 只做命令路由，不承载复杂业务逻辑。
 ## 2. Tag 治理脚本
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-tag-governance.ps1 -Action Audit -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-tag-governance.ps1 -Action Plan
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-tag-governance.ps1 -Action Verify
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools\specialty\aicoding-tag-governance.ps1 -Action Audit -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools\specialty\aicoding-tag-governance.ps1 -Action Plan
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools\specialty\aicoding-tag-governance.ps1 -Action Verify
 ```
 
 `Plan` 只生成纠偏命令，不会自动创建或 push tag。动态审计报告默认写入 `.aicoding/reports/release-governance/`，不作为长期文档提交。

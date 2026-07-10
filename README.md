@@ -73,12 +73,11 @@ User / Agent
 |---|---|
 | 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | 命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| Fast Path | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| 官方测试 | [docs/testing/GLOBAL_TEST_PLAN.md](docs/testing/GLOBAL_TEST_PLAN.md) |
-| PowerShell 当前边界 | [docs/POWERSHELL_BOUNDARY.md](docs/POWERSHELL_BOUNDARY.md) |
-| Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
-| Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
-| Release policy | [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) |
+| 官方测试 | [docs/operations/testing/GLOBAL_TEST_PLAN.md](docs/operations/testing/GLOBAL_TEST_PLAN.md) |
+| PowerShell 当前边界 | [docs/architecture/POWERSHELL_BOUNDARY.md](docs/architecture/POWERSHELL_BOUNDARY.md) |
+| Release governance overlay | [docs/governance/RELEASE_GOVERNANCE_OVERLAY.md](docs/governance/RELEASE_GOVERNANCE_OVERLAY.md) |
+| Tag policy | [docs/governance/TAGGING_POLICY.md](docs/governance/TAGGING_POLICY.md) |
+| Release policy | [docs/governance/RELEASE_POLICY.md](docs/governance/RELEASE_POLICY.md) |
 
 ## Tag 规则摘要
 
@@ -86,3 +85,32 @@ User / Agent
 - Kit/component 发布 tag：`kit/<kit-id>/vMAJOR.MINOR.PATCH`。
 - Milestone tag：`milestone/YYYY.MM.DD-<name>`。
 - 不移动、不覆盖、不复用已经绑定 release 的 immutable tag。
+
+<!-- AICODING:REPOSITORY_MAP:START -->
+## Repository map
+
+> Generated from `config/repository-navigation.json`. Edit the configuration, not this block.
+
+| Area | Purpose | Audience | Entry |
+|---|---|---|---|
+| `CodingKit/` | Authoritative skill/plugin assets and submodule boundary. | maintainer, agent | `CodingKit/agents/skills` |
+| `cmd/` | Go executable entry points only. | developer | `cmd/aicoding` |
+| `config/` | Machine-readable platform configuration, registries, policies and schemas. | maintainer, agent | `config/README.md` |
+| `docs/` | Canonical human documentation. | user, contributor, maintainer | `docs/README.md` |
+| `internal/` | Go platform implementation packages. | developer | `internal/README.md` |
+| `testdata/` | Fixtures and sample repositories; no executable business logic. | developer | `testdata` |
+| `tools/` | Standalone specialty, migration, testing and template tooling. | maintainer, agent | `tools/README.md` |
+
+### Common routes
+
+| Need | Start here | Command |
+|---|---|---|
+| 初始化或构建 AiCoding | `cmd/aicoding` | `go run ./cmd/aicoding bootstrap --json` |
+| 查找平台命令 | `docs/COMMANDS.md` | `bin/aicoding.exe governance layout --json` |
+| 修改架构或包边界 | `docs/architecture` | — |
+| 修改 Hook、发布或 Git 治理 | `docs/governance` | `aicoding governance layout --json` |
+| 维护 kit 注册表或生命周期 | `config` | `bin/aicoding.exe status --all --json` |
+| 运行完整验证 | `docs/operations` | `bin/aicoding.exe test full --json` |
+| 维护专项工具 | `tools` | — |
+| 维护 Skill 权威源码 | `CodingKit/agents/skills` | — |
+<!-- AICODING:REPOSITORY_MAP:END -->

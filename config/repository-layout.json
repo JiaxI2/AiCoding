@@ -72,7 +72,15 @@
       "CHANGELOG.md",
       "README.md",
       "README_CN.md",
-      "README_EN.md"
+      "README_EN.md",
+      "CONTRIBUTING.md",
+      "SECURITY.md",
+      ".aicoding/memory/DECISIONS.md",
+      "config/README.md",
+      "config/skills/c99-standard-c/rules/embedded-c-rules.md",
+      "internal/README.md",
+      "tools/README.md",
+      "tools/migration/aicoding-agent-dev-kit.SKILL.insert.md"
     ],
     "allowedOutsideRoots": [
       ".agents",

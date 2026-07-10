@@ -33,7 +33,7 @@ try {
   if (-not $RepoRoot) { $RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..\..\..")).Path }
   $changed = @(Get-GitChangedFiles $RepoRoot)
   $implChanged = @($changed | Where-Object { $_ -match '^(tools/specialty|config|CodingKit|\.agents|\.github)/' })
-  $required = @("docs/spec/IMPLEMENTATION_PLAN.md", "docs/spec/TASKS.md", "docs/spec/TRACEABILITY.md")
+  $required = @("docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md", "docs/decisions/plan-mode-overlay/TASKS.md", "docs/decisions/plan-mode-overlay/TRACEABILITY.md")
   $missing = @()
   if ($implChanged.Count -gt 0) {
     foreach ($rel in $required) {
@@ -43,7 +43,7 @@ try {
   $ok = ($missing.Count -eq 0)
   $message = if ($ok) { "Spec artifact 门禁验证通过。" } else { "检测到实现相关文件变更，但缺少计划、任务或可追溯性文档。" }
   $code = if ($ok) { "OK" } else { "SPEC_ARTIFACTS_MISSING" }
-  $nextSteps = "请补齐 docs/spec/IMPLEMENTATION_PLAN.md、docs/spec/TASKS.md 和 docs/spec/TRACEABILITY.md 后重新运行门禁。"
+  $nextSteps = "请补齐 docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md、docs/decisions/plan-mode-overlay/TASKS.md 和 docs/decisions/plan-mode-overlay/TRACEABILITY.md 后重新运行门禁。"
   $data = @{ changedFiles=$changed; implementationChangedFiles=$implChanged; missing=$missing }
   if (-not $ok) { $data.nextSteps = $nextSteps }
   Out-Hook $ok $code $message $data

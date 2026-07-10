@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "limits": {
+    "maxVisibleRootDirectories": 8,
+    "maxHiddenRootDirectories": 7,
+    "maxRootFiles": 18,
+    "maxDocsRootMarkdownFiles": 3,
+    "maxDirectoryFanout": 14,
+    "maxHumanPathDepth": 5
+  },
+  "root": {
+    "allowedDirectories": [
+      ".aicoding",
+      ".agents",
+      ".codex",
+      ".github",
+      ".githooks",
+      ".git",
+      "CodingKit",
+      "cmd",
+      "config",
+      "docs",
+      "internal",
+      "testdata",
+      "tools"
+    ],
+    "forbiddenDirectories": [
+      ".agent-memory",
+      "dist",
+      "patches",
+      "prompts",
+      "scripts",
+      "spec",
+      "templates",
+      "tests"
+    ],
+    "requiredFiles": [
+      "README.md",
+      "README_CN.md",
+      "README_EN.md",
+      "AGENTS.md",
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "LICENSE",
+      "SECURITY.md",
+      "Taskfile.yml",
+      "go.mod"
+    ],
+    "generatedDirectories": [
+      "bin",
+      "dist",
+      "test-results"
+    ]
+  },
+  "docs": {
+    "allowedCategories": [
+      "architecture",
+      "guides",
+      "governance",
+      "operations",
+      "reference",
+      "decisions"
+    ],
+    "allowedRootMarkdownFiles": [
+      "README.md",
+      "ARCHITECTURE_OVERVIEW.md",
+      "COMMANDS.md"
+    ],
+    "versionSuffixPattern": "(?i)(?:_|-)(?:v|version)?[0-9]+$"
+  },
+  "hubs": [
+    {
+      "path": "docs/README.md",
+      "title": "Documentation Hub",
+      "purpose": "Canonical documentation index grouped by user intent."
+    },
+    {
+      "path": "config/README.md",
+      "title": "Configuration Catalog",
+      "purpose": "Configuration source-of-truth, precedence, schemas, registries and policies."
+    },
+    {
+      "path": "tools/README.md",
+      "title": "Tool Catalog",
+      "purpose": "Supported specialty tools, migration tools, test tools and their entry commands."
+    },
+    {
+      "path": "internal/README.md",
+      "title": "Internal Package Map",
+      "purpose": "Package ownership and dependency direction; not end-user documentation."
+    }
+  ],
+  "areas": [
+    {
+      "path": "CodingKit",
+      "purpose": "Authoritative skill/plugin assets and submodule boundary.",
+      "audience": "maintainer, agent",
+      "entry": "CodingKit/agents/skills"
+    },
+    {
+      "path": "cmd",
+      "purpose": "Go executable entry points only.",
+      "audience": "developer",
+      "entry": "cmd/aicoding"
+    },
+    {
+      "path": "config",
+      "purpose": "Machine-readable platform configuration, registries, policies and schemas.",
+      "audience": "maintainer, agent",
+      "entry": "config/README.md"
+    },
+    {
+      "path": "docs",
+      "purpose": "Canonical human documentation.",
+      "audience": "user, contributor, maintainer",
+      "entry": "docs/README.md"
+    },
+    {
+      "path": "internal",
+      "purpose": "Go platform implementation packages.",
+      "audience": "developer",
+      "entry": "internal/README.md"
+    },
+    {
+      "path": "testdata",
+      "purpose": "Fixtures and sample repositories; no executable business logic.",
+      "audience": "developer",
+      "entry": ""
+    },
+    {
+      "path": "tools",
+      "purpose": "Standalone specialty, migration, testing and template tooling.",
+      "audience": "maintainer, agent",
+      "entry": "tools/README.md"
+    }
+  ],
+  "routes": [
+    {
+      "intent": "初始化或构建 AiCoding",
+      "path": "cmd/aicoding",
+      "command": "go run ./cmd/aicoding bootstrap --json"
+    },
+    {
+      "intent": "查找平台命令",
+      "path": "docs/COMMANDS.md",
+      "command": "bin/aicoding.exe governance layout --json"
+    },
+    {
+      "intent": "修改架构或包边界",
+      "path": "docs/architecture",
+      "command": ""
+    },
+    {
+      "intent": "修改 Hook、发布或 Git 治理",
+      "path": "docs/governance",
+      "command": "aicoding governance layout --json"
+    },
+    {
+      "intent": "维护 kit 注册表或生命周期",
+      "path": "config",
+      "command": "bin/aicoding.exe status --all --json"
+    },
+    {
+      "intent": "运行完整验证",
+      "path": "docs/operations",
+      "command": "bin/aicoding.exe test full --json"
+    },
+    {
+      "intent": "维护专项工具",
+      "path": "tools",
+      "command": ""
+    },
+    {
+      "intent": "维护 Skill 权威源码",
+      "path": "CodingKit/agents/skills",
+      "command": ""
+    }
+  ],
+  "readmePolicy": {
+    "generatedMarkerStart": "<!-- AICODING:REPOSITORY_MAP:START -->",
+    "generatedMarkerEnd": "<!-- AICODING:REPOSITORY_MAP:END -->",
+    "requiredHubDirectories": [
+      "docs",
+      "config",
+      "tools",
+      "internal"
+    ],
+    "forbiddenReadmeDirectories": [
+      "cmd",
+      "testdata",
+      ".github",
+      ".githooks",
+      ".agents",
+      ".codex"
+    ]
+  }
+}

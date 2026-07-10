@@ -40,9 +40,9 @@ Trade-offs:
 Remove:
 
 ```text
-docs/AGENT_DEV_KIT_PLAN_MODE.md
-docs/SPEC_KIT_ADAPTATION.md
-docs/SUPERPOWER_SKILL_ADAPTATION.md
+docs/decisions/AGENT_DEV_KIT_PLAN_MODE.md
+docs/decisions/SPEC_KIT_ADAPTATION.md
+docs/decisions/SUPERPOWER_SKILL_ADAPTATION.md
 config/agent-dev-kit-plan-mode.registry.json
 tools/specialty/new-agent-plan-mode-session.ps1
 tools/specialty/verify-agent-dev-kit-plan-mode.ps1

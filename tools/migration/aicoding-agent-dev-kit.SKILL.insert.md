@@ -5,12 +5,12 @@
 ### 模糊需求处理
 
 1. 模糊需求不要直接实现。
-2. 先创建或更新 `docs/spec/PRD_OPTIONS.md`。
+2. 先创建或更新 `docs/decisions/plan-mode-overlay/PRD_OPTIONS.md`。
 3. 给出 2-5 个技术路线选项，说明优点、缺点、风险、验证方式、工作量和推荐条件。
 4. 请求用户选择技术路线。
 5. 用户选择前，不修改架构敏感文件。
-6. 用户选择后，写入 `docs/spec/SELECTED_SOLUTION.md` 和 `.aicoding/memory/DECISIONS.md`。
-7. 再生成或更新 `docs/spec/IMPLEMENTATION_PLAN.md`、`docs/spec/TASKS.md`、`docs/spec/TRACEABILITY.md`、`docs/spec/CHECKLIST.md`。
+6. 用户选择后，写入 `docs/decisions/plan-mode-overlay/SELECTED_SOLUTION.md` 和 `.aicoding/memory/DECISIONS.md`。
+7. 再生成或更新 `docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md`、`docs/decisions/plan-mode-overlay/TASKS.md`、`docs/decisions/plan-mode-overlay/TRACEABILITY.md`、`docs/decisions/plan-mode-overlay/CHECKLIST.md`。
 
 ### 权限摘要要求
 

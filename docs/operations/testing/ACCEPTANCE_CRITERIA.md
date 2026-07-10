@@ -34,7 +34,7 @@
 必须满足：
 
 1. README 三件套存在。
-2. COMMANDS、FAST_PATH、C99 skill 文档存在。
+2. COMMANDS、C99 skill 文档存在。
 3. README 中的默认入口与 COMMANDS 中的命令矩阵不冲突。
 5. DocSync CI/Release gate 成功。
 
@@ -66,7 +66,7 @@
 | BOOTSTRAP | 修复 Go build、路径识别、bin 输出 |
 | GO | 先修 `go test ./...`，再修 race/并发 |
 | C99_SKILL | 先修 skill.json/style/templates/rules，再修 formatter |
-| DOCSYNC | 修 README/COMMANDS/FAST_PATH/C99 文档索引 |
+| DOCSYNC | 修 README/COMMANDS/C99 文档索引 |
 | LIFECYCLE | 修 registry/manifest/schema/version/路径 |
 | GIT_GOVERNANCE | 修 hook、gitattributes、tag policy、release notes |
 | PWSH_BOUNDARY | 清理默认入口中残余 PowerShell 编排 |

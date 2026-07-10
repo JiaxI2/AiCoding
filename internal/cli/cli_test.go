@@ -70,10 +70,10 @@ func writeReleaseFixture(t *testing.T, repo string) {
 	t.Helper()
 	mustWrite(t, filepath.Join(repo, "CHANGELOG.md"), "# CHANGELOG\n\n## [Unreleased]\n\n- **docs**: test fixture.\n")
 	mustWrite(t, filepath.Join(repo, ".github", "RELEASE_TEMPLATE.md"), "## 摘要 / Summary\n\n## 变更内容 / What's Changed\n\n## 可追溯性 / Traceability\n")
-	mustWrite(t, filepath.Join(repo, "docs", "TAGGING_POLICY.md"), "vMAJOR.MINOR.PATCH\nkit/<kit-id>/vMAJOR.MINOR.PATCH\nmilestone/YYYY.MM.DD-<name>\n")
-	mustWrite(t, filepath.Join(repo, "docs", "RELEASE_POLICY.md"), "Platform Release\nKit / Component Release\nMilestone Release\n")
+	mustWrite(t, filepath.Join(repo, "docs", "governance", "TAGGING_POLICY.md"), "vMAJOR.MINOR.PATCH\nkit/<kit-id>/vMAJOR.MINOR.PATCH\nmilestone/YYYY.MM.DD-<name>\n")
+	mustWrite(t, filepath.Join(repo, "docs", "governance", "RELEASE_POLICY.md"), "Platform Release\nKit / Component Release\nMilestone Release\n")
 	for _, rel := range []string{
-		"docs/RELEASE_GOVERNANCE_OVERLAY.md",
+		"docs/governance/RELEASE_GOVERNANCE_OVERLAY.md",
 		"tools/specialty/aicoding-tag-governance.ps1",
 		"tools/specialty/verify-release-governance-overlay.ps1",
 		"config/kits/release-governance-overlay-kit.json",
@@ -336,8 +336,8 @@ func writeGoControlFixture(t *testing.T, repo string) {
 	mustWrite(t, filepath.Join(repo, "internal", "docsync", "docsync.go"), "package docsync\n")
 	mustWrite(t, filepath.Join(repo, "internal", "docsync", "check.go"), "package docsync\n")
 	mustWrite(t, filepath.Join(repo, "docs", "COMMANDS.md"), "# Commands\n")
-	mustWrite(t, filepath.Join(repo, "docs", "DOC_SYNC_PLUS_SPEC.md"), "# DocSync Spec\n")
-	mustWrite(t, filepath.Join(repo, "docs", "DOC_SYNC_PLUS_VALIDATION_PLAN.md"), "# DocSync Validation\n")
+	mustWrite(t, filepath.Join(repo, "docs", "architecture", "DOC_SYNC_PLUS_SPEC.md"), "# DocSync Spec\n")
+	mustWrite(t, filepath.Join(repo, "docs", "operations", "DOC_SYNC_PLUS_VALIDATION_PLAN.md"), "# DocSync Validation\n")
 	mustWrite(t, filepath.Join(repo, "config", "codex-kit.json"), minimalCodexKitConfig())
 	mustWrite(t, filepath.Join(repo, ".agents", "plugins", "marketplace.json"), "{\"plugins\":[{\"name\":\"aicoding\",\"source\":{\"path\":\"CodingKit/agents/skills/plugins/AiCoding\"}}]}\n")
 	mustWrite(t, filepath.Join(repo, "config", "kit-registry.json"), "{\"schemaVersion\":1,\"name\":\"test\",\"defaultMode\":\"all\",\"kits\":[{\"id\":\"sample-kit\",\"enabled\":true,\"order\":1,\"manifest\":\"config/kits/sample-kit.json\"}]}\n")

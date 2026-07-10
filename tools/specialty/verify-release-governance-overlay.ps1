@@ -42,9 +42,9 @@ Push-Location $RepoRootPath
 try {
     $required = @(
         'Taskfile.yml',
-        'docs/TAGGING_POLICY.md',
-        'docs/RELEASE_POLICY.md',
-        'docs/RELEASE_GOVERNANCE_OVERLAY.md',
+        'docs/governance/TAGGING_POLICY.md',
+        'docs/governance/RELEASE_POLICY.md',
+        'docs/governance/RELEASE_GOVERNANCE_OVERLAY.md',
         'tools/specialty/aicoding-tag-governance.ps1',
         'tools/specialty/verify-release-governance-overlay.ps1',
         'config/tagging-policy.json',

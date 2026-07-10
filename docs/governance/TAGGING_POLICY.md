@@ -43,8 +43,8 @@ bin\aicoding.exe test release --json
 专项 tag 对齐计划仅在需要人工审计 tag 命名时运行：
 
 ```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-tag-governance.ps1 -Action Audit -Json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\aicoding-tag-governance.ps1 -Action Plan
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools\specialty\aicoding-tag-governance.ps1 -Action Audit -Json
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools\specialty\aicoding-tag-governance.ps1 -Action Plan
 ```
 
 ## 不允许的动作

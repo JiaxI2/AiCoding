@@ -68,8 +68,8 @@ func Check(repo, mode string) CheckResult {
 	}
 	if mode == "release" {
 		result.Errors = append(result.Errors, requiredPathErrors(repo, []string{
-			"docs/DOC_SYNC_PLUS_SPEC.md",
-			"docs/DOC_SYNC_PLUS_VALIDATION_PLAN.md",
+			"docs/architecture/DOC_SYNC_PLUS_SPEC.md",
+			"docs/operations/DOC_SYNC_PLUS_VALIDATION_PLAN.md",
 		})...)
 	}
 	result.Errors = compact(result.Errors)

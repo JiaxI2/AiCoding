@@ -73,12 +73,11 @@ User / Agent
 |---|---|
 | Architecture overview | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | Command matrix | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| Fast Path | [docs/FAST_PATH_COMMANDS.md](docs/FAST_PATH_COMMANDS.md) |
-| Official testing | [docs/testing/GLOBAL_TEST_PLAN.md](docs/testing/GLOBAL_TEST_PLAN.md) |
-| PowerShell boundary | [docs/POWERSHELL_BOUNDARY.md](docs/POWERSHELL_BOUNDARY.md) |
-| Release governance overlay | [docs/RELEASE_GOVERNANCE_OVERLAY.md](docs/RELEASE_GOVERNANCE_OVERLAY.md) |
-| Tag policy | [docs/TAGGING_POLICY.md](docs/TAGGING_POLICY.md) |
-| Release policy | [docs/RELEASE_POLICY.md](docs/RELEASE_POLICY.md) |
+| Official testing | [docs/operations/testing/GLOBAL_TEST_PLAN.md](docs/operations/testing/GLOBAL_TEST_PLAN.md) |
+| PowerShell boundary | [docs/architecture/POWERSHELL_BOUNDARY.md](docs/architecture/POWERSHELL_BOUNDARY.md) |
+| Release governance overlay | [docs/governance/RELEASE_GOVERNANCE_OVERLAY.md](docs/governance/RELEASE_GOVERNANCE_OVERLAY.md) |
+| Tag policy | [docs/governance/TAGGING_POLICY.md](docs/governance/TAGGING_POLICY.md) |
+| Release policy | [docs/governance/RELEASE_POLICY.md](docs/governance/RELEASE_POLICY.md) |
 
 ## Tag Rules Summary
 

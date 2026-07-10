@@ -13,14 +13,14 @@ Therefore AiCoding should adapt Spec Kit as a pattern, not vendor it wholesale.
 | Spec Kit concept | AiCoding adaptation |
 |---|---|
 | constitution | `docs/AGENT_ENGINEERING_FOUNDATION.md`, `docs/AGENT_WORKFLOW_STANDARD.md`, `AGENTS.md` |
-| specify | `docs/spec/PRD_OPTIONS.md`, requirements sections in `docs/spec/IMPLEMENTATION_PLAN.md` |
+| specify | `docs/decisions/plan-mode-overlay/PRD_OPTIONS.md`, requirements sections in `docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md` |
 | clarify | AiCoding Agent Dev Kit fuzzy requirement gate |
-| plan | `docs/spec/IMPLEMENTATION_PLAN.md` |
-| tasks | `docs/spec/TASKS.md` |
+| plan | `docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md` |
+| tasks | `docs/decisions/plan-mode-overlay/TASKS.md` |
 | analyze | `tools/specialty/verify-agent-dev-kit-plan-mode.ps1` and hook submodules |
-| checklist | `docs/spec/CHECKLIST.md`, golden tests, Smoke verify |
+| checklist | `docs/decisions/plan-mode-overlay/CHECKLIST.md`, golden tests, Smoke verify |
 | implement | only after selected solution and approved plan |
-| converge | update `docs/spec/TRACEABILITY.md`, changelog, docs, and remaining tasks |
+| converge | update `docs/decisions/plan-mode-overlay/TRACEABILITY.md`, changelog, docs, and remaining tasks |
 
 ## AiCoding-specific additions
 
@@ -36,12 +36,12 @@ AiCoding adds embedded/agent safety requirements:
 ## Artifact lifecycle
 
 ```text
-docs/spec/PRD_OPTIONS.md          # options if fuzzy
-docs/spec/NEEDS_USER_DECISION.md  # blocks implementation
-docs/spec/SELECTED_SOLUTION.md    # user selection
+docs/decisions/plan-mode-overlay/PRD_OPTIONS.md          # options if fuzzy
+docs/decisions/plan-mode-overlay/NEEDS_USER_DECISION.md  # blocks implementation
+docs/decisions/plan-mode-overlay/SELECTED_SOLUTION.md    # user selection
 .aicoding/memory/DECISIONS.md     # decision memory
-docs/spec/IMPLEMENTATION_PLAN.md  # technical plan
-docs/spec/TASKS.md                # execution tasks
-docs/spec/TRACEABILITY.md         # requirement-plan-task-verify links
-docs/spec/CHECKLIST.md            # quality checklist
+docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md  # technical plan
+docs/decisions/plan-mode-overlay/TASKS.md                # execution tasks
+docs/decisions/plan-mode-overlay/TRACEABILITY.md         # requirement-plan-task-verify links
+docs/decisions/plan-mode-overlay/CHECKLIST.md            # quality checklist
 ```

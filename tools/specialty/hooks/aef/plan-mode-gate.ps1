@@ -33,7 +33,7 @@ try {
 请先生成 Plan Mode 会话：
 pwsh tools/specialty/new-agent-plan-mode-session.ps1 -Feature "<功能名>" -Description "<需求描述>" -NeedsDecision -Json
 
-然后让用户从 docs/spec/PRD_OPTIONS.md 中选择技术路线。
+然后让用户从 docs/decisions/plan-mode-overlay/PRD_OPTIONS.md 中选择技术路线。
 
 用户选择后执行：
 pwsh tools/specialty/confirm-agent-decision.ps1 -Title "<标题>" -SelectedOption "<用户选择的方案>" -Rationale "<选择理由>" -Json

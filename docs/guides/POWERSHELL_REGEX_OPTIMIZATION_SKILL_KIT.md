@@ -36,6 +36,6 @@ Update-CodeDynamically -SourceCode $source -Pattern '(?:^|_)(\w)' -Callback { pa
 ```powershell
 go test ./...
 go build -o bin/aicoding.exe ./cmd/aicoding
-bin\aicoding.exe powershell regex-lint --path dist\codex-agent-powershell-skill-kit\plugins\AiCodingPowerShellSkillKit\skills --json
-pwsh -NoProfile -ExecutionPolicy Bypass -File scripts\test-codex-agent-powershell-skill-kit.ps1 -InstallMissingTools -Json
+bin\aicoding.exe powershell regex-lint --path tools\specialty --json
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools\specialty\test-codex-agent-powershell-skill-kit.ps1 -InstallMissingTools -Json
 ```

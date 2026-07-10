@@ -10,9 +10,9 @@
   "mode": "powershell-specialty",
   "description": "Tag/release namespace governance, Taskfile entry, and performance-loop overlay for AiCoding.",
   "paths": {
-    "taggingPolicy": "docs/TAGGING_POLICY.md",
-    "releasePolicy": "docs/RELEASE_POLICY.md",
-    "overlayGuide": "docs/RELEASE_GOVERNANCE_OVERLAY.md",
+    "taggingPolicy": "docs/governance/TAGGING_POLICY.md",
+    "releasePolicy": "docs/governance/RELEASE_POLICY.md",
+    "overlayGuide": "docs/governance/RELEASE_GOVERNANCE_OVERLAY.md",
     "policyConfig": "config/tagging-policy.json"
   },
   "commands": {
@@ -20,9 +20,9 @@
       "type": "builtin-check",
       "requiredPaths": [
         "Taskfile.yml",
-        "docs/TAGGING_POLICY.md",
-        "docs/RELEASE_POLICY.md",
-        "docs/RELEASE_GOVERNANCE_OVERLAY.md",
+        "docs/governance/TAGGING_POLICY.md",
+        "docs/governance/RELEASE_POLICY.md",
+        "docs/governance/RELEASE_GOVERNANCE_OVERLAY.md",
         "tools/specialty/aicoding-tag-governance.ps1",
         "tools/specialty/verify-release-governance-overlay.ps1",
         "config/tagging-policy.json",
@@ -45,9 +45,9 @@
       "type": "builtin-package",
       "include": [
         "Taskfile.yml",
-        "docs/TAGGING_POLICY.md",
-        "docs/RELEASE_POLICY.md",
-        "docs/RELEASE_GOVERNANCE_OVERLAY.md",
+        "docs/governance/TAGGING_POLICY.md",
+        "docs/governance/RELEASE_POLICY.md",
+        "docs/governance/RELEASE_GOVERNANCE_OVERLAY.md",
         "tools/specialty/aicoding-tag-governance.ps1",
         "tools/specialty/verify-release-governance-overlay.ps1",
         "config/tagging-policy.json",
@@ -69,9 +69,9 @@
   "export": {
     "include": [
       "Taskfile.yml",
-      "docs/TAGGING_POLICY.md",
-      "docs/RELEASE_POLICY.md",
-      "docs/RELEASE_GOVERNANCE_OVERLAY.md",
+      "docs/governance/TAGGING_POLICY.md",
+      "docs/governance/RELEASE_POLICY.md",
+      "docs/governance/RELEASE_GOVERNANCE_OVERLAY.md",
       "tools/specialty/aicoding-tag-governance.ps1",
       "tools/specialty/verify-release-governance-overlay.ps1",
       "config/tagging-policy.json",

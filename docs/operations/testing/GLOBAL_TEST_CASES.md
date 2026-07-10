@@ -48,7 +48,7 @@
 | DOC-001 | DocSync CI | `bin/aicoding.exe docsync ci --json` | 退出码 0，JSON 合法 | REQUIRED |
 | DOC-002 | DocSync all | `bin/aicoding.exe docsync all --json` | 退出码 0，JSON 合法 | WARN |
 | DOC-003 | DocSync release | `bin/aicoding.exe docsync release --json` | 退出码 0，JSON 合法 | REQUIRED |
-| DOC-004 | 文档索引一致性 | 静态检查 README/COMMANDS/FAST_PATH/C99 文档 | README 只索引稳定 hub 文档；leaf skill 文档由 COMMANDS 与 leaf 文档自身覆盖 | REQUIRED |
+| DOC-004 | 文档索引一致性 | 静态检查 README/COMMANDS/C99 文档 | README 只索引稳定 hub 文档；leaf skill 文档由 COMMANDS 与 leaf 文档自身覆盖 | REQUIRED |
 
 ## 6. LIFECYCLE：外部 skill / kit 生命周期规范
 
@@ -76,8 +76,8 @@
 | DOCS-001 | README 三件套 | 检查 `README.md`、`README_CN.md`、`README_EN.md` | 文件存在 | REQUIRED |
 | DOCS-002 | README 架构声明 | 静态搜索 Go CLI/Fast Path/DocSync/skill verify/lifecycle/export/fresh-clone | 关键入口存在 | REQUIRED |
 | DOCS-003 | COMMANDS 命令矩阵 | 检查 `docs/COMMANDS.md` | 包含 bootstrap/smoke/ci/full/release/C99/DocSync/lifecycle/export/fresh-clone | REQUIRED |
-| DOCS-004 | Fast Path 文档 | 检查 `docs/FAST_PATH_COMMANDS.md` | 包含 Go 默认控制面和 PowerShell boundary | REQUIRED |
-| DOCS-005 | C99 skill 文档 | 检查 `docs/C99_STANDARD_C_SKILL.md` | 包含配置边界和 CLI 入口 | REQUIRED |
+| DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含 Go 默认控制面和 PowerShell boundary | REQUIRED |
+| DOCS-005 | C99 skill 文档 | 检查 `docs/guides/C99_STANDARD_C_SKILL.md` | 包含配置边界和 CLI 入口 | REQUIRED |
 
 ## 9. GIT_GOVERNANCE：Git 仓库治理
 

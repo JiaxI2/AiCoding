@@ -2,7 +2,7 @@
 
 Taskfile 是人机短路由；Go CLI 是默认控制面；业务逻辑位于 Go 的 `internal/*` 包中。PowerShell/Python 只作为专项工具保留，不承载默认 Smoke、CI、Full 或 Release profile。
 
-C/H 风格命令见 [C99 Standard C Skill](C99_STANDARD_C_SKILL.md)。
+C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 
 ## 默认入口
 
@@ -38,6 +38,7 @@ C/H 风格命令见 [C99 Standard C Skill](C99_STANDARD_C_SKILL.md)。
 | Full aggregate | `bin\aicoding.exe full --json` |
 | Release gate | `bin\aicoding.exe release gate --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
+| Repository layout gate | `bin\aicoding.exe governance layout --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
 | Release notes verification | `bin\aicoding.exe verify release-notes --json` |
@@ -65,16 +66,20 @@ C/H 风格命令见 [C99 Standard C Skill](C99_STANDARD_C_SKILL.md)。
 
 当前默认 CI workflow 是 `.github/workflows/aicoding-ci.yml`：
 
-```powershell
+```text
 go build -o bin/aicoding.exe ./cmd/aicoding
 bin\aicoding.exe ci --profile Smoke --json
 ```
 
 手动或定时 release job 运行：
 
-```powershell
+```text
 bin\aicoding.exe test release --json
 ```
+
+## 运行模型
+
+默认控制面统一由 Go CLI 承担：`Full` 和 `Release` 分别通过 `test full` 与 `test release` 运行，全局测试报告落在临时的 `test-results/`；DocSync、Lifecycle、Skill verify 和 fresh-clone 均由上表中的 Go CLI 路由执行。PowerShell 仅保留专项慢路径，边界见 [PowerShell Boundary](architecture/POWERSHELL_BOUNDARY.md)。
 
 ## PowerShell 专项入口
 

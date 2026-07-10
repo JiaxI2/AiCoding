@@ -26,23 +26,23 @@
   "docTargets": {
     "internal/docsync/check.go": [
       "README.md",
-      "docs/MAINTENANCE_METHOD.md",
-      "docs/DOC_SYNC_PLUS_SPEC.md",
+      "docs/operations/MAINTENANCE_METHOD.md",
+      "docs/architecture/DOC_SYNC_PLUS_SPEC.md",
       "CHANGELOG.md"
     ],
     "config/docs-sync.policy.json": [
-      "docs/DOC_SYNC_PLUS_SPEC.md",
-      "docs/MAINTENANCE_METHOD.md",
+      "docs/architecture/DOC_SYNC_PLUS_SPEC.md",
+      "docs/operations/MAINTENANCE_METHOD.md",
       "README.md",
       "CHANGELOG.md"
     ],
     ".githooks/pre-commit": [
-      "docs/MAINTENANCE_METHOD.md",
+      "docs/operations/MAINTENANCE_METHOD.md",
       "AGENTS.md",
       "CHANGELOG.md"
     ],
     ".github/workflows/aicoding-ci.yml": [
-      "docs/MAINTENANCE_METHOD.md",
+      "docs/operations/MAINTENANCE_METHOD.md",
       "AGENTS.md",
       "CHANGELOG.md"
     ]

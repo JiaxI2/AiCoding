@@ -67,8 +67,8 @@ function Match-AnyPath([string]$Path, [string[]]$Patterns) {
 function Test-ZhFirstLanguagePolicy([string]$Root) {
   $targets = @(
     "AGENTS.md",
-    "docs/AGENT_LANGUAGE_POLICY.md",
-    "docs/AGENT_DEV_KIT_PLAN_MODE.md",
+    "docs/governance/AGENT_LANGUAGE_POLICY.md",
+    "docs/decisions/AGENT_DEV_KIT_PLAN_MODE.md",
     ".agents/skills/aicoding-agent-dev-kit-plan-mode/prompts/apply-devkit-plan-mode-overlay.prompt.md",
     "tools/migration/aicoding-agent-dev-kit.SKILL.insert.md",
     "tools/specialty/new-agent-plan-mode-session.ps1",
@@ -140,10 +140,10 @@ try {
   }
 
   $requiredFiles = @(
-    "docs/AGENT_LANGUAGE_POLICY.md",
-    "docs/AGENT_DEV_KIT_PLAN_MODE.md",
-    "docs/SPEC_KIT_ADAPTATION.md",
-    "docs/SUPERPOWER_SKILL_ADAPTATION.md",
+    "docs/governance/AGENT_LANGUAGE_POLICY.md",
+    "docs/decisions/AGENT_DEV_KIT_PLAN_MODE.md",
+    "docs/decisions/SPEC_KIT_ADAPTATION.md",
+    "docs/decisions/SUPERPOWER_SKILL_ADAPTATION.md",
     ".agents/skills/aicoding-agent-dev-kit-plan-mode/prompts/apply-devkit-plan-mode-overlay.prompt.md",
     "tools/migration/aicoding-agent-dev-kit.SKILL.insert.md",
     "tools/specialty/new-agent-plan-mode-session.ps1",
@@ -168,9 +168,9 @@ try {
     $warnings.Add(("中文优先轻量扫描发现文档提示项，请人工确认：{0}" -f ($languageWarnings.Count))) | Out-Null
   }
 
-  $needsPath = Join-Path $RepoRoot "docs/spec/NEEDS_USER_DECISION.md"
+  $needsPath = Join-Path $RepoRoot "docs/decisions/plan-mode-overlay/NEEDS_USER_DECISION.md"
   $hasPendingDecision = Test-Path -LiteralPath $needsPath -PathType Leaf
-  Add-Check "decision.pending" ((-not $hasPendingDecision) -or $AllowPendingDecision) "检测到 docs/spec/NEEDS_USER_DECISION.md，用户尚未选择技术路线，禁止继续实现。" @{ exists=$hasPendingDecision }
+  Add-Check "decision.pending" ((-not $hasPendingDecision) -or $AllowPendingDecision) "检测到 docs/decisions/plan-mode-overlay/NEEDS_USER_DECISION.md，用户尚未选择技术路线，禁止继续实现。" @{ exists=$hasPendingDecision }
 
   $changed = @(Get-GitChangedFiles $RepoRoot)
   $sensitive = @()
@@ -181,7 +181,7 @@ try {
   }
 
   $decisionText = ""
-  foreach ($rel in @("docs/spec/SELECTED_SOLUTION.md", ".aicoding/memory/DECISIONS.md")) {
+  foreach ($rel in @("docs/decisions/plan-mode-overlay/SELECTED_SOLUTION.md", ".aicoding/memory/DECISIONS.md")) {
     $decisionText += "`n" + (Read-TextIfExists (Join-Path $RepoRoot ($rel -replace '/', [IO.Path]::DirectorySeparatorChar)))
   }
   foreach ($dirRel in @("docs/decisions", "docs/adr")) {
@@ -193,24 +193,24 @@ try {
   $selectedMarkers = if ($registry -and $registry.requiredMarkers.selectedDecision) { @($registry.requiredMarkers.selectedDecision) } else { @("Decision Status: Selected","Status: Accepted","Selected option:") }
   $hasSelectedDecision = Has-AnyMarker $decisionText $selectedMarkers
 
-  $planText = Read-TextIfExists (Join-Path $RepoRoot "docs/spec/IMPLEMENTATION_PLAN.md")
+  $planText = Read-TextIfExists (Join-Path $RepoRoot "docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md")
   $planMarkers = if ($registry -and $registry.requiredMarkers.approvedPlan) { @($registry.requiredMarkers.approvedPlan) } else { @("Plan Status: Approved","Status: Accepted") }
   $hasPlan = -not [string]::IsNullOrWhiteSpace($planText)
   $hasApprovedPlan = Has-AnyMarker $planText $planMarkers
 
-  $hasTasks = Test-Path -LiteralPath (Join-Path $RepoRoot "docs/spec/TASKS.md") -PathType Leaf
-  $hasTrace = Test-Path -LiteralPath (Join-Path $RepoRoot "docs/spec/TRACEABILITY.md") -PathType Leaf
+  $hasTasks = Test-Path -LiteralPath (Join-Path $RepoRoot "docs/decisions/plan-mode-overlay/TASKS.md") -PathType Leaf
+  $hasTrace = Test-Path -LiteralPath (Join-Path $RepoRoot "docs/decisions/plan-mode-overlay/TRACEABILITY.md") -PathType Leaf
 
   if ($sensitive.Count -gt 0) {
     Add-Check "architecture.decision" $hasSelectedDecision "检测到架构敏感文件变更，但未找到已接受的用户决策记录。" @{ sensitive=$sensitive }
-    Add-Check "implementation.plan" $hasPlan "架构敏感变更需要 docs/spec/IMPLEMENTATION_PLAN.md。" @{ approved=$hasApprovedPlan }
-    Add-Check "implementation.tasks" $hasTasks "架构敏感变更需要 docs/spec/TASKS.md。"
-    Add-Check "implementation.traceability" $hasTrace "架构敏感变更需要 docs/spec/TRACEABILITY.md。"
+    Add-Check "implementation.plan" $hasPlan "架构敏感变更需要 docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md。" @{ approved=$hasApprovedPlan }
+    Add-Check "implementation.tasks" $hasTasks "架构敏感变更需要 docs/decisions/plan-mode-overlay/TASKS.md。"
+    Add-Check "implementation.traceability" $hasTrace "架构敏感变更需要 docs/decisions/plan-mode-overlay/TRACEABILITY.md。"
   } else {
     Add-Check "architecture.changed" $true "未检测到架构敏感文件变更。" @{ changed=$changed }
   }
 
-  if (@($changed | Where-Object { $_ -eq "docs/spec/PRD_OPTIONS.md" }).Count -gt 0) {
+  if (@($changed | Where-Object { $_ -eq "docs/decisions/plan-mode-overlay/PRD_OPTIONS.md" }).Count -gt 0) {
     Add-Check "options.selected" $hasSelectedDecision "PRD_OPTIONS 已变更，需要先记录用户选择的技术路线。"
   }
 

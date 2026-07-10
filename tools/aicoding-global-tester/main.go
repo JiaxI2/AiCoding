@@ -486,15 +486,15 @@ func runStatic(cfg Config, tc TestCase) Result {
 	case "DOCS-003":
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"bootstrap", "smoke", "ci", "full", "release", "c99-standard-c", "docsync", "lifecycle", "export", "fresh-clone"})
 	case "DOCS-004":
-		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/FAST_PATH_COMMANDS.md"), []string{"Go CLI", "Full", "Release", "DocSync", "Lifecycle", "PowerShell Boundary"})
+		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"Go CLI", "Full", "Release", "DocSync", "Lifecycle", "PowerShell Boundary"})
 	case "DOCS-005":
-		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/C99_STANDARD_C_SKILL.md"), []string{"config/skills/c99-standard-c", "skill c99-standard-c", "fmt", "check", "templates"})
+		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/guides/C99_STANDARD_C_SKILL.md"), []string{"config/skills/c99-standard-c", "skill c99-standard-c", "fmt", "check", "templates"})
 	case "GIT-007":
 		err = checkGitAttributes(cfg.Repo)
 	case "PWSH-003":
 		err = checkTaskfileGoRoutes(cfg.Repo)
 	case "REL-002":
-		err = requirePaths(cfg.Repo, "docs/TAGGING_POLICY.md", "docs/RELEASE_POLICY.md")
+		err = requirePaths(cfg.Repo, "docs/governance/TAGGING_POLICY.md", "docs/governance/RELEASE_POLICY.md")
 	default:
 		err = errors.New("static check not implemented")
 	}
@@ -644,10 +644,9 @@ func checkDocIndex(repo string) error {
 	// skill command coverage. This avoids forcing README churn whenever a specific
 	// skill is added, renamed, or split.
 	checks := map[string][]string{
-		"README.md":                    {"docs/COMMANDS.md", "docs/FAST_PATH_COMMANDS.md"},
-		"docs/COMMANDS.md":             {"docsync", "skill verify", "lifecycle", "fresh-clone", "c99-standard-c"},
-		"docs/FAST_PATH_COMMANDS.md":   {"DocSync", "skill verify", "fresh-clone"},
-		"docs/C99_STANDARD_C_SKILL.md": {"skill c99-standard-c", "config/skills/c99-standard-c"},
+		"README.md":                           {"docs/COMMANDS.md"},
+		"docs/COMMANDS.md":                    {"docsync", "skill verify", "lifecycle", "fresh-clone", "c99-standard-c"},
+		"docs/guides/C99_STANDARD_C_SKILL.md": {"skill c99-standard-c", "config/skills/c99-standard-c"},
 	}
 	for rel, words := range checks {
 		if err := fileContainsAll(filepath.Join(repo, rel), words); err != nil {
