@@ -30,11 +30,11 @@ jobs:
 
       - name: Repository layout gate
         shell: cmd
-        run: bin/aicoding.exe governance layout --json
+        run: .\bin\aicoding.exe governance layout --json
 
       - name: Go CI Smoke
         shell: cmd
-        run: bin/aicoding.exe ci --profile Smoke --json
+        run: .\bin\aicoding.exe ci --profile Smoke --json
 
   release-gate:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
@@ -56,8 +56,8 @@ jobs:
 
       - name: Repository layout gate
         shell: cmd
-        run: bin/aicoding.exe governance layout --json
+        run: .\bin\aicoding.exe governance layout --json
 
       - name: Release test profile
         shell: cmd
-        run: bin/aicoding.exe test release --json
+        run: .\bin\aicoding.exe test release --json

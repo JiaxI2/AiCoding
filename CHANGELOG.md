@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **ci**: 修复 Windows GitHub Actions 的相对 CLI 路径，避免 `cmd` 将 `bin/aicoding.exe` 解析为命令加参数。
+
 ## [0.6.0] - 2026-07-10
 
 - **refactor(layout)**: 收敛文档分类、Plan Mode 产物路径与工具路径，新增 IA 导航配置和生成的目录导航 hub。

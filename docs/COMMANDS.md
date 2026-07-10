@@ -68,7 +68,7 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 
 ```text
 go build -o bin/aicoding.exe ./cmd/aicoding
-bin\aicoding.exe ci --profile Smoke --json
+.\bin\aicoding.exe ci --profile Smoke --json
 ```
 
 手动或定时 release job 运行：
