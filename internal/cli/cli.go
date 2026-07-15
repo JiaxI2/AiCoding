@@ -122,6 +122,7 @@ Usage:
   aicoding skill c99-standard-c templates [--repo-root PATH] [--json]
   aicoding skill c99-standard-c fmt --scope changed|staged|all|paths [--path PATH ...] [--preview] [--repo-root PATH] [--json]
   aicoding skill c99-standard-c check --scope changed|staged|all|paths [--path PATH ...] [--repo-root PATH] [--json]
+  aicoding skill c99-standard-c verify --profile fast|full [--target PATH] [--overlay PATH ...] [--timings] [--repo-root PATH] [--json]
   aicoding lifecycle plan --action install|update|uninstall --all [--repo-root PATH] [--json]
   aicoding lifecycle install|update|uninstall --all [--repo-root PATH] [--json]
   aicoding lifecycle rollback --last [--repo-root PATH] [--json]
@@ -179,7 +180,7 @@ func (m *multiFlag) Set(value string) error {
 
 func runCStyleCommand(commandPrefix string, skillID string, args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, fmt.Errorf("%s requires subcommand: status, templates, fmt, or check", commandPrefix)
+		return report.Result{}, fmt.Errorf("%s requires subcommand: status, templates, fmt, check, or verify", commandPrefix)
 	}
 
 	sub := args[0]
@@ -187,11 +188,21 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 	repoArg := fs.String("repo-root", "", "repository root")
 	scopeArg := fs.String("scope", "changed", "changed, staged, all, or paths")
 	previewArg := fs.Bool("preview", false, "preview formatting changes without writing files")
+	profileArg := fs.String("profile", "fast", "C Kit verification profile: fast or full")
+	targetArg := fs.String("target", "", "C Kit verification target manifest")
+	timingsArg := fs.Bool("timings", false, "include C Kit per-step timings")
 	_ = fs.Bool("json", false, "json output")
 
 	var pathArgs multiFlag
+	var overlayArgs multiFlag
 	fs.Var(&pathArgs, "path", "explicit path for --scope paths; can be repeated")
-	_ = fs.Parse(args[1:])
+	fs.Var(&overlayArgs, "overlay", "C Kit partial configuration overlay; can be repeated")
+	if err := fs.Parse(args[1:]); err != nil {
+		return report.Result{}, fmt.Errorf("%s %s arguments: %w", commandPrefix, sub, err)
+	}
+	if fs.NArg() != 0 {
+		return report.Result{}, fmt.Errorf("%s %s does not accept positional arguments: %s", commandPrefix, sub, strings.Join(fs.Args(), " "))
+	}
 
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
@@ -220,6 +231,12 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 			"formatter_config_exists": status.FormatterConfigExists,
 			"templates_exists":        status.CommentTemplatesExists,
 			"rules_exists":            status.RulesExists,
+			"kit_id":                  status.KitID,
+			"kit_version":             status.KitVersion,
+			"kit_root_exists":         status.KitRootExists,
+			"kit_config_exists":       status.KitConfigExists,
+			"kit_snippets_exists":     status.KitSnippetsExists,
+			"kit_quick_target_exists": status.KitQuickTargetExists,
 			"errors":                  len(errs),
 		}, nil, errs, status)
 		return report.Result{
@@ -285,6 +302,38 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 			Errors:        data.Errors,
 			ElapsedMS:     elapsed,
 		}, runErr
+
+	case "verify":
+		data, verifyErr := cstyle.VerifyBySkill(skillID, cstyle.VerifyOptions{
+			RepoRoot: repo,
+			Profile:  *profileArg,
+			Target:   *targetArg,
+			Overlays: overlayArgs,
+			Timings:  *timingsArg,
+		})
+		elapsed := report.Elapsed(start)
+		errs := []string{}
+		if verifyErr != nil {
+			errs = append(errs, verifyErr.Error())
+		}
+		standard := standardReport(commandPrefix+" verify", data.Profile, elapsed, map[string]interface{}{
+			"skill_id": data.SkillID,
+			"kit_id":   data.KitID,
+			"profile":  data.Profile,
+			"target":   data.Target,
+			"overlays": len(data.Overlays),
+			"errors":   len(errs),
+		}, nil, errs, data)
+		return report.Result{
+			SchemaVersion: 1,
+			Command:       commandPrefix + " verify",
+			OK:            verifyErr == nil,
+			Message:       "C99 Standard C skill C Kit verification",
+			RepoRoot:      repo,
+			Data:          standard,
+			Errors:        errs,
+			ElapsedMS:     elapsed,
+		}, verifyErr
 
 	default:
 		return report.Result{}, fmt.Errorf("unsupported %s subcommand: %s", commandPrefix, sub)

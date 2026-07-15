@@ -1,6 +1,14 @@
 function Get-AiCodingRoot {
     param([string]$ScriptRoot)
-    return (Resolve-Path -LiteralPath (Join-Path $ScriptRoot '..')).Path
+    $current = Get-Item -LiteralPath $ScriptRoot -ErrorAction Stop
+    while ($null -ne $current) {
+        $config = Join-Path $current.FullName 'config\codex-kit.json'
+        if (Test-Path -LiteralPath $config -PathType Leaf) {
+            return $current.FullName
+        }
+        $current = $current.Parent
+    }
+    throw "Unable to locate AiCoding root from: $ScriptRoot"
 }
 
 function Read-CodexKitConfig {

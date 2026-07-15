@@ -1,0 +1,44 @@
+{
+  "name": "C UserStyle Kit",
+  "state": "current",
+  "version": "1.2.0",
+  "selectedArchitecture": "Option D - simple entry plus public advanced examples",
+  "integratedIntoAiCoding": true,
+  "reference": {
+    "document": "DKBA 2826-2011.5",
+    "pages": 61,
+    "chapters": "0-16",
+    "clauses": 139,
+    "unclassifiedClauses": 0,
+    "sha256": "80D23AC9CACB83AEBAA1C28889271F744D5866CA45D09266533895F256262200"
+  },
+  "generatedFiles": [
+    "generated-demo/demo.h",
+    "generated-demo/demo.c",
+    "generated-demo/advanced/README.md",
+    "generated-demo/advanced/state_machine.h",
+    "generated-demo/advanced/state_machine.c",
+    "generated-demo/advanced/protocol.h",
+    "generated-demo/advanced/protocol.c",
+    "generated-demo/advanced/fixed_pool.h",
+    "generated-demo/advanced/fixed_pool.c",
+    "generated-demo/advanced/tests/advanced_test.c"
+  ],
+  "validated": true,
+  "validation": [
+    "PDF and Markdown: 61 pages, 139/139 clauses, 0 missing, 0 extra",
+    "Rule catalog: 139 covered, 0 unclassified, non-clause sections covered",
+    "c-kit, VS Code snippets, rule-catalog, and external target JSON passed their checked-in schemas",
+    "Go tests passed, including golden lint and negative rule fixtures",
+    "Golden demo generation and full-file lint passed",
+    "Chapter 8 comment method, numbered complex-function flow, branch/case intent, and readability summaries passed",
+    "Unknown employee IDs are omitted and source modification history is disabled by default",
+    "GCC 14.2 strict C99 compiled with warnings as errors",
+    "Clang 17 strict C99 front-end compile passed with warnings as errors",
+    "All four headers independently passed GCC/Clang C99 and G++/Clang++ C++17",
+    "GCC behavior, boundary and fault-injection tests passed",
+    "External verify fast and full profiles passed without invoking TI/CCS or firmware builds",
+    "PowerShell AST, safety and PSScriptAnalyzer gates passed",
+    "AiCoding Kit registry, existing C99 Skill route, fast/full verification, and global gates passed while the skills submodule remained unchanged"
+  ]
+}

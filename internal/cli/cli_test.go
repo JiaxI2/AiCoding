@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/cstyle"
 	"github.com/JiaxI2/AiCoding/internal/report"
 )
 
@@ -136,6 +137,7 @@ func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
 		`aicoding test full|release`,
 		`aicoding release gate`,
 		`aicoding skill c99-standard-c status`,
+		`aicoding skill c99-standard-c verify`,
 	} {
 		if !strings.Contains(source, needle) {
 			t.Fatalf("cli.go is missing %q", needle)
@@ -249,6 +251,48 @@ func TestC99StandardCSkillCommandsRouteToCStyle(t *testing.T) {
 
 }
 
+func TestC99StandardCSkillVerifyWrapsCStyleKitJSON(t *testing.T) {
+	repo := t.TempDir()
+	writeC99SkillFixture(t, repo)
+	writeFakeCStyleKit(t, repo)
+	mustWrite(t, filepath.Join(repo, "fixtures", "target.json"), "{}\n")
+	mustWrite(t, filepath.Join(repo, "overlays", "project.json"), "{}\n")
+
+	res, err := runSkill([]string{
+		"c99-standard-c", "verify",
+		"--profile", "fast",
+		"--target", "fixtures/target.json",
+		"--overlay", "overlays/project.json",
+		"--timings",
+		"--repo-root", repo,
+		"--json",
+	}, time.Now())
+	if err != nil || !res.OK || res.Command != "skill c99-standard-c verify" {
+		t.Fatalf("skill c99-standard-c verify failed: res=%#v err=%v", res, err)
+	}
+	standard, ok := res.Data.(report.StandardReport)
+	if !ok || standard.Status != "PASS" || standard.Profile != "fast" {
+		t.Fatalf("expected standard C99 verify report, got %#v", res.Data)
+	}
+	details, ok := standard.Details.(cstyle.VerifyResult)
+	if !ok || details.Payload["ok"] != true || details.Target != "fixtures/target.json" {
+		t.Fatalf("unexpected C Kit verify details: %#v", standard.Details)
+	}
+}
+
+func TestC99StandardCSkillVerifyRejectsInvalidArguments(t *testing.T) {
+	for _, args := range [][]string{
+		{"c99-standard-c", "verify", "--bogus", "--json"},
+		{"c99-standard-c", "verify", "--target"},
+		{"c99-standard-c", "verify", "unexpected.json"},
+	} {
+		res, err := runSkill(args, time.Now())
+		if err == nil || res.OK {
+			t.Fatalf("invalid arguments must fail: args=%#v res=%#v err=%v", args, res, err)
+		}
+	}
+}
+
 func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 	repo := t.TempDir()
 	writeFakeGlobalTester(t, repo)
@@ -297,6 +341,14 @@ func writeC99SkillFixture(t *testing.T, repo string) {
   "formatter": { "id": "clang-format", "config": "style/clang-format.yaml" },
   "commentTemplates": "templates/comment-templates.json",
   "rules": "rules/embedded-c-rules.md",
+  "kit": {
+    "id": "c-userstyle-kit",
+    "version": "test",
+    "root": "CodingKit/tools/c-userstyle-kit",
+    "config": "CodingKit/tools/c-userstyle-kit/examples/c-kit.json",
+    "snippets": "CodingKit/tools/c-userstyle-kit/examples/c-snippets.json",
+    "quickTarget": "CodingKit/tools/c-userstyle-kit/examples/verify-target.json"
+  },
   "excludedDirectories": ["vendor", "third_party", "generated", "Drivers", "device", "build", "out", "dist"]
 }
 `)
@@ -317,6 +369,30 @@ func writeC99SkillFixture(t *testing.T, repo string) {
 }
 `)
 	mustWrite(t, filepath.Join(repo, "config", "skills", "c99-standard-c", "rules", "embedded-c-rules.md"), "# rules\n")
+}
+
+func writeFakeCStyleKit(t *testing.T, repo string) {
+	t.Helper()
+	root := filepath.Join(repo, filepath.FromSlash(cstyle.DefaultKitRoot))
+	mustWrite(t, filepath.Join(root, "go.mod"), "module c-userstyle-kit\n\ngo 1.22\n")
+	mustWrite(t, filepath.Join(root, "cmd", "cstylekit", "main.go"), `package main
+
+import (
+	"encoding/json"
+	"os"
+)
+
+func main() {
+	_ = json.NewEncoder(os.Stdout).Encode(map[string]interface{}{
+		"schema":  "cstylekit.verify.v1",
+		"ok":      true,
+		"profile": "fast",
+	})
+}
+`)
+	mustWrite(t, filepath.Join(root, filepath.FromSlash(cstyle.DefaultKitConfig)), "{}\n")
+	mustWrite(t, filepath.Join(root, filepath.FromSlash(cstyle.DefaultKitSnippets)), "{}\n")
+	mustWrite(t, filepath.Join(root, filepath.FromSlash(cstyle.DefaultKitQuickTarget)), "{}\n")
 }
 
 func writeGoControlFixture(t *testing.T, repo string) {

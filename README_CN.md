@@ -6,6 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
 [![clang-format](https://img.shields.io/badge/clang--format-17.0.2-5C2D91?logo=llvm&logoColor=white)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
+[![C UserStyle Kit](https://img.shields.io/badge/C%20UserStyle%20Kit-1.2.0-00599C?logo=c&logoColor=white)](docs/guides/C99_STANDARD_C_SKILL.md)
 [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
 
 AiCoding 是本地 AI coding 工作流的平台集成、安装、治理和 CodingKit 资产仓库。它负责 kit 注册表、hook、验证入口、发布治理和 Go CLI 控制面，不拥有嵌入式 skill 源码。
@@ -73,6 +74,7 @@ User / Agent
 |---|---|
 | 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
 | 命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
+| C99 / C UserStyle Kit | [docs/guides/C99_STANDARD_C_SKILL.md](docs/guides/C99_STANDARD_C_SKILL.md) |
 | 官方测试 | [docs/operations/testing/GLOBAL_TEST_PLAN.md](docs/operations/testing/GLOBAL_TEST_PLAN.md) |
 | PowerShell 当前边界 | [docs/architecture/POWERSHELL_BOUNDARY.md](docs/architecture/POWERSHELL_BOUNDARY.md) |
 | Release governance overlay | [docs/governance/RELEASE_GOVERNANCE_OVERLAY.md](docs/governance/RELEASE_GOVERNANCE_OVERLAY.md) |

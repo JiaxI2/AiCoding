@@ -1,0 +1,222 @@
+{
+  "schema": "c-userstyle",
+  "id": "embedded-c-userstyle-huawei-dkba-2826",
+  "standard": "c99",
+  "reference": {
+    "title": "华为 C 语言编程规范 DKBA 2826-2011.5",
+    "pdf": "references/huawei-c-language-programming-standard-dkba-2826-2011-5.pdf",
+    "markdown": "references/huawei-c-language-programming-standard-dkba-2826-2011-5.md",
+    "ruleCatalog": "config/rules/huawei-c-language-programming-standard.rules.json",
+    "sha256": "80D23AC9CACB83AEBAA1C28889271F744D5866CA45D09266533895F256262200",
+    "pages": 61,
+    "expectedClauses": 139
+  },
+  "scope": {
+    "include": [
+      "**/*.c",
+      "**/*.h"
+    ],
+    "exclude": [
+      "vendor",
+      "external",
+      "generated",
+      "Drivers",
+      "device",
+      "build",
+      "out",
+      "dist",
+      "FLASH",
+      "RAM"
+    ]
+  },
+  "style": {
+    "indentWidth": 4,
+    "continuationIndentWidth": 4,
+    "columnLimit": 100,
+    "braceStyle": "allman",
+    "pointerAlignment": "right",
+    "newline": "lf",
+    "encoding": "utf-8",
+    "changedLinesOnly": true,
+    "requireEOFNewline": true,
+    "forbidLineComment": true
+  },
+  "naming": {
+    "modulePrefix": "DEMO",
+    "publicFunction": "${MODULE}_${PascalCase}",
+    "privateFunction": "${MODULE}_${PascalCase}",
+    "type": "${lower_snake_case}_t",
+    "functionPointer": "${lower_snake_case}_fn",
+    "macro": "${UPPER_SNAKE_CASE}",
+    "enumConstant": "${UPPER_SNAKE_CASE}",
+    "globalVariable": "g_${lower_snake_case}",
+    "staticVariable": "s_${lower_snake_case}",
+    "localVariable": "${lower_snake_case}",
+    "parameter": "${lower_snake_case}",
+    "structMember": "${lower_snake_case}",
+    "forbidReservedIdentifier": true
+  },
+  "documentation": {
+    "fileHeader": true,
+    "requireFileMetadata": true,
+    "allFunctions": true,
+    "types": true,
+    "macros": true,
+    "requireBrief": true,
+    "requireParamTags": true,
+    "requireParamDirection": true,
+    "requireReturnTag": true,
+    "requireDefinitionDetails": true,
+    "requirePublicPerformance": true,
+    "requirePublicReentrancy": true,
+    "requireBarePrivatePrototype": true,
+    "requireCaseIntentComment": true,
+    "requireGlobalVariableDetail": true,
+    "requireExternC": true,
+    "employeeIdPolicy": "whenProvided",
+    "modificationHistoryPolicy": "disabled"
+  },
+  "safety": {
+    "forbidDynamicAllocation": true,
+    "forbidVLA": true,
+    "requireStdintTypes": true,
+    "requireExplicitVoid": true,
+    "forbidUnboundedLoop": true,
+    "forbidGoto": true,
+    "forbiddenCalls": [
+      "printf",
+      "scanf",
+      "strcpy",
+      "strcat",
+      "sprintf",
+      "vsprintf",
+      "gets",
+      "system",
+      "popen",
+      "sleep",
+      "Sleep",
+      "vTaskDelay"
+    ],
+    "requirePointerNullComparison": true,
+    "forbidBooleanLiteralComparison": true,
+    "preferPreIncrement": true,
+    "requireSizeTForSize": true,
+    "maxParameters": 5
+  },
+  "controlFlow": {
+    "requireCompoundBraces": true,
+    "requireSwitchDefault": true,
+    "requireCaseBreak": true,
+    "forbidStandaloneTernaryCall": true
+  },
+  "macros": {
+    "requireUppercase": true,
+    "protectParameters": true,
+    "protectFinalExpression": true,
+    "multiStatementDoWhile": true,
+    "requireDocumentation": true,
+    "simpleObjectCommentStyle": "block"
+  },
+  "readability": {
+    "complexFunction": {
+      "minEffectiveLines": 20,
+      "minBranches": 3,
+      "minNesting": 3,
+      "requireNumberedFlow": true
+    },
+    "requireNumberedIntentCommentPlacement": true,
+    "reportNonObviousBranches": true,
+    "reportSingleCallStaticHelpers": true
+  },
+  "template": {
+    "moduleName": "DEMO",
+    "fileStem": "demo",
+    "brief": "覆盖华为 C 语言编程规范全范围的三模块黄金示例。",
+    "details": "核心状态机、协议安全和固定资源池共同提供代码、lint、编译与测试证据。",
+    "contextType": "demo_context_t",
+    "headerGuard": "DEMO_H"
+  },
+  "gates": {
+    "gcc": {
+      "languageStandard": "c99",
+      "warningsAsErrors": true,
+      "flags": [
+        "-std=c99",
+        "-pedantic-errors",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Wconversion",
+        "-Wsign-conversion",
+        "-Wshadow",
+        "-Wstrict-prototypes",
+        "-Wmissing-prototypes",
+        "-Wvla",
+        "-Wformat=2",
+        "-Wundef",
+        "-Wcast-qual",
+        "-Wwrite-strings"
+      ]
+    },
+    "clang": {
+      "languageStandard": "c99",
+      "warningsAsErrors": true,
+      "flags": [
+        "-std=c99",
+        "-pedantic-errors",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Wconversion",
+        "-Wsign-conversion",
+        "-Wshadow",
+        "-Wstrict-prototypes",
+        "-Wmissing-prototypes",
+        "-Wvla",
+        "-Wformat=2",
+        "-Wundef",
+        "-Wcast-qual",
+        "-Wwrite-strings"
+      ]
+    },
+    "headerC": {
+      "languageStandard": "c99",
+      "warningsAsErrors": true,
+      "flags": [
+        "-std=c99",
+        "-pedantic-errors",
+        "-Wall",
+        "-Wextra",
+        "-Werror"
+      ]
+    },
+    "headerCxx": {
+      "languageStandard": "c++17",
+      "warningsAsErrors": true,
+      "flags": [
+        "-std=c++17",
+        "-pedantic-errors",
+        "-Wall",
+        "-Wextra",
+        "-Werror"
+      ]
+    },
+    "runUnitTests": true,
+    "lintFixtures": true
+  },
+  "hook": {
+    "enabled": true,
+    "scope": "staged",
+    "failLevel": "error",
+    "maxDiagnostics": 200,
+    "noCChangeFastExit": true
+  },
+  "agent": {
+    "modifyOnlyFunctionBody": true,
+    "preservePrototype": true,
+    "preserveDocumentation": true,
+    "boundedExecutionRequired": true,
+    "requireBuild": true,
+    "requireTests": true
+  }
+}

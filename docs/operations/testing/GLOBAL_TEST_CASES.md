@@ -39,7 +39,9 @@
 | C99-003 | 样例路径格式检查 | `bin/aicoding.exe skill c99-standard-c check --scope paths --path testdata/style-samples/foc_sample.c --json` | 样例存在时退出码 0 | REQUIRED |
 | C99-004 | staged C/H 检查入口 | `bin/aicoding.exe skill c99-standard-c check --scope staged --json` | 退出码 0 或明确无 staged 文件 | REQUIRED |
 | C99-005 | source-of-truth 配置 | 检查 `config/skills/c99-standard-c/*` 与 `.clang-format` | 配置文件存在，投影包含关键字段 | REQUIRED |
-| C99-006 | 排除目录策略 | 解析 `skill.json` | 包含 vendor/third_party/generated/Drivers/device/build/out/dist | REQUIRED |
+| C99-006 | 排除目录与自包含 Kit 边界策略 | 解析 `skill.json` 并执行 Go 回归测试 | 包含常规目录名排除项与 `CodingKit/tools/c-userstyle-kit` 仓库相对路径排除项，且不误排其他 `tools` 内容 | REQUIRED |
+| C99-007 | C UserStyle Kit 快速验证 | `bin/aicoding.exe skill c99-standard-c verify --json` | fast profile 成功，输出统一 JSON，且不调用固件工具链 | REQUIRED |
+| C99-008 | C Kit 资产与参考完整性 | 检查 kit manifest、黄金/高级样例、规则目录、snippets、PDF 和 Markdown 参考 | 资产存在，manifest version 为 1.2.0 | REQUIRED |
 
 ## 5. DOCSYNC：文档同步
 
@@ -77,7 +79,7 @@
 | DOCS-002 | README 架构声明 | 静态搜索 Go CLI/Fast Path/DocSync/skill verify/lifecycle/export/fresh-clone | 关键入口存在 | REQUIRED |
 | DOCS-003 | COMMANDS 命令矩阵 | 检查 `docs/COMMANDS.md` | 包含 bootstrap/smoke/ci/full/release/C99/DocSync/lifecycle/export/fresh-clone | REQUIRED |
 | DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含 Go 默认控制面和 PowerShell boundary | REQUIRED |
-| DOCS-005 | C99 skill 文档 | 检查 `docs/guides/C99_STANDARD_C_SKILL.md` | 包含配置边界和 CLI 入口 | REQUIRED |
+| DOCS-005 | C99 skill 文档 | 检查 `docs/guides/C99_STANDARD_C_SKILL.md` | 包含配置边界、C Kit 资产边界和统一 CLI 入口 | REQUIRED |
 
 ## 9. GIT_GOVERNANCE：Git 仓库治理
 

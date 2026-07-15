@@ -230,6 +230,8 @@ func buildTests(cfg Config) []TestCase {
 		{ID: "C99-004", Category: "C99_SKILL", Title: "C99 staged 检查入口", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "check", "--scope", "staged", "--json"}, ExpectJSON: true},
 		{ID: "C99-005", Category: "C99_SKILL", Title: "C99 source-of-truth 配置", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "C99-006", Category: "C99_SKILL", Title: "C99 排除目录策略", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "C99-007", Category: "C99_SKILL", Title: "C Kit 快速验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "verify", "--profile", "fast", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "C99-008", Category: "C99_SKILL", Title: "C Kit 资产与参考完整性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
 		{ID: "DOC-001", Category: "DOCSYNC", Title: "DocSync CI", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "docsync", "ci", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "DOC-002", Category: "DOCSYNC", Title: "DocSync all", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "docsync", "all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
@@ -467,12 +469,21 @@ func runStatic(cfg Config, tc TestCase) Result {
 			"config/skills/c99-standard-c/templates/comment-templates.json",
 			"config/skills/c99-standard-c/rules/embedded-c-rules.md",
 			".clang-format",
+			"CodingKit/tools/c-userstyle-kit/go.mod",
+			"CodingKit/tools/c-userstyle-kit/cmd/cstylekit/main.go",
+			"CodingKit/tools/c-userstyle-kit/examples/c-kit.json",
+			"CodingKit/tools/c-userstyle-kit/examples/c-snippets.json",
+			"CodingKit/tools/c-userstyle-kit/examples/verify-target.json",
+			"CodingKit/tools/c-userstyle-kit/config/rules/huawei-c-language-programming-standard.rules.json",
+			"CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.pdf",
 		)
 		if err == nil {
 			err = checkC99Projection(cfg.Repo)
 		}
 	case "C99-006":
 		err = checkC99ExcludedDirs(cfg.Repo)
+	case "C99-008":
+		err = checkCStyleKitAssets(cfg.Repo)
 	case "DOC-004":
 		err = checkDocIndex(cfg.Repo)
 	case "LIFE-001":
@@ -531,6 +542,78 @@ func requirePaths(repo string, rels ...string) error {
 	return nil
 }
 
+func checkCStyleKitAssets(repo string) error {
+	const expectedVersion = "1.2.0"
+	required := []string{
+		"config/kits/c-userstyle-kit.json",
+		"CodingKit/tools/c-userstyle-kit/MANIFEST.json",
+		"CodingKit/tools/c-userstyle-kit/config/rules/huawei-c-language-programming-standard.rules.json",
+		"CodingKit/tools/c-userstyle-kit/examples/c-snippets.json",
+		"CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.pdf",
+		"CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.md",
+		"CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.raw.md",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/demo.c",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/demo.h",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/advanced/README.md",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/advanced/state_machine.c",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/advanced/state_machine.h",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/advanced/protocol.c",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/advanced/protocol.h",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/advanced/fixed_pool.c",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/advanced/fixed_pool.h",
+		"CodingKit/tools/c-userstyle-kit/generated-demo/advanced/tests/advanced_test.c",
+	}
+	if err := requirePaths(repo, required...); err != nil {
+		return err
+	}
+
+	var kitManifest struct {
+		ID      string `json:"id"`
+		Version string `json:"version"`
+	}
+	if err := decodeJSONFile(filepath.Join(repo, "config/kits/c-userstyle-kit.json"), &kitManifest); err != nil {
+		return err
+	}
+	var assetManifest struct {
+		Version string `json:"version"`
+	}
+	if err := decodeJSONFile(filepath.Join(repo, "CodingKit/tools/c-userstyle-kit/MANIFEST.json"), &assetManifest); err != nil {
+		return err
+	}
+	var skillConfig struct {
+		Kit struct {
+			ID      string `json:"id"`
+			Version string `json:"version"`
+			Root    string `json:"root"`
+		} `json:"kit"`
+	}
+	if err := decodeJSONFile(filepath.Join(repo, "config/skills/c99-standard-c/skill.json"), &skillConfig); err != nil {
+		return err
+	}
+
+	if kitManifest.ID != "c-userstyle-kit" || skillConfig.Kit.ID != kitManifest.ID {
+		return fmt.Errorf("C Kit id mismatch: manifest=%q skill=%q", kitManifest.ID, skillConfig.Kit.ID)
+	}
+	if kitManifest.Version != expectedVersion || assetManifest.Version != expectedVersion || skillConfig.Kit.Version != expectedVersion {
+		return fmt.Errorf("C Kit version mismatch: kit=%q asset=%q skill=%q expected=%q", kitManifest.Version, assetManifest.Version, skillConfig.Kit.Version, expectedVersion)
+	}
+	if skillConfig.Kit.Root != "CodingKit/tools/c-userstyle-kit" {
+		return fmt.Errorf("unexpected C Kit root: %q", skillConfig.Kit.Root)
+	}
+	return nil
+}
+
+func decodeJSONFile(path string, target any) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read %s: %w", path, err)
+	}
+	if err := json.Unmarshal(data, target); err != nil {
+		return fmt.Errorf("decode %s: %w", path, err)
+	}
+	return nil
+}
+
 func exists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
@@ -583,7 +666,17 @@ func checkC99ExcludedDirs(repo string) error {
 	if err := json.Unmarshal(b, &data); err != nil {
 		return err
 	}
-	want := []string{"vendor", "third_party", "generated", "Drivers", "device", "build", "out", "dist"}
+	want := []string{
+		"vendor",
+		"third_party",
+		"generated",
+		"Drivers",
+		"device",
+		"build",
+		"out",
+		"dist",
+		"CodingKit/tools/c-userstyle-kit",
+	}
 	have := map[string]bool{}
 	for _, d := range data.Excluded {
 		have[d] = true

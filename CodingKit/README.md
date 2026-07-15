@@ -15,6 +15,9 @@ CodingKit/
 └── tools/             Local tools and diagnostics
 ```
 
+`tools/c-userstyle-kit` 是首方 C99 生成与验证资产。它由 kit registry 管理，并通过现有
+`skill c99-standard-c` 用户入口调用；不会创建第二套顶层 formatting 命令。
+
 ## Codex Kit
 
 The installable Codex plugin is provided by the submodule at:
@@ -35,6 +38,20 @@ Plugin skills and hooks discover CodingKit assets by this protocol:
 2. otherwise walk upward from the active repository until `config/codex-kit.json` is found;
 3. resolve `examples`, `modules`, `platforms`, `tests`, and `tools` from that manifest;
 4. treat missing optional assets as unavailable capability, not as plugin failure.
+
+## C UserStyle Kit
+
+C UserStyle Kit 1.2.0 位于 `CodingKit/tools/c-userstyle-kit`，包含黄金 Demo、高级规则覆盖样例、
+139 条规则目录、VS Code 兼容 snippets、lint、主机编译与行为测试。华为 C 语言编程规范
+DKBA 2826-2011.5 的 PDF 和 Markdown 参考副本随该首方资产发布。
+
+用户保持使用统一 Go CLI 入口执行秒级快速验证：
+
+```powershell
+bin/aicoding.exe skill c99-standard-c verify --json
+```
+
+该验证仅使用主机工具链和临时测试程序，不接入或修改固件工程构建。
 
 ## New Machine Setup
 

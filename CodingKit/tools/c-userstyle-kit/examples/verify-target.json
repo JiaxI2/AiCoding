@@ -1,0 +1,26 @@
+{
+  "schema": "cstylekit-verify-target-v1",
+  "id": "generated-demo",
+  "candidate": {
+    "source": "../generated-demo/demo.c",
+    "header": "../generated-demo/demo.h"
+  },
+  "baseline": {
+    "source": "../generated-demo/demo.c",
+    "header": "../generated-demo/demo.h"
+  },
+  "host": {
+    "testSource": "../generated-demo/advanced/tests/advanced_test.c",
+    "supportSources": [
+      "../generated-demo/advanced/state_machine.c",
+      "../generated-demo/advanced/protocol.c",
+      "../generated-demo/advanced/fixed_pool.c"
+    ],
+    "supportHeaders": [
+      "../generated-demo/advanced/state_machine.h",
+      "../generated-demo/advanced/protocol.h",
+      "../generated-demo/advanced/fixed_pool.h"
+    ],
+    "defines": []
+  }
+}

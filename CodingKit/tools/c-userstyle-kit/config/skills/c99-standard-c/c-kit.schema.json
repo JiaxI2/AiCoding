@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/c-userstyle/c-kit.schema.json",
+  "title": "C UserStyle Configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "standard",
+    "reference",
+    "scope",
+    "style",
+    "naming",
+    "documentation",
+    "safety",
+    "controlFlow",
+    "macros",
+    "readability",
+    "template",
+    "gates",
+    "hook",
+    "agent"
+  ],
+  "properties": {
+    "schema": {"const": "c-userstyle"},
+    "id": {"type": "string", "minLength": 1},
+    "standard": {"const": "c99"},
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "pdf", "markdown", "ruleCatalog", "sha256", "pages", "expectedClauses"],
+      "properties": {
+        "title": {"type": "string", "minLength": 1},
+        "pdf": {"type": "string", "pattern": "\\.pdf$"},
+        "markdown": {"type": "string", "pattern": "\\.md$"},
+        "ruleCatalog": {"type": "string", "pattern": "\\.json$"},
+        "sha256": {"type": "string", "pattern": "^[A-F0-9]{64}$"},
+        "pages": {"const": 61},
+        "expectedClauses": {"const": 139}
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["include", "exclude"],
+      "properties": {
+        "include": {"$ref": "#/$defs/stringArray"},
+        "exclude": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["indentWidth", "continuationIndentWidth", "columnLimit", "braceStyle", "pointerAlignment", "newline", "encoding", "changedLinesOnly", "requireEOFNewline", "forbidLineComment"],
+      "properties": {
+        "indentWidth": {"const": 4},
+        "continuationIndentWidth": {"type": "integer", "minimum": 1},
+        "columnLimit": {"type": "integer", "minimum": 80, "maximum": 160},
+        "braceStyle": {"enum": ["allman"]},
+        "pointerAlignment": {"enum": ["right"]},
+        "newline": {"enum": ["lf", "crlf", "preserve"]},
+        "encoding": {"enum": ["utf-8", "preserve"]},
+        "changedLinesOnly": {"type": "boolean"},
+        "requireEOFNewline": {"type": "boolean"},
+        "forbidLineComment": {"type": "boolean"}
+      }
+    },
+    "naming": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modulePrefix", "publicFunction", "privateFunction", "type", "functionPointer", "macro", "enumConstant", "globalVariable", "staticVariable", "localVariable", "parameter", "structMember", "forbidReservedIdentifier"],
+      "properties": {
+        "modulePrefix": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*$"},
+        "publicFunction": {"type": "string", "minLength": 1},
+        "privateFunction": {"type": "string", "minLength": 1},
+        "type": {"type": "string", "minLength": 1},
+        "functionPointer": {"type": "string", "minLength": 1},
+        "macro": {"type": "string", "minLength": 1},
+        "enumConstant": {"type": "string", "minLength": 1},
+        "globalVariable": {"type": "string", "minLength": 1},
+        "staticVariable": {"type": "string", "minLength": 1},
+        "localVariable": {"type": "string", "minLength": 1},
+        "parameter": {"type": "string", "minLength": 1},
+        "structMember": {"type": "string", "minLength": 1},
+        "forbidReservedIdentifier": {"type": "boolean"}
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fileHeader", "requireFileMetadata", "allFunctions", "types", "macros", "requireBrief", "requireParamTags", "requireParamDirection", "requireReturnTag", "requireDefinitionDetails", "requirePublicPerformance", "requirePublicReentrancy", "requireBarePrivatePrototype", "requireCaseIntentComment", "requireGlobalVariableDetail", "requireExternC", "employeeIdPolicy", "modificationHistoryPolicy"],
+      "properties": {
+        "fileHeader": {"type": "boolean"},
+        "requireFileMetadata": {"type": "boolean"},
+        "allFunctions": {"type": "boolean"},
+        "types": {"type": "boolean"},
+        "macros": {"type": "boolean"},
+        "requireBrief": {"type": "boolean"},
+        "requireParamTags": {"type": "boolean"},
+        "requireParamDirection": {"type": "boolean"},
+        "requireReturnTag": {"type": "boolean"},
+        "requireDefinitionDetails": {"type": "boolean"},
+        "requirePublicPerformance": {"type": "boolean"},
+        "requirePublicReentrancy": {"type": "boolean"},
+        "requireBarePrivatePrototype": {"type": "boolean"},
+        "requireCaseIntentComment": {"type": "boolean"},
+        "requireGlobalVariableDetail": {"type": "boolean"},
+        "requireExternC": {"type": "boolean"},
+        "employeeIdPolicy": {"enum": ["omit", "whenProvided", "required"]},
+        "modificationHistoryPolicy": {"enum": ["disabled", "maintenance-release", "required"]}
+      }
+    },
+    "safety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidDynamicAllocation", "forbidVLA", "requireStdintTypes", "requireExplicitVoid", "forbidUnboundedLoop", "forbidGoto", "forbiddenCalls", "requirePointerNullComparison", "forbidBooleanLiteralComparison", "preferPreIncrement", "requireSizeTForSize", "maxParameters"],
+      "properties": {
+        "forbidDynamicAllocation": {"type": "boolean"},
+        "forbidVLA": {"type": "boolean"},
+        "requireStdintTypes": {"type": "boolean"},
+        "requireExplicitVoid": {"type": "boolean"},
+        "forbidUnboundedLoop": {"type": "boolean"},
+        "forbidGoto": {"type": "boolean"},
+        "forbiddenCalls": {"$ref": "#/$defs/stringArray"},
+        "requirePointerNullComparison": {"type": "boolean"},
+        "forbidBooleanLiteralComparison": {"type": "boolean"},
+        "preferPreIncrement": {"type": "boolean"},
+        "requireSizeTForSize": {"type": "boolean"},
+        "maxParameters": {"type": "integer", "minimum": 1, "maximum": 5}
+      }
+    },
+    "controlFlow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requireCompoundBraces", "requireSwitchDefault", "requireCaseBreak", "forbidStandaloneTernaryCall"],
+      "properties": {
+        "requireCompoundBraces": {"type": "boolean"},
+        "requireSwitchDefault": {"type": "boolean"},
+        "requireCaseBreak": {"type": "boolean"},
+        "forbidStandaloneTernaryCall": {"type": "boolean"}
+      }
+    },
+    "macros": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requireUppercase", "protectParameters", "protectFinalExpression", "multiStatementDoWhile", "requireDocumentation", "simpleObjectCommentStyle"],
+      "properties": {
+        "requireUppercase": {"type": "boolean"},
+        "protectParameters": {"type": "boolean"},
+        "protectFinalExpression": {"type": "boolean"},
+        "multiStatementDoWhile": {"type": "boolean"},
+        "requireDocumentation": {"type": "boolean"},
+        "simpleObjectCommentStyle": {"enum": ["block", "doxygen", "either"]}
+      }
+    },
+    "readability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["complexFunction", "requireNumberedIntentCommentPlacement", "reportNonObviousBranches", "reportSingleCallStaticHelpers"],
+      "properties": {
+        "complexFunction": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minEffectiveLines", "minBranches", "minNesting", "requireNumberedFlow"],
+          "properties": {
+            "minEffectiveLines": {"type": "integer", "minimum": 1},
+            "minBranches": {"type": "integer", "minimum": 1},
+            "minNesting": {"type": "integer", "minimum": 1},
+            "requireNumberedFlow": {"type": "boolean"}
+          }
+        },
+        "requireNumberedIntentCommentPlacement": {"type": "boolean"},
+        "reportNonObviousBranches": {"type": "boolean"},
+        "reportSingleCallStaticHelpers": {"type": "boolean"}
+      }
+    },
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleName", "fileStem", "brief", "details", "contextType", "headerGuard"],
+      "properties": {
+        "moduleName": {"type": "string", "minLength": 1},
+        "fileStem": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "brief": {"type": "string", "minLength": 1},
+        "details": {"type": "string", "minLength": 1},
+        "contextType": {"type": "string", "pattern": "^[a-z][a-z0-9_]*_t$"},
+        "headerGuard": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*_H$"}
+      }
+    },
+    "gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gcc", "clang", "headerC", "headerCxx", "runUnitTests", "lintFixtures"],
+      "properties": {
+        "gcc": {"$ref": "#/$defs/c99Gate"},
+        "clang": {"$ref": "#/$defs/c99Gate"},
+        "headerC": {"$ref": "#/$defs/c99Gate"},
+        "headerCxx": {"$ref": "#/$defs/cxx17Gate"},
+        "runUnitTests": {"type": "boolean"},
+        "lintFixtures": {"type": "boolean"}
+      }
+    },
+    "hook": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "scope", "failLevel", "maxDiagnostics", "noCChangeFastExit"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "scope": {"enum": ["staged", "files"]},
+        "failLevel": {"enum": ["error"]},
+        "maxDiagnostics": {"type": "integer", "minimum": 1},
+        "noCChangeFastExit": {"type": "boolean"}
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modifyOnlyFunctionBody", "preservePrototype", "preserveDocumentation", "boundedExecutionRequired", "requireBuild", "requireTests"],
+      "properties": {
+        "modifyOnlyFunctionBody": {"type": "boolean"},
+        "preservePrototype": {"type": "boolean"},
+        "preserveDocumentation": {"type": "boolean"},
+        "boundedExecutionRequired": {"type": "boolean"},
+        "requireBuild": {"type": "boolean"},
+        "requireTests": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "c99Gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["languageStandard", "warningsAsErrors", "flags"],
+      "properties": {
+        "languageStandard": {"const": "c99"},
+        "warningsAsErrors": {"const": true},
+        "flags": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "cxx17Gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["languageStandard", "warningsAsErrors", "flags"],
+      "properties": {
+        "languageStandard": {"const": "c++17"},
+        "warningsAsErrors": {"const": true},
+        "flags": {"$ref": "#/$defs/stringArray"}
+      }
+    }
+  }
+}

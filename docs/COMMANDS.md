@@ -29,6 +29,7 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | Skill verify | `bin\aicoding.exe skill verify --all --profile Smoke|Full|Release --json` |
 | C99 skill status | `bin\aicoding.exe skill c99-standard-c status --json` |
 | C99 skill templates | `bin\aicoding.exe skill c99-standard-c templates --json` |
+| C99 skill 快速/完整验证 | `bin\aicoding.exe skill c99-standard-c verify --profile fast\|full --timings --json` |
 | C99 skill fmt/check | `bin\aicoding.exe skill c99-standard-c fmt|check --scope changed|staged|paths --json` |
 | Lifecycle plan | `bin\aicoding.exe lifecycle plan --action install|update|uninstall --all --json` |
 | Lifecycle apply | `bin\aicoding.exe lifecycle install|update|uninstall --all --json` |
@@ -59,9 +60,14 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | `task test:latest` | `bin/aicoding.exe test latest` |
 | `task style:c:status` | `bin/aicoding.exe skill c99-standard-c status --json` |
 | `task style:c:templates` | `bin/aicoding.exe skill c99-standard-c templates --json` |
+| `task style:c:verify` | `bin/aicoding.exe skill c99-standard-c verify --profile fast --timings --json` |
 | `task fmt:c` | `bin/aicoding.exe skill c99-standard-c fmt --scope changed --json` |
 | `task fmt-check:c` | `bin/aicoding.exe skill c99-standard-c check --scope changed --json` |
 | `task fmt-check-staged:c` | `bin/aicoding.exe skill c99-standard-c check --scope staged --json` |
+
+外部候选可追加 `--target path/to/verify-target.json`；项目差异配置可用可重复的
+`--overlay path/to/project-overlay.json`。完整 target/schema 说明见
+[C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 
 ## CI
 

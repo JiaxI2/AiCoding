@@ -10,8 +10,13 @@ import (
 )
 
 const (
-	DefaultSkillID      = "c99-standard-c"
-	skillConfigRootPath = "config/skills"
+	DefaultSkillID        = "c99-standard-c"
+	DefaultKitID          = "c-userstyle-kit"
+	DefaultKitRoot        = "CodingKit/tools/c-userstyle-kit"
+	DefaultKitConfig      = "examples/c-kit.json"
+	DefaultKitSnippets    = "examples/c-snippets.json"
+	DefaultKitQuickTarget = "examples/verify-target.json"
+	skillConfigRootPath   = "config/skills"
 )
 
 type SkillConfig struct {
@@ -24,12 +29,31 @@ type SkillConfig struct {
 	CommentTemplates    string                 `json:"commentTemplates"`
 	Rules               string                 `json:"rules"`
 	ExcludedDirectories []string               `json:"excludedDirectories"`
+	Kit                 SkillKitConfig         `json:"kit,omitempty"`
 	Extra               map[string]interface{} `json:"-"`
 }
 
 type SkillFormatterConfig struct {
 	ID     string `json:"id"`
 	Config string `json:"config"`
+}
+
+type SkillKitConfig struct {
+	ID          string `json:"id,omitempty"`
+	Version     string `json:"version,omitempty"`
+	Root        string `json:"root,omitempty"`
+	Config      string `json:"config,omitempty"`
+	Snippets    string `json:"snippets,omitempty"`
+	QuickTarget string `json:"quickTarget,omitempty"`
+}
+
+type SkillKitPaths struct {
+	ID          string
+	Version     string
+	Root        string
+	Config      string
+	Snippets    string
+	QuickTarget string
 }
 
 type SkillStatusReport struct {
@@ -44,6 +68,16 @@ type SkillStatusReport struct {
 	CommentTemplatesExists bool       `json:"commentTemplatesExists"`
 	Rules                  string     `json:"rules"`
 	RulesExists            bool       `json:"rulesExists"`
+	KitID                  string     `json:"kitId"`
+	KitVersion             string     `json:"kitVersion,omitempty"`
+	KitRoot                string     `json:"kitRoot"`
+	KitRootExists          bool       `json:"kitRootExists"`
+	KitConfig              string     `json:"kitConfig"`
+	KitConfigExists        bool       `json:"kitConfigExists"`
+	KitSnippets            string     `json:"kitSnippets"`
+	KitSnippetsExists      bool       `json:"kitSnippetsExists"`
+	KitQuickTarget         string     `json:"kitQuickTarget"`
+	KitQuickTargetExists   bool       `json:"kitQuickTargetExists"`
 	ExcludedDirectories    []string   `json:"excludedDirectories"`
 	ClangFormat            ToolStatus `json:"clangFormat"`
 }
@@ -101,6 +135,40 @@ func ResolveRulesPath(repoRoot string, cfg SkillConfig) (string, error) {
 	return resolveSkillRelativePath(repoRoot, cfg.ID, cfg.Rules)
 }
 
+func ResolveKitPaths(repoRoot string, cfg SkillConfig) (SkillKitPaths, error) {
+	root, err := resolveRepoRoot(repoRoot)
+	if err != nil {
+		return SkillKitPaths{}, err
+	}
+
+	kit := cfg.Kit
+	if strings.TrimSpace(kit.ID) == "" {
+		kit.ID = DefaultKitID
+	}
+	if strings.TrimSpace(kit.Root) == "" {
+		kit.Root = DefaultKitRoot
+	}
+	if strings.TrimSpace(kit.Config) == "" {
+		kit.Config = DefaultKitConfig
+	}
+	if strings.TrimSpace(kit.Snippets) == "" {
+		kit.Snippets = DefaultKitSnippets
+	}
+	if strings.TrimSpace(kit.QuickTarget) == "" {
+		kit.QuickTarget = DefaultKitQuickTarget
+	}
+
+	kitRoot := resolveRepoRelativePath(root, kit.Root)
+	return SkillKitPaths{
+		ID:          kit.ID,
+		Version:     kit.Version,
+		Root:        kitRoot,
+		Config:      resolveKitAssetPath(root, kitRoot, kit.Root, kit.Config),
+		Snippets:    resolveKitAssetPath(root, kitRoot, kit.Root, kit.Snippets),
+		QuickTarget: resolveKitAssetPath(root, kitRoot, kit.Root, kit.QuickTarget),
+	}, nil
+}
+
 func SkillStatus(repoRoot, skillID string) (SkillStatusReport, error) {
 	root, err := resolveRepoRoot(repoRoot)
 	if err != nil {
@@ -115,6 +183,7 @@ func SkillStatus(repoRoot, skillID string) (SkillStatusReport, error) {
 	formatterConfig, formatterErr := ResolveFormatterConfig(root, cfg)
 	templatesPath, templatesErr := ResolveCommentTemplatesPath(root, cfg)
 	rulesPath, rulesErr := ResolveRulesPath(root, cfg)
+	kitPaths, kitErr := ResolveKitPaths(root, cfg)
 
 	report := SkillStatusReport{
 		SkillID:             cfg.ID,
@@ -137,6 +206,18 @@ func SkillStatus(repoRoot, skillID string) (SkillStatusReport, error) {
 		report.Rules = relativeRepoPath(root, rulesPath)
 		report.RulesExists = fileExists(rulesPath)
 	}
+	if kitErr == nil {
+		report.KitID = kitPaths.ID
+		report.KitVersion = kitPaths.Version
+		report.KitRoot = relativeRepoPath(root, kitPaths.Root)
+		report.KitRootExists = directoryExists(kitPaths.Root)
+		report.KitConfig = relativeRepoPath(root, kitPaths.Config)
+		report.KitConfigExists = fileExists(kitPaths.Config)
+		report.KitSnippets = relativeRepoPath(root, kitPaths.Snippets)
+		report.KitSnippetsExists = fileExists(kitPaths.Snippets)
+		report.KitQuickTarget = relativeRepoPath(root, kitPaths.QuickTarget)
+		report.KitQuickTargetExists = fileExists(kitPaths.QuickTarget)
+	}
 
 	errs := []string{}
 	for _, item := range []struct {
@@ -146,9 +227,26 @@ func SkillStatus(repoRoot, skillID string) (SkillStatusReport, error) {
 		{name: "formatter config", err: formatterErr},
 		{name: "comment templates", err: templatesErr},
 		{name: "rules", err: rulesErr},
+		{name: "kit paths", err: kitErr},
 	} {
 		if item.err != nil {
 			errs = append(errs, item.name+": "+item.err.Error())
+		}
+	}
+	if kitErr == nil {
+		for _, item := range []struct {
+			name   string
+			path   string
+			exists bool
+		}{
+			{name: "kit root", path: report.KitRoot, exists: report.KitRootExists},
+			{name: "kit config", path: report.KitConfig, exists: report.KitConfigExists},
+			{name: "kit snippets", path: report.KitSnippets, exists: report.KitSnippetsExists},
+			{name: "kit quick target", path: report.KitQuickTarget, exists: report.KitQuickTargetExists},
+		} {
+			if !item.exists {
+				errs = append(errs, item.name+" not found: "+item.path)
+			}
 		}
 	}
 	if len(errs) > 0 {
@@ -195,4 +293,31 @@ func relativeRepoPath(repoRoot, path string) string {
 func fileExists(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && !info.IsDir()
+}
+
+func directoryExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
+}
+
+func resolveRepoRelativePath(repoRoot, path string) string {
+	cleanPath := strings.TrimSpace(path)
+	if filepath.IsAbs(cleanPath) {
+		return filepath.Clean(cleanPath)
+	}
+	return filepath.Join(repoRoot, filepath.FromSlash(cleanPath))
+}
+
+func resolveKitAssetPath(repoRoot, kitRoot, configuredRoot, path string) string {
+	cleanPath := strings.TrimSpace(path)
+	if filepath.IsAbs(cleanPath) {
+		return filepath.Clean(cleanPath)
+	}
+
+	rootPath := filepath.ToSlash(filepath.Clean(configuredRoot))
+	assetPath := filepath.ToSlash(filepath.Clean(cleanPath))
+	if rootPath != "." && (assetPath == rootPath || strings.HasPrefix(assetPath, rootPath+"/")) {
+		return filepath.Join(repoRoot, filepath.FromSlash(assetPath))
+	}
+	return filepath.Join(kitRoot, filepath.FromSlash(assetPath))
 }

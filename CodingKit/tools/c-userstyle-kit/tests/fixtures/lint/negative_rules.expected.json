@@ -1,0 +1,13 @@
+{
+  "requiredRuleIds": [
+    "naming.global-variable",
+    "documentation.global-variable",
+    "documentation.private-prototype",
+    "c99.vla",
+    "embedded.dynamic-allocation",
+    "comment.line-style",
+    "comment.case-intent",
+    "control.unbounded-loop",
+    "operator.pre-increment"
+  ]
+}

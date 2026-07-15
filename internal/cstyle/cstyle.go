@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -58,6 +59,11 @@ var defaultExcludedDirs = map[string]bool{
 	"build":       true,
 	"out":         true,
 	"dist":        true,
+}
+
+type exclusionSet struct {
+	directoryNames map[string]bool
+	pathPrefixes   []string
 }
 
 func Status() ToolStatus {
@@ -256,7 +262,7 @@ func allCFiles(repoRoot string, excludedDirs []string) ([]string, error) {
 	return out, err
 }
 
-func normalizeCandidate(repoRoot string, item string, excluded map[string]bool) (string, bool) {
+func normalizeCandidate(repoRoot string, item string, excluded exclusionSet) (string, bool) {
 	item = strings.TrimSpace(item)
 	if item == "" {
 		return "", false
@@ -290,18 +296,35 @@ func isCHeaderOrSource(path string) bool {
 	return ext == ".c" || ext == ".h"
 }
 
-func isExcluded(rel string, excluded map[string]bool) bool {
-	parts := strings.Split(filepath.ToSlash(rel), "/")
+func exclusionPathKey(path string) string {
+	key := filepath.ToSlash(filepath.Clean(path))
+	if runtime.GOOS == "windows" {
+		return strings.ToLower(key)
+	}
+	return key
+}
+
+func isExcluded(rel string, excluded exclusionSet) bool {
+	rel = exclusionPathKey(rel)
+	parts := strings.Split(rel, "/")
 	for _, p := range parts {
-		if excluded[p] {
+		if excluded.directoryNames[p] {
+			return true
+		}
+	}
+	for _, prefix := range excluded.pathPrefixes {
+		if rel == prefix || strings.HasPrefix(rel, prefix+"/") {
 			return true
 		}
 	}
 	return false
 }
 
-func excludedSet(excludedDirs []string) map[string]bool {
-	out := map[string]bool{".git": true}
+func excludedSet(excludedDirs []string) exclusionSet {
+	out := exclusionSet{
+		directoryNames: map[string]bool{".git": true},
+	}
+	prefixes := map[string]bool{}
 	source := excludedDirs
 	if len(source) == 0 {
 		for dir := range defaultExcludedDirs {
@@ -309,16 +332,21 @@ func excludedSet(excludedDirs []string) map[string]bool {
 		}
 	}
 	for _, dir := range source {
-		dir = strings.TrimSpace(filepath.ToSlash(dir))
-		if dir == "" {
+		dir = exclusionPathKey(strings.TrimSpace(dir))
+		dir = strings.TrimPrefix(dir, "./")
+		if dir == "" || dir == "." {
 			continue
 		}
-		for _, part := range strings.Split(dir, "/") {
-			if part != "" && part != "." {
-				out[part] = true
+		if strings.Contains(dir, "/") {
+			if !prefixes[dir] {
+				prefixes[dir] = true
+				out.pathPrefixes = append(out.pathPrefixes, dir)
 			}
+			continue
 		}
+		out.directoryNames[dir] = true
 	}
+	sort.Strings(out.pathPrefixes)
 	return out
 }
 

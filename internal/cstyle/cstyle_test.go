@@ -1,9 +1,13 @@
 package cstyle
 
 import (
+	"context"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -50,6 +54,38 @@ func writeSkillConfig(t *testing.T, root string, style string) {
 	writeFile(t, filepath.Join(root, "config", "skills", "c99-standard-c", "rules", "embedded-c-rules.md"), "# rules\n")
 }
 
+func writeSkillKitFixture(t *testing.T, root string) {
+	t.Helper()
+	kitRoot := filepath.Join(root, filepath.FromSlash(DefaultKitRoot))
+	writeFile(t, filepath.Join(kitRoot, "go.mod"), "module c-userstyle-kit\n\ngo 1.22\n")
+	writeFile(t, filepath.Join(kitRoot, filepath.FromSlash(DefaultKitConfig)), "{}\n")
+	writeFile(t, filepath.Join(kitRoot, filepath.FromSlash(DefaultKitSnippets)), "{}\n")
+	writeFile(t, filepath.Join(kitRoot, filepath.FromSlash(DefaultKitQuickTarget)), "{}\n")
+}
+
+type fakeVerifyRunner struct {
+	stdout             []byte
+	stderr             []byte
+	err                error
+	repoRoot           string
+	kitRoot            string
+	args               []string
+	contextHasDeadline bool
+}
+
+func (r *fakeVerifyRunner) Run(
+	ctx context.Context,
+	repoRoot string,
+	kitRoot string,
+	args []string,
+) ([]byte, []byte, error) {
+	r.repoRoot = repoRoot
+	r.kitRoot = kitRoot
+	r.args = append([]string{}, args...)
+	_, r.contextHasDeadline = ctx.Deadline()
+	return r.stdout, r.stderr, r.err
+}
+
 func TestCollectFilesAllExcludesVendorAndGenerated(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "src", "foc.c"), "int main(void){return 0;}\n")
@@ -74,6 +110,79 @@ func TestCollectFilesAllExcludesVendorAndGenerated(t *testing.T) {
 	}
 	if got["vendor/x.c"] || got["generated/x.h"] || got["Drivers/x.c"] || got["device/x.h"] {
 		t.Fatalf("excluded files must be ignored, got %#v", files)
+	}
+}
+
+func TestCollectFilesAllSupportsRepoRelativeExclusion(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "CodingKit", "tools", "c-userstyle-kit", "golden", "demo.c"), "int demo(void);\n")
+	writeFile(t, filepath.Join(root, "CodingKit", "tools", "c-userstyle-kit-old", "keep.c"), "int keep_similar(void);\n")
+	writeFile(t, filepath.Join(root, "CodingKit", "tools", "other-kit", "keep.c"), "int keep_tool(void);\n")
+	writeFile(t, filepath.Join(root, "CodingKit", "modules", "keep.h"), "int keep_module(void);\n")
+	writeFile(t, filepath.Join(root, "tools", "keep.c"), "int keep_root_tool(void);\n")
+
+	files, err := CollectFilesWithExclusions(
+		root,
+		ScopeAll,
+		nil,
+		[]string{"CodingKit/tools/c-userstyle-kit"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := map[string]bool{}
+	for _, file := range files {
+		got[file] = true
+	}
+	if got["CodingKit/tools/c-userstyle-kit/golden/demo.c"] {
+		t.Fatalf("repo-relative exclusion must omit only the configured subtree, got %#v", files)
+	}
+	for _, want := range []string{
+		"CodingKit/modules/keep.h",
+		"CodingKit/tools/c-userstyle-kit-old/keep.c",
+		"CodingKit/tools/other-kit/keep.c",
+		"tools/keep.c",
+	} {
+		if !got[want] {
+			t.Fatalf("repo-relative exclusion unexpectedly omitted %s: %#v", want, files)
+		}
+	}
+}
+
+func TestRepoRelativeExclusionUsesPlatformPathSemantics(t *testing.T) {
+	excluded := excludedSet([]string{"CodingKit/tools/c-userstyle-kit", "vendor"})
+	if !isExcluded("CodingKit/tools/c-userstyle-kit/generated-demo/demo.c", excluded) {
+		t.Fatal("configured repo-relative subtree must be excluded")
+	}
+	if isExcluded("CodingKit/tools/c-userstyle-kit-old/demo.c", excluded) {
+		t.Fatal("repo-relative exclusion must stop at a path boundary")
+	}
+
+	if runtime.GOOS != "windows" {
+		return
+	}
+	if !isExcluded(`codingkit\TOOLS\C-USERSTYLE-KIT\generated-demo\demo.c`, excluded) {
+		t.Fatal("Windows path matching must ignore case and accept backslashes")
+	}
+	if !isExcluded(`src\VENDOR\driver.c`, excluded) {
+		t.Fatal("Windows directory-name matching must ignore case")
+	}
+
+	root := t.TempDir()
+	target := filepath.Join(root, "CodingKit", "tools", "c-userstyle-kit", "generated-demo", "demo.c")
+	writeFile(t, target, "int demo(void);\n")
+	files, err := CollectFilesWithExclusions(
+		root,
+		ScopePaths,
+		[]string{strings.ToLower(target)},
+		[]string{"CodingKit/tools/c-userstyle-kit"},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 0 {
+		t.Fatalf("case-variant absolute Windows path bypassed exclusion: %#v", files)
 	}
 }
 
@@ -159,5 +268,96 @@ func TestValidateTemplatesConfig(t *testing.T) {
 		if !found {
 			t.Fatalf("missing template id %s in %#v", id, validation.Templates)
 		}
+	}
+}
+
+func TestSkillStatusReportsRequiredKitAssets(t *testing.T) {
+	root := t.TempDir()
+	writeSkillConfig(t, root, "BasedOnStyle: LLVM\n")
+	writeSkillKitFixture(t, root)
+
+	status, err := SkillStatus(root, DefaultSkillID)
+	if err != nil {
+		t.Fatalf("skill status failed: %v", err)
+	}
+	if status.KitID != DefaultKitID || !status.KitRootExists || !status.KitConfigExists ||
+		!status.KitSnippetsExists || !status.KitQuickTargetExists {
+		t.Fatalf("unexpected kit status: %#v", status)
+	}
+
+	quickTarget := filepath.Join(root, filepath.FromSlash(DefaultKitRoot), filepath.FromSlash(DefaultKitQuickTarget))
+	if err := os.Remove(quickTarget); err != nil {
+		t.Fatal(err)
+	}
+	status, err = SkillStatus(root, DefaultSkillID)
+	if err == nil || status.KitQuickTargetExists || !strings.Contains(err.Error(), "kit quick target not found") {
+		t.Fatalf("missing quick target must fail status: status=%#v err=%v", status, err)
+	}
+}
+
+func TestVerifyBySkillResolvesPathsAndParsesSingleJSON(t *testing.T) {
+	root := t.TempDir()
+	writeSkillConfig(t, root, "BasedOnStyle: LLVM\n")
+	writeSkillKitFixture(t, root)
+	writeFile(t, filepath.Join(root, "fixtures", "target.json"), "{}\n")
+	writeFile(t, filepath.Join(root, "overlays", "project.json"), "{}\n")
+
+	runner := &fakeVerifyRunner{stdout: []byte(`{"schema":"cstylekit.verify.v1","ok":true,"profile":"full"}`)}
+	result, err := verifyBySkill(DefaultSkillID, VerifyOptions{
+		RepoRoot: root,
+		Profile:  "full",
+		Target:   "fixtures/target.json",
+		Overlays: []string{"overlays/project.json"},
+		Timings:  true,
+	}, runner)
+	if err != nil {
+		t.Fatalf("verify failed: %v", err)
+	}
+	if result.Payload["ok"] != true || result.Profile != "full" || !runner.contextHasDeadline {
+		t.Fatalf("unexpected verify result: result=%#v runner=%#v", result, runner)
+	}
+	if runner.kitRoot != filepath.Join(root, filepath.FromSlash(DefaultKitRoot)) {
+		t.Fatalf("unexpected kit root: %s", runner.kitRoot)
+	}
+	wantArgs := []string{
+		"verify",
+		"--config", filepath.Join(root, filepath.FromSlash(DefaultKitRoot), filepath.FromSlash(DefaultKitConfig)),
+		"--target", filepath.Join(root, "fixtures", "target.json"),
+		"--profile", "full",
+		"--json",
+		"--overlay", filepath.Join(root, "overlays", "project.json"),
+		"--timings",
+	}
+	if strings.Join(runner.args, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("unexpected C Kit arguments:\nwant %#v\n got %#v", wantArgs, runner.args)
+	}
+}
+
+func TestVerifyBySkillRejectsInvalidOrFailedJSON(t *testing.T) {
+	root := t.TempDir()
+	writeSkillConfig(t, root, "BasedOnStyle: LLVM\n")
+	writeSkillKitFixture(t, root)
+
+	for _, tc := range []struct {
+		name   string
+		stdout string
+		runErr error
+		want   string
+	}{
+		{name: "invalid", stdout: "not-json", want: "invalid C Kit verify JSON"},
+		{name: "multiple", stdout: `{"ok":true} {"ok":true}`, want: "multiple JSON values"},
+		{name: "wrong schema", stdout: `{"schema":"other","profile":"fast","ok":true}`, want: "schema must be"},
+		{name: "wrong profile", stdout: `{"schema":"cstylekit.verify.v1","profile":"full","ok":true}`, want: "profile must match"},
+		{name: "failed result", stdout: `{"schema":"cstylekit.verify.v1","profile":"fast","ok":false}`, runErr: errors.New("exit status 1"), want: "ok=false"},
+		{name: "failed process", stdout: `{"schema":"cstylekit.verify.v1","profile":"fast","ok":true}`, runErr: errors.New("exit status 1"), want: "process failed"},
+		{name: "missing ok", stdout: `{"schema":"cstylekit.verify.v1","profile":"fast"}`, want: "field ok must be boolean"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			runner := &fakeVerifyRunner{stdout: []byte(tc.stdout), err: tc.runErr}
+			_, err := verifyBySkill(DefaultSkillID, VerifyOptions{RepoRoot: root, Profile: "fast"}, runner)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("wanted error containing %q, got %v", tc.want, err)
+			}
+		})
 	}
 }

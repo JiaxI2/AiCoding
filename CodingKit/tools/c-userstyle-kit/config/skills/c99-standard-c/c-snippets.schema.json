@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/c-snippets.schema.json",
+  "title": "C UserStyle VS Code Snippet Catalog",
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": {"$ref": "#/$defs/snippet"},
+  "$defs": {
+    "stringOrStringArray": {
+      "oneOf": [
+        {"type": "string", "minLength": 1},
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string"}
+        }
+      ]
+    },
+    "snippet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefix", "body", "description"],
+      "properties": {
+        "prefix": {"$ref": "#/$defs/stringOrStringArray"},
+        "body": {"$ref": "#/$defs/stringOrStringArray"},
+        "description": {"type": "string", "minLength": 1},
+        "scope": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

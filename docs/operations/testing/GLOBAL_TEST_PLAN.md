@@ -7,7 +7,7 @@
 核心问题：
 
 1. **功能是否收敛到 Go CLI 默认控制面**：默认 Smoke/CI/Full/Release 是否不再依赖 PowerShell 编排。
-2. **C 语言 skill 是否可验证风格一致性**：`c99-standard-c` 的 status、templates、fmt/check、`.clang-format` 投影与 source-of-truth 是否一致。
+2. **C 语言 skill 是否可验证风格一致性**：`c99-standard-c` 的 status、templates、fmt/check、C UserStyle Kit fast verify、`.clang-format` 投影与 source-of-truth 是否一致。
 3. **下载安装外部 skill / 创建用户 skill 相关流程是否规范**：kit registry、manifest、lifecycle plan、export、rollback/fresh-clone 路径是否可检查。
 4. **Go 并发是否可靠**：runner 并发计划、race 检查、CLI 并发只读调用是否稳定。
 5. **README 与文档是否同步**：README/README_CN/README_EN、COMMANDS、C99 skill 文档、DocSync gate 是否对齐。
@@ -29,7 +29,7 @@
 | 层级 | 说明 | 代表用例 |
 |---|---|---|
 | L0 静态治理 | 不执行仓库命令，只检查文件、配置、文档、registry | README、`.gitattributes`、kit registry、C99 skill config |
-| L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap、smoke、C99 status/templates |
+| L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap、smoke、C99 status/templates/verify |
 | L2 功能聚合 | 执行功能域 gate | ci、docsync、governance、export、lifecycle plan |
 | L3 并发/一致性 | 并发执行只读命令，或 race 检查 | `go test -race`、并发 C99 status/templates |
 | L4 发布门禁 | Full/Release/fresh-clone gate | full、release gate、fresh-clone Release |
@@ -62,7 +62,7 @@
 - ENV required 全部通过。
 - bootstrap 成功生成 `bin/aicoding.exe`。
 - `smoke --json` 成功。
-- C99 status/templates 成功。
+- C99 status/templates 与 C UserStyle Kit fast verify 成功。
 - README/COMMANDS/C99 文档存在且包含必要入口。
 - Git hooks/repo-text 至少可执行或给出明确失败原因。
 

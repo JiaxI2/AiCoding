@@ -10,6 +10,14 @@
   },
   "commentTemplates": "templates/comment-templates.json",
   "rules": "rules/embedded-c-rules.md",
+  "kit": {
+    "id": "c-userstyle-kit",
+    "version": "1.2.0",
+    "root": "CodingKit/tools/c-userstyle-kit",
+    "config": "examples/c-kit.json",
+    "snippets": "examples/c-snippets.json",
+    "quickTarget": "examples/verify-target.json"
+  },
   "excludedDirectories": [
     "vendor",
     "third_party",
@@ -18,6 +26,7 @@
     "device",
     "build",
     "out",
-    "dist"
+    "dist",
+    "CodingKit/tools/c-userstyle-kit"
   ]
 }

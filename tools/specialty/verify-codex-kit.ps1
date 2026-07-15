@@ -1,6 +1,6 @@
 param([switch]$Json)
 $ErrorActionPreference = 'Stop'
-$repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+$repo = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
 $bin = Join-Path $repo 'bin\aicoding.exe'
 if (Test-Path -LiteralPath $bin -PathType Leaf) {
     $argsList = @('full')

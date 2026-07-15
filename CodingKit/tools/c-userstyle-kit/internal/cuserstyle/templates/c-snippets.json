@@ -1,0 +1,166 @@
+{
+  "C File Header (Professional)": {
+    "prefix": "cfile",
+    "body": [
+      "/**",
+      " * @file      ${TM_FILENAME}",
+      " * @brief     ${1:Brief description}",
+      " *",
+      " * @details",
+      " * ${2:Detailed description of this file's purpose, design notes,}",
+      " * ${3:and important usage considerations.}",
+      " *",
+      " * @author    ${4:HU JIAXUAN}",
+      " * @date      ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+      " * @version   ${5:1.0.0}",
+      " *",
+      " * @copyright",
+      " * Copyright (c) ${CURRENT_YEAR} ${6:YourCompany}",
+      " *",
+      " * File content: ${7:Main declarations or implementations in this file.}",
+      " * Main functions: ${8:Primary responsibilities provided by this file.}",
+      " * Relationships: ${9:Related header, source, tests, or modules.}",
+      " *",
+      " * @note",
+      " * ${10:This file follows C99 and embedded C coding conventions.}",
+      " */",
+      "",
+      "$0"
+    ],
+    "description": "生成专业 C 文件头注释（工程级 / Doxygen）"
+  },
+  "C File Header (CN)": {
+    "prefix": "文件说明",
+    "body": [
+      "/**",
+      " * @file      ${TM_FILENAME}",
+      " * @brief     ${1:文件简要说明}",
+      " *",
+      " * @details",
+      " * ${2:本文件的详细功能描述、设计背景和使用约束。}",
+      " *",
+      " * @author    ${3:HU JIAXUAN}",
+      " * @date      ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}",
+      " * @version   ${4:1.0.0}",
+      " *",
+      " * @copyright",
+      " * Copyright (c) ${CURRENT_YEAR} ${5:YourCompany}",
+      " *",
+      " * 文件内容：${6:本文件声明或实现的主要内容。}",
+      " * 主要功能：${7:本文件对外提供的核心职责。}",
+      " * 文件关系：${8:相关头文件、源文件、测试或依赖模块。}",
+      " */",
+      "",
+      "$0"
+    ],
+    "description": "生成中文 C 文件头注释（Doxygen 风格）"
+  },
+  "C Function Header (Full)": {
+    "prefix": "函数",
+    "body": [
+      "/**",
+      " * @brief ${1:函数功能简述}",
+      " *",
+      " * @details",
+      " * ${2:说明函数行为、实现步骤、采用理由和边界条件。}",
+      " *",
+      " * @param[in]  ${3:param_in}   ${4:输入参数说明}",
+      " * @param[out] ${5:param_out}  ${6:输出参数说明}",
+      " *",
+      " * @return ${7:int32_t}",
+      " * @retval ${8:0}   成功",
+      " * @retval ${9:-1}  失败或参数错误",
+      " *",
+      " * @note",
+      " * ${10:说明执行上界、可重入性、并发和中断调用约束。}",
+      " */",
+      "$0"
+    ],
+    "description": "生成完整函数头注释（输入/输出/返回值）"
+  },
+  "C Function Header (Void)": {
+    "prefix": "void函数",
+    "body": [
+      "/**",
+      " * @brief ${1:函数功能简述}",
+      " *",
+      " * @details",
+      " * ${2:说明函数行为、实现步骤、采用理由和边界条件。}",
+      " *",
+      " * @param[in] ${3:param} ${4:参数说明}",
+      " *",
+      " * @note",
+      " * ${5:说明执行上界、可重入性、并发和中断调用约束。}",
+      " */",
+      "$0"
+    ],
+    "description": "生成 void 返回值函数注释"
+  },
+  "C Section Divider": {
+    "prefix": "代码块",
+    "body": [
+      "/* ========================================================================== */",
+      "/* ${1:SECTION NAME}                                                          */",
+      "/* ========================================================================== */",
+      "",
+      "$0"
+    ],
+    "description": "生成工程级代码分块注释"
+  },
+  "C Simple Object Macro": {
+    "prefix": "简单宏",
+    "body": [
+      "/* ${1:说明宏的领域含义、单位或约束。} */",
+      "#define ${2:MACRO_NAME} ${3:value}",
+      "",
+      "$0"
+    ],
+    "description": "生成带单行块注释的简单对象式宏"
+  },
+  "C Struct Brief": {
+    "prefix": "结构体",
+    "body": [
+      "/**",
+      " * @brief ${1:结构体名称}",
+      " *",
+      " * @details",
+      " * ${2:结构体用途、字段含义及使用场景说明}",
+      " */",
+      "typedef struct",
+      "{",
+      "    ${3:/* members */}",
+      "} ${4:type_name_t};",
+      "",
+      "$0"
+    ],
+    "description": "生成结构体定义及说明（嵌入式风格）"
+  },
+  "C Enum Brief": {
+    "prefix": "枚举",
+    "body": [
+      "/**",
+      " * @brief ${1:枚举类型说明}",
+      " */",
+      "typedef enum",
+      "{",
+      "    ${2:ENUM_ITEM_0} = 0,",
+      "    ${3:ENUM_ITEM_1},",
+      "    ${4:ENUM_ITEM_2}",
+      "} ${5:enum_name_t};",
+      "",
+      "$0"
+    ],
+    "description": "生成枚举类型定义（带说明）"
+  },
+  "C Common Includes": {
+    "prefix": "常用头文件",
+    "body": [
+      "#include <stdint.h>",
+      "#include <stdbool.h>",
+      "#include <stddef.h>",
+      "",
+      "$0"
+    ],
+    "description": "引入嵌入式常用标准头文件"
+  }
+}

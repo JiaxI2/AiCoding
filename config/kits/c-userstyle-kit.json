@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 2,
+  "id": "c-userstyle-kit",
+  "name": "C UserStyle Kit",
+  "version": "1.2.0",
+  "kind": [
+    "codingkit-tool-kit",
+    "c99-governance-kit"
+  ],
+  "mode": "external-cli",
+  "description": "First-party C99 style, comment, lint, host-compile, and behavior verification assets backed by the Huawei DKBA 2826-2011.5 reference.",
+  "paths": {
+    "toolRoot": "CodingKit/tools/c-userstyle-kit",
+    "config": "CodingKit/tools/c-userstyle-kit/examples/c-kit.json",
+    "snippets": "CodingKit/tools/c-userstyle-kit/examples/c-snippets.json",
+    "quickTarget": "CodingKit/tools/c-userstyle-kit/examples/verify-target.json",
+    "referencePdf": "CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.pdf",
+    "referenceMarkdown": "CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.md",
+    "referenceRawMarkdown": "CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.raw.md",
+    "ruleCatalog": "CodingKit/tools/c-userstyle-kit/config/rules/huawei-c-language-programming-standard.rules.json",
+    "goldenDemo": "CodingKit/tools/c-userstyle-kit/generated-demo"
+  },
+  "commands": {
+    "status": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "CodingKit/tools/c-userstyle-kit/MANIFEST.json",
+        "CodingKit/tools/c-userstyle-kit/README.md",
+        "CodingKit/tools/c-userstyle-kit/go.mod",
+        "CodingKit/tools/c-userstyle-kit/cmd/cstylekit/main.go",
+        "CodingKit/tools/c-userstyle-kit/examples/c-kit.json",
+        "CodingKit/tools/c-userstyle-kit/examples/c-snippets.json",
+        "CodingKit/tools/c-userstyle-kit/examples/verify-target.json",
+        "CodingKit/tools/c-userstyle-kit/config/rules/huawei-c-language-programming-standard.rules.json",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/demo.c",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/demo.h",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/advanced/README.md",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/advanced/state_machine.c",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/advanced/state_machine.h",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/advanced/protocol.c",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/advanced/protocol.h",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/advanced/fixed_pool.c",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/advanced/fixed_pool.h",
+        "CodingKit/tools/c-userstyle-kit/generated-demo/advanced/tests/advanced_test.c",
+        "CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.pdf",
+        "CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.md",
+        "CodingKit/tools/c-userstyle-kit/references/huawei-c-language-programming-standard-dkba-2826-2011-5.raw.md"
+      ]
+    },
+    "verify": {
+      "type": "external-command",
+      "executable": "go",
+      "args": [
+        "-C",
+        "CodingKit/tools/c-userstyle-kit",
+        "run",
+        "./cmd/cstylekit",
+        "verify",
+        "--config",
+        "./examples/c-kit.json",
+        "--target",
+        "./examples/verify-target.json",
+        "--profile",
+        "fast",
+        "--timings",
+        "--json"
+      ],
+      "supportsJson": true
+    },
+    "test": {
+      "type": "external-command",
+      "executable": "go",
+      "args": [
+        "-C",
+        "CodingKit/tools/c-userstyle-kit",
+        "run",
+        "./cmd/cstylekit",
+        "verify",
+        "--config",
+        "./examples/c-kit.json",
+        "--target",
+        "./examples/verify-target.json",
+        "--profile",
+        "fast",
+        "--timings",
+        "--json"
+      ],
+      "supportsJson": true
+    },
+    "install": {
+      "type": "unsupported",
+      "reason": "C UserStyle Kit is versioned repository content and requires no runtime installation."
+    },
+    "update": {
+      "type": "unsupported",
+      "reason": "C UserStyle Kit updates are reviewed repository asset changes, not lifecycle adapter actions."
+    },
+    "uninstall": {
+      "type": "unsupported",
+      "reason": "C UserStyle Kit is a first-party CodingKit asset and is not removed through runtime lifecycle state."
+    },
+    "export": {
+      "type": "builtin-package",
+      "include": [
+        "CodingKit/tools/c-userstyle-kit/**",
+        "config/kits/c-userstyle-kit.json"
+      ],
+      "exclude": [
+        "CodingKit/tools/c-userstyle-kit/build/**",
+        "CodingKit/tools/c-userstyle-kit/**/reports/**",
+        "CodingKit/tools/c-userstyle-kit/**/*.exe"
+      ],
+      "outputName": "c-userstyle-kit-${version}.zip"
+    }
+  },
+  "skills": {
+    "members": []
+  },
+  "hooks": {
+    "repo": [],
+    "agent": [],
+    "kit": []
+  },
+  "commonDependencies": [
+    {
+      "id": "c-userstyle-kit",
+      "path": "CodingKit/tools/c-userstyle-kit",
+      "version": "1.2.0",
+      "usage": "repository-owned C99 generation and verification tool"
+    }
+  ],
+  "export": {
+    "include": [
+      "CodingKit/tools/c-userstyle-kit/**",
+      "config/kits/c-userstyle-kit.json"
+    ],
+    "exclude": [
+      "CodingKit/tools/c-userstyle-kit/build/**",
+      "CodingKit/tools/c-userstyle-kit/**/reports/**",
+      "CodingKit/tools/c-userstyle-kit/**/*.exe"
+    ],
+    "outputName": "c-userstyle-kit-${version}.zip"
+  },
+  "state": {
+    "root": ".aicoding/state/kits/c-userstyle-kit",
+    "installState": ".aicoding/state/kits/c-userstyle-kit/install-state.json"
+  },
+  "trust": {
+    "level": "first-party",
+    "source": "AiCoding CodingKit asset",
+    "thirdParty": false,
+    "updatePolicy": "manual"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 30
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true,
+      "packageRestore": false
+    }
+  }
+}

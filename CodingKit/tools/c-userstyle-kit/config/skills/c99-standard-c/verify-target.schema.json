@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/c-userstyle/verify-target.schema.json",
+  "title": "C UserStyle External Verification Target",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "candidate"],
+  "properties": {
+    "schema": {"const": "cstylekit-verify-target-v1"},
+    "id": {"type": "string", "minLength": 1},
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "header"],
+      "properties": {
+        "source": {"type": "string", "minLength": 1, "pattern": "\\.c$"},
+        "header": {"type": "string", "minLength": 1, "pattern": "\\.h$"}
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "header"],
+      "properties": {
+        "source": {"type": "string", "minLength": 1, "pattern": "\\.c$"},
+        "header": {"type": "string", "minLength": 1, "pattern": "\\.h$"}
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "testSource": {"type": "string", "minLength": 1, "pattern": "\\.c$"},
+        "supportSources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "pattern": "\\.c$"}
+        },
+        "supportHeaders": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1, "pattern": "\\.h$"}
+        },
+        "defines": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}
