@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **feat(external-skill)**: 支持 `AiCoding -> Codex-Skills -> GitHub Skill` 嵌套 submodule 链，并通过 `standaloneSkillRegistry.sourcePaths` 将 `drawio-skill` 映射到上游真实 Skill 子目录；supports URL-bound external standalone Skills without copied source.
+- **build(governance)**: 规定后续所有 GitHub 来源 Skill 必须由 Codex-Skills 声明外部子模块并锁定 gitlink，AiCoding 仅维护运行时名称到 Skill 子路径的映射；standardizes chained URL binding for future GitHub Skills.
+- **feat(external-skill)**: runtime profile 支持按注册名称安全删除目标完全匹配的 standalone junction；外部 Skill 更新采用最新稳定 SemVer tag，仓库移除同步清理 URL binding 和 gitlink。 / Adds ownership-checked unlink and stable-tag lifecycle rules.
+
 ## [0.8.0] - 2026-07-15
 
 - **feat(cstyle)**: 将 C UserStyle Kit 1.2.0 作为 `CodingKit/tools` 自包含 Go module 纳入平台，保留唯一 `skill c99-standard-c` 用户入口，并新增 `fast`/`full` 结构化验证。 / Integrates C UserStyle Kit 1.2.0 through the existing C99 Skill route with structured fast/full verification.

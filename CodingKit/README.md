@@ -77,6 +77,8 @@ This link is local generated state. It must not be used to copy plugin files int
 
 Normal runtime should expose `aicoding-*` skills through the installed AiCoding plugin. Personal standalone skills are linked selectively from `%USERPROFILE%\.agents\skills` by default. The complete registry lives in `config/codex-kit.json` under `standaloneSkillRegistry`, and compatibility installs can target `%USERPROFILE%\.codex\skills` only when `set-codex-skill-profile.ps1 -StandaloneRoot codex` is explicitly selected.
 
+GitHub-sourced standalone Skills are not copied into AiCoding. They are pinned as nested submodules under `Codex-Skills/external/`, and `standaloneSkillRegistry.sourcePaths` maps each runtime name to the nested directory that contains its `SKILL.md`. Clone and update flows therefore use recursive submodule initialization.
+
 When compatibility mode keeps `%USERPROFILE%\.codex\skills`, keep `.system` and selected standalone links only. Remove source checkout directories such as `embedded`, `platform`, and `plugins/AiCoding/skills` from active runtime exposure after backing them up.
 
 Run the runtime audit before and after install, update, migration, profile switching, or uninstall work:

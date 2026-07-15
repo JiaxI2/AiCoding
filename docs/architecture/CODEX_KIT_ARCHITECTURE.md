@@ -19,6 +19,21 @@ AiCoding does not own canonical skill source. `CodingKit/agents/skills` is a rea
 
 Plugin runtime state is managed through supported install/update/verify flows. Do not edit Codex plugin cache directly and do not copy CodingKit asset directories into plugin packages.
 
+## External Standalone Skill Chain
+
+GitHub-sourced standalone Skills use nested Git submodules rather than copied source:
+
+```text
+AiCoding
+-> CodingKit/agents/skills (Codex-Skills submodule)
+-> external/<repository> (upstream repository submodule)
+-> sourcePaths mapping to the directory containing SKILL.md
+-> selected user-level junction
+```
+
+Codex-Skills owns the upstream URL, stable-tag policy, pinned gitlink, and external binding manifest. AiCoding owns the runtime name-to-source-path mapping in `config/codex-kit.json`. Clone/update verification must initialize submodules recursively, and the runtime audit must continue rejecting duplicate active Skill names.
+Codex-Skills resolves updates from the highest non-prerelease semantic-version tag and pins that release commit. Switching to the runtime profile removes only registered junctions with exact target matches. Removing an external Skill from the kit must delete both the AiCoding runtime mapping and the Codex-Skills URL binding/gitlink in the coordinated cross-repository change.
+
 ## Default Gates
 
 ```powershell

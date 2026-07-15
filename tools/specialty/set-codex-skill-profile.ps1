@@ -23,6 +23,16 @@ function Resolve-StandaloneRoot {
     return Expand-RuntimePath $Config.skillRuntime.canonicalUserRoot
 }
 
+function Resolve-StandaloneSkillSourcePath {
+    param($Config, [string]$SkillName)
+    $sourcePaths = $Config.standaloneSkillRegistry.sourcePaths
+    if ($sourcePaths) {
+        $property = $sourcePaths.PSObject.Properties | Where-Object { $_.Name -eq $SkillName } | Select-Object -First 1
+        if ($property) { return [string]$property.Value }
+    }
+    return $SkillName
+}
+
 function Find-CanonicalSkillPath {
     param([string]$Repository, [string]$SkillName)
     if (-not (Test-Path -LiteralPath $Repository)) { return $null }
@@ -50,6 +60,18 @@ function Ensure-Junction {
     return 'created'
 }
 
+function Remove-ManagedJunction {
+    param([string]$Link, [string]$Target)
+    if (-not (Test-Path -LiteralPath $Link)) { return 'absent' }
+    $item = Get-Item -LiteralPath $Link -Force
+    $targets = @($item.Target)
+    if (-not $item.LinkType -or -not ($targets -contains $Target)) {
+        throw "Refusing to remove unmanaged path: $Link"
+    }
+    Remove-Item -LiteralPath $Link -Force
+    return 'removed'
+}
+
 $repo = Get-AiCodingRoot $PSScriptRoot
 $config = Read-CodexKitConfig $repo
 $agentsRoot = Expand-RuntimePath $config.skillRuntime.canonicalUserRoot
@@ -70,14 +92,23 @@ if ($Profile -eq 'runtime') {
     $actions += 'Use AiCoding Plugin as the only aicoding-* runtime source.'
     $actions += 'Do not link canonical embedded/ or platform/ sources.'
     $actions += 'Do not install standalone skills unless Profile full is selected.'
+    $removeNames = if ($Skill) { @($Skill) } else { @($config.profiles.full.standaloneSkills) }
+    foreach ($standalone in $removeNames) {
+        if (@($config.standaloneSkillRegistry.skills) -notcontains $standalone) { throw "Standalone Skill is not registered: $standalone" }
+        $sourcePath = Resolve-StandaloneSkillSourcePath -Config $config -SkillName $standalone
+        $target = Join-Path $SourceRepository $sourcePath
+        $link = Join-Path $standaloneInstallRoot $standalone
+        $actions += "Remove managed standalone skill link if present: $link -> $target"
+    }
     $actions += 'Run audit-runtime-skills.ps1 -ExpectedProfile runtime.'
 }
 elseif ($Profile -eq 'full') {
     $actions += 'Use AiCoding Plugin as the only aicoding-* runtime source.'
     foreach ($standalone in @($config.profiles.full.standaloneSkills)) {
-        $target = Join-Path $SourceRepository $standalone
+        $sourcePath = Resolve-StandaloneSkillSourcePath -Config $config -SkillName $standalone
+        $target = Join-Path $SourceRepository $sourcePath
         $link = Join-Path $standaloneInstallRoot $standalone
-        $actions += "Ensure standalone skill link: $link -> $target"
+        $actions += "Ensure standalone skill link: $link -> $target (source: $sourcePath)"
         if (-not (Test-Path -LiteralPath $target)) { $warnings += "Standalone skill target missing: $target" }
     }
     $actions += 'Run audit-runtime-skills.ps1 -ExpectedProfile full.'
@@ -94,12 +125,23 @@ else {
 if (-not $DryRun) {
     New-Item -ItemType Directory -Force -Path $agentsRoot | Out-Null
     New-Item -ItemType Directory -Force -Path $standaloneInstallRoot | Out-Null
-    if ($Profile -eq 'full') {
+    if ($Profile -eq 'runtime') {
+        $removeNames = if ($Skill) { @($Skill) } else { @($config.profiles.full.standaloneSkills) }
+        foreach ($standalone in $removeNames) {
+            $sourcePath = Resolve-StandaloneSkillSourcePath -Config $config -SkillName $standalone
+            $target = Join-Path $SourceRepository $sourcePath
+            $link = Join-Path $standaloneInstallRoot $standalone
+            $result = Remove-ManagedJunction -Link $link -Target $target
+            $changes += [pscustomobject]@{ name=$standalone; sourcePath=$sourcePath; link=$link; target=$target; result=$result }
+        }
+    }
+    elseif ($Profile -eq 'full') {
         foreach ($standalone in @($config.profiles.full.standaloneSkills)) {
-            $target = Join-Path $SourceRepository $standalone
+            $sourcePath = Resolve-StandaloneSkillSourcePath -Config $config -SkillName $standalone
+            $target = Join-Path $SourceRepository $sourcePath
             $link = Join-Path $standaloneInstallRoot $standalone
             $result = Ensure-Junction -Link $link -Target $target
-            $changes += [pscustomobject]@{ name=$standalone; link=$link; target=$target; result=$result }
+            $changes += [pscustomobject]@{ name=$standalone; sourcePath=$sourcePath; link=$link; target=$target; result=$result }
         }
     }
     elseif ($Profile -eq 'skill-development') {

@@ -55,7 +55,7 @@
         "codex-documents-anthropic-docx",
         "defuddle",
         "doc-coauthoring",
-        "drawio",
+        "drawio-skill",
         "frontend-design",
         "internal-comms",
         "json-canvas",
@@ -82,6 +82,9 @@
     ],
     "linkMode": "junction",
     "installByProfile": true,
+    "sourcePaths": {
+      "drawio-skill": "external/drawio-skill/skills/drawio-skill"
+    },
     "skills": [
       "algorithmic-art",
       "anthropic-docx",
@@ -94,7 +97,7 @@
       "codex-documents-anthropic-docx",
       "defuddle",
       "doc-coauthoring",
-      "drawio",
+      "drawio-skill",
       "frontend-design",
       "internal-comms",
       "json-canvas",

@@ -166,6 +166,14 @@ Before completing installation, upgrade, migration, profile switching, or uninst
 
 Source skills may have generated package copies in the repository, but a Skill name must have only one active runtime source.
 
+## External GitHub Skill Policy
+
+All Skills downloaded from GitHub must enter the Codex-Skills source repository through a declared nested Git submodule under `external/`; do not copy their source into either repository. Codex-Skills owns `.gitmodules`, the pinned external gitlink, and `config/external-skill-bindings.json`.
+
+AiCoding may expose an external standalone Skill by keeping its runtime name in `profiles.full.standaloneSkills` and `standaloneSkillRegistry.skills`, then mapping that name to the nested directory containing `SKILL.md` through `standaloneSkillRegistry.sourcePaths`. The runtime junction must target that mapped Skill directory, not the external repository root. New-machine and update flows must initialize submodules recursively.
+
+External updates resolve the highest stable semantic-version tag and advance the pinned gitlink only after review. Runtime uninstall removes only a junction whose target exactly matches the registered source path. Repository de-integration must pair removal of the AiCoding registry/source-path entry with removal of the Codex-Skills binding manifest entry, `.gitmodules` section, and gitlink; orphaned runtime or source links are not allowed.
+
 
 ## SDD/BDD/TDD Workflow Policy
 

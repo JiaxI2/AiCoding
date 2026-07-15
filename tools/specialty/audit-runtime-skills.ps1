@@ -134,6 +134,7 @@ $result = [pscustomobject]@{
     sourceRepository = $sourceRepository
     sourceRepositoryUnderSkillRoot = $sourceRepositoryUnderSkillRoot
     registeredStandaloneSkills = @($config.standaloneSkillRegistry.skills)
+    registeredStandaloneSourcePaths = $config.standaloneSkillRegistry.sourcePaths
     brokenLinks = $brokenLinks
     wholeRepositoryLinks = $wholeRepositoryLinks
     generatedSkillLinks = $generatedSkillLinks
