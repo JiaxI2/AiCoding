@@ -178,7 +178,7 @@ func deprecatedCommand(args []string) (string, bool) {
 			}
 		}
 	case "status":
-		return "aicoding lifecycle status --scope all", true
+		return "aicoding doctor --all", true
 	}
 	return "", false
 }

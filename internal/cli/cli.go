@@ -103,6 +103,10 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 	case "powershell":
 		res, err = runPowerShell(commandArgs, start)
 	default:
+		if jsonRequested(commandArgs) {
+			err = usageErrorf("unknown command: %s", cmd)
+			break
+		}
 		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
 		writeUsage(stderr)
 		return ExitUsage
@@ -120,6 +124,16 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 		if len(res.Errors) == 0 {
 			res.Errors = []string{err.Error()}
 		}
+	}
+	switch {
+	case isUsageError(err):
+		res.ErrorKind = report.ErrorKindUsage
+	case report.IsValidationError(err):
+		res.ErrorKind = report.ErrorKindValidation
+	case res.ErrorKind == "" && !res.OK:
+		res.ErrorKind = report.ErrorKindValidation
+	case res.ErrorKind == "" && err != nil:
+		res.ErrorKind = report.ErrorKindExecution
 	}
 	if canonical, ok := deprecatedCommand(args); ok {
 		res = addDeprecation(res, canonical)
@@ -156,6 +170,8 @@ Formal product workflow:
   aicoding lifecycle status|doctor --scope all [--runtime-profile runtime|full|skill-development] [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding lifecycle verify --scope all --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--configured] [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding lifecycle rollback --last [--repo-root PATH] [--json]
+  aicoding doctor --all [--runtime-profile runtime|full|skill-development] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]
+  aicoding verify --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--configured] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]
   aicoding release verify [--repo-root PATH] [--json]
   aicoding release gate [--repo-root PATH] [--json]
 
@@ -674,8 +690,8 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 }
 
 func runVerify(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 {
-		return report.Result{}, usageErrorf("verify requires subcommand: hooks, repo-text, or release-notes")
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		return runProductVerify(args, start)
 	}
 	sub := args[0]
 	if !validChoice(sub, "hooks", "repo-text", "release-notes") {
@@ -707,26 +723,11 @@ func runVerify(args []string, start time.Time) (report.Result, error) {
 }
 
 func runStatus(args []string, start time.Time) (report.Result, error) {
-	fs := newFlagSet("status")
-	repoArg := fs.String("repo-root", "", "repository root")
-	allArg := fs.Bool("all", false, "summarize all local fast-path state")
-	_ = fs.Bool("json", false, "json output")
-	if err := parseNoPositionals(fs, args); err != nil {
-		return report.Result{}, err
-	}
-	if !*allArg {
-		return report.Result{}, usageErrorf("status requires --all")
-	}
-	repo, err := platform.ResolveRepoRoot(*repoArg)
-	if err != nil {
-		return report.Fail("status", start, "cannot resolve repo root", nil, err.Error()), err
-	}
-	status, errs := repohealth.StatusAll(repo)
-	return report.Result{SchemaVersion: 1, Command: "status --all", OK: len(errs) == 0, Message: "fast path repository status", RepoRoot: repo, Data: status, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	return runProductDoctor(args, start, "status --all")
 }
 func runDoctor(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 {
-		return report.Result{}, usageErrorf("doctor requires subcommand: perf, pwsh, or pwsh-budget")
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		return runProductDoctor(args, start, "doctor --all")
 	}
 	sub := args[0]
 	if !validChoice(sub, "perf", "pwsh", "pwsh-budget") {

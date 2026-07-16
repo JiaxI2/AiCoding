@@ -191,7 +191,7 @@ func runMCPAdapter(ctx context.Context, repo string, opts Options) AdapterResult
 		result.Errors = errorsFound
 		return result
 	case "doctor":
-		doctor := mcpcontrol.DoctorComponents(repo, entries)
+		doctor := mcpcontrol.DoctorComponentsContext(ctx, repo, entries)
 		errorsFound := mcpCommandErrors(entries, doctor)
 		result.OK = len(errorsFound) == 0
 		result.Status = statusFromOK(result.OK)

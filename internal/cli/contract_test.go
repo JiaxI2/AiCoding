@@ -70,7 +70,7 @@ func TestExecuteFlagHelpAndJSONUsageError(t *testing.T) {
 	if err := json.Unmarshal(stdout.Bytes(), &res); err != nil {
 		t.Fatalf("invalid flag must preserve JSON-only stdout: %v: %q", err, stdout.String())
 	}
-	if res.OK || len(res.Errors) == 0 || stderr.Len() != 0 {
+	if res.OK || res.ErrorKind != report.ErrorKindUsage || len(res.Errors) == 0 || stderr.Len() != 0 {
 		t.Fatalf("unexpected usage result: res=%#v stderr=%q", res, stderr.String())
 	}
 }
@@ -94,7 +94,7 @@ func TestUnsupportedSubcommandsUseExitTwoWithoutExecuting(t *testing.T) {
 		if err := json.Unmarshal(stdout.Bytes(), &res); err != nil {
 			t.Fatalf("Execute(%#v) must emit JSON usage result: %v: %q", args, err, stdout.String())
 		}
-		if res.OK || stderr.Len() != 0 {
+		if res.OK || res.ErrorKind != report.ErrorKindUsage || stderr.Len() != 0 {
 			t.Fatalf("unexpected usage result for %#v: res=%#v stderr=%q", args, res, stderr.String())
 		}
 	}
@@ -112,7 +112,7 @@ func TestExecuteExecutionFailureUsesExitOne(t *testing.T) {
 	if err := json.Unmarshal(stdout.Bytes(), &res); err != nil {
 		t.Fatalf("execution failure must emit JSON: %v: %q", err, stdout.String())
 	}
-	if res.OK || stderr.Len() != 0 {
+	if res.OK || res.ErrorKind != report.ErrorKindExecution || stderr.Len() != 0 {
 		t.Fatalf("unexpected execution failure result: res=%#v stderr=%q", res, stderr.String())
 	}
 }
@@ -129,7 +129,7 @@ func TestDeprecationContract(t *testing.T) {
 		{[]string{"test", "release"}, "aicoding test --profile Release"},
 		{[]string{"kit", "lifecycle", "--action", "update"}, "aicoding lifecycle plan --action update --scope kit"},
 		{[]string{"mcp", "install", "visio-mcp"}, "aicoding lifecycle install --scope mcp"},
-		{[]string{"status", "--all"}, "aicoding lifecycle status --scope all"},
+		{[]string{"status", "--all"}, "aicoding doctor --all"},
 	} {
 		canonical, ok := deprecatedCommand(tc.args)
 		if !ok || canonical != tc.canonical {

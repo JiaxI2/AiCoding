@@ -1,6 +1,7 @@
 package mcpcontrol
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -271,7 +272,11 @@ func versionAtLeast(actual, minimum string) bool {
 }
 
 func runNative(dir, executable string, args ...string) (string, error) {
-	command := exec.Command(executable, args...)
+	return runNativeContext(context.Background(), dir, executable, args...)
+}
+
+func runNativeContext(ctx context.Context, dir, executable string, args ...string) (string, error) {
+	command := exec.CommandContext(ctx, executable, args...)
 	command.Dir = dir
 	output, err := command.CombinedOutput()
 	text := strings.TrimSpace(string(output))

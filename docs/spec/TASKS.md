@@ -33,9 +33,9 @@
 
 ## Phase 5: Doctor / Verify / Report
 
-- [ ] 建立产品级 doctor 和 verify 边界。
-- [ ] 统一报告 Schema 和严格 JSON stdout。
-- [ ] 补充帮助、退出码和兼容回归。
+- [x] 建立产品级 doctor 和 verify 边界。
+- [x] 统一报告 Schema、errorKind 和严格 JSON stdout。
+- [x] 补充帮助、退出码和兼容回归。
 
 ## Phase 6: 文档
 

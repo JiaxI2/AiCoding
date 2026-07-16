@@ -9,6 +9,10 @@ import (
 )
 
 func DoctorComponents(repo string, entries []RegistryEntry) []CommandResult {
+	return DoctorComponentsContext(context.Background(), repo, entries)
+}
+
+func DoctorComponentsContext(ctx context.Context, repo string, entries []RegistryEntry) []CommandResult {
 	results := make([]CommandResult, 0, len(entries))
 	for _, entry := range entries {
 		component, err := LoadComponent(repo, entry.Manifest)
@@ -18,7 +22,7 @@ func DoctorComponents(repo string, entries []RegistryEntry) []CommandResult {
 		}
 		root := componentRoot(repo, component)
 		python := venvPython(root)
-		results = append(results, runPythonStep(root, python, component.Doctor.Args))
+		results = append(results, runPythonStep(ctx, root, python, component.Doctor.Args))
 	}
 	return results
 }
@@ -47,7 +51,7 @@ func Verify(
 			report.OK = false
 			continue
 		}
-		item := verifyComponent(repo, component, normalized)
+		item := verifyComponent(ctx, repo, component, normalized)
 		report.Managed = append(report.Managed, item)
 		if !item.OK {
 			report.OK = false
@@ -85,7 +89,7 @@ func Verify(
 	return report
 }
 
-func verifyComponent(repo string, component Component, profile string) ComponentVerifyResult {
+func verifyComponent(ctx context.Context, repo string, component Component, profile string) ComponentVerifyResult {
 	result := ComponentVerifyResult{
 		ID:      component.ID,
 		Profile: profile,
@@ -101,7 +105,7 @@ func verifyComponent(repo string, component Component, profile string) Component
 	root := componentRoot(repo, component)
 	python := venvPython(root)
 	for _, step := range steps {
-		commandResult := runPythonStep(root, python, step)
+		commandResult := runPythonStep(ctx, root, python, step)
 		result.Steps = append(result.Steps, commandResult)
 		if !commandResult.OK {
 			result.OK = false
@@ -112,7 +116,7 @@ func verifyComponent(repo string, component Component, profile string) Component
 	return result
 }
 
-func runPythonStep(root, python string, args []string) CommandResult {
+func runPythonStep(ctx context.Context, root, python string, args []string) CommandResult {
 	started := time.Now()
 	result := CommandResult{
 		Command: append([]string{python}, args...),
@@ -123,7 +127,7 @@ func runPythonStep(root, python string, args []string) CommandResult {
 		result.ElapsedMS = time.Since(started).Milliseconds()
 		return result
 	}
-	output, err := runNative(root, python, args...)
+	output, err := runNativeContext(ctx, root, python, args...)
 	result.ElapsedMS = time.Since(started).Milliseconds()
 	if err != nil {
 		result.Errors = []string{err.Error()}
