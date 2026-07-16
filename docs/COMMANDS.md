@@ -55,6 +55,23 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | 解析 Codex Token JSONL | `bin\aicoding.exe codex usage parse --file <FILE> --json` |
 | 运行 Codex 并采集 Token | `bin\aicoding.exe codex usage run -- codex exec --json "<PROMPT>"` |
 
+## Codex Skill 运行时同步
+
+插件更新先比较 released package 与 installed cache 的 `BUILDINFO.json`；发生漂移时通过 Codex 官方 plugin CLI 重装同一 Marketplace plugin，刷新成功后才写 install state：
+
+```powershell
+bin\aicoding.exe lifecycle plan --action update --kit aicoding-platform --json
+bin\aicoding.exe lifecycle update --kit aicoding-platform --json
+```
+
+Standalone full profile 默认统一到官方 user root，并在显式迁移时备份同名 unmanaged path：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/set-codex-skill-profile.ps1 -Profile full -StandaloneRoot agents -DryRun -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/set-codex-skill-profile.ps1 -Profile full -StandaloneRoot agents -MigrateUnmanaged -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/audit-runtime-skills.ps1 -ExpectedProfile full -StandaloneRoot agents -Strict -Json
+```
+
 ## MCP 组件控制面
 
 MCP registry、component manifest、Codex 配置、生命周期和兼容性回归统一由 Go CLI 管理：

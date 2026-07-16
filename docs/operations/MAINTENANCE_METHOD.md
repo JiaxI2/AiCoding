@@ -136,9 +136,22 @@ AiCoding Plugin cache
 Before changing runtime exposure, use the current audit/profile entrypoints:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/audit-runtime-skills.ps1 -Json
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/set-codex-skill-profile.ps1 -Profile runtime -DryRun -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/audit-runtime-skills.ps1 -ExpectedProfile full -StandaloneRoot agents -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/set-codex-skill-profile.ps1 -Profile full -StandaloneRoot agents -DryRun -Json
 ```
+
+The audit enumerates direct Skill directories in both user roots so Windows junctions are not skipped. By default it inspects only the installed AiCoding plugin cache and compares its `BUILDINFO.json` with the released package; `-IncludeAllPluginCaches` is an explicit forensic mode, not an active-plugin inventory.
+
+To converge registered standalone Skills on the canonical root, review the dry-run and then use:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/set-codex-skill-profile.ps1 -Profile full -StandaloneRoot agents -MigrateUnmanaged -Json
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/audit-runtime-skills.ps1 -ExpectedProfile full -StandaloneRoot agents -Strict -Json
+```
+
+`-MigrateUnmanaged` moves only registered paths under the two approved Skill roots, stores them under `%USERPROFILE%\.codex\backups\aicoding-skill-profiles`, and writes `rollback.json`. Without that switch, an unmanaged or mismatched path blocks the operation before mutation.
+
+For plugin package drift, first run `lifecycle plan`. The apply path uses Codex `plugin remove/add`, verifies the installed build metadata, and only then updates AiCoding install state. If the Codex CLI cannot execute, the result is `manual-required` and includes the supported command and local-plugin deep link; cache files are never edited directly.
 
 Do not move or delete user-level skill roots without a dry-run report, runtime audit, plugin verification, rollback plan, and user approval.
 

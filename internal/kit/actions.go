@@ -2,8 +2,6 @@ package kit
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -52,13 +50,16 @@ type ActionResult struct {
 }
 
 type installState struct {
-	SchemaVersion int       `json:"schemaVersion"`
-	KitID         string    `json:"kitId"`
-	Version       string    `json:"version"`
-	Manifest      string    `json:"manifest"`
-	Action        string    `json:"action"`
-	InstalledAt   time.Time `json:"installedAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+	SchemaVersion      int       `json:"schemaVersion"`
+	KitID              string    `json:"kitId"`
+	Version            string    `json:"version"`
+	Manifest           string    `json:"manifest"`
+	Action             string    `json:"action"`
+	InstalledAt        time.Time `json:"installedAt"`
+	UpdatedAt          time.Time `json:"updatedAt"`
+	PluginSourceCommit string    `json:"pluginSourceCommit,omitempty"`
+	PluginSkillsDigest string    `json:"pluginSkillsDigest,omitempty"`
+	PluginCachePath    string    `json:"pluginCachePath,omitempty"`
 }
 
 type rollbackSnapshot struct {
@@ -164,19 +165,49 @@ func runBuiltinLifecycle(repo string, entry RegistryKit, manifest Manifest, comm
 		return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "missing", Data: map[string]interface{}{"missing": missing}, Errors: prefixMissing(missing)}
 	}
 	if dryRun {
-		return ActionResult{ID: entry.ID, Action: action, OK: true, Status: "planned", Message: "builtin lifecycle dry-run"}
+		result := ActionResult{ID: entry.ID, Action: action, OK: true, Status: "planned", Message: "builtin lifecycle dry-run"}
+		if entry.ID == "aicoding-platform" && (action == "install" || action == "update") {
+			pluginSync, err := inspectPlatformPlugin(repo, manifest)
+			if err != nil {
+				result.OK = false
+				result.Status = "failed"
+				result.Errors = []string{err.Error()}
+			} else {
+				result.Data = pluginSync
+				if pluginSync.Drift {
+					result.Warnings = append(result.Warnings, "installed plugin cache drift: "+strings.Join(pluginSync.DriftReasons, "; "))
+				}
+			}
+		}
+		return result
 	}
 	switch action {
 	case "install", "update":
+		var data interface{}
+		var syncedPlugin *PlatformPluginSync
+		warnings := []string{}
 		if entry.ID == "aicoding-platform" {
-			if err := installPlatform(repo, manifest); err != nil {
-				return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{err.Error()}}
+			pluginSync, err := syncPlatformPlugin(repo, manifest)
+			data = pluginSync
+			if err != nil {
+				status := "failed"
+				if pluginSync.ManualRequired {
+					status = "manual-required"
+				}
+				return ActionResult{ID: entry.ID, Action: action, OK: false, Status: status, Data: pluginSync, Errors: []string{err.Error()}}
+			}
+			repoWarnings, err := configurePlatformRepository(repo, &pluginSync)
+			data = pluginSync
+			syncedPlugin = &pluginSync
+			warnings = append(warnings, repoWarnings...)
+			if err != nil {
+				return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Data: pluginSync, Warnings: warnings, Errors: []string{err.Error()}}
 			}
 		}
-		if err := writeInstallState(repo, entry, manifest, action); err != nil {
+		if err := writeInstallState(repo, entry, manifest, action, syncedPlugin); err != nil {
 			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{err.Error()}}
 		}
-		return ActionResult{ID: entry.ID, Action: action, OK: true, Status: "ok", Message: "builtin lifecycle state updated"}
+		return ActionResult{ID: entry.ID, Action: action, OK: true, Status: "ok", Message: "builtin lifecycle state updated after runtime synchronization", Data: data, Warnings: warnings}
 	case "uninstall":
 		if err := removeInstallState(repo, manifest); err != nil {
 			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{err.Error()}}
@@ -185,33 +216,6 @@ func runBuiltinLifecycle(repo string, entry RegistryKit, manifest Manifest, comm
 	default:
 		return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{"unsupported builtin lifecycle action: " + action}}
 	}
-}
-
-func installPlatform(repo string, manifest Manifest) error {
-	pluginRoot := manifest.Paths["pluginRoot"]
-	if pluginRoot == "" {
-		return errors.New("aicoding-platform missing paths.pluginRoot")
-	}
-	pluginPath := platform.RepoPath(repo, pluginRoot)
-	if !platform.IsDir(pluginPath) {
-		return fmt.Errorf("missing plugin package: %s", pluginRoot)
-	}
-	if _, err := exec.Command("git", "-C", repo, "config", "core.hooksPath", ".githooks").CombinedOutput(); err != nil {
-		return err
-	}
-	link := filepath.Join(repo, "plugins", "AiCoding")
-	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
-		return err
-	}
-	if info, err := os.Lstat(link); err == nil {
-		if info.Mode()&os.ModeSymlink != 0 {
-			_ = os.Remove(link)
-		} else {
-			return nil
-		}
-	}
-	_ = os.Symlink(pluginPath, link)
-	return nil
 }
 
 func runExternal(repo, id, action string, command CommandDef) ActionResult {
@@ -224,7 +228,7 @@ func runExternal(repo, id, action string, command CommandDef) ActionResult {
 	return ActionResult{ID: id, Action: action, OK: true, Status: "ok", Data: map[string]string{"output": strings.TrimSpace(string(out))}}
 }
 
-func writeInstallState(repo string, entry RegistryKit, manifest Manifest, action string) error {
+func writeInstallState(repo string, entry RegistryKit, manifest Manifest, action string, pluginSync *PlatformPluginSync) error {
 	path := statePath(repo, manifest, entry.ID)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -233,6 +237,11 @@ func writeInstallState(repo string, entry RegistryKit, manifest Manifest, action
 	state := installState{SchemaVersion: 1, KitID: entry.ID, Version: manifest.Version, Manifest: entry.Manifest, Action: action, InstalledAt: now, UpdatedAt: now}
 	if previousState, err := readInstallState(path); err == nil && previousState != nil {
 		state.InstalledAt = previousState.InstalledAt
+	}
+	if pluginSync != nil {
+		state.PluginSourceCommit = pluginSync.SourceBuildInfo.SourceCommit
+		state.PluginSkillsDigest = pluginSync.SourceBuildInfo.SkillsDigest
+		state.PluginCachePath = pluginSync.InstalledPackage
 	}
 	return writeJSONFile(path, state)
 }
