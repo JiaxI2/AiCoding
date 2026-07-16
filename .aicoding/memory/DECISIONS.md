@@ -48,3 +48,24 @@ Constraints:
 - Stable asset names, paths, packages, symbols, models and runtime code do not encode the asset version.
 - Versions are controlled by manifest metadata, asset documentation, changelog, Tag/Release URLs and exact-authority README badges.
 - Existing reverse names and self-version code are corrected immediately rather than registered as deferred debt.
+
+## AiCoding Product Convergence
+
+Decision Status: Selected
+
+Selected option: compatibility-first unified control plane.
+
+Rationale:
+
+- `test --profile Smoke|Full|Release` is the single formal test entry.
+- `lifecycle` is the single formal product lifecycle namespace.
+- Release reuses the same test engine without recursive CLI aggregation.
+- Legacy commands remain compatible for one version and emit `CLI_DEPRECATED`.
+- Existing tester, runner, report, kit and MCP implementations are converged rather than replaced by parallel frameworks.
+
+Constraints:
+
+- Do not modify `CodingKit/agents/skills`.
+- Do not add another CLI, test framework, report system, UI or complex plugin system.
+- Do not create a Release or automatically merge a PR.
+- Validate and commit every Phase independently without squashing the staged history.

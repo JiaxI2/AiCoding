@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 选择兼容优先的产品闭环收敛路线，定义唯一 CLI/Test/Report/Lifecycle/Release 权威面、一个版本的 `CLI_DEPRECATED` 兼容边界及分阶段验证/回滚计划；selects the compatibility-first product convergence plan and phased gates.
+
 ## [0.9.1] - 2026-07-16
 
 - **fix(test)**: FOC no-compile 报告不再版本化墙钟耗时和本机 Python 绝对路径，改为记录确定性迭代数/checksum，并统一生成文件末尾换行；removes machine-dependent timing/path drift from versioned FOC validation reports.
