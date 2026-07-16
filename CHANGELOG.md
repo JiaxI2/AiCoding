@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-07-16
+
 - **fix(test)**: FOC no-compile 报告不再版本化墙钟耗时和本机 Python 绝对路径，改为记录确定性迭代数/checksum，并统一生成文件末尾换行；removes machine-dependent timing/path drift from versioned FOC validation reports.
 - **fix(cstyle)**: 仓库级 C 文件头模板删除 `@version`/`version` 变量，并由模板 validator 阻断源码头重新暴露资产版本；keeps reusable C source headers version-opaque.
 - **fix(plugin-lifecycle)**：`lifecycle install|update` 现在比较源码包与 installed cache 的 `BUILDINFO.json`，仅通过 Codex 官方 `plugin remove/add` 刷新漂移包，并在 CLI 不可用、插件禁用或刷新后仍漂移时阻止写入虚假的 install state；refreshes stale plugin caches through the supported Codex plugin lifecycle instead of editing cache files.
@@ -67,6 +69,7 @@
 - **docs**: README、命令文档、架构文档、PowerShell 边界文档、Tag policy 和 Release policy 只描述当前 main 的可观测标准。
 - **chore(pwsh)**: Go 默认控制面之外只保留 PowerShell 专项质量、安全、Plan Mode、外部 skill、tag planning / overlay compatibility 和硬件/工具链边界脚本。
 
-[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/JiaxI2/AiCoding/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/JiaxI2/AiCoding/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/JiaxI2/AiCoding/compare/v0.7.0...v0.8.0
