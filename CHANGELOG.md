@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **fix(plugin-lifecycle)**：`lifecycle install|update` 现在比较源码包与 installed cache 的 `BUILDINFO.json`，仅通过 Codex 官方 `plugin remove/add` 刷新漂移包，并在 CLI 不可用、插件禁用或刷新后仍漂移时阻止写入虚假的 install state；refreshes stale plugin caches through the supported Codex plugin lifecycle instead of editing cache files.
+- **fix(skill-runtime)**：runtime audit 改为直接枚举两个 user Skill root 的 junction，默认只核验 AiCoding active cache，并校验精确 profile、source target 与 package digest；profile 切换可显式备份 unmanaged/mismatched 注册路径后统一到 `.agents\skills`，同时生成 rollback manifest。 / Makes Windows junction discovery, profile matching, migration and rollback evidence deterministic.
+- **build(codex-kit)**：推进 `CodingKit/agents/skills` gitlink 到已验证的 deterministic plugin metadata 修复提交。 / Advances the released Skill dependency used by plugin drift comparison.
+
 ## [0.9.0] - 2026-07-16
 
 - **feat(governance)**: 新增仓库级依赖方向与稳定身份门禁，统一约束 Kit、Skill、MCP、模块命名、registry binding、下层平台无感、MCP/Skill 职责和资产版本不可观察；adds an executable higher-to-lower dependency contract.

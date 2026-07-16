@@ -20,6 +20,8 @@
       "type": "builtin-lifecycle",
       "requiredPaths": [
         "CodingKit/agents/skills/plugins/AiCoding",
+        "CodingKit/agents/skills/plugins/AiCoding/.codex-plugin/plugin.json",
+        "CodingKit/agents/skills/plugins/AiCoding/BUILDINFO.json",
         "config/codex-kit.json",
         ".agents/plugins/marketplace.json"
       ],
@@ -67,6 +69,8 @@
       "type": "builtin-lifecycle",
       "requiredPaths": [
         "CodingKit/agents/skills/plugins/AiCoding",
+        "CodingKit/agents/skills/plugins/AiCoding/.codex-plugin/plugin.json",
+        "CodingKit/agents/skills/plugins/AiCoding/BUILDINFO.json",
         "config/codex-kit.json",
         ".agents/plugins/marketplace.json"
       ],

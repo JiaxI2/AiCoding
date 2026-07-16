@@ -251,6 +251,13 @@ func appendPluginPackageWarning(repo string, manifest Manifest, warnings []strin
 	}
 	if !platform.Exists(platform.RepoPath(repo, pluginRoot)) {
 		warnings = append(warnings, "missing generated plugin package: "+pluginRoot)
+		return warnings
+	}
+	pluginSync, err := inspectPlatformPlugin(repo, manifest)
+	if err != nil {
+		warnings = append(warnings, "cannot inspect installed plugin cache: "+err.Error())
+	} else if pluginSync.Drift {
+		warnings = append(warnings, "installed plugin cache drift: "+strings.Join(pluginSync.DriftReasons, "; "))
 	}
 	return warnings
 }

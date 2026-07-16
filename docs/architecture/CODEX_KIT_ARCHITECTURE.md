@@ -17,7 +17,9 @@ AiCoding does not own canonical skill source. `CodingKit/agents/skills` is a rea
 
 ## Runtime Boundary
 
-Plugin runtime state is managed through supported install/update/verify flows. Do not edit Codex plugin cache directly and do not copy CodingKit asset directories into plugin packages.
+Plugin runtime state is managed through supported install/update/verify flows. Install and update compare the released source package `BUILDINFO.json` with the installed cache, refresh drift through the Codex plugin CLI, and write AiCoding install state only after the cache matches. A disabled plugin is never silently re-enabled. Do not edit Codex plugin cache directly and do not copy CodingKit asset directories into plugin packages.
+
+Standalone runtime exposure uses `%USERPROFILE%\.agents\skills` as the canonical root. `%USERPROFILE%\.codex\skills` is a compatibility root that must not retain a second registered copy after profile convergence. Profile migration may back up an unmanaged registered path only when explicitly requested, and records a rollback manifest under the user Codex backup area.
 
 ## Dependency Direction Boundary
 
