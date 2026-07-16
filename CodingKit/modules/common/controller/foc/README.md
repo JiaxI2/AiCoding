@@ -135,4 +135,8 @@ cmake -S CodingKit/modules/common/controller/foc -B CodingKit/modules/common/con
 cmake --build CodingKit/modules/common/controller/foc/build
 ```
 
+`tests/run_no_compile_validation.py` 生成的版本化报告只记录相对命令、通过/失败结果、
+固定迭代数和稳定 checksum。墙钟耗时只适合作为当前机器的临时观测，不写入仓库；
+所有 JSON/Markdown 报告统一保留末尾换行，连续运行不会产生无意义 diff。
+
 真实电机 bring-up 仍需覆盖相序、offset、电流方向、编码器方向/零位、开环 Vq、闭环 Id/Iq、速度闭环和位置闭环。本模块不声明硬件参数已调好。

@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **fix(test)**: FOC no-compile 报告不再版本化墙钟耗时和本机 Python 绝对路径，改为记录确定性迭代数/checksum，并统一生成文件末尾换行；removes machine-dependent timing/path drift from versioned FOC validation reports.
+- **fix(cstyle)**: 仓库级 C 文件头模板删除 `@version`/`version` 变量，并由模板 validator 阻断源码头重新暴露资产版本；keeps reusable C source headers version-opaque.
+
 ## [0.9.0] - 2026-07-16
 
 - **feat(governance)**: 新增仓库级依赖方向与稳定身份门禁，统一约束 Kit、Skill、MCP、模块命名、registry binding、下层平台无感、MCP/Skill 职责和资产版本不可观察；adds an executable higher-to-lower dependency contract.

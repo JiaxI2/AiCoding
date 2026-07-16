@@ -18,7 +18,6 @@
         " *",
         " * @author    {{author}}",
         " * @date      {{date}}",
-        " * @version   {{version}}",
         " *",
         " * @copyright",
         " * Copyright (c) {{year}} {{company}}",
@@ -33,7 +32,6 @@
         "details": { "description": "文件详细功能、设计背景和使用注意事项。", "default": "本文件的详细功能描述、设计背景、使用说明等" },
         "author": { "description": "作者。", "default": "HU JIAXUAN" },
         "date": { "description": "日期，建议格式 YYYY-MM-DD。", "default": "{{current_date}}" },
-        "version": { "description": "文件或模块版本号。", "default": "1.0.0" },
         "year": { "description": "版权年份。", "default": "{{current_year}}" },
         "company": { "description": "版权归属单位。", "default": "YourCompany" },
         "note": { "description": "MISRA-C、嵌入式约束或调用注意事项。", "default": "This file follows MISRA-C / Embedded C coding conventions." }
@@ -55,7 +53,6 @@
         " *",
         " * @author    {{author}}",
         " * @date      {{date}}",
-        " * @version   {{version}}",
         " *",
         " * @copyright",
         " * Copyright (c) {{year}} {{company}}",
@@ -67,7 +64,6 @@
         "details": { "description": "文件详细功能、设计背景和使用说明。", "default": "本文件的详细功能描述、设计背景、使用说明等" },
         "author": { "description": "作者。", "default": "HU JIAXUAN" },
         "date": { "description": "日期，建议格式 YYYY-MM-DD。", "default": "{{current_date}}" },
-        "version": { "description": "文件或模块版本号。", "default": "1.0.0" },
         "year": { "description": "版权年份。", "default": "{{current_year}}" },
         "company": { "description": "版权归属单位。", "default": "YourCompany" }
       }

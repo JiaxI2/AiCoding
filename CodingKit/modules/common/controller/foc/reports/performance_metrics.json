@@ -1,6 +1,5 @@
 {
+  "measurement_policy": "deterministic-output-only",
   "iterations": 100000,
-  "elapsed_s": 0.38379410000015923,
-  "avg_us_per_iter_python_model": 3.8379410000015923,
-  "checksum": 49974.140666256564
+  "checksum": 49974.140666257
 }
