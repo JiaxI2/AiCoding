@@ -1,12 +1,14 @@
 package cli
 
 import (
+	"context"
 	"strings"
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/cstyle"
 	"github.com/JiaxI2/AiCoding/internal/docsync"
 	"github.com/JiaxI2/AiCoding/internal/kit"
+	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/report"
 	"github.com/JiaxI2/AiCoding/internal/reuse"
@@ -79,18 +81,28 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 
 func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, usageErrorf("lifecycle requires subcommand: plan, install, update, uninstall, rollback")
+		return report.Result{}, usageErrorf("lifecycle requires subcommand: plan, install, update, status, doctor, verify, uninstall, or rollback")
 	}
 	sub := strings.ToLower(args[0])
-	if !validChoice(sub, "plan", "install", "update", "uninstall", "rollback") {
+	if !validChoice(sub, "plan", "install", "update", "status", "doctor", "verify", "uninstall", "rollback") {
 		return report.Result{}, usageErrorf("unsupported lifecycle action: %s", sub)
 	}
 	fs := newFlagSet("lifecycle " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
+	scopeArg := fs.String("scope", lifecyclecontrol.ScopeKit, "kit, mcp, runtime-skill, or all")
 	kitArg := fs.String("kit", "", "kit id")
-	allArg := fs.Bool("all", false, "all enabled kits")
+	componentArg := fs.String("component", "", "MCP component id")
+	allArg := fs.Bool("all", false, "all enabled entries in the selected adapter")
 	actionArg := fs.String("action", "", "lifecycle action for plan")
 	lastArg := fs.Bool("last", false, "rollback last snapshot")
+	profileArg := fs.String("profile", "Smoke", "verification profile: Smoke, Full or Release")
+	codexConfigArg := fs.String("codex-config", "", "Codex config.toml path")
+	configuredArg := fs.Bool("configured", false, "include configured Codex MCP compatibility probes")
+	runtimeProfileArg := fs.String("runtime-profile", "", "runtime, full, or skill-development")
+	runtimeSkillArg := fs.String("runtime-skill", "", "selected canonical Skill for skill-development or targeted removal")
+	sourceRepositoryArg := fs.String("source-repository", "", "Codex-Skills source repository")
+	standaloneRootArg := fs.String("standalone-root", "agents", "agents or codex")
+	migrateUnmanagedArg := fs.Bool("migrate-unmanaged", false, "back up and replace registered unmanaged runtime Skill paths")
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
 		return report.Result{}, err
@@ -99,12 +111,40 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	if err != nil {
 		return report.Fail("lifecycle "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
+
+	scope := strings.ToLower(strings.TrimSpace(*scopeArg))
+	if !validChoice(scope, lifecyclecontrol.ScopeKit, lifecyclecontrol.ScopeMCP, lifecyclecontrol.ScopeRuntimeSkill, lifecyclecontrol.ScopeAll) {
+		return report.Result{}, usageErrorf("unsupported lifecycle scope: %s", scope)
+	}
+	standaloneRoot := strings.ToLower(strings.TrimSpace(*standaloneRootArg))
+	if !validChoice(standaloneRoot, "agents", "codex") {
+		return report.Result{}, usageErrorf("unsupported standalone root: %s", *standaloneRootArg)
+	}
+	runtimeProfile := strings.ToLower(strings.TrimSpace(*runtimeProfileArg))
+	if runtimeProfile != "" && !validChoice(runtimeProfile, "runtime", "full", "skill-development") {
+		return report.Result{}, usageErrorf("unsupported runtime profile: %s", *runtimeProfileArg)
+	}
+	if scope == lifecyclecontrol.ScopeAll && (*kitArg != "" || *componentArg != "") {
+		return report.Result{}, usageErrorf("lifecycle --scope all does not accept --kit or --component")
+	}
+	if scope == lifecyclecontrol.ScopeKit && *componentArg != "" {
+		return report.Result{}, usageErrorf("lifecycle --scope kit does not accept --component")
+	}
+	if scope == lifecyclecontrol.ScopeMCP && *kitArg != "" {
+		return report.Result{}, usageErrorf("lifecycle --scope mcp does not accept --kit")
+	}
+	hasRuntimeFlags := runtimeProfile != "" || *runtimeSkillArg != "" || *sourceRepositoryArg != "" || *migrateUnmanagedArg
+	if scope != lifecyclecontrol.ScopeRuntimeSkill && scope != lifecyclecontrol.ScopeAll && hasRuntimeFlags {
+		return report.Result{}, usageErrorf("runtime Skill flags require --scope runtime-skill or --scope all")
+	}
+
 	if sub == "rollback" {
 		if !*lastArg {
 			return report.Result{}, usageErrorf("lifecycle rollback requires --last")
 		}
-		res := kit.RollbackLast(repo)
-		return report.Result{SchemaVersion: 1, Command: "lifecycle rollback", OK: res.OK, Message: "Go lifecycle rollback", RepoRoot: repo, Data: res, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
+		if scope != lifecyclecontrol.ScopeKit {
+			return report.Result{}, usageErrorf("lifecycle rollback currently supports --scope kit only")
+		}
 	}
 	action := sub
 	if sub == "plan" {
@@ -112,21 +152,54 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 		if action == "" {
 			action = "install"
 		}
+		if !validChoice(action, "install", "update", "uninstall") {
+			return report.Result{}, usageErrorf("lifecycle plan requires --action install|update|uninstall")
+		}
 	}
-	repo, entries, err := selectedKits(*repoArg, *kitArg, *allArg)
-	if err != nil {
-		return report.Fail("lifecycle "+sub, start, "kit selection failed", nil, err.Error()), err
-	}
-	if sub == "plan" {
-		plan := kit.PlanLifecycle(repo, entries, kit.LifecycleOptions{Action: action, Mode: selectionMode(*allArg), DryRun: true})
-		errs := lifecyclePlanErrors(plan)
-		return report.Result{SchemaVersion: 1, Command: "lifecycle plan", OK: len(errs) == 0, Message: "Go lifecycle plan", RepoRoot: repo, Data: plan, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-	}
-	if action != "install" && action != "update" && action != "uninstall" {
+	if !validChoice(action, "install", "update", "status", "doctor", "verify", "uninstall", "rollback") {
 		return report.Result{}, usageErrorf("unsupported lifecycle action: %s", action)
 	}
-	res := kit.RunAction(repo, entries, kit.ActionOptions{Action: action, Mode: selectionMode(*allArg), DryRun: false})
-	return report.Result{SchemaVersion: 1, Command: "lifecycle " + action, OK: res.OK, Message: "Go lifecycle action", RepoRoot: repo, Data: res, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
+	if scope == lifecyclecontrol.ScopeKit && action != "rollback" && !*allArg && *kitArg == "" {
+		return report.Result{}, usageErrorf("lifecycle --scope kit requires --all or --kit")
+	}
+	if scope == lifecyclecontrol.ScopeMCP && !*allArg && *componentArg == "" {
+		return report.Result{}, usageErrorf("lifecycle --scope mcp requires --all or --component")
+	}
+	if (scope == lifecyclecontrol.ScopeRuntimeSkill || scope == lifecyclecontrol.ScopeAll) &&
+		validChoice(action, "install", "update") && runtimeProfile == "" {
+		return report.Result{}, usageErrorf("runtime Skill apply requires --runtime-profile")
+	}
+	if runtimeProfile == "skill-development" && *runtimeSkillArg == "" {
+		return report.Result{}, usageErrorf("skill-development runtime profile requires --runtime-skill")
+	}
+
+	lifecycleReport := lifecyclecontrol.Run(context.Background(), repo, lifecyclecontrol.Options{
+		Action:            action,
+		Scope:             scope,
+		All:               *allArg || scope == lifecyclecontrol.ScopeAll,
+		KitID:             *kitArg,
+		ComponentID:       *componentArg,
+		CodexConfig:       *codexConfigArg,
+		VerifyProfile:     *profileArg,
+		IncludeConfigured: *configuredArg,
+		DryRun:            sub == "plan",
+		RuntimeProfile:    runtimeProfile,
+		RuntimeSkill:      *runtimeSkillArg,
+		SourceRepository:  *sourceRepositoryArg,
+		StandaloneRoot:    standaloneRoot,
+		MigrateUnmanaged:  *migrateUnmanagedArg,
+	})
+	return report.Result{
+		SchemaVersion: 1,
+		Command:       "lifecycle " + sub,
+		OK:            lifecycleReport.OK,
+		Message:       "unified lifecycle control plane",
+		RepoRoot:      repo,
+		Data:          lifecycleReport,
+		Warnings:      lifecycleReport.Warnings,
+		Errors:        lifecycleReport.Errors,
+		ElapsedMS:     report.Elapsed(start),
+	}, report.BoolErr(lifecycleReport.Errors)
 }
 
 func runExport(args []string, start time.Time) (report.Result, error) {

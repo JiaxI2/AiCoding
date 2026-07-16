@@ -16,6 +16,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/governance"
 	"github.com/JiaxI2/AiCoding/internal/kit"
+	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/pwshregex"
 	"github.com/JiaxI2/AiCoding/internal/releasegate"
@@ -148,6 +149,12 @@ Formal product workflow:
   aicoding test --profile Smoke|Full|Release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]
   aicoding lifecycle plan --action install|update|uninstall --all [--repo-root PATH] [--json]
   aicoding lifecycle install|update|uninstall --all [--repo-root PATH] [--json]
+  aicoding lifecycle plan --action install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle plan --action uninstall --scope all [--runtime-skill NAME] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle uninstall --scope all [--runtime-skill NAME] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle status|doctor --scope all [--runtime-profile runtime|full|skill-development] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle verify --scope all --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--configured] [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding lifecycle rollback --last [--repo-root PATH] [--json]
   aicoding release verify [--repo-root PATH] [--json]
   aicoding release gate [--repo-root PATH] [--json]
@@ -157,6 +164,9 @@ Compatibility for one version (emits CLI_DEPRECATED):
   aicoding ci --profile Smoke|Full|Release [--repo-root PATH] [--json]
   aicoding test full|release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]
   aicoding full [--repo-root PATH] [--json]
+  aicoding kit lifecycle --action install|update|uninstall|status --all [--dry-run] [--repo-root PATH] [--json]
+  aicoding mcp install|update|uninstall COMPONENT|--all [--dry-run] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding status --all [--repo-root PATH] [--json]
 
 Domain and diagnostic commands:
   aicoding test latest [--repo-root PATH] [--json]
@@ -176,7 +186,6 @@ Domain and diagnostic commands:
   aicoding mcp list [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding mcp status|doctor COMPONENT [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding mcp verify COMPONENT|--all --profile Smoke|Full|Release [--configured] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding mcp install|update|uninstall COMPONENT|--all [--dry-run] [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding tag audit [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
   aicoding governance dependencies [--repo-root PATH] [--json]
@@ -186,15 +195,12 @@ Domain and diagnostic commands:
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
-  aicoding kit lifecycle --action install|update|uninstall --all --dry-run [--repo-root PATH] [--json]
-  aicoding kit lifecycle --action status --all [--repo-root PATH] [--json]
   aicoding doctor perf [--repo-root PATH] [--json]
   aicoding doctor pwsh [--repo-root PATH] [--json]
   aicoding doctor pwsh-budget [--repo-root PATH] [--json]
   aicoding verify hooks [--repo-root PATH] [--json]
   aicoding verify repo-text [--repo-root PATH] [--json]
   aicoding verify release-notes [--repo-root PATH] [--json]
-  aicoding status --all [--repo-root PATH] [--json]
   aicoding powershell regex-lint --staged [--repo-root PATH] [--json]
   aicoding powershell regex-lint --path PATH [--repo-root PATH] [--json]
 
@@ -611,30 +617,32 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		if action != "status" && !*dryRunArg {
 			return report.Result{}, usageErrorf("use aicoding lifecycle %s --all for real lifecycle actions", action)
 		}
-		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
+		_, err := kit.SelectKits(entries, *kitArg, *allArg)
 		if err != nil {
 			return report.Fail("kit lifecycle", start, "kit selection failed", nil, err.Error()), err
 		}
-		mode := "kit"
-		if *allArg {
-			mode = "all"
-		}
-		plan := kit.PlanLifecycle(repo, selected, kit.LifecycleOptions{Action: action, Mode: mode, DryRun: *dryRunArg})
-		errs := []string{}
-		for _, item := range plan.Kits {
-			if !item.OK {
-				reason := item.Reason
-				if reason == "" {
-					reason = item.Status
-				}
-				errs = append(errs, item.ID+": "+reason)
-			}
-		}
+		unified := lifecyclecontrol.Run(context.Background(), repo, lifecyclecontrol.Options{
+			Action: action,
+			Scope:  lifecyclecontrol.ScopeKit,
+			All:    *allArg,
+			KitID:  *kitArg,
+			DryRun: *dryRunArg,
+		})
 		message := "kit lifecycle planner"
 		if *dryRunArg {
 			message = "kit lifecycle dry-run planner"
 		}
-		return report.Result{SchemaVersion: 1, Command: "kit lifecycle", OK: len(errs) == 0, Message: message, RepoRoot: repo, Data: plan, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+		return report.Result{
+			SchemaVersion: 1,
+			Command:       "kit lifecycle",
+			OK:            unified.OK,
+			Message:       message,
+			RepoRoot:      repo,
+			Data:          lifecycleAdapterData(unified, lifecyclecontrol.ScopeKit),
+			Warnings:      unified.Warnings,
+			Errors:        unified.Errors,
+			ElapsedMS:     report.Elapsed(start),
+		}, report.BoolErr(unified.Errors)
 	case "verify", "test":
 		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
 		if err != nil {

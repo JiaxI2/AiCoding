@@ -27,9 +27,9 @@
 
 ## Phase 4: 生命周期
 
-- [ ] 建立静态 lifecycle adapter。
-- [ ] 收敛 kit/MCP/runtime Skill plan、apply、status、doctor、verify。
-- [ ] 保持所有写操作显式且可回滚。
+- [x] 建立静态 lifecycle adapter。
+- [x] 收敛 kit/MCP/runtime Skill plan、apply、status、doctor、verify。
+- [x] 保持所有写操作显式且保留真实 rollback/恢复边界。
 
 ## Phase 5: Doctor / Verify / Report
 

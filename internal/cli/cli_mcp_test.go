@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/mcpcontrol"
 )
 
@@ -73,5 +74,48 @@ func TestRunMCPLifecycleDryRun(t *testing.T) {
 	)
 	if err != nil || !result.OK {
 		t.Fatalf("mcp install dry-run failed: %v %#v", err, result)
+	}
+}
+
+func TestRunUnifiedLifecycleMCPPlan(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "config", "mcp-registry.json"), `{
+  "schemaVersion":1,
+  "name":"test",
+  "components":[{"id":"visio-mcp","enabled":true,"order":10,"manifest":"config/mcp/components/visio-mcp.json"}]
+}`)
+	mustWrite(t, filepath.Join(repo, "config", "mcp", "components", "visio-mcp.json"), `{
+  "schemaVersion":1,
+  "id":"visio-mcp",
+  "name":"Visio",
+  "version":"0.1.0",
+  "transport":"stdio",
+  "runtime":{"kind":"python-venv","root":"asset","requirements":"requirements.txt","minimumPython":"3.10","pythonEnvVar":"VISIO_MCP_PYTHON","module":"visio_mcp","packageInstall":["-e","."],"serverArgs":["-m","visio_mcp","server"],"env":{}},
+  "codex":{"serverName":"visio-mcp","startupTimeoutSec":30,"toolTimeoutSec":120},
+  "doctor":{"args":["-m","visio_mcp","doctor","--json"]},
+  "verify":{"Smoke":[["-m","pytest"]],"Full":[["-m","pytest"]],"Release":[["-m","pytest"]]}
+}`)
+	mustWrite(t, filepath.Join(repo, "asset", "requirements.txt"), "example\n")
+	config := filepath.Join(repo, "config.toml")
+	const configText = "[mcp_servers.remote]\nurl = \"https://example.com/mcp\"\n"
+	mustWrite(t, config, configText)
+
+	result, err := runLifecycle(
+		[]string{"plan", "--action", "install", "--scope", "mcp", "--component", "visio-mcp", "--repo-root", repo, "--codex-config", config, "--json"},
+		time.Now(),
+	)
+	if err != nil || !result.OK {
+		t.Fatalf("unified MCP lifecycle plan failed: %v %#v", err, result)
+	}
+	data, ok := result.Data.(lifecyclecontrol.Report)
+	if !ok || data.Scope != lifecyclecontrol.ScopeMCP || data.Mode != "plan" || len(data.Adapters) != 1 {
+		t.Fatalf("unexpected unified lifecycle data: %#v", result.Data)
+	}
+	after, err := os.ReadFile(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(after) != configText {
+		t.Fatalf("MCP lifecycle plan changed Codex config: %s", after)
 	}
 }

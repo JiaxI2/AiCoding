@@ -127,6 +127,9 @@ func TestDeprecationContract(t *testing.T) {
 		{[]string{"full"}, "aicoding test --profile Full"},
 		{[]string{"test", "full"}, "aicoding test --profile Full"},
 		{[]string{"test", "release"}, "aicoding test --profile Release"},
+		{[]string{"kit", "lifecycle", "--action", "update"}, "aicoding lifecycle plan --action update --scope kit"},
+		{[]string{"mcp", "install", "visio-mcp"}, "aicoding lifecycle install --scope mcp"},
+		{[]string{"status", "--all"}, "aicoding lifecycle status --scope all"},
 	} {
 		canonical, ok := deprecatedCommand(tc.args)
 		if !ok || canonical != tc.canonical {

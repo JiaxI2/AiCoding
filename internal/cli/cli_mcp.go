@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/mcpcontrol"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/report"
@@ -111,19 +112,26 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			ElapsedMS:     report.Elapsed(start),
 		}, mcpcontrol.VerifyErrors(verification)
 	case "install", "update", "uninstall":
-		results := mcpcontrol.RunLifecycle(repo, *codexConfigArg, entries, sub, *dryRunArg)
-		errorsFound, warnings := lifecycleMessages(results)
+		unified := lifecyclecontrol.Run(context.Background(), repo, lifecyclecontrol.Options{
+			Action:      sub,
+			Scope:       lifecyclecontrol.ScopeMCP,
+			All:         *allArg,
+			ComponentID: *componentArg,
+			CodexConfig: *codexConfigArg,
+			DryRun:      *dryRunArg,
+		})
+		data := lifecycleAdapterData(unified, lifecyclecontrol.ScopeMCP)
 		return report.Result{
 			SchemaVersion: 1,
 			Command:       "mcp " + sub,
-			OK:            len(errorsFound) == 0,
+			OK:            unified.OK,
 			Message:       "MCP managed lifecycle",
 			RepoRoot:      repo,
-			Data:          results,
-			Warnings:      warnings,
-			Errors:        errorsFound,
+			Data:          data,
+			Warnings:      unified.Warnings,
+			Errors:        unified.Errors,
 			ElapsedMS:     report.Elapsed(start),
-		}, report.BoolErr(errorsFound)
+		}, report.BoolErr(unified.Errors)
 	default:
 		return report.Result{}, usageErrorf("unsupported mcp subcommand: %s", sub)
 	}
@@ -157,16 +165,11 @@ func commandErrors(entries []mcpcontrol.RegistryEntry, results []mcpcontrol.Comm
 	return errorsFound
 }
 
-func lifecycleMessages(results []mcpcontrol.LifecycleResult) ([]string, []string) {
-	errorsFound := []string{}
-	warnings := []string{}
-	for _, result := range results {
-		for _, issue := range result.Errors {
-			errorsFound = append(errorsFound, result.ID+": "+issue)
-		}
-		for _, issue := range result.Warnings {
-			warnings = append(warnings, result.ID+": "+issue)
+func lifecycleAdapterData(result lifecyclecontrol.Report, id string) interface{} {
+	for _, adapter := range result.Adapters {
+		if adapter.ID == id {
+			return adapter.Data
 		}
 	}
-	return errorsFound, warnings
+	return nil
 }
