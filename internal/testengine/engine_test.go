@@ -53,6 +53,18 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 			t.Fatalf("%s recursively calls release gate: %s", testCase.ID, strings.Join(testCase.Command, " "))
 		}
 	}
+	for _, testCase := range Registry(cfg) {
+		if testCase.ID != "LIFE-006" {
+			continue
+		}
+		command := strings.Join(testCase.Command, " ")
+		if !strings.Contains(command, "lifecycle rollback --help") {
+			t.Fatalf("rollback contract check must be read-only, got %q", command)
+		}
+		if strings.Contains(command, "--last") {
+			t.Fatalf("test profiles must not apply rollback state: %q", command)
+		}
+	}
 
 	if _, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: "nightly"}); err == nil {
 		t.Fatal("invalid profile must fail")

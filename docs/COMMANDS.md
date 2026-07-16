@@ -34,6 +34,8 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 `doctor` 只做环境和状态诊断；`verify` 只组合确定性静态/结构验证；`test` 独占
 Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`release`
 不创建 Tag 或 Release，只执行结构验证或复用 Release test profile。
+测试 profile 对 rollback 只执行 `lifecycle rollback --help` 的只读契约检查，不会应用
+本地 rollback snapshot。
 
 ## 领域与专项命令
 

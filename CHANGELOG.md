@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **fix(test)**: Full/Release 的 rollback 用例改为只读 `lifecycle rollback --help` 契约检查，禁止测试 profile 在存在 snapshot 时意外应用仓库状态。
 - **docs(control-plane)**: README 三件套、COMMANDS、Architecture、Maintenance、AGENTS、Taskfile 与测试文档统一指向 lifecycle/doctor/verify/test/release 正式入口；旧 CLI 只保留在一个版本兼容表或历史决策中，并扩展 DocSync 对 Go CLI、test engine、Taskfile、CI 与 report schema 的语义绑定。
 - **feat(verify)**: 新增带总超时的正式 `doctor --all` 与 `verify --profile Smoke|Full|Release` 产品边界；doctor 将未安装的 worktree-local MCP 作为可操作 warning，verify 只运行确定性静态/结构检查，不递归调用 test engine 或启动 Release 可见工具；未知 JSON 命令保持 stdout-only、`errorKind=usage` 和退出码 `2`。
 - **feat(report)**: 为 `report.Result` 增加兼容的 `errorKind`/validation error 契约，为 `StandardReport`/共享 check 增加 schemaVersion、PASS_WITH_WARNINGS 与统一汇总，并发布 `config/schemas/cli-report.schema.json`。

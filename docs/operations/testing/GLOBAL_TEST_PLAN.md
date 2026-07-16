@@ -19,6 +19,7 @@
 - **官方入口统一在 Go CLI**：`bin\aicoding.exe test --profile Smoke|Full|Release --json` 和 `bin\aicoding.exe test latest`。
 - **所有命令必须有超时**：测试驱动使用 `context.WithTimeout`，禁止无限等待。
 - **优先非破坏性测试**：默认只跑 plan/check/gate/export，不直接修改用户全局状态。
+- **rollback 只读验证**：测试 profile 只运行 `lifecycle rollback --help`，不读取或应用本地 rollback snapshot。
 - **结果可追溯**：每个用例保留原始 stdout/stderr、耗时、退出码、判定依据。
 - **数据化输出**：统计总用例、通过、失败、告警、跳过、总耗时、各命令耗时。
 - **标准 Markdown 文档**：测试计划、测试用例、报告均使用 `.md`。
