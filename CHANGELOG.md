@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **refactor(lifecycle)**: 新增唯一 `internal/lifecycle` 静态编排层，将 Kit、MCP 与 runtime Skill 的 plan/apply/status/doctor/verify 接入同一报告；`--scope all` 的 runtime Skill install/update 必须显式指定 profile，旧 `kit lifecycle`、MCP lifecycle 动词与 `status --all` 保留一个版本并输出 `CLI_DEPRECATED`。
 - **refactor(test)**: 兼容 `smoke`、`ci`、`full` 与 `release gate` 直接映射到唯一 `test --profile` 引擎，删除 CLI aggregate plan 和测试注册表中的 `FULL-001`/`REL-001` 自调用；fresh-clone 改为 leaf probe，CI/Taskfile 直接使用正式 profile，消除 Full→Full、Release→Release 与 CI→Smoke 聚合链。
 - **refactor(test)**: 将 global tester 的 Config/Profile/Registry/Timeout/Result/Summary/Report/ExitCode 内聚到唯一 `internal/testengine`，正式 CLI 改为进程内调用并复用同一报告存储；`tools/aicoding-global-tester` 退化为兼容薄壳，不再拥有测试实现。
 - **feat(cli)**: 新增可测试的 CLI 执行契约，统一全局/命令帮助、参数错误退出码 `2`、执行失败退出码 `1`、严格 JSON stdout 和文本 warning；正式支持 `test --profile Smoke|Full|Release`，旧 `smoke`、`ci`、`full` 与位置参数测试入口输出 `CLI_DEPRECATED`。
