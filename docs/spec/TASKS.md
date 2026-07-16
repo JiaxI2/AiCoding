@@ -45,6 +45,6 @@
 
 ## Phase 7: 验收
 
-- [ ] 执行全部用户要求的验证。
-- [ ] 分阶段提交完整、未 squash。
-- [ ] 工作区和 submodule clean。
+- [x] 执行全部用户要求的验证。
+- [x] 分阶段提交完整、未 squash。
+- [x] 工作区和 submodule clean。
