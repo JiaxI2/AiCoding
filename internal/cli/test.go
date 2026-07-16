@@ -173,7 +173,8 @@ func globalTestStandardReport(command string, profile string, outDir string, dur
 		status = "FAIL"
 	}
 	return report.StandardReport{
-		Status: status,
+		SchemaVersion: report.SchemaVersion,
+		Status:        status,
 		Summary: map[string]interface{}{
 			"repo":        s.Repo,
 			"profile":     s.Profile,

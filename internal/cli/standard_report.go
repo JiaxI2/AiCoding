@@ -4,14 +4,15 @@ import "github.com/JiaxI2/AiCoding/internal/report"
 
 func standardReport(command string, profile string, durationMS int64, summary map[string]interface{}, warnings []string, errors []string, details interface{}) report.StandardReport {
 	return report.StandardReport{
-		Status:     report.StatusFromOK(len(errors) == 0),
-		Summary:    summary,
-		Findings:   findingsFromMessages(warnings, errors),
-		Command:    command,
-		Profile:    profile,
-		DurationMS: durationMS,
-		Logs:       []report.LogRef{},
-		Details:    details,
+		SchemaVersion: report.SchemaVersion,
+		Status:        report.StatusFromMessages(warnings, errors),
+		Summary:       summary,
+		Findings:      findingsFromMessages(warnings, errors),
+		Command:       command,
+		Profile:       profile,
+		DurationMS:    durationMS,
+		Logs:          []report.LogRef{},
+		Details:       details,
 	}
 }
 

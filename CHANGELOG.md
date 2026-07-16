@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **feat(report)**: 为 `report.Result` 增加兼容的 `errorKind`/validation error 契约，为 `StandardReport`/共享 check 增加 schemaVersion、PASS_WITH_WARNINGS 与统一汇总，并发布 `config/schemas/cli-report.schema.json`。
 - **refactor(cli)**: 正式 `lifecycle` 命名空间新增 `kit|mcp|runtime-skill|all` scope 与 status/doctor/verify，旧 `kit lifecycle` 和 MCP lifecycle 动词路由到同一 adapter 并输出 `CLI_DEPRECATED`；兼容期内未指定 scope 的 `--all` 保持 Kit 语义。
 - **refactor(lifecycle)**: 新增唯一 `internal/lifecycle` 静态编排层，将 Kit、MCP 与 runtime Skill 的 plan/apply/status/doctor/verify 接入同一报告；runtime Skill install/update 必须显式指定 profile，并能从 Git common repository root 安全解析 worktree 外的 Codex-Skills source。
 - **refactor(test)**: 兼容 `smoke`、`ci`、`full` 与 `release gate` 直接映射到唯一 `test --profile` 引擎，删除 CLI aggregate plan 和测试注册表中的 `FULL-001`/`REL-001` 自调用；fresh-clone 改为 leaf probe，CI/Taskfile 直接使用正式 profile，消除 Full→Full、Release→Release 与 CI→Smoke 聚合链。
