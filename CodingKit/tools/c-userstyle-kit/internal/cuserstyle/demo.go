@@ -27,7 +27,6 @@ var goldenDemoFiles = []demoFile{
 		Template: "templates/demo.h",
 		Output:   "advanced/state_machine.h",
 		Replacements: []string{
-			"@version 1.0.0", "@version 1.2.0",
 			"demo_test.c", "advanced_test.c",
 			"demo.c", "state_machine.c",
 			"demo.h", "state_machine.h",
@@ -38,7 +37,6 @@ var goldenDemoFiles = []demoFile{
 		Template: "templates/demo.c",
 		Output:   "advanced/state_machine.c",
 		Replacements: []string{
-			"@version 1.0.0", "@version 1.2.0",
 			"demo_test.c", "advanced_test.c",
 			"demo.c", "state_machine.c",
 			"demo.h", "state_machine.h",
@@ -48,7 +46,6 @@ var goldenDemoFiles = []demoFile{
 		Template: "templates/demo_protocol.h",
 		Output:   "advanced/protocol.h",
 		Replacements: []string{
-			"@version 1.0.0", "@version 1.2.0",
 			"demo_test.c", "advanced_test.c",
 			"demo_protocol.c", "protocol.c",
 			"demo_protocol.h", "protocol.h",
@@ -61,7 +58,6 @@ var goldenDemoFiles = []demoFile{
 		Template: "templates/demo_protocol.c",
 		Output:   "advanced/protocol.c",
 		Replacements: []string{
-			"@version 1.0.0", "@version 1.2.0",
 			"demo_test.c", "advanced_test.c",
 			"demo_protocol.c", "protocol.c",
 			"demo_protocol.h", "protocol.h",
@@ -71,7 +67,6 @@ var goldenDemoFiles = []demoFile{
 		Template: "templates/demo_pool.h",
 		Output:   "advanced/fixed_pool.h",
 		Replacements: []string{
-			"@version 1.0.0", "@version 1.2.0",
 			"demo_test.c", "advanced_test.c",
 			"demo_pool.c", "fixed_pool.c",
 			"demo_pool.h", "fixed_pool.h",
@@ -84,7 +79,6 @@ var goldenDemoFiles = []demoFile{
 		Template: "templates/demo_pool.c",
 		Output:   "advanced/fixed_pool.c",
 		Replacements: []string{
-			"@version 1.0.0", "@version 1.2.0",
 			"demo_test.c", "advanced_test.c",
 			"demo_pool.c", "fixed_pool.c",
 			"demo_pool.h", "fixed_pool.h",

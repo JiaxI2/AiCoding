@@ -17,6 +17,7 @@
 
 ## Governance
 
+- [`governance/DEPENDENCY_DIRECTION_POLICY.md`](governance/DEPENDENCY_DIRECTION_POLICY.md)
 - One topic has one canonical document.
 - Version history belongs in Git history or `decisions/`, not parallel `*_V1.md` files.
 - New documentation must be reachable from this hub in at most two links.

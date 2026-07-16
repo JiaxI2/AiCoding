@@ -2,7 +2,6 @@
  * @file advanced_test.c
  * @brief 从公开接口验证黄金示例的行为、边界和故障注入路径。
  * @copyright Copyright (c) 2026 C UserStyle Kit.
- * @version 1.2.0
  * @date 2026-07-15
  * @author C UserStyle Kit
  *

@@ -1,0 +1,266 @@
+{
+  "schemaVersion": 1,
+  "name": "AiCoding Dependency Direction Governance",
+  "direction": "higher-rank-may-depend-on-equal-or-lower-rank",
+  "layers": [
+    {
+      "id": "platform",
+      "rank": 400,
+      "description": "User-facing orchestration, Go control plane, repositories and product policy."
+    },
+    {
+      "id": "integration",
+      "rank": 300,
+      "description": "Registry bindings, lifecycle adapters and platform-specific packaging."
+    },
+    {
+      "id": "capability",
+      "rank": 200,
+      "description": "Reusable Kits, standalone Skills and MCP components."
+    },
+    {
+      "id": "runtime",
+      "rank": 100,
+      "description": "External protocols, applications, language runtimes and operating-system services."
+    }
+  ],
+  "reservedNamespaces": [
+    {
+      "value": "aicoding-",
+      "ownerLayer": "platform"
+    },
+    {
+      "value": "aicoding",
+      "ownerLayer": "platform"
+    },
+    {
+      "value": "AICODING_",
+      "ownerLayer": "platform"
+    },
+    {
+      "value": "AIC_",
+      "ownerLayer": "platform"
+    },
+    {
+      "value": "aicoding.local",
+      "ownerLayer": "platform"
+    }
+  ],
+  "scan": {
+    "extensions": [
+      ".c",
+      ".h",
+      ".go",
+      ".json",
+      ".m",
+      ".md",
+      ".ps1",
+      ".py",
+      ".toml",
+      ".txt",
+      ".yaml",
+      ".yml"
+    ],
+    "fileNames": [
+      "CMakeLists.txt",
+      "Dockerfile"
+    ],
+    "excludeDirectories": [
+      ".git",
+      ".pytest_cache",
+      ".venv",
+      "__pycache__",
+      "build",
+      "dist",
+      "node_modules",
+      "test-results"
+    ]
+  },
+  "versionVisibility": {
+    "identityPattern": "(?i)(?:^|[^a-z0-9])(?:v|version|ver)[_-]?[0-9]+(?:[._-][0-9a-z]+)+(?:$|[^a-z0-9])",
+    "codeSelfVersionPattern": "(?i)(?:__version__|(?:[a-z][a-z0-9_]*_)?version(?:_(?:major|minor|patch|str|string))?)\\s*(?:=|\\s+)\\s*(?:[\"']?[0-9]+(?:\\.[0-9]+)+[\"']?|[0-9]+[uUlL]?)",
+    "codeSelfVersionAllowedSymbols": [
+      "PROTOCOL_VERSION",
+      "MCP_PROTOCOL_VERSION",
+      "SCHEMA_VERSION",
+      "cmake_minimum_required(VERSION"
+    ],
+    "readmeBodyVersionPattern": "\\b[0-9]+\\.[0-9]+(?:\\.[0-9]+)?(?:[-+][A-Za-z0-9.-]+)?\\b",
+    "codeExtensions": [
+      ".c",
+      ".h",
+      ".go",
+      ".py",
+      ".m"
+    ],
+    "codeFileNames": [
+      "CMakeLists.txt"
+    ],
+    "documentationDirectories": [
+      "docs",
+      "references"
+    ],
+    "authorityFiles": [
+      "CHANGELOG.md",
+      "MANIFEST.json",
+      "pyproject.toml"
+    ],
+    "readmeFiles": [
+      "README.md",
+      "README_CN.md",
+      "README_EN.md"
+    ],
+    "readmeBadges": [
+      {
+        "label": "Release",
+        "imageFragment": "github/v/release/JiaxI2/AiCoding",
+        "target": "https://github.com/JiaxI2/AiCoding/releases/latest",
+        "authority": "repository-release",
+        "displayVersion": ""
+      },
+      {
+        "label": "Go",
+        "imageFragment": "Go-1.22%2B",
+        "target": "https://go.dev/doc/go1.22",
+        "authority": "upstream-version",
+        "displayVersion": "1.22+"
+      },
+      {
+        "label": "PowerShell",
+        "imageFragment": "PowerShell-7%2B",
+        "target": "https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0",
+        "authority": "upstream-version",
+        "displayVersion": "7+"
+      },
+      {
+        "label": "Python",
+        "imageFragment": "Python-3.10%2B",
+        "target": "https://docs.python.org/3.10/whatsnew/3.10.html",
+        "authority": "upstream-version",
+        "displayVersion": "3.10+"
+      },
+      {
+        "label": "Taskfile",
+        "imageFragment": "Taskfile-optional",
+        "target": "https://taskfile.dev/",
+        "authority": "upstream-project",
+        "displayVersion": ""
+      },
+      {
+        "label": "clang-format",
+        "imageFragment": "clang--format-17.0.2",
+        "target": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2",
+        "authority": "upstream-version",
+        "displayVersion": "17.0.2"
+      },
+      {
+        "label": "C UserStyle Kit",
+        "imageFragment": "C%20UserStyle%20Kit-1.2.0",
+        "target": "docs/guides/C99_STANDARD_C_SKILL.md",
+        "authority": "local-kit",
+        "displayVersion": "1.2.0",
+        "manifest": "config/kits/c-userstyle-kit.json"
+      }
+    ]
+  },
+  "kitRegistry": {
+    "path": "config/kit-registry.json",
+    "bindings": [
+      {
+        "id": "aicoding-platform",
+        "layer": "platform",
+        "platformAgnostic": false,
+        "roots": [],
+        "dependsOn": [
+          "mcp:visio-mcp"
+        ]
+      },
+      {
+        "id": "docsync-plus",
+        "layer": "platform",
+        "platformAgnostic": false,
+        "roots": [],
+        "dependsOn": []
+      },
+      {
+        "id": "reuse-governance",
+        "layer": "platform",
+        "platformAgnostic": false,
+        "roots": [],
+        "dependsOn": []
+      },
+      {
+        "id": "common-control-kit",
+        "layer": "capability",
+        "platformAgnostic": true,
+        "roots": [
+          "CodingKit/modules/common/controller"
+        ],
+        "dependsOn": [
+          "runtime:c99"
+        ]
+      },
+      {
+        "id": "c-userstyle-kit",
+        "layer": "capability",
+        "platformAgnostic": true,
+        "roots": [
+          "CodingKit/tools/c-userstyle-kit"
+        ],
+        "dependsOn": [
+          "runtime:c99"
+        ]
+      },
+      {
+        "id": "release-governance-overlay-kit",
+        "layer": "platform",
+        "platformAgnostic": false,
+        "roots": [],
+        "dependsOn": []
+      }
+    ]
+  },
+  "mcpRegistry": {
+    "path": "config/mcp-registry.json",
+    "idPattern": "^[a-z0-9]+(?:-[a-z0-9]+)*-mcp$",
+    "promptPolicy": "forbid-workflow-prompts",
+    "bindings": [
+      {
+        "id": "visio-mcp",
+        "layer": "capability",
+        "platformAgnostic": true,
+        "roots": [
+          "CodingKit/tools/windows-automation/visio-mcp"
+        ],
+        "dependsOn": [
+          "runtime:microsoft-visio",
+          "runtime:mcp"
+        ]
+      }
+    ]
+  },
+  "skills": {
+    "runtimeConfig": "config/codex-kit.json",
+    "pluginRoot": "CodingKit/agents/skills/plugins/AiCoding/skills",
+    "pluginLayer": "integration",
+    "pluginRequiredPrefix": "aicoding-",
+    "standaloneLayer": "capability",
+    "standaloneForbiddenPrefixes": [
+      "aicoding-"
+    ]
+  },
+  "externalDependencies": [
+    {
+      "id": "runtime:c99",
+      "layer": "runtime"
+    },
+    {
+      "id": "runtime:mcp",
+      "layer": "runtime"
+    },
+    {
+      "id": "runtime:microsoft-visio",
+      "layer": "runtime"
+    }
+  ]
+}

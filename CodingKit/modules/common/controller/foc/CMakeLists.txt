@@ -1,18 +1,18 @@
 cmake_minimum_required(VERSION 3.16)
-project(aicoding_foc_controller C)
+project(foc_controller C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(AICODING_PID_DIR "${CMAKE_CURRENT_LIST_DIR}/../pid")
+set(PID_CONTROLLER_DIR "${CMAKE_CURRENT_LIST_DIR}/../pid")
 
-add_library(aicoding_foc_controller
+add_library(foc_controller
     src/foc_math.c
     src/foc_svpwm.c
     src/foc.c
-    ${AICODING_PID_DIR}/src/pid.c
+    ${PID_CONTROLLER_DIR}/src/pid.c
 )
 
-target_include_directories(aicoding_foc_controller PUBLIC
+target_include_directories(foc_controller PUBLIC
     src
-    ${AICODING_PID_DIR}/src
+    ${PID_CONTROLLER_DIR}/src
 )

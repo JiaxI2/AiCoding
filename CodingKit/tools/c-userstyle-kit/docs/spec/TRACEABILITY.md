@@ -15,4 +15,4 @@
 | 编译门禁 | `scripts/verify.ps1`、`scripts/verify.sh` | GCC 与 Clang 严格 C99；四个头分别通过两套 C99/C++17 探针 |
 | 测试闭环 | Go 测试和 `advanced/tests/advanced_test.c` | 生成器/lint 测试与 GCC 行为、边界、故障注入测试 |
 | 注释语义评审边界 | `docs/COMMENTING_METHOD.md`、规则目录 | 格式由 lint；领域意图和重构判断由 demo + manual |
-| 集成 AiCoding | `CodingKit/tools/c-userstyle-kit`、Kit registry、既有 C99 Skill 路由 | C Kit fast verify、AiCoding Smoke/Full/Release；skills submodule 保持只读且 clean |
+| 平台集成 | `CodingKit/tools/c-userstyle-kit`、Kit registry、既有 C99 Skill binding | C Kit fast verify、上层 Smoke/Full/Release；skills dependency 保持只读且 clean |

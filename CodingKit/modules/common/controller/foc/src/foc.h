@@ -3,7 +3,7 @@
 
 /**
  * @file foc.h
- * @brief v1.0-flat VF/IF FOC 控制器模板。
+ * @brief VF/IF FOC 控制器模板。
  * @author HU JIAXUAN
  *
  * 本模块只负责可复用 FOC 数学链路：相电流 offset 扣除 -> Clarke -> Park ->
@@ -41,7 +41,7 @@ typedef enum {
     FOC_ANGLE_OPEN_LOOP = 1  /* 本模块按 open_loop_freq_hz 积分生成 theta_e。 */
 } FocAngleMode;
 
-/** @brief v1.0-flat FOC 控制器对象。 */
+/** @brief FOC 控制器对象。 */
 typedef struct {
     FocMode mode; /* FOC 主控制模式，无单位。 */
     FocAngleMode angle_mode; /* 电角度来源，无单位。 */
@@ -112,7 +112,7 @@ typedef struct {
 } Foc;
 
 /**
- * @brief 初始化 v1.0-flat FOC 控制器对象。
+ * @brief 初始化 FOC 控制器对象。
  * @param[out] controller FOC 控制器对象指针；不能为空。
  * @return 初始化成功返回 true；controller 为空返回 false。
  */
@@ -142,9 +142,9 @@ bool foc_current_offset_accumulate(Foc *controller, FocPhase sample);
 bool foc_current_offset_set(Foc *controller, FocPhase offset);
 
 /**
- * @brief 执行一次 v1.0-flat FOC 更新。
+ * @brief 执行一次 FOC 更新。
  *
- * 这是 v1.0-flat VF/IF 控制器唯一执行入口。调用前，上层必须写入 mode、angle_mode、
+ * 这是 VF/IF 控制器唯一执行入口。调用前，上层必须写入 mode、angle_mode、
  * control_freq、vbus、电流采样、角度来源和对应命令；调用后读取 duty_a/duty_b/duty_c。
  *
  * @param[in,out] controller FOC 控制器对象指针；不能为空。

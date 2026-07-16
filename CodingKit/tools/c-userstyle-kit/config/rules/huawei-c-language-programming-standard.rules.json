@@ -2053,8 +2053,8 @@
       ],
       "evidence": [
         "lint:documentation.file-metadata,employee-id.*,modification-history.*",
-        "examples/c-kit.json:documentation 元数据覆盖策略",
-        "docs/COMMENTING_METHOD.md:文件头与版本历史"
+        "MANIFEST.json + CHANGELOG.md + Tag/Release:资产版本权威面",
+        "docs/COMMENTING_METHOD.md:文件头版本字段覆盖策略"
       ],
       "rationale": "注释准确性和业务意图由人工评审与黄金样例证明；lint 只阻断可可靠判断的结构规则。",
       "status": "covered"

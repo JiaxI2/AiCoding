@@ -69,8 +69,8 @@ git show :path                -> 实际待提交文本
 文件级契约对被修改文件检查一次，行级规则只检查修改范围。当前目录不是 Git 仓库时应使用
 `--scope files`；这不影响完整验证脚本。
 
-## AiCoding 集成边界
+## 上层集成边界
 
-本 Kit 作为 AiCoding-owned 确定性工具保存在 `CodingKit/tools/c-userstyle-kit`，由 Kit registry 管理，
-并通过既有 `aicoding skill c99-standard-c` 用户入口调用。它不修改 skills submodule、生成插件、
-Codex 插件缓存或 Marketplace 路径；AiCoding 的 Smoke、Full、Release 与文档同步门禁负责集成验收。
+本 Kit 是平台无关的确定性工具。上层 composition root 可以通过 Kit registry 和 C99 Skill binding
+调用它，但本 Kit 不依赖具体产品命名、插件缓存、Marketplace、用户级 Skill 根或安装状态。
+Smoke、Full、Release 与文档同步属于上层集成验收，不进入本 Kit 的运行时合同。

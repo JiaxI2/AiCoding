@@ -16,6 +16,6 @@ Decision Status: Resolved
 - `docs/spec/IMPLEMENTATION_PLAN.md`；
 - `docs/spec/TASKS.md`；
 - `docs/spec/TRACEABILITY.md`；
-- `.aicoding/memory/DECISIONS.md`。
+- 上层平台决策记录。
 
 决策记录、实现和验证证据均已更新；该文件只保留历史决策上下文，不表示仍待用户选择。

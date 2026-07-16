@@ -61,7 +61,52 @@ required_bilingual_sections = ["摘要 / Summary"]
 
 [changelog]
 mode = "unreleased"
+
+[governance_standard]
+id = "aicoding-git-governance"
+version = "2026.07.16"
+source_url = "https://github.com/JiaxI2/Codex-Skills/blob/main/platform/aicoding-git-governance/references/aicoding-git-governance-standard.md"
+sync_policy = "track-canonical-url"
+
+[issues]
+enabled = true
+profile = "managed-lifecycle"
+templates_directory = ".github/ISSUE_TEMPLATE"
+label_manifest = ".github/issue-labels.json"
+workflow = ".github/workflows/issue-governance.yml"
+allow_blank = false
+required_label_axes = ["type", "area", "priority", "status"]
+closure_requires_resolution = true
+closure_requires_summary = true
+auto_close_stale = false
 `)
+	mustWrite(t, filepath.Join(repo, ".github", "ISSUE_TEMPLATE", "config.yml"), "blank_issues_enabled: false\n")
+	mustWrite(t, filepath.Join(repo, ".github", "ISSUE_TEMPLATE", "bug.yml"), "name: Bug\ndescription: Bug\ntitle: Bug\nlabels: [\"type:bug\", \"status:needs-triage\"]\nbody:\n  - id: existing\n  - id: current_behavior\n  - id: expected_behavior\n  - id: reproduction\n  - id: impact\n  - id: environment\n  - id: done_condition\n")
+	mustWrite(t, filepath.Join(repo, ".github", "ISSUE_TEMPLATE", "feature.yml"), "name: Feature\ndescription: Feature\ntitle: Feature\nlabels: [\"type:feature\", \"status:needs-triage\"]\nbody:\n  - id: existing\n  - id: problem\n  - id: outcome\n  - id: scope\n  - id: acceptance\n  - id: alternatives\n  - id: traceability\n")
+	mustWrite(t, filepath.Join(repo, ".github", "ISSUE_TEMPLATE", "governance.yml"), "name: Governance\ndescription: Governance\ntitle: Governance\nlabels: [\"type:governance\", \"status:needs-triage\"]\nbody:\n  - id: existing\n  - id: gap\n  - id: proposed_rule\n  - id: lifecycle_impact\n  - id: verification\n  - id: compatibility\n  - id: rollback\n")
+	mustWrite(t, filepath.Join(repo, ".github", "issue-labels.json"), `{
+  "schema_version": 1,
+  "labels": [
+    {"name":"type:bug","color":"d73a4a","description":"bug"},
+    {"name":"type:feature","color":"a2eeef","description":"feature"},
+    {"name":"type:governance","color":"5319e7","description":"governance"},
+    {"name":"area:test","color":"c5def5","description":"area"},
+    {"name":"priority:p0","color":"b60205","description":"p0"},
+    {"name":"priority:p1","color":"d93f0b","description":"p1"},
+    {"name":"priority:p2","color":"fbca04","description":"p2"},
+    {"name":"priority:p3","color":"0e8a16","description":"p3"},
+    {"name":"status:needs-triage","color":"ededed","description":"triage"},
+    {"name":"status:needs-info","color":"fef2c0","description":"info"},
+    {"name":"status:ready","color":"0e8a16","description":"ready"},
+    {"name":"status:in-progress","color":"1d76db","description":"progress"},
+    {"name":"status:blocked","color":"b60205","description":"blocked"},
+    {"name":"resolution:completed","color":"0e8a16","description":"completed"},
+    {"name":"resolution:duplicate","color":"cfd3d7","description":"duplicate"},
+    {"name":"resolution:not-planned","color":"ffffff","description":"not planned"},
+    {"name":"resolution:invalid","color":"e4e669","description":"invalid"}
+  ]
+}`)
+	mustWrite(t, filepath.Join(repo, ".github", "workflows", "issue-governance.yml"), "name: Issue governance\nopened\nreopened\nlabeled\nclosed\npermissions:\n  issues: write\nmanifest: .github/issue-labels.json\nuses: actions/github-script@v9\n")
 	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "#!/bin/sh\n")
 	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "#!/bin/sh\n")
 }

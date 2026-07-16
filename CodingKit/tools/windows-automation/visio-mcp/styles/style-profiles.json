@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "defaultProfile": "engineering-standard",
+  "profiles": {
+    "engineering-standard": {
+      "font": {
+        "ordinaryFamily": "SimSun",
+        "asianFamily": "SimSun",
+        "mathFamily": "Times New Roman"
+      },
+      "text": {
+        "fontSizePt": 10,
+        "safeRatio": 0.8
+      },
+      "line": {
+        "weightPt": 0.75,
+        "cornerRadiusIn": 0.12
+      }
+    }
+  }
+}

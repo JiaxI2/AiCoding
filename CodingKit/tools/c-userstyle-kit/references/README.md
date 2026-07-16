@@ -21,4 +21,4 @@
 
 ## 分发状态
 
-PDF、规范化 Markdown 与 raw 转换件按用户授权作为 C Kit 的正式参考资产随 AiCoding 发布。
+PDF、规范化 Markdown 与 raw 转换件按用户授权作为 C Kit 的正式参考资产随受管发行包发布。

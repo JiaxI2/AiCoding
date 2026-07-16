@@ -13,5 +13,5 @@
 - [x] 简单对象宏 snippet 使用单行块注释；黄金模板省略未知工号和默认代码内修改历史。
 - [x] 高级 README 模板指向编号流程样例和最终用户可见的简单宏 snippet。
 - [x] `generated-demo` 统一再生后运行完整 JSON/schema、lint、编译和测试门禁。
-- [x] 已按 AiCoding 架构集成，且未修改 skills submodule、生成插件、Marketplace 或插件缓存。
+- [x] 已按上层平台架构集成，且未修改 skills dependency、生成插件、Marketplace 或插件缓存。
 - [x] 交接包含已验证、未验证和回滚。

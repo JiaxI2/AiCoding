@@ -2,7 +2,6 @@
  * @file negative_rules.c
  * @brief 仅供 lint 负例测试的故意违规输入。
  * @copyright Copyright (c) 2026 C UserStyle Kit.
- * @version 1.0.0
  * @date 2026-07-15
  * @author C UserStyle Kit
  *

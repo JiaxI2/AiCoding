@@ -2,7 +2,7 @@
 % 说明：生成 FOC 模块参考模型框架。
 % 本脚本不依赖硬件，只用于搭建 Clarke、Park、电角度和 SVPWM 的仿真结构。
 
-model = 'aicoding_foc_reference_model';
+model = 'foc_reference_model';
 if bdIsLoaded(model)
     close_system(model, 0);
 end

@@ -41,7 +41,7 @@ Plugin skills and hooks discover CodingKit assets by this protocol:
 
 ## C UserStyle Kit
 
-C UserStyle Kit 1.2.0 位于 `CodingKit/tools/c-userstyle-kit`，包含黄金 Demo、高级规则覆盖样例、
+C UserStyle Kit 位于 `CodingKit/tools/c-userstyle-kit`，包含黄金 Demo、高级规则覆盖样例、
 139 条规则目录、VS Code 兼容 snippets、lint、主机编译与行为测试。华为 C 语言编程规范
 DKBA 2826-2011.5 的 PDF 和 Markdown 参考副本随该首方资产发布。
 
@@ -52,6 +52,14 @@ bin/aicoding.exe skill c99-standard-c verify --json
 ```
 
 该验证仅使用主机工具链和临时测试程序，不接入或修改固件工程构建。
+
+## Windows Automation MCP
+
+`tools/windows-automation/visio-mcp` 是通用 Visio capability。AiCoding 只在上层 MCP registry 和 Go 控制面中登记、安装、诊断和验证它；该组件的 package、module、环境变量、schema、示例和测试不观察 AiCoding。
+
+组件提供 Diagram IR、Visio tools、快照、检查、质量检测、有限 repair 和 VSDX/PNG/SVG/PDF 导出。简单同质图可使用全局统一尺寸；复杂图按 `sizeClass`、文字安全区、端口密度和容器职责确定有界尺寸，并检查中心轴、绝对端口、紧凑度、箭头净空和文字碰撞。
+
+MCP 不注册工作流 prompt。完整画图流程属于上层通用 `visio-diagram` Skill；控制面与运维入口见 [MCP Control Plane](../docs/architecture/MCP_CONTROL_PLANE.md) 和 [MCP Components](../docs/operations/MCP_COMPONENTS.md)。
 
 ## New Machine Setup
 

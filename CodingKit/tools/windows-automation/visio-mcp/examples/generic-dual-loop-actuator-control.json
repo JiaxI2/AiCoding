@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "document": {
+    "id": "generic-dual-loop-actuator-control",
+    "title": "Generic Dual-loop Actuator Control",
+    "page": {
+      "width": 18.9,
+      "height": 9.6,
+      "orientation": "landscape",
+      "margin": 0.5
+    },
+    "theme": "visio-default",
+    "styleProfile": "engineering-standard",
+    "layout": {
+      "engine": "manual",
+      "direction": "LR",
+      "compact": true,
+      "uniformNodeSize": false,
+      "nodeGap": 0.9,
+      "layerGap": 0.8
+    }
+  },
+  "nodes": [
+    {"id": "reference", "text": "Motion\nReference", "type": "process", "x": 1.15, "y": 5.1, "width": 1.25, "height": 0.78, "layer": 0, "order": 0, "sizeClass": "main-process"},
+    {"id": "sum_position", "text": "Σ", "type": "junction", "x": 2.795, "y": 5.1, "width": 0.4, "height": 0.4, "layer": 1, "order": 0, "sizeClass": "junction"},
+    {"id": "position_controller", "text": "Position\nController", "caption": "Position loop", "captionSide": "top", "captionPosition": 0.5, "captionOffset": 0.1, "type": "process", "x": 3.84, "y": 5.1, "width": 1.25, "height": 0.78, "layer": 2, "order": 0, "sizeClass": "main-process"},
+    {"id": "gear_ratio", "text": "Gear\nRatio", "type": "process", "x": 5.94, "y": 5.1, "width": 1.25, "height": 0.78, "layer": 3, "order": 0, "sizeClass": "main-process"},
+    {"id": "sum_velocity", "text": "Σ", "type": "junction", "x": 6.985, "y": 5.1, "width": 0.4, "height": 0.4, "layer": 4, "order": 0, "sizeClass": "junction"},
+    {"id": "velocity_controller", "text": "Velocity\nController", "caption": "Velocity loop", "captionSide": "top", "captionPosition": 0.5, "captionOffset": 0.1, "type": "process", "x": 8.03, "y": 5.1, "width": 1.25, "height": 0.78, "layer": 5, "order": 0, "sizeClass": "main-process"},
+    {"id": "sum_current", "text": "Σ", "type": "junction", "x": 9.575, "y": 5.1, "width": 0.4, "height": 0.4, "layer": 6, "order": 0, "sizeClass": "junction"},
+    {"id": "current_controller", "text": "Current\nControllers", "caption": "Current loop", "captionSide": "top", "captionPosition": 0.5, "captionOffset": 0.1, "type": "process", "x": 10.96, "y": 5.1, "width": 1.25, "height": 1.15, "layer": 7, "order": 0, "sizeClass": "multiport-stage", "data": {"sizeEvidence": {"requiredHeight": 1.15, "reason": "two absolute input/output port lanes"}}},
+    {"id": "transform", "text": "Coordinate\nTransform", "type": "component", "x": 12.66, "y": 5.1, "width": 1.25, "height": 1.15, "layer": 8, "order": 0, "sizeClass": "multiport-stage", "data": {"sizeEvidence": {"requiredHeight": 1.15, "reason": "two absolute input/output port lanes"}}},
+    {"id": "modulator", "text": "Modulator", "type": "component", "x": 14.36, "y": 5.1, "width": 1.25, "height": 1.15, "layer": 9, "order": 0, "sizeClass": "multiport-stage", "data": {"sizeEvidence": {"requiredHeight": 1.15, "reason": "three absolute output port lanes"}}},
+    {"id": "power_stage", "text": "Power\nStage", "type": "component", "x": 16.06, "y": 5.1, "width": 1.25, "height": 1.15, "layer": 10, "order": 0, "sizeClass": "multiport-stage", "data": {"sizeEvidence": {"requiredHeight": 1.15, "reason": "three absolute input port lanes"}}},
+    {"id": "actuator", "text": "Actuator", "type": "process", "x": 17.76, "y": 5.1, "width": 1.25, "height": 0.78, "layer": 11, "order": 0, "sizeClass": "main-process"},
+
+    {"id": "acc_feedforward", "text": "Acceleration\nFeed-forward", "type": "process", "x": 5.6, "y": 8.4, "width": 1.35, "height": 0.78, "layer": 20, "order": 1, "sizeClass": "feedforward"},
+    {"id": "acc_gain", "text": "Kacc", "fontRole": "module", "type": "process", "x": 6.985, "y": 8.4, "width": 0.85, "height": 0.78, "layer": 21, "order": 1, "sizeClass": "gain"},
+    {"id": "vel_feedforward", "text": "Velocity\nFeed-forward", "type": "process", "x": 5.6, "y": 7.15, "width": 1.35, "height": 0.78, "layer": 20, "order": 2, "sizeClass": "feedforward"},
+    {"id": "vel_gain", "text": "Kvel", "fontRole": "module", "type": "process", "x": 6.985, "y": 7.15, "width": 0.85, "height": 0.78, "layer": 21, "order": 2, "sizeClass": "gain"},
+
+    {"id": "position_feedback", "text": "Position\nFeedback", "type": "process", "x": 2.795, "y": 1.3, "width": 1.25, "height": 0.78, "layer": 1, "order": 3, "sizeClass": "feedback-stage"},
+    {"id": "velocity_feedback", "text": "Velocity\nFeedback", "type": "process", "x": 6.985, "y": 1.3, "width": 1.25, "height": 0.78, "layer": 4, "order": 3, "sizeClass": "feedback-stage"},
+    {"id": "current_feedback", "text": "Current\nFeedback", "type": "process", "x": 9.575, "y": 1.3, "width": 1.25, "height": 0.78, "layer": 6, "order": 3, "sizeClass": "feedback-stage"},
+    {"id": "zero_reference", "text": "d=0", "fontRole": "math", "type": "process", "x": 9.9, "y": 4.755, "width": 0.5, "height": 0.4, "layer": 22, "order": 4, "sizeClass": "zero-reference"}
+  ],
+  "edges": [
+    {"id": "main_01", "from": "reference", "to": "sum_position", "label": "pos ref", "fontRole": "signal", "routing": "orthogonal"},
+    {"id": "main_02", "from": "sum_position", "to": "position_controller", "routing": "orthogonal"},
+    {"id": "main_03", "from": "position_controller", "to": "gear_ratio", "label": "vel ref", "fontRole": "signal", "routing": "orthogonal"},
+    {"id": "main_04", "from": "gear_ratio", "to": "sum_velocity", "routing": "orthogonal"},
+    {"id": "main_05", "from": "sum_velocity", "to": "velocity_controller", "routing": "orthogonal"},
+    {"id": "main_06", "from": "velocity_controller", "to": "sum_current", "label": "i ref", "fontRole": "signal", "labelSide": "below", "routing": "orthogonal"},
+    {"id": "main_07", "from": "sum_current", "to": "current_controller", "routing": "orthogonal"},
+    {
+      "id": "dq_d",
+      "from": "current_controller",
+      "to": "transform",
+      "label": "d",
+      "sourcePort": "right",
+      "sourcePortPosition": 0.68,
+      "targetPort": "left",
+      "targetPortPosition": 0.68,
+      "routing": "straight"
+    },
+    {
+      "id": "dq_q",
+      "from": "current_controller",
+      "to": "transform",
+      "label": "q",
+      "sourcePort": "right",
+      "sourcePortPosition": 0.32,
+      "targetPort": "left",
+      "targetPortPosition": 0.32,
+      "routing": "straight"
+    },
+    {
+      "id": "mod_d",
+      "from": "transform",
+      "to": "modulator",
+      "sourcePort": "right",
+      "sourcePortPosition": 0.68,
+      "targetPort": "left",
+      "targetPortPosition": 0.68,
+      "routing": "straight"
+    },
+    {
+      "id": "mod_q",
+      "from": "transform",
+      "to": "modulator",
+      "sourcePort": "right",
+      "sourcePortPosition": 0.32,
+      "targetPort": "left",
+      "targetPortPosition": 0.32,
+      "routing": "straight"
+    },
+    {
+      "id": "phase_a",
+      "from": "modulator",
+      "to": "power_stage",
+      "sourcePort": "right",
+      "sourcePortPosition": 0.75,
+      "targetPort": "left",
+      "targetPortPosition": 0.75,
+      "routing": "straight"
+    },
+    {
+      "id": "phase_b",
+      "from": "modulator",
+      "to": "power_stage",
+      "sourcePort": "right",
+      "sourcePortPosition": 0.5,
+      "targetPort": "left",
+      "targetPortPosition": 0.5,
+      "routing": "straight"
+    },
+    {
+      "id": "phase_c",
+      "from": "modulator",
+      "to": "power_stage",
+      "sourcePort": "right",
+      "sourcePortPosition": 0.25,
+      "targetPort": "left",
+      "targetPortPosition": 0.25,
+      "routing": "straight"
+    },
+    {"id": "plant", "from": "power_stage", "to": "actuator", "routing": "orthogonal"},
+
+    {"id": "acc_01", "from": "acc_feedforward", "to": "acc_gain", "routing": "orthogonal"},
+    {"id": "acc_02", "from": "acc_gain", "to": "sum_current", "label": "acc FF", "fontRole": "signal", "sourcePort": "right", "targetPort": "top", "routing": "orthogonal"},
+    {"id": "vel_01", "from": "vel_feedforward", "to": "vel_gain", "routing": "orthogonal"},
+    {"id": "vel_02", "from": "vel_gain", "to": "sum_velocity", "label": "vel FF", "fontRole": "signal", "sourcePort": "bottom", "targetPort": "top", "routing": "straight"},
+
+    {"id": "fb_position", "from": "position_feedback", "to": "sum_position", "label": "position", "fontRole": "signal", "sourcePort": "top", "targetPort": "bottom", "routing": "orthogonal"},
+    {"id": "fb_velocity", "from": "velocity_feedback", "to": "sum_velocity", "label": "velocity", "fontRole": "signal", "sourcePort": "top", "targetPort": "bottom", "routing": "orthogonal"},
+    {"id": "fb_current", "from": "current_feedback", "to": "sum_current", "label": "current", "fontRole": "signal", "sourcePort": "top", "targetPort": "bottom", "labelSide": "left", "routing": "straight"},
+    {
+      "id": "zero_d",
+      "from": "zero_reference",
+      "to": "current_controller",
+      "sourcePort": "right",
+      "targetPort": "left",
+      "targetPortPosition": 0.2,
+      "routing": "straight"
+    }
+  ],
+  "metadata": {
+    "purpose": "De-identified engineering control diagram regression sample",
+    "referenceClass": "multi-loop actuator control"
+  }
+}

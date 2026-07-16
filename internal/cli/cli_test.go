@@ -84,6 +84,30 @@ func writeReleaseFixture(t *testing.T, repo string) {
 	}
 }
 
+func writeIssueGovernanceFixture(t *testing.T, repo string) {
+	t.Helper()
+	mustWrite(t, filepath.Join(repo, ".github", "ISSUE_TEMPLATE", "config.yml"), "blank_issues_enabled: false\n")
+	mustWrite(t, filepath.Join(repo, ".github", "ISSUE_TEMPLATE", "bug.yml"), "name: Bug\ndescription: Bug\ntitle: Bug\nlabels: [\"type:bug\", \"status:needs-triage\"]\nbody:\n  - id: existing\n  - id: current_behavior\n  - id: expected_behavior\n  - id: reproduction\n  - id: impact\n  - id: environment\n  - id: done_condition\n")
+	mustWrite(t, filepath.Join(repo, ".github", "ISSUE_TEMPLATE", "feature.yml"), "name: Feature\ndescription: Feature\ntitle: Feature\nlabels: [\"type:feature\", \"status:needs-triage\"]\nbody:\n  - id: existing\n  - id: problem\n  - id: outcome\n  - id: scope\n  - id: acceptance\n  - id: alternatives\n  - id: traceability\n")
+	mustWrite(t, filepath.Join(repo, ".github", "ISSUE_TEMPLATE", "governance.yml"), "name: Governance\ndescription: Governance\ntitle: Governance\nlabels: [\"type:governance\", \"status:needs-triage\"]\nbody:\n  - id: existing\n  - id: gap\n  - id: proposed_rule\n  - id: lifecycle_impact\n  - id: verification\n  - id: compatibility\n  - id: rollback\n")
+	labelNames := []string{
+		"type:bug", "type:feature", "type:governance", "area:test",
+		"priority:p0", "priority:p1", "priority:p2", "priority:p3",
+		"status:needs-triage", "status:needs-info", "status:ready", "status:in-progress", "status:blocked",
+		"resolution:completed", "resolution:duplicate", "resolution:not-planned", "resolution:invalid",
+	}
+	labels := make([]map[string]string, 0, len(labelNames))
+	for _, name := range labelNames {
+		labels = append(labels, map[string]string{"name": name, "color": "123abc", "description": name})
+	}
+	manifest, err := json.Marshal(map[string]interface{}{"schema_version": 1, "labels": labels})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustWrite(t, filepath.Join(repo, ".github", "issue-labels.json"), string(manifest))
+	mustWrite(t, filepath.Join(repo, ".github", "workflows", "issue-governance.yml"), "name: Issue governance\nopened\nreopened\nlabeled\nclosed\npermissions:\n  issues: write\nmanifest: .github/issue-labels.json\nuses: actions/github-script@v9\n")
+}
+
 func mustWrite(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -134,8 +158,12 @@ func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
 		`res, err = runFull`,
 		`case "release":`,
 		`res, err = runReleaseCommand`,
+		`case "codex":`,
+		`res, err = runCodexUsage`,
 		`aicoding test full|release`,
 		`aicoding release gate`,
+		`aicoding codex usage parse`,
+		`aicoding codex usage run`,
 		`aicoding skill c99-standard-c status`,
 		`aicoding skill c99-standard-c verify`,
 	} {
@@ -398,10 +426,11 @@ func main() {
 func writeGoControlFixture(t *testing.T, repo string) {
 	t.Helper()
 	mustWrite(t, filepath.Join(repo, "go.mod"), "module example.com/aicoding-fixture\n\ngo 1.22\n")
-	mustWrite(t, filepath.Join(repo, "README.md"), "# AiCoding\n\nAiCoding is the local AI coding platform.\n\nGit Governance Standard\n\nfeat fix docs style refactor perf test build ci chore\n\nmain develop feature test release hotfix\n\nRelease typed notes\n")
+	mustWrite(t, filepath.Join(repo, "README.md"), "# AiCoding\n\n[![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=release)](https://github.com/JiaxI2/AiCoding/releases/latest) [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/go1.22) [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.10/whatsnew/3.10.html) [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/) [![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)\n\nAiCoding 是本地 AI coding 工作流的平台集成仓库。\n\n[中文](README_CN.md) | [English](README_EN.md)\n\nGit Governance Standard\n\nfeat fix docs style refactor perf test build ci chore\n\nmain develop feature test release hotfix\n\nRelease typed notes\n")
 	mustWrite(t, filepath.Join(repo, "README_EN.md"), "# AiCoding\n\nGit Governance Standard\n\nfeat fix docs style refactor perf test build ci chore\n")
 	writeReleaseFixture(t, repo)
-	mustWrite(t, filepath.Join(repo, ".github", "repository-governance.toml"), "[readme]\nprimary_language = \"zh-CN\"\nsecondary_language_surface = \"top-file-language-switch-and-github-about\"\nenglish_language_file = \"README_EN.md\"\nquick_environment_preview = true\n\n[github_about]\nrequire_bilingual = true\n\n[release]\nnotes_template = \".github/RELEASE_TEMPLATE.md\"\nnotes_validator = \"bin/aicoding.exe verify release-notes --json\"\nrequired_bilingual_sections = [\"Summary\"]\n\n[changelog]\nmode = \"unreleased\"\n")
+	mustWrite(t, filepath.Join(repo, ".github", "repository-governance.toml"), "[readme]\nprimary_language = \"zh-CN\"\nsecondary_language_surface = \"top-file-language-switch-and-github-about\"\nenglish_language_file = \"README_EN.md\"\nquick_environment_preview = true\n\n[github_about]\nrequire_bilingual = true\n\n[release]\nnotes_template = \".github/RELEASE_TEMPLATE.md\"\nnotes_validator = \"bin/aicoding.exe verify release-notes --json\"\nrequired_bilingual_sections = [\"Summary\"]\n\n[changelog]\nmode = \"unreleased\"\n\n[governance_standard]\nid = \"aicoding-git-governance\"\nversion = \"2026.07.16\"\nsource_url = \"https://github.com/JiaxI2/Codex-Skills/blob/main/platform/aicoding-git-governance/references/aicoding-git-governance-standard.md\"\nsync_policy = \"track-canonical-url\"\n\n[issues]\nenabled = true\nprofile = \"managed-lifecycle\"\ntemplates_directory = \".github/ISSUE_TEMPLATE\"\nlabel_manifest = \".github/issue-labels.json\"\nworkflow = \".github/workflows/issue-governance.yml\"\nallow_blank = false\nrequired_label_axes = [\"type\", \"area\", \"priority\", \"status\"]\nclosure_requires_resolution = true\nclosure_requires_summary = true\nauto_close_stale = false\n")
+	writeIssueGovernanceFixture(t, repo)
 	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "bin/aicoding.exe hook pre-commit --json\npwsh -File tools/specialty/fallback.ps1\n")
 	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "go run ./cmd/aicoding hook commit-msg --file $1\npwsh -File tools/specialty/fallback.ps1\n")
 	mustWrite(t, filepath.Join(repo, "Taskfile.yml"), "version: '3'\n")
@@ -416,6 +445,7 @@ func writeGoControlFixture(t *testing.T, repo string) {
 	mustWrite(t, filepath.Join(repo, "docs", "operations", "DOC_SYNC_PLUS_VALIDATION_PLAN.md"), "# DocSync Validation\n")
 	mustWrite(t, filepath.Join(repo, "docs", "operations", "THIRD_PARTY_REUSE_GOVERNANCE.md"), "DocSync\n")
 	mustWrite(t, filepath.Join(repo, "config", "codex-kit.json"), minimalCodexKitConfig())
+	writeDependencyGovernanceFixture(t, repo)
 	mustWrite(t, filepath.Join(repo, ".agents", "plugins", "marketplace.json"), "{\"plugins\":[{\"name\":\"aicoding\",\"source\":{\"path\":\"CodingKit/agents/skills/plugins/AiCoding\"}}]}\n")
 	mustWrite(t, filepath.Join(repo, "config", "kit-registry.json"), "{\"schemaVersion\":1,\"name\":\"test\",\"defaultMode\":\"all\",\"kits\":[{\"id\":\"sample-kit\",\"enabled\":true,\"order\":1,\"manifest\":\"config/kits/sample-kit.json\"}]}\n")
 	mustWrite(t, filepath.Join(repo, "config", "reuse-governance.json"), minimalReuseGovernanceConfig())

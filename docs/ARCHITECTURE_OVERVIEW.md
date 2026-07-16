@@ -9,15 +9,23 @@ AiCoding 不拥有嵌入式 skill 源码。权威 skill/plugin 源位于 `Coding
 ## Layer Model
 
 ```text
+platform
+  -> integration
+     -> capability
+        -> runtime
+```
+
+平台层包含 User/Agent、Taskfile 和 Go CLI；integration 层包含 registry、lifecycle、插件绑定与安装状态；capability 层包含通用 Kit、Skill、MCP 和 CodingKit 模块；runtime 层包含语言、协议、操作系统与外部应用。依赖只允许同层或向下，详见 [依赖方向与稳定身份治理](governance/DEPENDENCY_DIRECTION_POLICY.md)。
+
+具体执行链仍为：
+
+```text
 User / Agent
   -> Taskfile routing
-     -> Go CLI (cmd/aicoding -> bin/aicoding.exe)
-        -> internal/runner Plan -> smoke / ci
-        -> official test profiles -> full / release / latest
-        -> internal/* Go packages
-        -> kit registry -> kit manifests -> CodingKit assets
-        -> installed plugin/runtime state
-     -> specialty scripts -> quality / safety / Plan Mode / toolchain
+     -> Go CLI
+        -> registry / lifecycle / governance
+           -> reusable capability
+              -> external runtime
 ```
 
 ## Go CLI Control Plane
@@ -72,3 +80,4 @@ PowerShell/Python 只保留在专项边界：tag planning / overlay compatibilit
 - `bin`、`dist`、`test-results` 是忽略的短生命周期生成目录，不能暂存或提交；
 - `tools/skill-template` 是 `skill-template` 的临时归属：待 Codex-Skills 在子模块上游提供对应模板域后，再按跨仓库升级流程迁入；
 - C Skill V3 本轮不部署；后续经上游验证后唯一允许的运行时挂载点是 `CodingKit/agents/skills/plugins/AiCoding/skills/aicoding-c99-standard-c`，不能再建立顶层或 standalone 镜像。
+- `config/dependency-governance.json` 负责 layer、registry binding、namespace、MCP/Skill 职责、稳定身份版本不可观察和 README badge 权威链接门禁。

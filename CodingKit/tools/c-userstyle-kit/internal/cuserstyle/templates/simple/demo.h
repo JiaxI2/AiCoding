@@ -2,7 +2,6 @@
  * @file demo.h
  * @brief 计算有界采样平均值并给出等级判定的简单公开接口。
  * @copyright Copyright (c) 2026 HU JIAXUAN.
- * @version 1.2.0
  * @date 2026-07-15
  * @author HU JIAXUAN
  *

@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "labels": [
+    {"name": "type:bug", "color": "d73a4a", "description": "缺陷或回归 / Defect or regression"},
+    {"name": "type:feature", "color": "a2eeef", "description": "功能或能力建议 / Feature or capability"},
+    {"name": "type:governance", "color": "5319e7", "description": "治理、流程或标准变更 / Governance or policy"},
+    {"name": "area:platform", "color": "c5def5", "description": "Go CLI 与平台集成 / Go CLI and platform"},
+    {"name": "area:kit", "color": "bfdadc", "description": "CodingKit 资产与生命周期 / CodingKit lifecycle"},
+    {"name": "area:plugin", "color": "d4c5f9", "description": "AiCoding plugin 安装与分发 / Plugin distribution"},
+    {"name": "area:skill", "color": "bfe5bf", "description": "Skill 路由与 source boundary / Skill routing"},
+    {"name": "area:docs", "color": "0075ca", "description": "README、规范与使用文档 / Documentation"},
+    {"name": "area:ci", "color": "5319e7", "description": "验证、Hook 与 CI / Validation, Hook, and CI"},
+    {"name": "priority:p0", "color": "b60205", "description": "紧急事件或发布阻塞 / Incident or release blocker"},
+    {"name": "priority:p1", "color": "d93f0b", "description": "关键且立即处理 / Critical and immediate"},
+    {"name": "priority:p2", "color": "fbca04", "description": "正常计划优先级 / Normal planned priority"},
+    {"name": "priority:p3", "color": "0e8a16", "description": "低紧急度或 backlog / Low urgency or backlog"},
+    {"name": "status:needs-triage", "color": "ededed", "description": "等待分类与所有权确认 / Awaiting triage"},
+    {"name": "status:needs-info", "color": "fef2c0", "description": "等待报告者补充信息 / More information required"},
+    {"name": "status:ready", "color": "0e8a16", "description": "范围清晰且可开始 / Ready for work"},
+    {"name": "status:in-progress", "color": "1d76db", "description": "已有人负责并进行中 / Work in progress"},
+    {"name": "status:blocked", "color": "b60205", "description": "存在明确阻塞条件 / Explicitly blocked"},
+    {"name": "resolution:completed", "color": "0e8a16", "description": "验收条件已满足 / Acceptance criteria met"},
+    {"name": "resolution:duplicate", "color": "cfd3d7", "description": "由另一 canonical Issue 跟踪 / Duplicate"},
+    {"name": "resolution:not-planned", "color": "ffffff", "description": "经说明后不计划实施 / Not planned with rationale"},
+    {"name": "resolution:invalid", "color": "e4e669", "description": "无效范围、假设或不可复现 / Invalid or unreproducible"}
+  ]
+}

@@ -1,0 +1,137 @@
+name: Issue governance
+
+on:
+  issues:
+    types:
+      - opened
+      - reopened
+      - labeled
+      - closed
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/issue-labels.json"
+      - ".github/workflows/issue-governance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-governance-${{ github.event.issue.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sync-labels:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or update declared labels
+        uses: actions/github-script@v9
+        env:
+          LABEL_MANIFEST: ".github/issue-labels.json"
+        with:
+          retries: 3
+          script: |
+            const ref = context.payload.after || context.payload.repository.default_branch;
+            const response = await github.rest.repos.getContent({
+              ...context.repo,
+              path: process.env.LABEL_MANIFEST,
+              ref,
+            });
+            if (Array.isArray(response.data) || !response.data.content) {
+              core.setFailed(`Label manifest is not a file: ${process.env.LABEL_MANIFEST}`);
+              return;
+            }
+            const manifest = JSON.parse(Buffer.from(response.data.content, 'base64').toString('utf8'));
+            const declared = manifest.labels || [];
+            const existing = await github.paginate(github.rest.issues.listLabelsForRepo, {
+              ...context.repo,
+              per_page: 100,
+            });
+            const byName = new Map(existing.map((label) => [label.name, label]));
+            for (const label of declared) {
+              const current = byName.get(label.name);
+              if (!current) {
+                await github.rest.issues.createLabel({...context.repo, ...label});
+                continue;
+              }
+              const currentDescription = current.description || '';
+              if (current.color.toLowerCase() !== label.color.toLowerCase() || currentDescription !== label.description) {
+                await github.rest.issues.updateLabel({
+                  ...context.repo,
+                  current_name: current.name,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                });
+              }
+            }
+
+  normalize-lifecycle:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Normalize singleton axes and close or reopen state
+        uses: actions/github-script@v9
+        with:
+          retries: 3
+          script: |
+            const issue = context.payload.issue;
+            const action = context.payload.action;
+            const names = issue.labels.map((label) => typeof label === 'string' ? label : label.name);
+            const singletonAxes = new Set(['type', 'priority', 'status', 'resolution']);
+            const removeLabel = async (name) => {
+              try {
+                await github.rest.issues.removeLabel({...context.issue, name});
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+            };
+            const addLabel = async (name) => {
+              await github.rest.issues.addLabels({...context.issue, labels: [name]});
+            };
+
+            if (action === 'labeled') {
+              const applied = context.payload.label && context.payload.label.name;
+              if (!applied || !applied.includes(':')) return;
+              const axis = applied.split(':', 1)[0];
+              if (issue.state === 'open' && axis === 'resolution') {
+                await removeLabel(applied);
+                return;
+              }
+              if (issue.state === 'closed' && axis === 'status') {
+                await removeLabel(applied);
+                return;
+              }
+              if (singletonAxes.has(axis)) {
+                for (const name of names) {
+                  if (name !== applied && name.startsWith(`${axis}:`)) await removeLabel(name);
+                }
+              }
+              return;
+            }
+
+            if (action === 'opened' || action === 'reopened') {
+              for (const name of names) {
+                if (name.startsWith('resolution:') || (name.startsWith('status:') && name !== 'status:needs-triage')) {
+                  await removeLabel(name);
+                }
+              }
+              await addLabel('status:needs-triage');
+              return;
+            }
+
+            if (action === 'closed') {
+              for (const name of names) {
+                if (name.startsWith('status:')) await removeLabel(name);
+              }
+              if (!names.some((name) => name.startsWith('resolution:'))) {
+                const resolution = issue.state_reason === 'not_planned'
+                  ? 'resolution:not-planned'
+                  : 'resolution:completed';
+                await addLabel(resolution);
+              }
+            }

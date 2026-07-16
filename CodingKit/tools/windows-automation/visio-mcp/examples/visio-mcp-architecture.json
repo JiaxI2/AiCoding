@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "document": {
+    "id": "visio-mcp-architecture",
+    "title": "Visio MCP Architecture",
+    "page": {
+      "width": 22,
+      "height": 9,
+      "orientation": "landscape",
+      "margin": 0.5
+    },
+    "theme": "visio-default",
+    "styleProfile": "engineering-standard",
+    "layout": {
+      "engine": "layered",
+      "direction": "LR",
+      "nodeGap": 0.8,
+      "layerGap": 1.2,
+      "compact": false,
+      "uniformNodeSize": true,
+      "nodeWidth": 2.4,
+      "nodeHeight": 1.0
+    }
+  },
+  "nodes": [
+    {"id": "agent", "text": "User / Agent\nDiagram workflow", "type": "actor", "layer": 0, "sizeClass": "architecture-node"},
+    {"id": "go", "text": "MCP Client / Host\nLifecycle + JSON-RPC", "type": "component", "layer": 1, "sizeClass": "architecture-node"},
+    {"id": "mcp", "text": "Visio MCP Server\nTools / Resources", "type": "component", "layer": 2, "sizeClass": "architecture-node"},
+    {"id": "model", "text": "Diagram IR\nSchema + Layout\nQuality", "type": "database", "layer": 3, "sizeClass": "architecture-node"},
+    {"id": "visio", "text": "Visio COM Adapter\nEditing + Export", "type": "process", "layer": 4, "sizeClass": "architecture-node"},
+    {"id": "qa", "text": "Visual QA\nDetect + Repair\nRegression", "type": "process", "layer": 4, "sizeClass": "architecture-node"},
+    {"id": "outputs", "text": "VSDX / PNG\nSVG / PDF\nInspection sidecar", "type": "database", "layer": 5, "sizeClass": "architecture-node"}
+  ],
+  "edges": [
+    {"id": "e1", "from": "agent", "to": "go", "label": "invoke", "type": "directed"},
+    {"id": "e2", "from": "go", "to": "mcp", "label": "JSON-RPC", "type": "directed"},
+    {"id": "e3", "from": "mcp", "to": "model", "label": "validate", "type": "directed"},
+    {"id": "e4", "from": "model", "to": "visio", "label": "render", "type": "directed"},
+    {"id": "e5", "from": "visio", "to": "qa", "label": "snapshot", "type": "directed", "sourcePort": "top", "sourcePortPosition": 0.4, "targetPort": "bottom", "targetPortPosition": 0.4},
+    {"id": "e6", "from": "qa", "to": "visio", "label": "repair", "type": "directed", "sourcePort": "bottom", "sourcePortPosition": 0.6, "targetPort": "top", "targetPortPosition": 0.6},
+    {"id": "e7", "from": "visio", "to": "outputs", "label": "export", "type": "directed"}
+  ],
+  "metadata": {
+    "owner": "Visio MCP maintainers",
+    "generated": true
+  }
+}

@@ -29,3 +29,22 @@ Constraints:
 - Exclude local build/state and obsolete direct-integration drafts from the snapshot.
 - The user explicitly authorized the PDF and Markdown reference copies for public release.
 - Release the user-visible platform integration as SemVer minor `v0.8.0`.
+
+## Dependency Direction And Stable Identity Governance
+
+Decision Status: Selected
+
+Selected rule: dependencies may point only from a higher layer to the same or a lower layer:
+
+```text
+platform -> integration -> capability -> runtime
+```
+
+Constraints:
+
+- A lower layer must not depend on or observe an upper-layer product namespace.
+- `aicoding-*` is reserved for genuine platform/integration assets, not capabilities merely distributed by AiCoding.
+- Generic MCP capability servers do not own workflow prompts; workflow orchestration belongs to Skills.
+- Stable asset names, paths, packages, symbols, models and runtime code do not encode the asset version.
+- Versions are controlled by manifest metadata, asset documentation, changelog, Tag/Release URLs and exact-authority README badges.
+- Existing reverse names and self-version code are corrected immediately rather than registered as deferred debt.

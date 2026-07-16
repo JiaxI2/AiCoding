@@ -172,7 +172,6 @@ func lintContentWithSummary(path string, data []byte, ranges []LineRange, cfg Co
 				message string
 			}{
 				{"@copyright", "文件头缺少版权说明。"},
-				{"@version", "文件头缺少版本号。"},
 				{"@date", "文件头缺少生成或修改日期。"},
 				{"@author", "文件头缺少作者。"},
 				{"文件内容", "文件头缺少内容说明。"},

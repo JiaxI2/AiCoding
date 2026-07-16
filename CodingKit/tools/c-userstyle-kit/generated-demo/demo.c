@@ -2,7 +2,6 @@
  * @file demo.c
  * @brief 实现有界采样平均值计算和等级判定。
  * @copyright Copyright (c) 2026 HU JIAXUAN.
- * @version 1.2.0
  * @date 2026-07-15
  * @author HU JIAXUAN
  *

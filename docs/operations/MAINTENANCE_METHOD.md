@@ -86,6 +86,7 @@ go test ./...
 go run ./cmd/aicoding bootstrap --json
 go build -o bin/aicoding.exe ./cmd/aicoding
 bin/aicoding.exe status --all --json
+bin/aicoding.exe governance dependencies --json
 bin/aicoding.exe doctor pwsh --json
 bin/aicoding.exe doctor pwsh-budget --json
 bin/aicoding.exe skill c99-standard-c status --json
@@ -149,6 +150,7 @@ Do not claim completion if:
 - generated plugin output has unexplained drift;
 - the submodule is dirty;
 - AiCoding changed Skill source;
+- a lower-layer Kit, Skill, MCP or module observes an upper-layer namespace or encodes its version into a stable identity;
 - docs or CHANGELOG no longer match behavior;
 - DocSync modes, semantic policy, or the single `bin/aicoding.exe docsync` entrypoint are missing or fail status/verify/test checks;
 - Hook changes have not been reported for `/hooks` review;

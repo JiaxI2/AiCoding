@@ -20,6 +20,35 @@ Before making changes, read:
 - `config/codex-kit.json`
 - `CodingKit/AGENTS.md` for CodingKit asset changes
 
+## Dependency Direction And Stable Identity Governance
+
+AiCoding uses the following semantic layers from high to low:
+
+```text
+platform -> integration -> capability -> runtime
+```
+
+Dependencies may point only to the same layer or a lower layer. A lower layer must not depend on, name, configure, document, or otherwise observe an upper layer.
+
+The executable policy is `config/dependency-governance.json`; validate it with:
+
+```powershell
+bin\aicoding.exe governance dependencies --json
+```
+
+Required rules:
+
+- `aicoding-*`, `AICODING_*`, `aicoding.local`, and equivalent product namespaces are reserved for platform or integration assets that genuinely depend on AiCoding behavior.
+- Reusable Kit, standalone Skill, MCP, module, renderer, schema, environment variable, package, service, example, and test identities must use domain names and remain platform agnostic.
+- AiCoding registry or manifest files may bind a platform to a lower capability; the lower capability must not contain the reverse binding.
+- Plugin-bundled platform Skills use `aicoding-*`; reusable standalone Skills do not.
+- Capability MCP servers expose tools and domain resources. Workflow orchestration, quality procedures, and user intent belong to Skills; capability MCP servers must not own workflow prompt directories or register workflow prompts.
+- Stable asset identities must not encode versions in paths, IDs, package/module/service names, C/CMake symbols, model names, or runtime code.
+- Asset versions are visible only through manifest metadata, asset documentation, `CHANGELOG.md`, Tag/Release authority, or README badges linked to an exact authority.
+- README version badges must be identical across `README.md`, `README_CN.md`, and `README_EN.md`. Third-party versions link to the exact upstream version page; local Kit versions link to the authoritative local Kit document and must match the Kit manifest.
+
+Do not add a time-limited exception for a new reverse dependency or versioned identity. Existing violations must be corrected before integration.
+
 ## Submodule Policy
 
 Treat `CodingKit/agents/skills` as a read-only released dependency.
@@ -186,6 +215,7 @@ Documentation synchronization is enforced by `bin/aicoding.exe docsync`, `.githo
 - `README.md`、`README_CN.md`、`README_EN.md` 是架构入口，只描述平台、kit、plugin、skill 母级边界，不列具体 leaf skill 命令。
 - 具体 skill 命令、专项格式化命令和 Taskfile 子命令放在 `docs/COMMANDS.md` 或对应专项文档中。
 - 新增稳定工具链、运行体系或默认验证体系时，必须同步三份 README 顶部 badge，并链接到权威 URL。
+- README 中的版本只能通过顶部 badge 展示；第三方版本链接上游准确版本页，本地 Kit 版本链接本仓库权威 Kit 文档。
 - README 架构图优先使用短文本图；如果使用 Mermaid，节点标签必须短，不写长路径、不写具体 leaf skill 名，避免渲染裁剪。
 
 ## 语言策略 / Language Policy

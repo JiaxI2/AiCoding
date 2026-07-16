@@ -3,7 +3,7 @@
   "state": "current",
   "version": "1.2.0",
   "selectedArchitecture": "Option D - simple entry plus public advanced examples",
-  "integratedIntoAiCoding": true,
+  "platformIntegrationVerified": true,
   "reference": {
     "document": "DKBA 2826-2011.5",
     "pages": 61,
@@ -39,6 +39,6 @@
     "GCC behavior, boundary and fault-injection tests passed",
     "External verify fast and full profiles passed without invoking TI/CCS or firmware builds",
     "PowerShell AST, safety and PSScriptAnalyzer gates passed",
-    "AiCoding Kit registry, existing C99 Skill route, fast/full verification, and global gates passed while the skills submodule remained unchanged"
+    "Platform Kit registry, existing C99 Skill binding, fast/full verification, and global gates passed while the skills dependency remained unchanged"
   ]
 }

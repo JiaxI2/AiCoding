@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/mcp-component.schema.json",
+  "title": "AiCoding MCP Component",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "transport",
+    "runtime",
+    "codex",
+    "doctor",
+    "verify"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "transport": {
+      "enum": [
+        "stdio",
+        "streamable-http"
+      ]
+    },
+    "platforms": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "required": [
+        "kind",
+        "root",
+        "requirements",
+        "minimumPython",
+        "pythonEnvVar",
+        "module",
+        "packageInstall",
+        "serverArgs",
+        "env"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "python-venv"
+        },
+        "root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requirements": {
+          "type": "string",
+          "minLength": 1
+        },
+        "minimumPython": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$"
+        },
+        "pythonEnvVar": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "packageInstall": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "serverArgs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "codex": {
+      "type": "object",
+      "required": [
+        "serverName",
+        "startupTimeoutSec",
+        "toolTimeoutSec"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "serverName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "startupTimeoutSec": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "toolTimeoutSec": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "doctor": {
+      "$ref": "#/$defs/command"
+    },
+    "verify": {
+      "type": "object",
+      "required": [
+        "Smoke",
+        "Full",
+        "Release"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "Smoke": {
+          "$ref": "#/$defs/steps"
+        },
+        "Full": {
+          "$ref": "#/$defs/steps"
+        },
+        "Release": {
+          "$ref": "#/$defs/steps"
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "command": {
+      "type": "object",
+      "required": [
+        "args"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

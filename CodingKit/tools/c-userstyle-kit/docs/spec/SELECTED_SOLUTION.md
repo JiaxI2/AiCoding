@@ -24,4 +24,4 @@ PDF 每条原则、规则和建议都必须在规则目录中映射为 `demo`、
 - 完整 PDF 和经过校验的 Markdown 参考文档保留在 `references/`；
 - 根 `AGENTS.md` 提供 Agent 可执行规则；
 - 独立 Kit 构建阶段保持 `c-userstyle-kit` 自包含；
-- 当前发布快照已通过 `CodingKit/tools/c-userstyle-kit` 接入 AiCoding，仍保留独立 Go module 与验证边界。
+- 当前发布快照已通过 `CodingKit/tools/c-userstyle-kit` 接入上层平台，仍保留独立 Go module 与验证边界。

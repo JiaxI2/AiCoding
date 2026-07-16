@@ -1,5 +1,5 @@
-#ifndef AICODING_PID_H
-#define AICODING_PID_H
+#ifndef PID_CONTROLLER_H
+#define PID_CONTROLLER_H
 
 /**
  * @file pid.h
@@ -45,12 +45,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* 版本信息。 */
-#define PID_VERSION_MAJOR 1u
-#define PID_VERSION_MINOR 6u
-#define PID_VERSION_PATCH 0u
-#define PID_VERSION_STR   "1.6.0"
 
 /* 控制频率合法性判断阈值，单位 Hz。 */
 #ifndef PID_EPSILON
@@ -163,4 +157,4 @@ float pid(Pid *controller);
 }
 #endif
 
-#endif /* AICODING_PID_H */
+#endif /* PID_CONTROLLER_H */

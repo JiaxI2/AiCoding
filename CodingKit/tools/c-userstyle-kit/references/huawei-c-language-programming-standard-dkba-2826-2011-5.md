@@ -1,7 +1,7 @@
 # 华为 C 语言编程规范（DKBA 2826-2011.5）
 
 > [!IMPORTANT]
-> 本文件是 C Kit 随 AiCoding 发布的可检索参考副本；原始页眉信息保留在 PDF 与 raw 转换件中。
+> 本文件是 C Kit 随受管发行包发布的可检索参考副本；原始页眉信息保留在 PDF 与 raw 转换件中。
 
 - 来源：`huawei-c-language-programming-standard-dkba-2826-2011-5.pdf`
 - PDF SHA-256：`80D23AC9CACB83AEBAA1C28889271F744D5866CA45D09266533895F256262200`

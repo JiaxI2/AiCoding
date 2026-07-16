@@ -2,7 +2,6 @@
  * @file demo_pool.h
  * @brief 固定容量资源池及带代际句柄的生命周期接口。
  * @copyright Copyright (c) 2026 C UserStyle Kit.
- * @version 1.0.0
  * @date 2026-07-15
  * @author C UserStyle Kit
  *

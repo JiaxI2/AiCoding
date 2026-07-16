@@ -41,7 +41,18 @@
       "requiredPaths": [
         "config/codex-kit.json",
         "config/kit-registry.json",
+        "config/dependency-governance.json",
+        "config/schemas/dependency-governance.schema.json",
+        "config/mcp-registry.json",
+        "config/mcp/components/visio-mcp.json",
+        "config/schemas/mcp-registry.schema.json",
+        "config/schemas/mcp-component.schema.json",
+        "CodingKit/agents/skills/visio-diagram/SKILL.md",
         "internal/kit/structure.go",
+        "internal/governance/dependencies.go",
+        "internal/mcpcontrol/registry.go",
+        "internal/mcpcontrol/probe.go",
+        "internal/cli/cli_mcp.go",
         "internal/cli/cli.go"
       ],
       "supportsJson": true

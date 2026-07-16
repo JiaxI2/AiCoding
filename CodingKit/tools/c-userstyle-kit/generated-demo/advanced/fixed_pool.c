@@ -2,7 +2,6 @@
  * @file fixed_pool.c
  * @brief 实现固定容量资源池和带代际句柄的生命周期保护。
  * @copyright Copyright (c) 2026 C UserStyle Kit.
- * @version 1.2.0
  * @date 2026-07-15
  * @author C UserStyle Kit
  *

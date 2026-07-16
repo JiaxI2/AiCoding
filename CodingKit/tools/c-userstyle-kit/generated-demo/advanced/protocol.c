@@ -2,7 +2,6 @@
  * @file protocol.c
  * @brief 实现不可信二进制帧、字符串和固定格式输出的安全处理。
  * @copyright Copyright (c) 2026 C UserStyle Kit.
- * @version 1.2.0
  * @date 2026-07-15
  * @author C UserStyle Kit
  *

@@ -27,6 +27,10 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | 最近测试报告 | `bin\aicoding.exe test latest` |
 | DocSync staged/all/ci/release | `bin\aicoding.exe docsync staged|all|ci|release --json` |
 | Skill verify | `bin\aicoding.exe skill verify --all --profile Smoke|Full|Release --json` |
+| MCP inventory | `bin\aicoding.exe mcp list --json` |
+| MCP status/doctor | `bin\aicoding.exe mcp status|doctor <COMPONENT> --json` |
+| MCP verify | `bin\aicoding.exe mcp verify <COMPONENT>\|--all --profile Smoke\|Full\|Release --configured --json` |
+| MCP lifecycle | `bin\aicoding.exe mcp install|update|uninstall <COMPONENT>\|--all --dry-run --json` |
 | C99 skill status | `bin\aicoding.exe skill c99-standard-c status --json` |
 | C99 skill templates | `bin\aicoding.exe skill c99-standard-c templates --json` |
 | C99 skill 快速/完整验证 | `bin\aicoding.exe skill c99-standard-c verify --profile fast\|full --timings --json` |
@@ -39,6 +43,7 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | Full aggregate | `bin\aicoding.exe full --json` |
 | Release gate | `bin\aicoding.exe release gate --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
+| Dependency direction / stable identity | `bin\aicoding.exe governance dependencies --json` |
 | Repository layout gate | `bin\aicoding.exe governance layout --json` |
 | Reuse governance evidence | `bin\aicoding.exe governance reuse --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
@@ -47,6 +52,37 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | PowerShell inventory | `bin\aicoding.exe doctor pwsh --json` |
 | PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` |
 | Tag audit | `bin\aicoding.exe tag audit --json` |
+| 解析 Codex Token JSONL | `bin\aicoding.exe codex usage parse --file <FILE> --json` |
+| 运行 Codex 并采集 Token | `bin\aicoding.exe codex usage run -- codex exec --json "<PROMPT>"` |
+
+## MCP 组件控制面
+
+MCP registry、component manifest、Codex 配置、生命周期和兼容性回归统一由 Go CLI 管理：
+
+```powershell
+bin\aicoding.exe mcp list --json
+bin\aicoding.exe mcp status visio-mcp --json
+bin\aicoding.exe mcp doctor visio-mcp --json
+bin\aicoding.exe mcp verify visio-mcp --profile Smoke --json
+bin\aicoding.exe mcp verify --all --profile Smoke --json
+```
+
+`--configured` 显式包含 Codex 当前配置的 stdio/Streamable HTTP MCP 只读 initialize/discovery；`--all` 会自动包含该兼容性 probe。生命周期操作先使用 `--dry-run`，再执行 install、update 或 uninstall。
+
+Smoke 与 Full 使用 mock/benchmark 路径，不要求 Microsoft Visio；Release 会显式运行可见 Visio COM smoke 和 VSDX/PNG/SVG/PDF 导出。MCP capability 不注册工作流 prompt，画图步骤、有限 repair 和最终视觉确认由上层 `visio-diagram` Skill 负责。
+
+详细边界见 [MCP Control Plane](architecture/MCP_CONTROL_PLANE.md)，操作说明见 [MCP Components](operations/MCP_COMPONENTS.md)。
+
+## Codex Token 报告
+
+`codex usage parse` 支持 Codex App Server 的 `thread/tokenUsage/updated` 通知和
+`codex exec --json` 的 `turn.completed.usage` 事件；`--file -` 表示从 stdin 读取。
+App Server 报告使用 `tokenUsage.total` 作为会话累计值，并使用
+`tokenUsage.last.totalTokens` 计算当前上下文占用，避免把累计会话用量误当作上下文大小。
+
+结构化结果继续使用统一 `report.Result` 外壳，标准报告的
+`data.details.token_usage` 保存归一化 Token 数据。`codex usage run` 将子进程 JSONL
+事件流保留到 stderr，并在 stdout 输出最终 AiCoding 报告。
 
 ## Taskfile 路由
 

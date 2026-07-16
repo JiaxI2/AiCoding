@@ -1,0 +1,54 @@
+name: Feature / 功能建议
+description: 提议有明确问题、范围和验收条件的能力 / Propose a capability with a clear problem and acceptance criteria
+title: "[Feature]: "
+labels: ["type:feature", "status:needs-triage"]
+body:
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: 提交前检查 / Preflight
+      options:
+        - label: 我已搜索现有 Issue、路线图和文档，未发现相同提议。 / I searched existing Issues, roadmap, and docs.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题 / Problem
+      description: 当前用户或维护流程中存在什么具体问题？
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: 目标结果 / Desired outcome
+      description: 描述可观察的结果，不要只描述实现手段。
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 范围 / Scope
+      description: 明确包含项、不包含项和受影响用户。
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收条件 / Acceptance criteria
+      description: 列出可测试、可审查的完成条件。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案 / Alternatives
+      description: 已尝试或考虑过哪些更简单方案？
+    validations:
+      required: true
+  - type: textarea
+    id: traceability
+    attributes:
+      label: 关联信息 / Traceability
+      description: 相关需求、Issue、PR、decision、release 或外部标准。
+    validations:
+      required: true

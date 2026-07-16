@@ -1,4 +1,4 @@
-# AiCoding FOC Controller Template v1.0-flat
+# FOC Controller Template
 
 这是一个扁平化 C99 FOC 通用模板。源码主路径只保留 VF / IF 两种核心模式，以及 SENSOR / OPEN_LOOP 两种角度来源。三环 PID 直接复用 `common/controller/pid`，FOC 内部不再重复实现 PID。
 

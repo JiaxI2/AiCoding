@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aicoding.local/schemas/c-snippets.schema.json",
+  "$id": "https://c-userstyle-kit.local/schemas/c-snippets.schema.json",
   "title": "C UserStyle VS Code Snippet Catalog",
   "type": "object",
   "minProperties": 1,

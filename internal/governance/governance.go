@@ -13,7 +13,7 @@ import (
 func Lint(repo, mode, commitMsgPath string) []string {
 	errs := []string{}
 	fail := func(msg string) { errs = append(errs, msg) }
-	requiredFiles := []string{"README.md", "README_EN.md", "CHANGELOG.md", ".github/RELEASE_TEMPLATE.md", ".github/repository-governance.toml", ".githooks/pre-commit", ".githooks/commit-msg"}
+	requiredFiles := []string{"README.md", "README_EN.md", "CHANGELOG.md", ".github/RELEASE_TEMPLATE.md", ".github/repository-governance.toml", ".githooks/pre-commit", ".githooks/commit-msg", "config/dependency-governance.json", "config/schemas/dependency-governance.schema.json"}
 	for _, f := range requiredFiles {
 		if !platform.IsFile(platform.RepoPath(repo, f)) {
 			fail("required governance file missing: " + f)
@@ -59,9 +59,9 @@ func Lint(repo, mode, commitMsgPath string) []string {
 			msg    string
 		}{
 			{"img.shields.io/github/v/release/JiaxI2/AiCoding", "README.md must keep the Release badge link"},
-			{"https://go.dev/", "README.md must keep the Go environment preview badge"},
-			{"https://learn.microsoft.com/powershell/", "README.md must keep the PowerShell environment preview badge"},
-			{"https://www.python.org/", "README.md must keep the Python environment preview badge"},
+			{"https://go.dev/doc/go1.22", "README.md must bind the Go badge to the Go 1.22 release notes"},
+			{"https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0", "README.md must bind the PowerShell badge to the upstream 7.0.0 release"},
+			{"https://docs.python.org/3.10/whatsnew/3.10.html", "README.md must bind the Python badge to the Python 3.10 documentation"},
 			{"https://taskfile.dev/", "README.md must keep the Taskfile environment preview badge"},
 			{"github/license/JiaxI2/AiCoding", "README.md must keep the License badge link"},
 		} {
@@ -107,6 +107,12 @@ func Lint(repo, mode, commitMsgPath string) []string {
 	if !strings.Contains(gov, "required_bilingual_sections") {
 		fail("repository-governance.toml must require bilingual release notes sections")
 	}
+	mustContain(gov, `principle = "lower-must-not-depend-on-or-observe-upper"`, ".github/repository-governance.toml must declare the dependency direction principle", fail)
+	mustContain(gov, `dependency_policy = "config/dependency-governance.json"`, ".github/repository-governance.toml must declare the dependency policy", fail)
+	mustContain(gov, `dependency_validator = "bin/aicoding.exe governance dependencies --json"`, ".github/repository-governance.toml must declare the dependency validator", fail)
+	mustContain(gov, `readme_version_surface = "badges-only"`, ".github/repository-governance.toml must restrict README version display to badges", fail)
+	mustContain(gov, `version_badge_policy = "config/dependency-governance.json#versionVisibility.readmeBadges"`, ".github/repository-governance.toml must declare the version badge policy", fail)
+	lintIssueGovernance(repo, gov, fail)
 	if strings.Contains(gov, `mode = "unreleased"`) && !strings.Contains(changelog, "[Unreleased]") {
 		fail("CHANGELOG.md must contain [Unreleased] when changelog.mode is unreleased")
 	}
@@ -114,6 +120,10 @@ func Lint(repo, mode, commitMsgPath string) []string {
 		fail("CHANGELOG.md must include typed entries such as **docs** or **chore**")
 	}
 	if mode == "all" || mode == "pre-commit" {
+		dependencies := CheckDependencies(repo)
+		for _, dependencyErr := range dependencies.Errors {
+			fail("dependency governance: " + dependencyErr)
+		}
 		staged, err := gitx.StagedFiles(repo)
 		if err != nil {
 			fail(err.Error())

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "name": "AiCoding MCP Component Registry",
+  "components": [
+    {
+      "id": "visio-mcp",
+      "enabled": true,
+      "order": 10,
+      "manifest": "config/mcp/components/visio-mcp.json"
+    }
+  ]
+}

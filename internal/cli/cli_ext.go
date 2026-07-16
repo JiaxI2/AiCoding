@@ -13,6 +13,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/docsync"
 	"github.com/JiaxI2/AiCoding/internal/governance"
 	"github.com/JiaxI2/AiCoding/internal/kit"
+	"github.com/JiaxI2/AiCoding/internal/mcpcontrol"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
@@ -278,6 +279,12 @@ func buildAggregatePlan(repo, profile string, release bool) runner.Plan {
 		structure := kit.VerifyStructure(repo, selected)
 		return runner.TaskResult{OK: structure.OK, Errors: structure.Errors, Warnings: structure.Warnings, Data: structure}
 	}})
+	if platform.IsFile(platform.RepoPath(repo, "config/mcp-registry.json")) {
+		plan.Add(runner.Task{ID: "mcp registry", Group: "mcp", Run: func(context.Context) runner.TaskResult {
+			errs := mcpcontrol.DoctorRegistry(repo)
+			return runner.TaskResult{OK: len(errs) == 0, Errors: errs}
+		}})
+	}
 	plan.Add(runner.Task{ID: "governance lint", Group: "governance", Run: func(context.Context) runner.TaskResult {
 		errs := governance.Lint(repo, "all", "")
 		return runner.TaskResult{OK: len(errs) == 0, Errors: errs}

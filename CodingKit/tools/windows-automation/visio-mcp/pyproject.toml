@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "visio-mcp"
+version = "0.1.0"
+description = "Configuration-driven Microsoft Visio MCP server"
+requires-python = ">=3.10"
+dependencies = [
+  "jsonschema>=4.22,<5",
+  "mcp>=1.28,<2",
+  "Pillow>=10.4,<12"
+]
+
+[project.optional-dependencies]
+windows = ["pywin32>=306"]
+test = ["pytest>=8.2,<9", "pytest-timeout>=2.3,<3"]
+
+[project.scripts]
+visio-mcp = "visio_mcp.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

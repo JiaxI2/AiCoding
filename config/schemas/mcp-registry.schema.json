@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/mcp-registry.schema.json",
+  "title": "AiCoding MCP Registry",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "name",
+    "components"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "enabled",
+          "order",
+          "manifest"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "manifest": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

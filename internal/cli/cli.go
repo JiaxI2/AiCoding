@@ -66,6 +66,10 @@ func Main() {
 		res, err = runFull(os.Args[2:], start)
 	case "cache":
 		res, err = runCache(os.Args[2:], start)
+	case "codex":
+		res, err = runCodexUsage(os.Args[2:], start)
+	case "mcp":
+		res, err = runMCP(os.Args[2:], start)
 
 	case "tag":
 		res, err = runTag(os.Args[2:], start)
@@ -98,6 +102,9 @@ func Main() {
 		report.WriteJSON(res)
 	} else {
 		report.WriteText(res)
+		if cmd == "codex" {
+			writeCodexUsageText(os.Stdout, res)
+		}
 	}
 	if err != nil || !res.OK {
 		os.Exit(1)
@@ -131,10 +138,17 @@ Usage:
   aicoding full [--repo-root PATH] [--json]
   aicoding cache status [--repo-root PATH] [--json]
   aicoding cache clean [--repo-root PATH] [--json]
+  aicoding codex usage parse [--file FILE|-] [--json]
+  aicoding codex usage run [--json] -- codex exec --json "PROMPT"
+  aicoding mcp list [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding mcp status|doctor COMPONENT [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding mcp verify COMPONENT|--all --profile Smoke|Full|Release [--configured] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding mcp install|update|uninstall COMPONENT|--all [--dry-run] [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding tag audit [--repo-root PATH] [--json]
   aicoding release verify [--repo-root PATH] [--json]
   aicoding release gate [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
+  aicoding governance dependencies [--repo-root PATH] [--json]
   aicoding governance layout [--repo-root PATH] [--json]
   aicoding governance reuse [--repo-root PATH] [--json]
 
@@ -160,6 +174,9 @@ This CLI owns Go-native fast, lifecycle, export, DocSync, fresh-clone, Full, and
 
 func jsonRequested(args []string) bool {
 	for _, a := range args {
+		if a == "--" {
+			break
+		}
 		if a == "--json" || a == "-json" || a == "-Json" {
 			return true
 		}
@@ -418,7 +435,7 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 }
 func runGovernance(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("governance requires subcommand: lint, layout, or reuse")
+		return report.Result{}, errors.New("governance requires subcommand: lint, dependencies, layout, or reuse")
 	}
 	sub := args[0]
 	fs := flag.NewFlagSet("governance "+sub, flag.ContinueOnError)
@@ -434,6 +451,9 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 	case "lint":
 		errs := governance.Lint(repo, *mode, "")
 		return report.Result{SchemaVersion: 1, Command: "governance lint", OK: len(errs) == 0, Message: "governance fast lint", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	case "dependencies":
+		dependencies := governance.CheckDependencies(repo)
+		return report.Result{SchemaVersion: 1, Command: "governance dependencies", OK: len(dependencies.Errors) == 0, Message: "dependency direction governance gate", RepoRoot: repo, Data: dependencies, Warnings: dependencies.Warnings, Errors: dependencies.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(dependencies.Errors)
 	case "layout":
 		layout := governance.CheckLayout(repo)
 		return report.Result{SchemaVersion: 1, Command: "governance layout", OK: len(layout.Errors) == 0, Message: "repository layout gate", RepoRoot: repo, Data: layout, Errors: layout.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(layout.Errors)

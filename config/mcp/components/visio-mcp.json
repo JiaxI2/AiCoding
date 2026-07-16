@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "id": "visio-mcp",
+  "name": "Visio MCP",
+  "version": "0.1.0",
+  "description": "Windows Visio diagram generation, visible editing, inspection, quality checks and bounded repair through MCP stdio.",
+  "transport": "stdio",
+  "platforms": [
+    "windows"
+  ],
+  "runtime": {
+    "kind": "python-venv",
+    "root": "CodingKit/tools/windows-automation/visio-mcp",
+    "requirements": "requirements-windows.txt",
+    "minimumPython": "3.10",
+    "pythonEnvVar": "VISIO_MCP_PYTHON",
+    "module": "visio_mcp",
+    "packageInstall": [
+      "--disable-pip-version-check",
+      "-e",
+      "."
+    ],
+    "serverArgs": [
+      "-m",
+      "visio_mcp",
+      "server"
+    ],
+    "env": {
+      "VISIO_MCP_ROOT": "${componentRoot}",
+      "VISIO_MCP_OUTPUT_ROOTS": "dist;test-results;generated"
+    }
+  },
+  "codex": {
+    "serverName": "visio-mcp",
+    "startupTimeoutSec": 30,
+    "toolTimeoutSec": 120
+  },
+  "doctor": {
+    "args": [
+      "-m",
+      "visio_mcp",
+      "doctor",
+      "--json"
+    ]
+  },
+  "verify": {
+    "Smoke": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ]
+    ],
+    "Full": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      [
+        "tools/benchmark.py",
+        "--renderer",
+        "mock",
+        "--iterations",
+        "30"
+      ]
+    ],
+    "Release": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      [
+        "tools/benchmark.py",
+        "--renderer",
+        "mock",
+        "--iterations",
+        "30"
+      ],
+      [
+        "tools/visio_smoke.py",
+        "--visible"
+      ],
+      [
+        "tools/visio_smoke.py",
+        "--input",
+        "examples/generic-dual-loop-actuator-control.json"
+      ]
+    ]
+  },
+  "security": {
+    "allowArbitraryShell": false,
+    "allowMacros": false,
+    "visibleEditingRequiresExplicitProfile": true,
+    "allowedOutputRoots": [
+      "dist",
+      "test-results",
+      "generated"
+    ]
+  },
+  "outputs": [
+    "vsdx",
+    "png",
+    "svg",
+    "pdf",
+    "quality.json",
+    "inspection.json"
+  ]
+}

@@ -1,0 +1,54 @@
+name: Governance / 治理变更
+description: 提议 Git、Skill、Plugin、CI 或发布治理规则变更 / Propose a repository governance change
+title: "[Governance]: "
+labels: ["type:governance", "status:needs-triage"]
+body:
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: 提交前检查 / Preflight
+      options:
+        - label: 我已检查现有标准、决策记录和开放 Issue。 / I reviewed current standards, decisions, and open Issues.
+          required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: 当前缺口 / Current gap
+      description: 哪个规则缺失、冲突或无法执行？请给出证据。
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_rule
+    attributes:
+      label: 建议规则 / Proposed rule
+      description: 写出可重复执行、可审查的规范文本。
+    validations:
+      required: true
+  - type: textarea
+    id: lifecycle_impact
+    attributes:
+      label: 生命周期影响 / Lifecycle impact
+      description: 哪些 source、generated package、submodule、runtime、hook 或 CI 环节受影响？
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: 门禁与验证 / Gates and verification
+      description: 哪些规则可由 CLI、lint、Hook 或 CI 确定性检查？
+    validations:
+      required: true
+  - type: textarea
+    id: compatibility
+    attributes:
+      label: 兼容性 / Compatibility
+      description: 迁移、版本、现有仓库和用户工作流会受到什么影响？
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: 回滚 / Rollback
+      description: 如何安全撤销规则、自动化或分发变更？
+    validations:
+      required: true

@@ -2,7 +2,6 @@
  * @file demo.c
  * @brief 实现状态机、直接内存访问通知和受控并发访问。
  * @copyright Copyright (c) 2026 C UserStyle Kit.
- * @version 1.0.0
  * @date 2026-07-15
  * @author C UserStyle Kit
  *

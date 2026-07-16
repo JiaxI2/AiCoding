@@ -2,7 +2,6 @@
  * @file demo_protocol.h
  * @brief 不可信帧、字符串和格式化输出的安全处理接口。
  * @copyright Copyright (c) 2026 C UserStyle Kit.
- * @version 1.0.0
  * @date 2026-07-15
  * @author C UserStyle Kit
  *

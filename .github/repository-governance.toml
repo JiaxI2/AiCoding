@@ -1,5 +1,12 @@
 schema_version = 1
 
+[governance_standard]
+id = "aicoding-git-governance"
+version = "2026.07.16"
+source_url = "https://github.com/JiaxI2/Codex-Skills/blob/main/platform/aicoding-git-governance/references/aicoding-git-governance-standard.md"
+raw_url = "https://raw.githubusercontent.com/JiaxI2/Codex-Skills/main/platform/aicoding-git-governance/references/aicoding-git-governance-standard.md"
+sync_policy = "track-canonical-url"
+
 [project]
 name = "AiCoding"
 repository_url = "https://github.com/JiaxI2/AiCoding.git"
@@ -39,6 +46,18 @@ issues = "https://github.com/JiaxI2/AiCoding/issues"
 contributing = "./CONTRIBUTING.md"
 security = "./SECURITY.md"
 license = "./LICENSE"
+
+[issues]
+enabled = true
+profile = "managed-lifecycle"
+templates_directory = ".github/ISSUE_TEMPLATE"
+label_manifest = ".github/issue-labels.json"
+workflow = ".github/workflows/issue-governance.yml"
+allow_blank = false
+required_label_axes = ["type", "area", "priority", "status"]
+closure_requires_resolution = true
+closure_requires_summary = true
+auto_close_stale = false
 
 [changelog]
 enabled = true
@@ -85,6 +104,18 @@ validate_release_notes = true
 github_generated_release_notes = false
 hooks_path = ".githooks"
 lint_command = "bin/aicoding.exe governance lint --json"
+
+[architecture]
+enabled = true
+principle = "lower-must-not-depend-on-or-observe-upper"
+layer_order = ["runtime", "capability", "integration", "platform"]
+dependency_rule = "higher-rank-may-depend-on-equal-or-lower-rank"
+dependency_policy = "config/dependency-governance.json"
+dependency_validator = "bin/aicoding.exe governance dependencies --json"
+reserved_platform_namespace = "aicoding"
+mcp_workflow_prompts = "forbidden"
+readme_version_surface = "badges-only"
+version_badge_policy = "config/dependency-governance.json#versionVisibility.readmeBadges"
 
 [github_about]
 require_bilingual = true

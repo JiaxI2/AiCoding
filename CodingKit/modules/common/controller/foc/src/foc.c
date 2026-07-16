@@ -1,6 +1,6 @@
 /**
  * @file foc.c
- * @brief v1.0-flat VF/IF FOC 控制器实现。
+ * @brief VF/IF FOC 控制器实现。
  * @author HU JIAXUAN
  *
  */
@@ -247,7 +247,7 @@ static bool foc_update_svpwm(Foc *controller)
 }
 
 /**
- * @brief 初始化 v1.0-flat FOC 控制器对象。
+ * @brief 初始化 FOC 控制器对象。
  * @param[out] controller FOC 控制器对象；不能为空。
  * @return 初始化成功返回 true；controller 为空返回 false。
  */
@@ -345,7 +345,7 @@ bool foc_current_offset_set(Foc *controller, FocPhase offset)
 }
 
 /**
- * @brief 执行一次 v1.0-flat FOC 控制循环。
+ * @brief 执行一次 FOC 控制循环。
  * @param[in,out] controller FOC 控制器对象；不能为空。
  * @return duty 输出有效返回 true；输入非法、模式非法或 SVPWM 更新失败返回 false。
  */

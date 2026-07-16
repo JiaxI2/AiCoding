@@ -86,7 +86,7 @@ def main() -> int:
         json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     lines = [
-        "# v1.6 no-compile 验证报告",
+        "# PID no-compile 验证报告",
         "",
         f"- Passed: {passed}",
         f"- Failed: {failed}",

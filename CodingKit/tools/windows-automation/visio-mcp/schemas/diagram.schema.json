@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://visio-mcp.local/schemas/diagram.schema.json",
+  "title": "Visio Diagram IR",
+  "$defs": {
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    }
+  },
+  "type": "object",
+  "required": ["schemaVersion", "document", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "document": {
+      "type": "object",
+      "required": ["id", "title"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-zA-Z0-9._-]+$"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 160},
+        "page": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width": {"type": "number", "minimum": 4, "maximum": 100},
+            "height": {"type": "number", "minimum": 4, "maximum": 100},
+            "orientation": {"enum": ["landscape", "portrait"]},
+            "margin": {"type": "number", "minimum": 0.1, "maximum": 3}
+          }
+        },
+        "theme": {"type": "string", "default": "visio-default"},
+        "styleProfile": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9._-]+$",
+          "default": "engineering-standard"
+        },
+        "typography": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fontFamily": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "default": "SimSun"
+            },
+            "latinFontFamily": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "asianFontFamily": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "mathFontFamily": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80
+            },
+            "fontSizePt": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 36
+            },
+            "mathFontSizePt": {
+              "type": "number",
+              "minimum": 6,
+              "maximum": 36
+            },
+            "nodeTextBlockWidthRatio": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 0.9,
+              "default": 0.8
+            },
+            "nodeTextBlockHeightRatio": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 0.9,
+              "default": 0.8
+            }
+          }
+        },
+        "appearance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pageBackgroundColor": {"$ref": "#/$defs/color"},
+            "textColor": {"$ref": "#/$defs/color"},
+            "nodeLineColor": {"$ref": "#/$defs/color"},
+            "nodeFillColor": {"$ref": "#/$defs/color"},
+            "lineWeightPt": {
+              "type": "number",
+              "minimum": 0.25,
+              "maximum": 4
+            },
+            "nodeLineWeightPt": {
+              "type": "number",
+              "minimum": 0.25,
+              "maximum": 4
+            },
+            "connectorLineColor": {"$ref": "#/$defs/color"},
+            "connectorLineWeightPt": {
+              "type": "number",
+              "minimum": 0.25,
+              "maximum": 4
+            },
+            "nodeCornerRadiusIn": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "layout": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "engine": {"enum": ["layered", "grid", "manual"]},
+            "direction": {"enum": ["TB", "LR", "BT", "RL"]},
+            "nodeGap": {"type": "number", "minimum": 0.1, "maximum": 5},
+            "layerGap": {"type": "number", "minimum": 0.1, "maximum": 8},
+            "compact": {"type": "boolean", "default": false},
+            "uniformNodeSize": {"type": "boolean", "default": true},
+            "nodeWidth": {"type": "number", "minimum": 0.8, "maximum": 30},
+            "nodeHeight": {"type": "number", "minimum": 0.5, "maximum": 20}
+          }
+        }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": {
+        "type": "object",
+        "required": ["id", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-zA-Z0-9._-]+$"},
+          "text": {"type": "string", "maxLength": 2000},
+          "type": {
+            "enum": ["process", "component", "database", "decision", "junction", "actor", "group", "note"]
+          },
+          "layer": {"type": "integer", "minimum": 0, "maximum": 100},
+          "order": {"type": "integer", "minimum": 0, "maximum": 10000},
+          "x": {"type": "number"},
+          "y": {"type": "number"},
+          "width": {"type": "number", "minimum": 0.3, "maximum": 30},
+          "height": {"type": "number", "minimum": 0.2, "maximum": 20},
+          "style": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9._-]+$",
+            "maxLength": 80
+          },
+          "fontFamily": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "latinFontFamily": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "asianFontFamily": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "fontRole": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9._-]+$",
+            "maxLength": 80
+          },
+          "fontSizePt": {
+            "type": "number",
+            "minimum": 6,
+            "maximum": 36
+          },
+          "fontWeight": {
+            "enum": ["regular", "bold"]
+          },
+          "fontStyle": {
+            "enum": ["normal", "italic"]
+          },
+          "textColor": {"$ref": "#/$defs/color"},
+          "lineColor": {"$ref": "#/$defs/color"},
+          "fillColor": {"$ref": "#/$defs/color"},
+          "lineWeightPt": {
+            "type": "number",
+            "minimum": 0.25,
+            "maximum": 4
+          },
+          "cornerRadiusIn": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "textBlockWidthRatio": {
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 0.9
+          },
+          "textBlockHeightRatio": {
+            "type": "number",
+            "minimum": 0.5,
+            "maximum": 0.9
+          },
+          "caption": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "captionFontSizePt": {
+            "type": "number",
+            "minimum": 6,
+            "maximum": 36
+          },
+          "captionFontWeight": {
+            "enum": ["regular", "bold"]
+          },
+          "captionFontStyle": {
+            "enum": ["normal", "italic"]
+          },
+          "captionSide": {
+            "enum": ["auto", "top", "bottom", "left", "right"],
+            "default": "auto"
+          },
+          "captionPosition": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.5
+          },
+          "captionOffset": {
+            "type": "number",
+            "minimum": 0.08,
+            "maximum": 3,
+            "default": 0.1
+          },
+          "sizeClass": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9._-]+$",
+            "maxLength": 80
+          },
+          "data": {"type": "object"}
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "maxItems": 3000,
+      "items": {
+        "type": "object",
+        "required": ["id", "from", "to"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-zA-Z0-9._-]+$"},
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "label": {"type": "string", "maxLength": 300},
+          "type": {"enum": ["directed", "bidirectional", "association", "dependency"]},
+          "style": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9._-]+$",
+            "maxLength": 80
+          },
+          "sourcePort": {
+            "enum": ["auto", "left", "right", "top", "bottom"],
+            "default": "auto"
+          },
+          "targetPort": {
+            "enum": ["auto", "left", "right", "top", "bottom"],
+            "default": "auto"
+          },
+          "sourcePortPosition": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.5
+          },
+          "targetPortPosition": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.5
+          },
+          "routing": {
+            "enum": ["orthogonal", "straight"],
+            "default": "orthogonal"
+          },
+          "labelSide": {
+            "enum": ["auto", "above", "below", "left", "right"],
+            "default": "auto"
+          },
+          "labelOffset": {
+            "type": "number",
+            "minimum": 0.08,
+            "maximum": 3,
+            "default": 0.22
+          },
+          "labelPosition": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "default": 0.5
+          },
+          "fontFamily": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "latinFontFamily": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "asianFontFamily": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "fontRole": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9._-]+$",
+            "maxLength": 80
+          },
+          "fontSizePt": {
+            "type": "number",
+            "minimum": 6,
+            "maximum": 36
+          },
+          "fontWeight": {
+            "enum": ["regular", "bold"]
+          },
+          "fontStyle": {
+            "enum": ["normal", "italic"]
+          },
+          "textColor": {"$ref": "#/$defs/color"},
+          "lineColor": {"$ref": "#/$defs/color"},
+          "lineWeightPt": {
+            "type": "number",
+            "minimum": 0.25,
+            "maximum": 4
+          }
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "members"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "label": {"type": "string"},
+          "members": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+        }
+      }
+    },
+    "metadata": {"type": "object"}
+  }
+}

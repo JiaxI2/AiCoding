@@ -4,8 +4,8 @@
 公开高级样例、139 条规则目录、VS Code 风格 snippets、lint、可读性摘要、双编译器门禁和行为测试
 连成闭环。
 
-当前版本已作为 AiCoding 管理的确定性外部工具集成在 `CodingKit/tools/c-userstyle-kit`，
-用户入口由既有 `aicoding skill c99-standard-c` 路由统一提供。
+当前版本保持为平台无关的确定性外部工具；上层 registry 与 C99 Skill binding 负责选择性集成，
+本 Kit 不感知具体平台命令、产品命名空间或运行时安装位置。
 
 ## 产物
 
@@ -159,4 +159,4 @@ Linux/macOS：
 - [需求追踪](docs/spec/TRACEABILITY.md)
 - [验证报告](docs/VERIFICATION_REPORT.md)
 
-原 PDF、规范化 Markdown 与 raw 转换件按用户授权作为 C Kit 的正式参考资产随 AiCoding 发布。
+原 PDF、规范化 Markdown 与 raw 转换件按用户授权作为 C Kit 的正式参考资产随受管发行包发布。

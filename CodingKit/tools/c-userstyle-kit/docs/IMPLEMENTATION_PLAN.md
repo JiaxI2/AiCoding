@@ -1,4 +1,4 @@
-# 当前实现与 AiCoding 集成结果
+# 当前实现与平台集成结果
 
 ## 已实现的独立 Kit
 
@@ -23,10 +23,10 @@
 
 通过标准见 `README.md` 和 `docs/spec/CHECKLIST.md`。
 
-## AiCoding 集成结果
+## 平台集成结果
 
 1. Kit 作为自包含 Go module 纳入 `CodingKit/tools/c-userstyle-kit`，由 Kit registry 登记。
-2. 既有 `aicoding skill c99-standard-c` 是唯一用户入口，没有建立平行命令体系。
+2. 上层 C99 Skill binding 提供统一用户入口，本 Kit 不建立平台专属命令体系。
 3. Go adapter 提供 `fast`/`full`、外部 target、overlay、timings 与统一 JSON 报告。
 4. C Kit fast verify 和完整资产/version 检查进入全局 Smoke/Full/Release 测试。
 5. `CodingKit/agents/skills`、生成插件、Marketplace 与插件缓存均未修改。

@@ -19,6 +19,18 @@ AiCoding does not own canonical skill source. `CodingKit/agents/skills` is a rea
 
 Plugin runtime state is managed through supported install/update/verify flows. Do not edit Codex plugin cache directly and do not copy CodingKit asset directories into plugin packages.
 
+## Dependency Direction Boundary
+
+AiCoding is the composition root. It may register and operate lower-level Kits, Skills and MCP components; those capabilities must not depend on or observe AiCoding.
+
+```text
+platform -> integration -> capability -> runtime
+```
+
+Product namespaces are reserved for the upper layers. A generic capability keeps domain names, receives runtime configuration through its manifest, and exposes no platform workflow prompt. Stable asset identities do not include versions; versions remain in metadata, documentation, changelog and release authority surfaces.
+
+The executable contract is `config/dependency-governance.json`; `bin/aicoding.exe governance dependencies --json` validates registry coverage, dependency edges, namespace leakage, Skill/MCP responsibility, version opacity and README badge authority.
+
 ## External Standalone Skill Chain
 
 GitHub-sourced standalone Skills use nested Git submodules rather than copied source:

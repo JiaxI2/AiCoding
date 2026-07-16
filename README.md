@@ -1,9 +1,9 @@
 # AiCoding
 
 [![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=release)](https://github.com/JiaxI2/AiCoding/releases/latest)
-[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/)
-[![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://learn.microsoft.com/powershell/)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/go1.22)
+[![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.10/whatsnew/3.10.html)
 [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
 [![clang-format](https://img.shields.io/badge/clang--format-17.0.2-5C2D91?logo=llvm&logoColor=white)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
 [![C UserStyle Kit](https://img.shields.io/badge/C%20UserStyle%20Kit-1.2.0-00599C?logo=c&logoColor=white)](docs/guides/C99_STANDARD_C_SKILL.md)
@@ -32,6 +32,7 @@ AiCoding 使用仓库内置 Git Governance Standard。
 
 - commit type taxonomy：`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`。
 - branch naming and environment mapping：`main`, `develop`, `feature`, `test`, `release`, `hotfix`。
+- Issue managed lifecycle：使用结构化表单、`type/area/priority/status/resolution` label 轴和人工确认的关闭证据；不按 stale 时间自动关闭。
 - Release typed notes：发布说明按主类型汇总，并由 `.github/RELEASE_TEMPLATE.md` 和 `bin/aicoding.exe verify release-notes --json` 验证。
 
 ## 快速开始
@@ -77,6 +78,7 @@ User / Agent
 | C99 / C UserStyle Kit | [docs/guides/C99_STANDARD_C_SKILL.md](docs/guides/C99_STANDARD_C_SKILL.md) |
 | 官方测试 | [docs/operations/testing/GLOBAL_TEST_PLAN.md](docs/operations/testing/GLOBAL_TEST_PLAN.md) |
 | PowerShell 当前边界 | [docs/architecture/POWERSHELL_BOUNDARY.md](docs/architecture/POWERSHELL_BOUNDARY.md) |
+| Issue governance | [docs/governance/ISSUE_GOVERNANCE.md](docs/governance/ISSUE_GOVERNANCE.md) |
 | Release governance overlay | [docs/governance/RELEASE_GOVERNANCE_OVERLAY.md](docs/governance/RELEASE_GOVERNANCE_OVERLAY.md) |
 | Tag policy | [docs/governance/TAGGING_POLICY.md](docs/governance/TAGGING_POLICY.md) |
 | Release policy | [docs/governance/RELEASE_POLICY.md](docs/governance/RELEASE_POLICY.md) |

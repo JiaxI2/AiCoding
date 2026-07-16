@@ -1,0 +1,85 @@
+name: Bug / 缺陷
+description: 报告可复现的错误、回归或不符合预期的行为 / Report a reproducible defect or regression
+title: "[Bug]: "
+labels: ["type:bug", "status:needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请提供最小、可验证的事实。安全漏洞请使用仓库安全渠道，不要创建公开 Issue。
+        Provide the smallest verifiable facts. Use the repository security channel for vulnerabilities.
+  - type: checkboxes
+    id: existing
+    attributes:
+      label: 提交前检查 / Preflight
+      options:
+        - label: 我已搜索现有 Issue，未发现相同问题。 / I searched existing Issues and found no duplicate.
+          required: true
+        - label: 这不是需要私密报告的安全漏洞。 / This is not a security vulnerability requiring private disclosure.
+          required: true
+  - type: textarea
+    id: current_behavior
+    attributes:
+      label: 当前行为 / Current behavior
+      description: 实际发生了什么？请包含准确错误文本。
+    validations:
+      required: true
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: 预期行为 / Expected behavior
+      description: 根据文档、契约或既有行为，本应发生什么？
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 最小复现 / Minimal reproduction
+      description: 列出从干净状态开始的命令、输入和步骤。
+      placeholder: |
+        1. 环境与前置条件
+        2. 执行命令或操作
+        3. 观察到的结果
+    validations:
+      required: true
+  - type: dropdown
+    id: impact
+    attributes:
+      label: 影响建议 / Suggested impact
+      description: 维护者会在 triage 时确认 priority label。
+      options:
+        - P0 - 安全紧急事件、生产事故或发布阻塞
+        - P1 - 关键功能不可用或高影响回归
+        - P2 - 正常优先级缺陷
+        - P3 - 低影响或边缘场景
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境 / Environment
+      description: OS、版本、branch/commit、工具链、配置及相关硬件。
+      value: |
+        - OS:
+        - Version / commit:
+        - Toolchain:
+        - Configuration:
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据 / Evidence
+      description: 日志、截图、最小仓库或失败测试；请移除凭据和隐私信息。
+  - type: textarea
+    id: done_condition
+    attributes:
+      label: 完成条件 / Done condition
+      description: 哪个可观察结果或测试能够证明问题已解决？
+    validations:
+      required: true
+  - type: textarea
+    id: traceability
+    attributes:
+      label: 关联信息 / Traceability
+      description: 相关 PR、commit、release、decision 或 Issue 链接。

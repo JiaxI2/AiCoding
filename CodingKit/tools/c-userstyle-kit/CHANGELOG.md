@@ -11,9 +11,10 @@
 
 ### Changed
 
-- 以自包含 Go module 形式集成到 AiCoding `CodingKit/tools`，并由既有 C99 Skill 路由提供快速验证。
-- PDF、规范化 Markdown 与 raw 转换件按用户授权作为正式参考资产随 AiCoding 发布。
+- 保持自包含 Go module，并通过上层 registry 与 C99 Skill binding 提供快速验证。
+- PDF、规范化 Markdown 与 raw 转换件按用户授权作为正式参考资产随受管发行包发布。
 - 未提供工号时不再生成 `@employee_id`；源码修改历史默认禁用，由 Git 和本文件记录。
+- 源码文件头不再写资产 `@version`；版本仅由 manifest、资产文档、本文件和 Tag/Release 权威面承载。
 - 静态函数前置声明保持裸原型，完整函数注释放在定义处。
 - 黄金 Demo 增加编号控制流和领域意图注释，高级规则覆盖样例继续对最终用户可见。
 

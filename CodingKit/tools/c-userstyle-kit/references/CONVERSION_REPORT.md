@@ -49,4 +49,4 @@ uv run --with pdfplumber==0.11.7 python ./tools/pdf-reference/verify_reference.p
 
 ## 分发状态
 
-PDF、原始 Markdown 和规范化 Markdown 按用户授权作为 C Kit 的正式参考资产随 AiCoding 发布。
+PDF、原始 Markdown 和规范化 Markdown 按用户授权作为 C Kit 的正式参考资产随受管发行包发布。

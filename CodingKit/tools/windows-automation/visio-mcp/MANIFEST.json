@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "visio-mcp",
+  "name": "Visio MCP",
+  "version": "0.1.0",
+  "owner": "Visio MCP maintainers",
+  "runtime": "python-venv",
+  "transport": "stdio",
+  "platforms": [
+    "windows"
+  ]
+}
