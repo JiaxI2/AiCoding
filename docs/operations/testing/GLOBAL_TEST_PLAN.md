@@ -16,7 +16,7 @@
 
 ## 2. 测试原则
 
-- **官方入口统一在 Go CLI**：`bin\aicoding.exe test full --json`、`bin\aicoding.exe test release --json` 和 `bin\aicoding.exe test latest`。
+- **官方入口统一在 Go CLI**：`bin\aicoding.exe test --profile Smoke|Full|Release --json` 和 `bin\aicoding.exe test latest`。
 - **所有命令必须有超时**：测试驱动使用 `context.WithTimeout`，禁止无限等待。
 - **优先非破坏性测试**：默认只跑 plan/check/gate/export，不直接修改用户全局状态。
 - **结果可追溯**：每个用例保留原始 stdout/stderr、耗时、退出码、判定依据。
@@ -29,10 +29,10 @@
 | 层级 | 说明 | 代表用例 |
 |---|---|---|
 | L0 静态治理 | 不执行仓库命令，只检查文件、配置、文档、registry | README、`.gitattributes`、kit registry、C99 skill config |
-| L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap、smoke、C99 status/templates/verify |
-| L2 功能聚合 | 执行功能域 gate | ci、docsync、governance、export、lifecycle plan |
+| L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap、`test --profile Smoke`、C99 status/templates/verify |
+| L2 功能门禁 | 执行唯一 Registry 中的功能域 gate | docsync、governance、export、lifecycle plan |
 | L3 并发/一致性 | 并发执行只读命令，或 race 检查 | `go test -race`、并发 C99 status/templates |
-| L4 发布门禁 | Full/Release/fresh-clone gate | full、release gate、fresh-clone Release |
+| L4 发布门禁 | Release profile 与 fresh-clone leaf probe | Release profile、fresh-clone Full/Release |
 
 ## 4. 测试数据
 
@@ -61,7 +61,7 @@
 
 - ENV required 全部通过。
 - bootstrap 成功生成 `bin/aicoding.exe`。
-- `smoke --json` 成功。
+- `test --profile Smoke --json` 成功。
 - C99 status/templates 与 C UserStyle Kit fast verify 成功。
 - README/COMMANDS/C99 文档存在且包含必要入口。
 - Git hooks/repo-text 至少可执行或给出明确失败原因。
@@ -80,8 +80,8 @@
 ### 5.3 Release 通过标准
 
 - Full 全部通过。
-- `full --json` 成功。
-- `release gate --json` 成功。
+- `test --profile Full --json` 成功。
+- `test --profile Release --json` 成功。
 - fresh-clone Release 路径成功，或因网络/远程访问失败产生可解释 WARN。
 - release notes/tag policy/release policy 对齐检查通过。
 

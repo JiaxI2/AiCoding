@@ -30,9 +30,27 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 		}
 		seen[testCase.ID] = true
 	}
-	for _, id := range []string{"ENV-001", "GO-001", "FULL-001", "REL-001"} {
+	for _, id := range []string{"ENV-001", "GO-001", "GIT-009", "FRESH-001", "FRESH-002", "REL-002"} {
 		if !seen[id] {
 			t.Fatalf("registry is missing %s", id)
+		}
+	}
+	for _, removed := range []string{"FULL-001", "REL-001"} {
+		if seen[removed] {
+			t.Fatalf("registry still contains recursive aggregate case %s", removed)
+		}
+	}
+
+	for _, testCase := range Registry(cfg) {
+		if len(testCase.Command) < 2 || !strings.Contains(strings.ToLower(filepath.Base(testCase.Command[0])), "aicoding") {
+			continue
+		}
+		subcommand := strings.ToLower(testCase.Command[1])
+		if subcommand == "smoke" || subcommand == "ci" || subcommand == "full" {
+			t.Fatalf("%s recursively calls compatibility aggregate: %s", testCase.ID, strings.Join(testCase.Command, " "))
+		}
+		if subcommand == "release" && len(testCase.Command) > 2 && strings.EqualFold(testCase.Command[2], "gate") {
+			t.Fatalf("%s recursively calls release gate: %s", testCase.ID, strings.Join(testCase.Command, " "))
 		}
 	}
 

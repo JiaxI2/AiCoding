@@ -272,7 +272,7 @@ func Registry(cfg Config) []TestCase {
 		{ID: "BOOT-001", Category: "BOOTSTRAP", Title: "bootstrap 构建 Go CLI", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "run", "./cmd/aicoding", "bootstrap", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "BOOT-002", Category: "BOOTSTRAP", Title: "CLI bootstrap 基础可用", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "bootstrap", "--json"}, ExpectJSON: true},
 
-		{ID: "GO-001", Category: "GO", Title: "全仓 Go 单元测试", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "test", "./..."}, TimeoutKind: "long"},
+		{ID: "GO-001", Category: "GO", Title: "全仓 Go 单元测试", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "test", "./..."}, TimeoutKind: "long"},
 		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "test", "-race", "./..."}, TimeoutKind: "long"},
 		{ID: "GO-003", Category: "GO", Title: "go vet 基础检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "vet", "./..."}, TimeoutKind: "long"},
 		{ID: "GO-004", Category: "GO", Title: "CLI 并发只读调用", Severity: Required, Profiles: []string{"full", "release"}, Kind: "concurrent", TimeoutKind: "normal", ExpectJSON: true},
@@ -285,8 +285,9 @@ func Registry(cfg Config) []TestCase {
 		{ID: "C99-006", Category: "C99_SKILL", Title: "C99 排除目录策略", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "C99-007", Category: "C99_SKILL", Title: "C Kit 快速验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "verify", "--profile", "fast", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "C99-008", Category: "C99_SKILL", Title: "C Kit 资产与参考完整性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "SKILL-001", Category: "SKILL", Title: "全部启用 Skill Smoke 验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "verify", "--all", "--profile", "Smoke", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
-		{ID: "DOC-001", Category: "DOCSYNC", Title: "DocSync CI", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "docsync", "ci", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "DOC-001", Category: "DOCSYNC", Title: "DocSync CI", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "docsync", "ci", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "DOC-002", Category: "DOCSYNC", Title: "DocSync all", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "docsync", "all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "DOC-003", Category: "DOCSYNC", Title: "DocSync release", Severity: Required, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "docsync", "release", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "DOC-004", Category: "DOCSYNC", Title: "文档索引一致性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
@@ -297,9 +298,12 @@ func Registry(cfg Config) []TestCase {
 		{ID: "LIFE-004", Category: "LIFECYCLE", Title: "lifecycle update plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "update", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "LIFE-005", Category: "LIFECYCLE", Title: "lifecycle uninstall plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "uninstall", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "LIFE-006", Category: "LIFECYCLE", Title: "lifecycle rollback 入口", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "rollback", "--last", "--json"}, ExpectJSON: true},
+		{ID: "LIFE-007", Category: "LIFECYCLE", Title: "kit lifecycle 结构验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "kit", "verify", "--all", "--profile", "Lifecycle", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+
+		{ID: "MCP-001", Category: "MCP", Title: "MCP registry inventory", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "mcp", "list", "--json"}, ExpectJSON: true},
 
 		{ID: "EXP-001", Category: "EXPORT", Title: "export zip", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "export", "--all", "--zip", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "FRESH-001", Category: "FRESH_CLONE", Title: "fresh-clone Smoke", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "fresh-clone", "--profile", "Smoke", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "FRESH-001", Category: "FRESH_CLONE", Title: "fresh-clone Full", Severity: WarnOnly, Profiles: []string{"full"}, Kind: "command", Command: []string{bin, "fresh-clone", "--profile", "Full", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "FRESH-002", Category: "FRESH_CLONE", Title: "fresh-clone Release", Severity: WarnOnly, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "fresh-clone", "--profile", "Release", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
 		{ID: "DOCS-001", Category: "README_DOCS", Title: "README 三件套", Severity: Required, Profiles: allProfiles(), Kind: "static"},
@@ -311,17 +315,18 @@ func Registry(cfg Config) []TestCase {
 		{ID: "GIT-001", Category: "GIT_GOVERNANCE", Title: "工作区状态", Severity: WarnOnly, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"git", "status", "--short"}},
 		{ID: "GIT-002", Category: "GIT_GOVERNANCE", Title: "hooks verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "hooks", "--json"}, ExpectJSON: true},
 		{ID: "GIT-003", Category: "GIT_GOVERNANCE", Title: "repo-text verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "repo-text", "--json"}, ExpectJSON: true},
-		{ID: "GIT-004", Category: "GIT_GOVERNANCE", Title: "release-notes verify", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "verify", "release-notes", "--json"}, ExpectJSON: true},
-		{ID: "GIT-005", Category: "GIT_GOVERNANCE", Title: "governance lint", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "governance", "lint", "--json"}, ExpectJSON: true},
+		{ID: "GIT-004", Category: "GIT_GOVERNANCE", Title: "release-notes verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "release-notes", "--json"}, ExpectJSON: true},
+		{ID: "GIT-005", Category: "GIT_GOVERNANCE", Title: "governance lint", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "lint", "--json"}, ExpectJSON: true},
 		{ID: "GIT-006", Category: "GIT_GOVERNANCE", Title: "tag audit", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "tag", "audit", "--json"}, ExpectJSON: true},
 		{ID: "GIT-007", Category: "GIT_GOVERNANCE", Title: ".gitattributes 策略", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "GIT-008", Category: "GIT_GOVERNANCE", Title: "repository layout", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "layout", "--json"}, ExpectJSON: true},
+		{ID: "GIT-009", Category: "GIT_GOVERNANCE", Title: "reuse governance", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "reuse", "--json"}, ExpectJSON: true},
 
 		{ID: "PWSH-001", Category: "PWSH_BOUNDARY", Title: "PowerShell inventory", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "doctor", "pwsh", "--json"}, ExpectJSON: true},
 		{ID: "PWSH-002", Category: "PWSH_BOUNDARY", Title: "PowerShell budget", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "doctor", "pwsh-budget", "--json"}, ExpectJSON: true},
 		{ID: "PWSH-003", Category: "PWSH_BOUNDARY", Title: "默认入口不经 PowerShell 编排", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "HEALTH-001", Category: "REPO_HEALTH", Title: "doctor performance probes", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "doctor", "perf", "--json"}, ExpectJSON: true},
 
-		{ID: "FULL-001", Category: "RELEASE_GATE", Title: "Full 聚合", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "full", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "REL-001", Category: "RELEASE_GATE", Title: "Release gate", Severity: Required, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "release", "gate", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "REL-002", Category: "RELEASE_GATE", Title: "Release policy 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 	}
 }
@@ -899,18 +904,24 @@ func checkTaskfileGoRoutes(repo string) error {
 	norm := normalizeTaskfileText(string(b))
 	checks := map[string][]string{
 		"smoke": {
+			"aicoding.exe test --profile smoke --json",
+			"aicoding test --profile smoke --json",
 			"aicoding.exe smoke --json",
 			"aicoding smoke --json",
 			"aicoding.exe ci --profile smoke --json",
 			"aicoding ci --profile smoke --json",
 		},
 		"full": {
+			"aicoding.exe test --profile full --json",
+			"aicoding test --profile full --json",
 			"aicoding.exe test full --json",
 			"aicoding test full --json",
 			"aicoding.exe full --json",
 			"aicoding full --json",
 		},
 		"release": {
+			"aicoding.exe test --profile release --json",
+			"aicoding test --profile release --json",
 			"aicoding.exe test release --json",
 			"aicoding test release --json",
 			"aicoding.exe release gate --json",

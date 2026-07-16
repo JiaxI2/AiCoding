@@ -21,9 +21,9 @@
 
 ## Phase 3: 聚合与兼容
 
-- [ ] 删除 Full→Full、Release→Full、CI→Smoke 等递归调用。
-- [ ] `test --profile` 成为正式测试入口。
-- [ ] 旧入口保留一个版本并统一路由。
+- [x] 删除 Full→Full、Release→Full、CI→Smoke 等递归调用。
+- [x] `test --profile` 成为正式测试入口。
+- [x] 旧入口保留一个版本并统一路由。
 
 ## Phase 4: 生命周期
 

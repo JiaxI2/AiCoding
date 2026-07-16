@@ -69,6 +69,47 @@ func resultErr(ok bool, err error) error {
 	return nil
 }
 
+func installPassingTestEngine(t *testing.T) {
+	t.Helper()
+	previousRunTestEngine := runTestEngine
+	t.Cleanup(func() {
+		runTestEngine = previousRunTestEngine
+	})
+	runTestEngine = func(_ context.Context, cfg testengine.Config) (testengine.Report, error) {
+		if err := os.MkdirAll(cfg.Out, 0o755); err != nil {
+			return testengine.Report{}, err
+		}
+		testReport := testengine.Report{
+			Summary: testengine.Summary{
+				Repo:       cfg.Repo,
+				Profile:    cfg.Profile,
+				StartedAt:  "2026-07-09T00:00:00+08:00",
+				EndedAt:    "2026-07-09T00:00:01+08:00",
+				DurationMS: 1,
+				Total:      1,
+				Pass:       1,
+				Conclusion: "PASS",
+			},
+			Results: []testengine.Result{{
+				ID:        "FIX-001",
+				Category:  "FIXTURE",
+				Title:     "fixture",
+				Status:    testengine.Pass,
+				Severity:  testengine.Required,
+				ExitCode:  0,
+				JSONValid: true,
+				Command:   "fixture",
+				Reason:    "command passed",
+				Profile:   cfg.Profile,
+			}},
+		}
+		if err := testengine.Write(cfg.Out, testReport); err != nil {
+			return testReport, err
+		}
+		return testReport, nil
+	}
+}
+
 func writeReleaseFixture(t *testing.T, repo string) {
 	t.Helper()
 	mustWrite(t, filepath.Join(repo, "CHANGELOG.md"), "# CHANGELOG\n\n## [Unreleased]\n\n- **docs**: test fixture.\n")
@@ -190,6 +231,7 @@ func TestGoControlPlaneCommandsUseRealGoImplementations(t *testing.T) {
 		t.Fatalf("git init: %v: %s", err, out)
 	}
 	writeGoControlFixture(t, repo)
+	installPassingTestEngine(t)
 	if out, err := exec.Command("git", "-C", repo, "add", ".").CombinedOutput(); err != nil {
 		t.Fatalf("git add: %v: %s", err, out)
 	}
@@ -242,7 +284,6 @@ func TestGoControlPlaneCommandsUseRealGoImplementations(t *testing.T) {
 			return resultErr(res.OK && res.Command == "full", err)
 		}},
 		{"release gate", func() error {
-			t.Setenv("AICODING_SKIP_FRESH_CLONE", "1")
 			res, err := runReleaseCommand([]string{"gate", "--repo-root", repo, "--json"}, start)
 			return resultErr(res.OK && res.Command == "release gate", err)
 		}},
@@ -325,43 +366,7 @@ func TestC99StandardCSkillVerifyRejectsInvalidArguments(t *testing.T) {
 
 func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 	repo := t.TempDir()
-	previousRunTestEngine := runTestEngine
-	t.Cleanup(func() {
-		runTestEngine = previousRunTestEngine
-	})
-	runTestEngine = func(_ context.Context, cfg testengine.Config) (testengine.Report, error) {
-		if err := os.MkdirAll(cfg.Out, 0o755); err != nil {
-			return testengine.Report{}, err
-		}
-		testReport := testengine.Report{
-			Summary: testengine.Summary{
-				Repo:       cfg.Repo,
-				Profile:    cfg.Profile,
-				StartedAt:  "2026-07-09T00:00:00+08:00",
-				EndedAt:    "2026-07-09T00:00:01+08:00",
-				DurationMS: 1,
-				Total:      1,
-				Pass:       1,
-				Conclusion: "PASS",
-			},
-			Results: []testengine.Result{{
-				ID:        "FIX-001",
-				Category:  "FIXTURE",
-				Title:     "fixture",
-				Status:    testengine.Pass,
-				Severity:  testengine.Required,
-				ExitCode:  0,
-				JSONValid: true,
-				Command:   "fixture",
-				Reason:    "command passed",
-				Profile:   cfg.Profile,
-			}},
-		}
-		if err := testengine.Write(cfg.Out, testReport); err != nil {
-			return testReport, err
-		}
-		return testReport, nil
-	}
+	installPassingTestEngine(t)
 
 	res, err := runTest([]string{"full", "--repo-root", repo, "--runner-timeout-sec", "30", "--json"}, time.Now())
 	if err != nil || !res.OK || res.Command != "test full" {
@@ -390,6 +395,51 @@ func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 
 	if res, err = runTest([]string{"full", "--profile", "Release", "--json"}, time.Now()); err == nil || res.OK || !isUsageError(err) {
 		t.Fatalf("legacy positional profile must not accept --profile override: res=%#v err=%v", res, err)
+	}
+}
+
+func TestCompatibilityTestCommandsRouteDirectlyToEngine(t *testing.T) {
+	repo := t.TempDir()
+	installPassingTestEngine(t)
+	passingEngine := runTestEngine
+	profiles := []string{}
+	runTestEngine = func(ctx context.Context, cfg testengine.Config) (testengine.Report, error) {
+		profiles = append(profiles, cfg.Profile)
+		return passingEngine(ctx, cfg)
+	}
+
+	for _, tc := range []struct {
+		name    string
+		run     func() (report.Result, error)
+		command string
+	}{
+		{"smoke", func() (report.Result, error) {
+			return runSmoke([]string{"--repo-root", repo, "--json"}, time.Now())
+		}, "smoke"},
+		{"ci", func() (report.Result, error) {
+			return runCI([]string{"--profile", "Release", "--repo-root", repo, "--json"}, time.Now())
+		}, "ci"},
+		{"full", func() (report.Result, error) {
+			return runFull([]string{"--repo-root", repo, "--json"}, time.Now())
+		}, "full"},
+		{"release gate", func() (report.Result, error) {
+			return runReleaseCommand([]string{"gate", "--repo-root", repo, "--json"}, time.Now())
+		}, "release gate"},
+	} {
+		res, err := tc.run()
+		if err != nil || !res.OK || res.Command != tc.command {
+			t.Fatalf("%s route failed: res=%#v err=%v", tc.name, res, err)
+		}
+	}
+
+	wantProfiles := []string{"smoke", "release", "full", "release"}
+	if len(profiles) != len(wantProfiles) {
+		t.Fatalf("engine call count = %d, want %d: %#v", len(profiles), len(wantProfiles), profiles)
+	}
+	for index := range wantProfiles {
+		if profiles[index] != wantProfiles[index] {
+			t.Fatalf("engine profile[%d] = %q, want %q", index, profiles[index], wantProfiles[index])
+		}
 	}
 }
 
