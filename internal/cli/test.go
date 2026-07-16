@@ -1,58 +1,17 @@
 package cli
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/testengine"
 )
 
-type globalTestSummary struct {
-	Repo       string `json:"repo"`
-	Profile    string `json:"profile"`
-	StartedAt  string `json:"started_at"`
-	EndedAt    string `json:"ended_at"`
-	DurationMS int64  `json:"duration_ms"`
-	Total      int    `json:"total"`
-	Pass       int    `json:"pass"`
-	Fail       int    `json:"fail"`
-	Warn       int    `json:"warn"`
-	Skip       int    `json:"skip"`
-	Conclusion string `json:"conclusion"`
-}
-
-type globalTestCaseResult struct {
-	ID         string `json:"id"`
-	Category   string `json:"category"`
-	Title      string `json:"title"`
-	Status     string `json:"status"`
-	Severity   string `json:"severity"`
-	DurationMS int64  `json:"duration_ms"`
-	ExitCode   int    `json:"exit_code"`
-	TimedOut   bool   `json:"timed_out"`
-	JSONValid  bool   `json:"json_valid"`
-	Command    string `json:"command"`
-	StdoutFile string `json:"stdout_file,omitempty"`
-	StderrFile string `json:"stderr_file,omitempty"`
-	MetaFile   string `json:"meta_file,omitempty"`
-	Reason     string `json:"reason"`
-	Profile    string `json:"profile"`
-}
-
-type globalTestFileReport struct {
-	Summary globalTestSummary      `json:"summary"`
-	Results []globalTestCaseResult `json:"results"`
-}
+var runTestEngine = testengine.Run
 
 func runTest(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
@@ -116,55 +75,41 @@ func runTestProfile(profile string, args []string, command string, start time.Ti
 		outDir = filepath.Join(repo, outDir)
 	}
 
-	cmdArgs := []string{
-		"run", "./tools/aicoding-global-tester",
-		"--repo", repo,
-		"--profile", profile,
-		"--out", outDir,
-		"--timeout-sec", fmt.Sprint(*timeoutSec),
-		"--long-timeout-sec", fmt.Sprint(*longTimeoutSec),
-		"--concurrency", fmt.Sprint(*concurrency),
-	}
-	if *strictArg {
-		cmdArgs = append(cmdArgs, "--strict")
-	}
-	if *noJSONCheckArg {
-		cmdArgs = append(cmdArgs, "--no-json-check")
+	cfg := testengine.Config{
+		Repo:        repo,
+		Out:         outDir,
+		Profile:     profile,
+		Timeout:     time.Duration(*timeoutSec) * time.Second,
+		LongTimeout: time.Duration(*longTimeoutSec) * time.Second,
+		Concurrency: *concurrency,
+		Strict:      *strictArg,
+		NoJSONCheck: *noJSONCheckArg,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(*runnerTimeoutSec)*time.Second)
 	defer cancel()
 
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd := exec.CommandContext(ctx, "go", cmdArgs...)
-	cmd.Dir = repo
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	runErr := cmd.Run()
+	fileReport, runErr := runTestEngine(ctx, cfg)
 	timedOut := ctx.Err() == context.DeadlineExceeded
 
-	fileReport, loadErr := loadGlobalTestReport(outDir)
 	errs := []string{}
 	if timedOut {
-		errs = append(errs, "global tester process timed out")
+		errs = append(errs, "test engine timed out")
 	}
 	if runErr != nil {
 		errs = append(errs, runErr.Error())
 	}
-	if loadErr != nil {
-		errs = append(errs, loadErr.Error())
-	}
 
 	data := globalTestStandardReport(command, profile, outDir, report.Elapsed(start), fileReport)
-	if timedOut || runErr != nil || loadErr != nil {
+	if timedOut || runErr != nil {
 		data.Findings = append(data.Findings, report.Finding{Level: "ERROR", Message: strings.Join(compactStrings(errs), "; ")})
 	}
 	data.Summary["runner_timed_out"] = timedOut
-	data.Summary["runner_stdout"] = truncateForReport(stdout.String(), 4000)
-	data.Summary["runner_stderr"] = truncateForReport(stderr.String(), 4000)
+	data.Summary["runner_mode"] = "in-process"
+	data.Summary["runner_stdout"] = ""
+	data.Summary["runner_stderr"] = ""
 
-	ok := len(errs) == 0 && fileReport.Summary.Conclusion != "FAIL"
+	ok := len(errs) == 0 && testengine.ExitCode(fileReport, nil) == 0
 	res := report.Result{
 		SchemaVersion: 1,
 		Command:       command,
@@ -194,11 +139,11 @@ func runTestLatest(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("test latest", start, "cannot resolve repo root", nil, err.Error()), err
 	}
 
-	outDir, err := latestGlobalTestDir(repo)
+	outDir, err := testengine.LatestDir(repo)
 	if err != nil {
 		return report.Fail("test latest", start, "cannot locate latest test report", nil, err.Error()), err
 	}
-	fileReport, err := loadGlobalTestReport(outDir)
+	fileReport, err := testengine.Load(outDir)
 	if err != nil {
 		return report.Fail("test latest", start, "cannot read latest test report", nil, err.Error()), err
 	}
@@ -221,62 +166,7 @@ func normalizeTestProfile(value string) (string, string, error) {
 	}
 }
 
-func loadGlobalTestReport(outDir string) (globalTestFileReport, error) {
-	var fileReport globalTestFileReport
-	resultsPath := filepath.Join(outDir, "results.json")
-	raw, err := os.ReadFile(resultsPath)
-	if err != nil {
-		return fileReport, fmt.Errorf("read results.json: %w", err)
-	}
-	if err := json.Unmarshal(raw, &fileReport); err != nil {
-		return fileReport, fmt.Errorf("parse results.json: %w", err)
-	}
-	if fileReport.Summary.Profile == "" {
-		summaryRaw, err := os.ReadFile(filepath.Join(outDir, "summary.json"))
-		if err != nil {
-			return fileReport, fmt.Errorf("read summary.json: %w", err)
-		}
-		if err := json.Unmarshal(summaryRaw, &fileReport.Summary); err != nil {
-			return fileReport, fmt.Errorf("parse summary.json: %w", err)
-		}
-	}
-	return fileReport, nil
-}
-
-func latestGlobalTestDir(repo string) (string, error) {
-	pattern := filepath.Join(repo, "test-results", "aicoding-global-test-*")
-	matches, err := filepath.Glob(pattern)
-	if err != nil {
-		return "", err
-	}
-	type candidate struct {
-		path    string
-		modTime time.Time
-	}
-	candidates := []candidate{}
-	for _, match := range matches {
-		info, err := os.Stat(match)
-		if err != nil || !info.IsDir() {
-			continue
-		}
-		if _, err := os.Stat(filepath.Join(match, "summary.json")); err != nil {
-			continue
-		}
-		candidates = append(candidates, candidate{path: match, modTime: info.ModTime()})
-	}
-	if len(candidates) == 0 {
-		return "", errors.New("no test-results/aicoding-global-test-* report found")
-	}
-	sort.Slice(candidates, func(i, j int) bool {
-		if candidates[i].modTime.Equal(candidates[j].modTime) {
-			return candidates[i].path > candidates[j].path
-		}
-		return candidates[i].modTime.After(candidates[j].modTime)
-	})
-	return candidates[0].path, nil
-}
-
-func globalTestStandardReport(command string, profile string, outDir string, durationMS int64, fileReport globalTestFileReport) report.StandardReport {
+func globalTestStandardReport(command string, profile string, outDir string, durationMS int64, fileReport testengine.Report) report.StandardReport {
 	s := fileReport.Summary
 	status := s.Conclusion
 	if status == "" {
@@ -311,13 +201,13 @@ func globalTestStandardReport(command string, profile string, outDir string, dur
 	}
 }
 
-func globalTestFindings(results []globalTestCaseResult) []report.Finding {
+func globalTestFindings(results []testengine.Result) []report.Finding {
 	findings := []report.Finding{}
 	for _, result := range results {
 		switch result.Status {
-		case "FAIL", "WARN":
+		case testengine.Fail, testengine.Warn:
 			findings = append(findings, report.Finding{
-				Level:    result.Status,
+				Level:    string(result.Status),
 				Message:  result.Reason,
 				Category: result.Category,
 				ID:       result.ID,
@@ -339,12 +229,4 @@ func compactStrings(values []string) []string {
 		out = append(out, value)
 	}
 	return out
-}
-
-func truncateForReport(value string, max int) string {
-	value = strings.TrimSpace(value)
-	if max <= 0 || len(value) <= max {
-		return value
-	}
-	return value[:max] + "..."
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/JiaxI2/AiCoding/internal/cstyle"
 	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/testengine"
 )
 
 func TestRunNewFastPathCommands(t *testing.T) {
@@ -323,7 +325,43 @@ func TestC99StandardCSkillVerifyRejectsInvalidArguments(t *testing.T) {
 
 func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 	repo := t.TempDir()
-	writeFakeGlobalTester(t, repo)
+	previousRunTestEngine := runTestEngine
+	t.Cleanup(func() {
+		runTestEngine = previousRunTestEngine
+	})
+	runTestEngine = func(_ context.Context, cfg testengine.Config) (testengine.Report, error) {
+		if err := os.MkdirAll(cfg.Out, 0o755); err != nil {
+			return testengine.Report{}, err
+		}
+		testReport := testengine.Report{
+			Summary: testengine.Summary{
+				Repo:       cfg.Repo,
+				Profile:    cfg.Profile,
+				StartedAt:  "2026-07-09T00:00:00+08:00",
+				EndedAt:    "2026-07-09T00:00:01+08:00",
+				DurationMS: 1,
+				Total:      1,
+				Pass:       1,
+				Conclusion: "PASS",
+			},
+			Results: []testengine.Result{{
+				ID:        "FIX-001",
+				Category:  "FIXTURE",
+				Title:     "fixture",
+				Status:    testengine.Pass,
+				Severity:  testengine.Required,
+				ExitCode:  0,
+				JSONValid: true,
+				Command:   "fixture",
+				Reason:    "command passed",
+				Profile:   cfg.Profile,
+			}},
+		}
+		if err := testengine.Write(cfg.Out, testReport); err != nil {
+			return testReport, err
+		}
+		return testReport, nil
+	}
 
 	res, err := runTest([]string{"full", "--repo-root", repo, "--runner-timeout-sec", "30", "--json"}, time.Now())
 	if err != nil || !res.OK || res.Command != "test full" {
@@ -472,52 +510,12 @@ func writeGoControlFixture(t *testing.T, repo string) {
 	}
 }
 
-func writeFakeGlobalTester(t *testing.T, repo string) {
-	t.Helper()
-	mustWrite(t, filepath.Join(repo, "go.mod"), "module example.com/global-tester-fixture\n\ngo 1.22\n")
-	mustWrite(t, filepath.Join(repo, "tools", "aicoding-global-tester", "main.go"), `package main
-
-import (
-	"encoding/json"
-	"flag"
-	"os"
-	"path/filepath"
-)
-
-func main() {
-	var repo string
-	var profile string
-	var out string
-	flag.StringVar(&repo, "repo", ".", "")
-	flag.StringVar(&profile, "profile", "full", "")
-	flag.StringVar(&out, "out", "", "")
-	flag.Int("timeout-sec", 180, "")
-	flag.Int("long-timeout-sec", 600, "")
-	flag.Int("concurrency", 4, "")
-	flag.Bool("strict", false, "")
-	flag.Bool("no-json-check", false, "")
-	flag.Parse()
-	if out == "" {
-		out = filepath.Join(repo, "test-results", "aicoding-global-test-fixture")
-	}
-	_ = os.MkdirAll(filepath.Join(out, "logs"), 0o755)
-	summary := map[string]interface{}{"repo": repo, "profile": profile, "started_at": "2026-07-09T00:00:00+08:00", "ended_at": "2026-07-09T00:00:01+08:00", "duration_ms": 1, "total": 1, "pass": 1, "fail": 0, "warn": 0, "skip": 0, "conclusion": "PASS"}
-	report := map[string]interface{}{"summary": summary, "results": []map[string]interface{}{{"id": "FIX-001", "category": "FIXTURE", "title": "fixture", "status": "PASS", "severity": "REQUIRED", "duration_ms": 1, "exit_code": 0, "timed_out": false, "json_valid": true, "command": "fixture", "reason": "command passed", "profile": profile}}}
-	b, _ := json.MarshalIndent(report, "", "  ")
-	_ = os.WriteFile(filepath.Join(out, "results.json"), b, 0o644)
-	s, _ := json.MarshalIndent(summary, "", "  ")
-	_ = os.WriteFile(filepath.Join(out, "summary.json"), s, 0o644)
-	_ = os.WriteFile(filepath.Join(out, "report.md"), []byte("# fixture\n"), 0o644)
-}
-`)
-}
-
 func writeGlobalTestReport(t *testing.T, dir string, profile string, conclusion string, pass int) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Join(dir, "logs"), 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	summary := globalTestSummary{
+	summary := testengine.Summary{
 		Repo:       filepath.Dir(filepath.Dir(dir)),
 		Profile:    profile,
 		StartedAt:  "2026-07-09T00:00:00+08:00",
@@ -527,30 +525,16 @@ func writeGlobalTestReport(t *testing.T, dir string, profile string, conclusion 
 		Pass:       pass,
 		Conclusion: conclusion,
 	}
-	fileReport := globalTestFileReport{Summary: summary, Results: []globalTestCaseResult{{
+	fileReport := testengine.Report{Summary: summary, Results: []testengine.Result{{
 		ID:       "FIX-001",
 		Category: "FIXTURE",
 		Title:    "fixture",
-		Status:   "PASS",
-		Severity: "REQUIRED",
+		Status:   testengine.Pass,
+		Severity: testengine.Required,
 		Reason:   "command passed",
 		Profile:  profile,
 	}}}
-	raw, err := json.MarshalIndent(fileReport, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "results.json"), raw, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	summaryRaw, err := json.MarshalIndent(summary, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "summary.json"), summaryRaw, 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "report.md"), []byte("# fixture\n"), 0o644); err != nil {
+	if err := testengine.Write(dir, fileReport); err != nil {
 		t.Fatal(err)
 	}
 }

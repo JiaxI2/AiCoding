@@ -15,9 +15,9 @@
 
 ## Phase 2: 唯一测试引擎
 
-- [ ] 内聚 global tester 为 `internal/testengine`。
-- [ ] 统一 Smoke/Full/Release Registry、Profile、Timeout、Report、ExitCode。
-- [ ] 保持 JSON/Markdown 报告兼容。
+- [x] 内聚 global tester 为 `internal/testengine`。
+- [x] 统一 Smoke/Full/Release Registry、Profile、Timeout、Report、ExitCode。
+- [x] 保持 JSON/Markdown 报告兼容。
 
 ## Phase 3: 聚合与兼容
 
