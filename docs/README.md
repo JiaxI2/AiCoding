@@ -14,6 +14,8 @@
 
 - [`ARCHITECTURE_OVERVIEW.md`](./ARCHITECTURE_OVERVIEW.md)
 - [`COMMANDS.md`](./COMMANDS.md)
+- [`architecture/KIT_LIFECYCLE_ARCHITECTURE.md`](./architecture/KIT_LIFECYCLE_ARCHITECTURE.md)
+- [`operations/testing/REPORT_SCHEMA.md`](./operations/testing/REPORT_SCHEMA.md)
 
 ## Governance
 

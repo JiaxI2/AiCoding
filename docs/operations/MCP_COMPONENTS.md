@@ -30,20 +30,21 @@ bin\aicoding.exe mcp doctor visio-mcp --json
 先执行 dry-run：
 
 ```powershell
-bin\aicoding.exe mcp install visio-mcp --dry-run --json
-bin\aicoding.exe mcp update visio-mcp --dry-run --json
-bin\aicoding.exe mcp uninstall visio-mcp --dry-run --json
+bin\aicoding.exe lifecycle plan --action install --scope mcp --component visio-mcp --json
+bin\aicoding.exe lifecycle plan --action update --scope mcp --component visio-mcp --json
+bin\aicoding.exe lifecycle plan --action uninstall --scope mcp --component visio-mcp --json
 ```
 
 确认后执行：
 
 ```powershell
-bin\aicoding.exe mcp install visio-mcp --json
-bin\aicoding.exe mcp update visio-mcp --json
-bin\aicoding.exe mcp uninstall visio-mcp --json
+bin\aicoding.exe lifecycle install --scope mcp --component visio-mcp --json
+bin\aicoding.exe lifecycle update --scope mcp --component visio-mcp --json
+bin\aicoding.exe lifecycle uninstall --scope mcp --component visio-mcp --json
 ```
 
-也可以将 component ID 替换为 `--all`，处理 registry 中全部启用的 components。
+也可以使用 `--scope mcp --all`，处理 registry 中全部启用的 components。旧
+`mcp install|update|uninstall` 仅在一个版本的兼容期内保留并输出 `CLI_DEPRECATED`。
 
 生命周期写操作遵守以下所有权规则：
 

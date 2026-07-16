@@ -12,7 +12,8 @@ It is not a Codex Skill, not a plugin, and not a replacement for `bin/aicoding.e
 git diff changed files
   -> path gate
   -> semantic classifier
-  -> PowerShell parameter/ValidateSet check
+  -> Go CLI / test profile / Taskfile / CI command-surface check
+  -> PowerShell specialty parameter/ValidateSet check
   -> JSON policy rule check
   -> Markdown command index check
   -> DOCSYNC-NO-DOC-CHANGE quality check
@@ -77,12 +78,14 @@ DOCSYNC-NO-DOC-CHANGE: no
 
 Implemented first:
 
+- Go CLI, test engine, Taskfile and CI command-surface bindings
+- shared CLI report schema bindings
 - PowerShell script surface checks
 - JSON policy checks
 - Markdown command index checks
 - no-doc marker quality checks
 - doc drift score
-- status/install/verify/test scripts
+- staged/all/ci/release Go checks
 
 Deferred:
 

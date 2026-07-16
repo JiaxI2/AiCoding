@@ -5,13 +5,16 @@
 ## 默认入口
 
 ```powershell
-bin\aicoding.exe smoke --json
-bin\aicoding.exe ci --profile Smoke --json
-bin\aicoding.exe test full --json
-bin\aicoding.exe test release --json
+bin\aicoding.exe doctor --all --json
+bin\aicoding.exe verify --profile Smoke --json
+bin\aicoding.exe test --profile Smoke --json
+bin\aicoding.exe test --profile Full --json
+bin\aicoding.exe test --profile Release --json
 ```
 
-Go CLI 同时拥有 hook、governance、repohealth、DocSync、skill verify、lifecycle、export、fresh-clone 和 C99 C/H style gate。
+Go CLI 同时拥有 lifecycle、product doctor/verify、test engine、release、hook、governance、
+DocSync、skill verify、export、fresh-clone 和 C99 C/H style gate。runtime Skill profile/audit
+脚本只能由显式 lifecycle adapter 或专项人工命令调用。
 
 ## 保留类别
 

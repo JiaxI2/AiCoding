@@ -22,7 +22,10 @@ AiCoding 是本地 AI coding 工作流的平台集成、安装、治理和 Codin
 
 ## 当前架构
 
-Go CLI 是默认控制面，负责 bootstrap、Smoke、CI、官方测试 profile、hook、status、repo text、release notes、tag/release 结构检查、governance lint、DocSync、skill verify、lifecycle、export 和 fresh-clone。
+Go CLI 是唯一正式产品控制面。产品工作流固定为 `bootstrap` → `lifecycle` →
+`doctor --all` / `verify --profile` → `test --profile` → `release verify|gate`。
+领域级 hook、governance、DocSync、Skill、MCP、export 和 fresh-clone 命令仍作为该控制面下的
+子命令或专项诊断存在，不再形成第二套产品入口。
 
 Taskfile 只做短路由，业务逻辑在 Go 的 `internal/*` 包中。PowerShell/Python 只保留专项质量、安全、计划模式（Plan Mode）、外部 skill、tag planning / overlay compatibility 和硬件/工具链专项流程。
 
@@ -39,11 +42,10 @@ AiCoding 使用仓库内置 Git Governance Standard。
 
 ```powershell
 go run ./cmd/aicoding bootstrap --json
-bin\aicoding.exe smoke --json
-bin\aicoding.exe ci --profile Smoke --json
-task smoke
-bin\aicoding.exe test full --json
-bin\aicoding.exe test release --json
+bin\aicoding.exe lifecycle plan --action install --scope all --runtime-profile runtime --json
+bin\aicoding.exe doctor --all --json
+bin\aicoding.exe verify --profile Smoke --json
+bin\aicoding.exe test --profile Smoke --json
 ```
 
 ## 常用入口
@@ -51,22 +53,23 @@ bin\aicoding.exe test release --json
 | 场景 | 命令 | 说明 |
 |---|---|---|
 | 初始化 | `go run ./cmd/aicoding bootstrap --json` | 构建 `bin/aicoding.exe` |
-| 本地 Smoke | `task smoke` | 路由到 `bin/aicoding.exe smoke --json` |
-| CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go 测试和默认聚合门禁 |
-| Full | `task full` | 路由到官方 Full 测试 profile |
-| Release | `task release` | 路由到官方 Release 测试 profile |
+| 生命周期计划 | `bin\aicoding.exe lifecycle plan --action install --all --json` | 默认保持 Kit 范围；跨域使用显式 `--scope all` |
+| 产品诊断 | `task doctor` | 路由到 `doctor --all` |
+| 产品验证 | `task verify` | 路由到 `verify --profile Smoke` |
+| Smoke / Full / Release | `task smoke` / `task full` / `task release` | 路由到唯一 `test --profile` 引擎 |
 | 最近测试报告 | `bin\aicoding.exe test latest` | 查看最近一次官方测试摘要 |
 
 ## 架构图
 
 ```text
 User / Agent
-  -> Taskfile routing
-     -> Go CLI (bin/aicoding.exe)
-        -> runner plans -> smoke / ci
-        -> test profiles -> full / release / latest
-        -> kit registry -> CodingKit assets + skill submodule
-     -> specialty scripts -> quality / safety / Plan Mode / toolchain
+  -> Go CLI
+     -> lifecycle -> Kit / MCP / runtime Skill
+     -> doctor / verify -> shared report schema
+     -> test profiles -> one test engine
+     -> release -> verify / gate
+  -> Taskfile / CI -> short routes to Go CLI
+  -> specialty tools -> quality / safety / Plan Mode / toolchain
 ```
 
 ## 文档索引

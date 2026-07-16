@@ -29,6 +29,11 @@ func TestExecuteHelpAndUsageExitCodes(t *testing.T) {
 	if !strings.Contains(stdout.String(), "Formal product workflow:") || stderr.Len() != 0 {
 		t.Fatalf("unexpected help streams: stdout=%q stderr=%q", stdout.String(), stderr.String())
 	}
+	for _, flag := range []string{"--source-repository PATH", "--standalone-root agents|codex", "--migrate-unmanaged"} {
+		if !strings.Contains(stdout.String(), flag) {
+			t.Fatalf("help must document runtime Skill flag %q", flag)
+		}
+	}
 
 	stdout.Reset()
 	stderr.Reset()

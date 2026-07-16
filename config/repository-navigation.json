@@ -158,12 +158,12 @@
     {
       "intent": "维护 kit 注册表或生命周期",
       "path": "config",
-      "command": "bin/aicoding.exe status --all --json"
+      "command": "bin/aicoding.exe lifecycle status --scope all --json"
     },
     {
       "intent": "运行完整验证",
       "path": "docs/operations",
-      "command": "bin/aicoding.exe test full --json"
+      "command": "bin/aicoding.exe test --profile Full --json"
     },
     {
       "intent": "维护专项工具",

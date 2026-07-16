@@ -19,7 +19,8 @@ bin/aicoding.exe docsync all --json
 bin/aicoding.exe docsync ci --json
 bin/aicoding.exe docsync release --json
 bin/aicoding.exe lifecycle plan --action install --all --json
-bin\aicoding.exe status --all --json
+bin\aicoding.exe doctor --all --json
+bin\aicoding.exe verify --profile Smoke --json
 bin/aicoding.exe lifecycle plan --action update --all --json
 bin\aicoding.exe governance lint --json
 git diff --check

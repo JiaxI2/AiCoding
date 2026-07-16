@@ -79,9 +79,9 @@
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | DOCS-001 | README 三件套 | 检查 `README.md`、`README_CN.md`、`README_EN.md` | 文件存在 | REQUIRED |
-| DOCS-002 | README 架构声明 | 静态搜索 Go CLI/Fast Path/DocSync/skill verify/lifecycle/export/fresh-clone | 关键入口存在 | REQUIRED |
-| DOCS-003 | COMMANDS 命令矩阵 | 检查 `docs/COMMANDS.md` | 包含 bootstrap/smoke/ci/full/release/C99/DocSync/lifecycle/export/fresh-clone | REQUIRED |
-| DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含 Go 默认控制面和 PowerShell boundary | REQUIRED |
+| DOCS-002 | README 架构声明 | 静态搜索 Go CLI/lifecycle/doctor/verify/test/release | README 只展示正式产品入口 | REQUIRED |
+| DOCS-003 | COMMANDS 命令矩阵 | 检查 `docs/COMMANDS.md` | 包含正式产品命令、领域命令和一个版本兼容表 | REQUIRED |
+| DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含唯一 test engine、共享 report 和 PowerShell boundary | REQUIRED |
 | DOCS-005 | C99 skill 文档 | 检查 `docs/guides/C99_STANDARD_C_SKILL.md` | 包含配置边界、C Kit 资产边界和统一 CLI 入口 | REQUIRED |
 
 ## 9. GIT_GOVERNANCE：Git 仓库治理
@@ -104,7 +104,7 @@
 |---|---|---|---|---|
 | PWSH-001 | PowerShell inventory | `bin/aicoding.exe doctor pwsh --json` | 输出当前 PS 文件清单 | WARN |
 | PWSH-002 | PowerShell budget | `bin/aicoding.exe doctor pwsh-budget --json` | 不超预算，或输出超预算明细 | REQUIRED |
-| PWSH-003 | 默认入口不经 PS 编排 | 检查 Taskfile 是否存在 Go-native 默认路由 | Smoke/Full/Release 至少存在 Go CLI 路由；允许变量、Windows/Unix 路径分隔符和拆分 smoke+ci | REQUIRED |
+| PWSH-003 | 默认入口不经 PS 编排 | 检查 Taskfile 是否存在 Go-native 默认路由 | doctor/verify/Smoke/Full/Release 均直达正式 Go CLI；允许变量和 Windows/Unix 路径分隔符 | REQUIRED |
 | HEALTH-001 | doctor performance probes | `bin/aicoding.exe doctor perf --json` | 核心本地探针可执行且输出 JSON | REQUIRED |
 
 ## 11. RELEASE_GATE：Release policy

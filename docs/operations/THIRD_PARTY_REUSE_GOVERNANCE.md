@@ -22,7 +22,7 @@
 
 - `aicoding governance reuse --json` 输出独立证据报告；
 - `skill verify` 同步验证登记配置；
-- pre-commit、`smoke`、`ci`、`full` 与 `release gate` 运行同一门禁；
+- pre-commit 与唯一 `test --profile Smoke|Full|Release` Registry 运行同一门禁；
 - DocSync 将该配置和实现视为风险变更，要求同时更新文档；
 - `reuse-governance` kit 进入既有 lifecycle registry，只记录本地状态，不复制任何外部资产。
 

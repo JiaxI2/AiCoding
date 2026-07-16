@@ -551,11 +551,11 @@ func runStatic(cfg Config, tc TestCase) Result {
 	case "DOCS-001":
 		err = requirePaths(cfg.Repo, "README.md", "README_CN.md", "README_EN.md")
 	case "DOCS-002":
-		err = fileContainsAll(filepath.Join(cfg.Repo, "README.md"), []string{"Go CLI", "DocSync", "skill verify", "lifecycle", "export", "fresh-clone"})
+		err = fileContainsAll(filepath.Join(cfg.Repo, "README.md"), []string{"Go CLI", "lifecycle", "doctor --all", "verify --profile", "test --profile", "release verify|gate"})
 	case "DOCS-003":
-		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"bootstrap", "smoke", "ci", "full", "release", "c99-standard-c", "docsync", "lifecycle", "export", "fresh-clone"})
+		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"正式产品命令", "doctor --all", "verify --profile", "test --profile", "lifecycle", "一个版本的兼容入口"})
 	case "DOCS-004":
-		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"Go CLI", "Full", "Release", "DocSync", "Lifecycle", "PowerShell Boundary"})
+		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"Go CLI", "Doctor", "Verify", "test engine", "DocSync", "PowerShell Boundary"})
 	case "DOCS-005":
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/guides/C99_STANDARD_C_SKILL.md"), []string{"config/skills/c99-standard-c", "skill c99-standard-c", "fmt", "check", "templates"})
 	case "GIT-007":
@@ -796,7 +796,7 @@ func checkDocIndex(repo string) error {
 	// skill is added, renamed, or split.
 	checks := map[string][]string{
 		"README.md":                           {"docs/COMMANDS.md"},
-		"docs/COMMANDS.md":                    {"docsync", "skill verify", "lifecycle", "fresh-clone", "c99-standard-c"},
+		"docs/COMMANDS.md":                    {"doctor --all", "verify --profile", "test --profile", "lifecycle", "fresh-clone", "c99-standard-c"},
 		"docs/guides/C99_STANDARD_C_SKILL.md": {"skill c99-standard-c", "config/skills/c99-standard-c"},
 	}
 	for rel, words := range checks {
@@ -903,29 +903,25 @@ func checkTaskfileGoRoutes(repo string) error {
 	}
 	norm := normalizeTaskfileText(string(b))
 	checks := map[string][]string{
+		"doctor": {
+			"aicoding.exe doctor --all --json",
+			"aicoding doctor --all --json",
+		},
+		"verify": {
+			"aicoding.exe verify --profile smoke --json",
+			"aicoding verify --profile smoke --json",
+		},
 		"smoke": {
 			"aicoding.exe test --profile smoke --json",
 			"aicoding test --profile smoke --json",
-			"aicoding.exe smoke --json",
-			"aicoding smoke --json",
-			"aicoding.exe ci --profile smoke --json",
-			"aicoding ci --profile smoke --json",
 		},
 		"full": {
 			"aicoding.exe test --profile full --json",
 			"aicoding test --profile full --json",
-			"aicoding.exe test full --json",
-			"aicoding test full --json",
-			"aicoding.exe full --json",
-			"aicoding full --json",
 		},
 		"release": {
 			"aicoding.exe test --profile release --json",
 			"aicoding test --profile release --json",
-			"aicoding.exe test release --json",
-			"aicoding test release --json",
-			"aicoding.exe release gate --json",
-			"aicoding release gate --json",
 		},
 	}
 	var missing []string

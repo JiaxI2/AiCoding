@@ -30,33 +30,40 @@ User / Agent
 
 ## Go CLI Control Plane
 
-Go CLI 是默认控制面，提供稳定 `report.Result` JSON。当前默认入口包括：
+Go CLI 是唯一正式产品控制面，提供稳定 `report.Result` JSON 与共享
+`StandardReport`/check schema。正式产品入口只有：
 
 - `bootstrap`；
-- `smoke`；
-- `ci --profile Smoke`；
-- `test full|release|latest`；
-- `hook pre-commit` 和 `hook commit-msg`；
-- `status --all`；
-- `governance lint`；
-- `governance layout`；
-- `governance reuse`；
-- `verify hooks|repo-text|release-notes`；
-- `doctor perf|pwsh|pwsh-budget`；
-- skill 级状态、模板、格式、检查和验证入口；
-- `docsync staged|all|ci|release`；
-- `skill verify --all --profile Smoke|Full|Release`；
-- `lifecycle plan|install|update|uninstall|rollback`；
-- `export --all --zip`；
-- `fresh-clone --profile Smoke|Full|Release`；
-- `full --json`；
+- `lifecycle ...`；
+- `doctor --all`；
+- `verify --profile Smoke|Full|Release`；
+- `test --profile Smoke|Full|Release` 和 `test latest`；
 - `release verify` 和 `release gate`。
+
+Hook、governance、DocSync、Skill、MCP、export、fresh-clone、C99 和专项 doctor/verify
+命令属于领域子命令；旧 `smoke`、`ci`、`full`、位置参数 test、`kit lifecycle`、
+MCP lifecycle 动词和 `status --all` 只保留一个版本并输出 `CLI_DEPRECATED`。
+
+## Single Implementation Authorities
+
+```text
+internal/cli        -> 参数、帮助、兼容路由、退出码
+internal/lifecycle  -> Kit / MCP / runtime Skill 静态 adapter
+internal/repohealth -> product doctor / verify 的确定性检查组合
+internal/testengine -> 唯一 Smoke / Full / Release Registry 与执行器
+internal/report     -> Result / StandardReport / Check / errorKind Schema
+```
+
+`doctor` 只诊断环境和状态；`verify` 只执行静态/结构验证；`test` 独占测试执行；
+`release` 只执行发布结构验证或复用 Release test profile。CI 直接调用
+`test --profile`，不再叠加第二个聚合器。
 
 ## Concurrent Plan Boundary
 
 `internal/runner` 提供可组合并发 Plan。只读检查通过任务 ID 注册到 Plan 中，有界并发执行并保持输出顺序。需要新增、替换或移除检查点时，修改 Plan 注册即可，不改调度器。
 
-写状态、写 ZIP、安装/卸载等有副作用路径保持在对应 Go 包中串行执行。
+写状态、写 ZIP、安装/卸载等有副作用路径保持在对应 Go 包中串行执行。Doctor/Verify
+以及 MCP 子进程使用显式总超时或 context，避免外部工具无限等待。
 
 ## Manifest Contract
 

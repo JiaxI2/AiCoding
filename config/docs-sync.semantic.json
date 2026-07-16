@@ -16,6 +16,10 @@
     "linkDrift": 10
   },
   "publicSurfaces": [
+    "cmd/**/*.go:command",
+    "internal/cli/**/*.go:command",
+    "internal/testengine/**/*.go:profile",
+    "Taskfile.yml:tasks",
     "tools/specialty/**/*.ps1:param",
     "tools/specialty/**/*.ps1:function",
     "config/docs-sync.policy.json:rules",
@@ -24,6 +28,43 @@
     ".github/workflows/**"
   ],
   "docTargets": {
+    "internal/cli/cli.go": [
+      "README.md",
+      "README_CN.md",
+      "README_EN.md",
+      "docs/COMMANDS.md",
+      "docs/ARCHITECTURE_OVERVIEW.md",
+      "CHANGELOG.md"
+    ],
+    "internal/cli/contract.go": [
+      "docs/COMMANDS.md",
+      "docs/operations/testing/REPORT_SCHEMA.md",
+      "CHANGELOG.md"
+    ],
+    "internal/cli/product.go": [
+      "docs/COMMANDS.md",
+      "docs/ARCHITECTURE_OVERVIEW.md",
+      "docs/operations/testing/REPORT_SCHEMA.md",
+      "CHANGELOG.md"
+    ],
+    "internal/testengine/engine.go": [
+      "docs/COMMANDS.md",
+      "docs/operations/testing/GLOBAL_TEST_PLAN.md",
+      "docs/operations/testing/GLOBAL_TEST_CASES.md",
+      "CHANGELOG.md"
+    ],
+    "Taskfile.yml": [
+      "docs/COMMANDS.md",
+      "README.md",
+      "README_CN.md",
+      "README_EN.md",
+      "CHANGELOG.md"
+    ],
+    "config/schemas/cli-report.schema.json": [
+      "docs/operations/testing/REPORT_SCHEMA.md",
+      "docs/COMMANDS.md",
+      "CHANGELOG.md"
+    ],
     "internal/docsync/check.go": [
       "README.md",
       "docs/operations/MAINTENANCE_METHOD.md",

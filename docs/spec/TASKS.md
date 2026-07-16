@@ -39,9 +39,9 @@
 
 ## Phase 6: 文档
 
-- [ ] 收敛 README 三件套和命令文档。
-- [ ] 更新 Architecture、AGENTS、DocSync 和 navigation。
-- [ ] 旧入口仅出现在兼容表和历史决策中。
+- [x] 收敛 README 三件套和命令文档。
+- [x] 更新 Architecture、AGENTS、DocSync 和 navigation。
+- [x] 旧入口仅出现在兼容表和历史决策中。
 
 ## Phase 7: 验收
 

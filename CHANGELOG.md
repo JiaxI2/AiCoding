@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **docs(control-plane)**: README 三件套、COMMANDS、Architecture、Maintenance、AGENTS、Taskfile 与测试文档统一指向 lifecycle/doctor/verify/test/release 正式入口；旧 CLI 只保留在一个版本兼容表或历史决策中，并扩展 DocSync 对 Go CLI、test engine、Taskfile、CI 与 report schema 的语义绑定。
 - **feat(verify)**: 新增带总超时的正式 `doctor --all` 与 `verify --profile Smoke|Full|Release` 产品边界；doctor 将未安装的 worktree-local MCP 作为可操作 warning，verify 只运行确定性静态/结构检查，不递归调用 test engine 或启动 Release 可见工具；未知 JSON 命令保持 stdout-only、`errorKind=usage` 和退出码 `2`。
 - **feat(report)**: 为 `report.Result` 增加兼容的 `errorKind`/validation error 契约，为 `StandardReport`/共享 check 增加 schemaVersion、PASS_WITH_WARNINGS 与统一汇总，并发布 `config/schemas/cli-report.schema.json`。
 - **refactor(cli)**: 正式 `lifecycle` 命名空间新增 `kit|mcp|runtime-skill|all` scope 与 status/doctor/verify，旧 `kit lifecycle` 和 MCP lifecycle 动词路由到同一 adapter 并输出 `CLI_DEPRECATED`；兼容期内未指定 scope 的 `--all` 保持 Kit 语义。

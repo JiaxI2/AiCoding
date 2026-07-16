@@ -14,4 +14,14 @@ Go implementation package ownership and dependency direction.
 ## Rule
 
 Do not create a parallel source of truth outside this domain. Add new items only when they have a distinct lifecycle and owner.
+
+## Product authority packages
+
+| Package | Sole responsibility |
+|---|---|
+| `cli` | command parsing, help, compatibility routing, JSON stdout and exit codes |
+| `lifecycle` | static Kit, MCP and runtime Skill adapter composition |
+| `repohealth` | product doctor and deterministic verify checks |
+| `testengine` | Smoke, Full and Release test registry, execution, timeout and reports |
+| `report` | `Result`, `StandardReport`, shared checks, `errorKind` and schema contract |
 <!-- AICODING:REPOSITORY_MAP:END -->

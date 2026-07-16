@@ -6,7 +6,7 @@
 
 核心问题：
 
-1. **功能是否收敛到 Go CLI 默认控制面**：默认 Smoke/CI/Full/Release 是否不再依赖 PowerShell 编排。
+1. **功能是否收敛到 Go CLI 正式控制面**：lifecycle/doctor/verify/test/release 是否职责清晰，Smoke/Full/Release 是否只由唯一 test engine 执行。
 2. **C 语言 skill 是否可验证风格一致性**：`c99-standard-c` 的 status、templates、fmt/check、C UserStyle Kit fast verify、`.clang-format` 投影与 source-of-truth 是否一致。
 3. **下载安装外部 skill / 创建用户 skill 相关流程是否规范**：kit registry、manifest、lifecycle plan、export、rollback/fresh-clone 路径是否可检查。
 4. **Go 并发是否可靠**：runner 并发计划、race 检查、CLI 并发只读调用是否稳定。
@@ -29,7 +29,7 @@
 | 层级 | 说明 | 代表用例 |
 |---|---|---|
 | L0 静态治理 | 不执行仓库命令，只检查文件、配置、文档、registry | README、`.gitattributes`、kit registry、C99 skill config |
-| L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap、`test --profile Smoke`、C99 status/templates/verify |
+| L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap、doctor、verify、`test --profile Smoke` |
 | L2 功能门禁 | 执行唯一 Registry 中的功能域 gate | docsync、governance、export、lifecycle plan |
 | L3 并发/一致性 | 并发执行只读命令，或 race 检查 | `go test -race`、并发 C99 status/templates |
 | L4 发布门禁 | Release profile 与 fresh-clone leaf probe | Release profile、fresh-clone Full/Release |
@@ -61,6 +61,7 @@
 
 - ENV required 全部通过。
 - bootstrap 成功生成 `bin/aicoding.exe`。
+- `doctor --all --json` 和 `verify --profile Smoke --json` 成功或仅产生可解释 warning。
 - `test --profile Smoke --json` 成功。
 - C99 status/templates 与 C UserStyle Kit fast verify 成功。
 - README/COMMANDS/C99 文档存在且包含必要入口。
@@ -80,8 +81,8 @@
 ### 5.3 Release 通过标准
 
 - Full 全部通过。
-- `test --profile Full --json` 成功。
-- `test --profile Release --json` 成功。
+- `test --profile Full --json` 成功，且不经旧位置参数入口。
+- `test --profile Release --json` 成功，且 Release gate 不递归回调 test CLI。
 - fresh-clone Release 路径成功，或因网络/远程访问失败产生可解释 WARN。
 - release notes/tag policy/release policy 对齐检查通过。
 

@@ -51,10 +51,12 @@ Codex-Skills resolves updates from the highest non-prerelease semantic-version t
 ## Default Gates
 
 ```powershell
-bin\aicoding.exe smoke --json
-bin\aicoding.exe ci --profile Smoke --json
-bin\aicoding.exe test full --json
-bin\aicoding.exe test release --json
+bin\aicoding.exe doctor --all --json
+bin\aicoding.exe verify --profile Smoke --json
+bin\aicoding.exe lifecycle plan --action install --all --json
+bin\aicoding.exe test --profile Smoke --json
+bin\aicoding.exe test --profile Full --json
+bin\aicoding.exe test --profile Release --json
 ```
 
 DocSync is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/aicoding-ci.yml`.
