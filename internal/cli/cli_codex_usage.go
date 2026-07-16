@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -18,10 +17,10 @@ import (
 // report/tokenusage so Plan reports and other commands can reuse the same API.
 func runCodexUsage(args []string, start time.Time) (report.Result, error) {
 	if len(args) == 0 || args[0] != "usage" {
-		return report.Result{}, fmt.Errorf("codex 需要 usage 子命令")
+		return report.Result{}, usageErrorf("codex 需要 usage 子命令")
 	}
 	if len(args) == 1 {
-		return report.Result{}, fmt.Errorf("codex usage 需要 parse 或 run")
+		return report.Result{}, usageErrorf("codex usage 需要 parse 或 run")
 	}
 	switch args[1] {
 	case "parse":
@@ -29,19 +28,16 @@ func runCodexUsage(args []string, start time.Time) (report.Result, error) {
 	case "run":
 		return runCodexUsageCommand(args[2:], start)
 	default:
-		return report.Result{}, fmt.Errorf("不支持的 codex usage 子命令：%s", args[1])
+		return report.Result{}, usageErrorf("不支持的 codex usage 子命令：%s", args[1])
 	}
 }
 
 func runCodexUsageParse(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("codex usage parse", flag.ContinueOnError)
+	fs := newFlagSet("codex usage parse")
 	file := fs.String("file", "-", "Codex JSONL file, or - for stdin")
 	_ = fs.Bool("json", false, "json output")
-	if err := fs.Parse(args); err != nil {
+	if err := parseNoPositionals(fs, args); err != nil {
 		return report.Result{}, err
-	}
-	if fs.NArg() != 0 {
-		return report.Result{}, fmt.Errorf("codex usage parse 不接受位置参数：%s", strings.Join(fs.Args(), " "))
 	}
 
 	var r io.Reader = os.Stdin
@@ -75,7 +71,12 @@ func runCodexUsageCommand(args []string, start time.Time) (report.Result, error)
 		}
 	}
 	if sep < 0 || sep == len(args)-1 {
-		return report.Result{}, fmt.Errorf("用法：aicoding codex usage run -- codex exec --json PROMPT")
+		return report.Result{}, usageErrorf("用法：aicoding codex usage run -- codex exec --json PROMPT")
+	}
+	fs := newFlagSet("codex usage run")
+	_ = fs.Bool("json", false, "json output")
+	if err := parseNoPositionals(fs, args[:sep]); err != nil {
+		return report.Result{}, err
 	}
 	command := args[sep+1:]
 	cmd := exec.Command(command[0], command[1:]...)

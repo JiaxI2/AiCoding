@@ -339,6 +339,20 @@ func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(repo, "test-results")); err != nil {
 		t.Fatalf("expected test-results output: %v", err)
 	}
+
+	canonicalOut := filepath.Join(repo, "canonical-smoke-results")
+	res, err = runTest([]string{"--profile", "Smoke", "--repo-root", repo, "--out", canonicalOut, "--runner-timeout-sec", "30", "--json"}, time.Now())
+	if err != nil || !res.OK || res.Command != "test --profile Smoke" {
+		t.Fatalf("canonical test profile failed: res=%#v err=%v", res, err)
+	}
+	data, ok = res.Data.(report.StandardReport)
+	if !ok || data.Status != "PASS" || data.Profile != "smoke" {
+		t.Fatalf("unexpected canonical test data: %#v", res.Data)
+	}
+
+	if res, err = runTest([]string{"full", "--profile", "Release", "--json"}, time.Now()); err == nil || res.OK || !isUsageError(err) {
+		t.Fatalf("legacy positional profile must not accept --profile override: res=%#v err=%v", res, err)
+	}
 }
 
 func TestRunTestLatestReadsLatestReport(t *testing.T) {

@@ -2,8 +2,6 @@ package cli
 
 import (
 	"context"
-	"errors"
-	"flag"
 	"os"
 	"os/exec"
 	"strings"
@@ -31,13 +29,20 @@ type aggregateCheck struct {
 
 func runDocSync(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("docsync requires mode: staged, all, ci, or release")
+		return report.Result{}, usageErrorf("docsync requires mode: staged, all, ci, or release")
 	}
 	mode := strings.ToLower(args[0])
-	fs := flag.NewFlagSet("docsync "+mode, flag.ContinueOnError)
+	switch mode {
+	case "staged", "all", "ci", "release":
+	default:
+		return report.Result{}, usageErrorf("unsupported docsync mode: %s", mode)
+	}
+	fs := newFlagSet("docsync " + mode)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("docsync "+mode, start, "cannot resolve repo root", nil, err.Error()), err
@@ -60,15 +65,17 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 		return runCStyleCommand("skill "+cstyle.DefaultSkillID, cstyle.DefaultSkillID, args[1:], start)
 	}
 	if len(args) < 1 || args[0] != "verify" {
-		return report.Result{}, errors.New("skill requires subcommand: verify or c99-standard-c")
+		return report.Result{}, usageErrorf("skill requires subcommand: verify or c99-standard-c")
 	}
-	fs := flag.NewFlagSet("skill verify", flag.ContinueOnError)
+	fs := newFlagSet("skill verify")
 	repoArg := fs.String("repo-root", "", "repository root")
 	kitArg := fs.String("kit", "", "kit id")
 	allArg := fs.Bool("all", false, "all enabled kits")
 	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, entries, err := selectedKits(*repoArg, *kitArg, *allArg)
 	if err != nil {
 		return report.Fail("skill verify", start, "kit selection failed", nil, err.Error()), err
@@ -87,24 +94,29 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 
 func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("lifecycle requires subcommand: plan, install, update, uninstall, rollback")
+		return report.Result{}, usageErrorf("lifecycle requires subcommand: plan, install, update, uninstall, rollback")
 	}
 	sub := strings.ToLower(args[0])
-	fs := flag.NewFlagSet("lifecycle "+sub, flag.ContinueOnError)
+	if !validChoice(sub, "plan", "install", "update", "uninstall", "rollback") {
+		return report.Result{}, usageErrorf("unsupported lifecycle action: %s", sub)
+	}
+	fs := newFlagSet("lifecycle " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	kitArg := fs.String("kit", "", "kit id")
 	allArg := fs.Bool("all", false, "all enabled kits")
 	actionArg := fs.String("action", "", "lifecycle action for plan")
 	lastArg := fs.Bool("last", false, "rollback last snapshot")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("lifecycle "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
 	if sub == "rollback" {
 		if !*lastArg {
-			return report.Fail("lifecycle rollback", start, "rollback requires --last", nil, "missing --last"), errors.New("missing --last")
+			return report.Result{}, usageErrorf("lifecycle rollback requires --last")
 		}
 		res := kit.RollbackLast(repo)
 		return report.Result{SchemaVersion: 1, Command: "lifecycle rollback", OK: res.OK, Message: "Go lifecycle rollback", RepoRoot: repo, Data: res, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
@@ -126,21 +138,23 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 		return report.Result{SchemaVersion: 1, Command: "lifecycle plan", OK: len(errs) == 0, Message: "Go lifecycle plan", RepoRoot: repo, Data: plan, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	}
 	if action != "install" && action != "update" && action != "uninstall" {
-		return report.Result{}, errors.New("unsupported lifecycle action: " + action)
+		return report.Result{}, usageErrorf("unsupported lifecycle action: %s", action)
 	}
 	res := kit.RunAction(repo, entries, kit.ActionOptions{Action: action, Mode: selectionMode(*allArg), DryRun: false})
 	return report.Result{SchemaVersion: 1, Command: "lifecycle " + action, OK: res.OK, Message: "Go lifecycle action", RepoRoot: repo, Data: res, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
 }
 
 func runExport(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("export", flag.ContinueOnError)
+	fs := newFlagSet("export")
 	repoArg := fs.String("repo-root", "", "repository root")
 	allArg := fs.Bool("all", false, "export all")
 	zipArg := fs.Bool("zip", false, "write zip")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args)
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
 	if !*allArg || !*zipArg {
-		return report.Fail("export", start, "export requires --all --zip", nil, "missing --all or --zip"), errors.New("missing --all or --zip")
+		return report.Result{}, usageErrorf("export requires --all --zip")
 	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
@@ -155,12 +169,14 @@ func runExport(args []string, start time.Time) (report.Result, error) {
 }
 
 func runFreshClone(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("fresh-clone", flag.ContinueOnError)
+	fs := newFlagSet("fresh-clone")
 	repoArg := fs.String("repo-root", "", "repository root")
 	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
 	keepTemp := fs.Bool("keep-temp", false, "keep temp clone")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args)
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("fresh-clone", start, "cannot resolve repo root", nil, err.Error()), err
@@ -170,10 +186,12 @@ func runFreshClone(args []string, start time.Time) (report.Result, error) {
 }
 
 func runSmoke(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("smoke", flag.ContinueOnError)
+	fs := newFlagSet("smoke")
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args)
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("smoke", start, "cannot resolve repo root", nil, err.Error()), err
@@ -184,11 +202,13 @@ func runSmoke(args []string, start time.Time) (report.Result, error) {
 }
 
 func runCI(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("ci", flag.ContinueOnError)
+	fs := newFlagSet("ci")
 	repoArg := fs.String("repo-root", "", "repository root")
 	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args)
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("ci", start, "cannot resolve repo root", nil, err.Error()), err
@@ -204,10 +224,12 @@ func runCI(args []string, start time.Time) (report.Result, error) {
 }
 
 func runFull(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("full", flag.ContinueOnError)
+	fs := newFlagSet("full")
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args)
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("full", start, "cannot resolve repo root", nil, err.Error()), err
@@ -219,18 +241,20 @@ func runFull(args []string, start time.Time) (report.Result, error) {
 
 func runReleaseCommand(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("release requires subcommand: verify or gate")
+		return report.Result{}, usageErrorf("release requires subcommand: verify or gate")
 	}
 	if args[0] == "verify" {
 		return runRelease(args, start)
 	}
 	if args[0] != "gate" {
-		return report.Result{}, errors.New("unsupported release subcommand: " + args[0])
+		return report.Result{}, usageErrorf("unsupported release subcommand: %s", args[0])
 	}
-	fs := flag.NewFlagSet("release gate", flag.ContinueOnError)
+	fs := newFlagSet("release gate")
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("release gate", start, "cannot resolve repo root", nil, err.Error()), err

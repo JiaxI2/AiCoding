@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **feat(cli)**: 新增可测试的 CLI 执行契约，统一全局/命令帮助、参数错误退出码 `2`、执行失败退出码 `1`、严格 JSON stdout 和文本 warning；正式支持 `test --profile Smoke|Full|Release`，旧 `smoke`、`ci`、`full` 与位置参数测试入口输出 `CLI_DEPRECATED`。
 - **docs(plan)**: 选择兼容优先的产品闭环收敛路线，定义唯一 CLI/Test/Report/Lifecycle/Release 权威面、一个版本的 `CLI_DEPRECATED` 兼容边界及分阶段验证/回滚计划；selects the compatibility-first product convergence plan and phased gates.
 
 ## [0.9.1] - 2026-07-16

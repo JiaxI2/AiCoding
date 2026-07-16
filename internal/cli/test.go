@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -57,24 +56,35 @@ type globalTestFileReport struct {
 
 func runTest(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("test requires subcommand: full, release, or latest")
+		return report.Result{}, usageErrorf("test requires --profile Smoke|Full|Release or subcommand latest")
 	}
 
 	sub := strings.ToLower(args[0])
 	switch sub {
 	case "full", "release":
-		return runTestProfile(sub, args[1:], start)
+		return runTestProfile(sub, args[1:], "test "+sub, start)
 	case "latest":
 		return runTestLatest(args[1:], start)
 	default:
-		return report.Result{}, fmt.Errorf("unsupported test subcommand: %s", sub)
+		if strings.HasPrefix(args[0], "-") {
+			return runTestProfile("", args, "", start)
+		}
+		return report.Result{}, usageErrorf("unsupported test subcommand: %s", sub)
 	}
 }
 
-func runTestProfile(profile string, args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("test "+profile, flag.ContinueOnError)
+func runTestProfile(profile string, args []string, command string, start time.Time) (report.Result, error) {
+	name := "test"
+	if profile != "" {
+		name += " " + profile
+	}
+	fs := newFlagSet(name)
 	repoArg := fs.String("repo-root", "", "repository root")
 	outArg := fs.String("out", "", "output directory")
+	profileValue := profile
+	if profile == "" {
+		fs.StringVar(&profileValue, "profile", "", "Smoke, Full or Release")
+	}
 	timeoutSec := fs.Int("timeout-sec", 180, "per-command timeout seconds")
 	longTimeoutSec := fs.Int("long-timeout-sec", 600, "long-command timeout seconds")
 	concurrency := fs.Int("concurrency", 4, "concurrent read-only CLI calls")
@@ -82,8 +92,15 @@ func runTestProfile(profile string, args []string, start time.Time) (report.Resu
 	strictArg := fs.Bool("strict", false, "treat WARN severity command failures as FAIL")
 	noJSONCheckArg := fs.Bool("no-json-check", false, "disable JSON output validation")
 	_ = fs.Bool("json", false, "json output")
-	if err := fs.Parse(args); err != nil {
+	if err := parseNoPositionals(fs, args); err != nil {
 		return report.Result{}, err
+	}
+	profile, displayProfile, err := normalizeTestProfile(profileValue)
+	if err != nil {
+		return report.Result{}, err
+	}
+	if command == "" {
+		command = "test --profile " + displayProfile
 	}
 
 	repo, err := platform.ResolveRepoRoot(*repoArg)
@@ -139,7 +156,7 @@ func runTestProfile(profile string, args []string, start time.Time) (report.Resu
 		errs = append(errs, loadErr.Error())
 	}
 
-	data := globalTestStandardReport("test "+profile, profile, outDir, report.Elapsed(start), fileReport)
+	data := globalTestStandardReport(command, profile, outDir, report.Elapsed(start), fileReport)
 	if timedOut || runErr != nil || loadErr != nil {
 		data.Findings = append(data.Findings, report.Finding{Level: "ERROR", Message: strings.Join(compactStrings(errs), "; ")})
 	}
@@ -150,9 +167,9 @@ func runTestProfile(profile string, args []string, start time.Time) (report.Resu
 	ok := len(errs) == 0 && fileReport.Summary.Conclusion != "FAIL"
 	res := report.Result{
 		SchemaVersion: 1,
-		Command:       "test " + profile,
+		Command:       command,
 		OK:            ok,
-		Message:       "AiCoding global " + profile + " test",
+		Message:       "AiCoding global " + displayProfile + " test",
 		RepoRoot:      repo,
 		Data:          data,
 		Errors:        compactStrings(errs),
@@ -165,10 +182,10 @@ func runTestProfile(profile string, args []string, start time.Time) (report.Resu
 }
 
 func runTestLatest(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("test latest", flag.ContinueOnError)
+	fs := newFlagSet("test latest")
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	if err := fs.Parse(args); err != nil {
+	if err := parseNoPositionals(fs, args); err != nil {
 		return report.Result{}, err
 	}
 
@@ -187,6 +204,21 @@ func runTestLatest(args []string, start time.Time) (report.Result, error) {
 	}
 	data := globalTestStandardReport("test latest", fileReport.Summary.Profile, outDir, report.Elapsed(start), fileReport)
 	return report.Result{SchemaVersion: 1, Command: "test latest", OK: true, Message: "latest AiCoding global test report", RepoRoot: repo, Data: data, ElapsedMS: report.Elapsed(start)}, nil
+}
+
+func normalizeTestProfile(value string) (string, string, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "smoke":
+		return "smoke", "Smoke", nil
+	case "full":
+		return "full", "Full", nil
+	case "release":
+		return "release", "Release", nil
+	case "":
+		return "", "", usageErrorf("test requires --profile Smoke|Full|Release")
+	default:
+		return "", "", usageErrorf("unsupported test profile: %s", value)
+	}
 }
 
 func loadGlobalTestReport(outDir string) (globalTestFileReport, error) {

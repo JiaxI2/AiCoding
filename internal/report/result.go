@@ -66,6 +66,9 @@ func WriteTextTo(w io.Writer, res Result) {
 	for _, e := range res.Errors {
 		fmt.Fprintf(w, "  - %s\n", e)
 	}
+	for _, warning := range res.Warnings {
+		fmt.Fprintf(w, "  ! %s\n", warning)
+	}
 	writeDataText(w, res.Data)
 }
 

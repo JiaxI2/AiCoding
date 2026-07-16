@@ -8,10 +8,10 @@
 
 ## Phase 1: CLI 契约
 
-- [ ] 统一全局和子命令 help。
-- [ ] 统一参数错误退出码 `2`。
-- [ ] 增加 `CLI_DEPRECATED` 兼容提示。
-- [ ] 保持 `report.Result` 兼容字段。
+- [x] 统一全局和子命令 help。
+- [x] 统一参数错误退出码 `2`。
+- [x] 增加 `CLI_DEPRECATED` 兼容提示。
+- [x] 保持 `report.Result` 兼容字段。
 
 ## Phase 2: 唯一测试引擎
 
