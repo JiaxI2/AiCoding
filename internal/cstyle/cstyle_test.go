@@ -271,6 +271,43 @@ func TestValidateTemplatesConfig(t *testing.T) {
 	}
 }
 
+func TestValidateTemplatesRejectsVersionedFileHeader(t *testing.T) {
+	root := t.TempDir()
+	writeSkillConfig(t, root, "BasedOnStyle: LLVM\n")
+	writeFile(t, filepath.Join(root, "config", "skills", "c99-standard-c", "templates", "comment-templates.json"), `{
+  "schemaVersion": 1,
+  "templates": [
+    {
+      "id": "versioned-file-header",
+      "title": "Versioned File Header",
+      "description": "invalid fixture",
+      "language": "c",
+      "kind": "file-header",
+      "body": ["/**", " * @version {{version}}", " */"],
+      "variables": {
+        "version": { "description": "source version", "default": "1.0.0" }
+      }
+    }
+  ]
+}
+`)
+
+	validation, err := ValidateTemplates(root)
+	if err == nil || validation.Valid {
+		t.Fatalf("versioned file header must fail validation: validation=%#v err=%v", validation, err)
+	}
+
+	joined := strings.Join(validation.Errors, "\n")
+	for _, want := range []string{
+		"file header must not expose a source version",
+		"file header must not declare a version variable",
+	} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("missing validation error %q in %q", want, joined)
+		}
+	}
+}
+
 func TestSkillStatusReportsRequiredKitAssets(t *testing.T) {
 	root := t.TempDir()
 	writeSkillConfig(t, root, "BasedOnStyle: LLVM\n")

@@ -3,29 +3,28 @@
 Passed: 3
 Failed: 0
 
-## Performance Mirror
+## Deterministic Workload Mirror
 
+Measurement policy: deterministic-output-only
 Iterations: 100000
-Average Python model time: 3.838 us/iter
+Checksum: 49974.140666257
+Wall-clock timing is intentionally not written to versioned reports.
 
-## C:\Users\24322\AppData\Local\Programs\Python\Python313\python.exe tools/check_c_gbk.py
+## python tools/check_c_gbk.py
 Return code: 0
 ```text
 C source encoding and author check passed.
-
 ```
 
-## C:\Users\24322\AppData\Local\Programs\Python\Python313\python.exe tests/test_foc_behavior.py
+## python tests/test_foc_behavior.py
 Return code: 0
 ```text
 Passed: 11
 Failed: 0
-
 ```
 
-## C:\Users\24322\AppData\Local\Programs\Python\Python313\python.exe tests/check_static_boundary.py
+## python tests/check_static_boundary.py
 Return code: 0
 ```text
 Static boundary checks passed.
-
 ```

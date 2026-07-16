@@ -113,6 +113,24 @@ func ValidateCommentTemplates(repoRoot string, skillID string) (TemplateValidati
 		if kind == "" {
 			res.Errors = append(res.Errors, fmt.Sprintf("template[%d] kind is required", idx))
 		}
+		if kind == "file-header" {
+			for _, line := range tmpl.Body {
+				if strings.Contains(strings.ToLower(line), "@version") ||
+					strings.Contains(line, "{{version}}") {
+					res.Errors = append(
+						res.Errors,
+						fmt.Sprintf("template[%d] file header must not expose a source version: %s", idx, id),
+					)
+					break
+				}
+			}
+			if _, ok := tmpl.Variables["version"]; ok {
+				res.Errors = append(
+					res.Errors,
+					fmt.Sprintf("template[%d] file header must not declare a version variable: %s", idx, id),
+				)
+			}
+		}
 
 		res.Templates = append(res.Templates, TemplateSummary{
 			ID:       id,
