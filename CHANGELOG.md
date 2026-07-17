@@ -5,6 +5,7 @@
 - **docs(architecture)**: 确定 Git 式“稳定 plumbing 内核 + 声明式扩展图 + porcelain 工作流”长期架构，明确 root/path、manifest snapshot、capability graph、plan/runner、report/contract 与 state/journal 基础能力，以及静态 adapter、性能预算、无版本实现 identity 和单控制面迁移纪律。
 - **feat(core)**: 将 runner plan 提升为可验证、不可变选择、可 snapshot/digest 的 `ExecutionPlan`；增加通用 Registry Snapshot + Digest 并迁移 Kit/MCP loader；建立 Typed Command Catalog 统一 CLI handler routing、alias、namespace contract 与全局 help；`aicoding version` 改从构建或 manifest 元数据读取，不再硬编码实现代际标签。
 - **fix(identity)**: 将 Fast Path cache 从 versioned 实现路径迁移到稳定的 `.aicoding/cache/fast-path` identity；旧 cache 仅为可删除临时数据，不再参与当前 status/clean。
+- **docs(architecture)**: checkpoint CLI/MCP control-plane 与 Extension Adapter 草稿，作为本轮 Git 原理学习和有限架构闭环的可追溯输入；草稿状态不代表最终 Accepted 契约。
 
 ## [0.10.0] - 2026-07-17
 
