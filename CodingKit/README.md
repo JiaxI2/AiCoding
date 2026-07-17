@@ -68,6 +68,8 @@ git clone --recurse-submodules https://github.com/JiaxI2/AiCoding.git
 cd AiCoding
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/verify-codex-kit.ps1
 bin/aicoding.exe lifecycle install --all --json
+bin/aicoding.exe doctor --all --json
+bin/aicoding.exe verify --profile Smoke --json
 ```
 
 After installing the plugin, open Codex `/hooks` and review/trust the plugin-bundled hooks.

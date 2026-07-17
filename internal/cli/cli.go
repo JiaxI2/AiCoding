@@ -2,9 +2,8 @@ package cli
 
 import (
 	"context"
-	"errors"
-	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/governance"
 	"github.com/JiaxI2/AiCoding/internal/kit"
+	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/pwshregex"
 	"github.com/JiaxI2/AiCoding/internal/releasegate"
@@ -30,98 +30,161 @@ import (
 const version = "fast-path-v2"
 
 func Main() {
-	start := time.Now()
-	if len(os.Args) < 2 {
-		printUsageAndExit(2)
-	}
-	cmd := os.Args[1]
-	var res report.Result
-	var err error
-	switch cmd {
-	case "version", "--version", "-v":
-		fmt.Println(version)
-		return
-	case "hook":
-		res, err = runHook(os.Args[2:], start)
-	case "bootstrap":
-		res, err = runBootstrap(os.Args[2:], start)
-	case "smoke":
-		res, err = runSmoke(os.Args[2:], start)
-	case "ci":
-		res, err = runCI(os.Args[2:], start)
-	case "test":
-		res, err = runTest(os.Args[2:], start)
-
-	case "docsync":
-		res, err = runDocSync(os.Args[2:], start)
-	case "skill":
-		res, err = runSkill(os.Args[2:], start)
-	case "lifecycle":
-		res, err = runLifecycle(os.Args[2:], start)
-	case "export":
-		res, err = runExport(os.Args[2:], start)
-	case "fresh-clone":
-		res, err = runFreshClone(os.Args[2:], start)
-	case "full":
-		res, err = runFull(os.Args[2:], start)
-	case "cache":
-		res, err = runCache(os.Args[2:], start)
-	case "codex":
-		res, err = runCodexUsage(os.Args[2:], start)
-	case "mcp":
-		res, err = runMCP(os.Args[2:], start)
-
-	case "tag":
-		res, err = runTag(os.Args[2:], start)
-	case "release":
-		res, err = runReleaseCommand(os.Args[2:], start)
-	case "kit":
-		res, err = runKit(os.Args[2:], start)
-	case "doctor":
-		res, err = runDoctor(os.Args[2:], start)
-	case "verify":
-		res, err = runVerify(os.Args[2:], start)
-	case "status":
-		res, err = runStatus(os.Args[2:], start)
-	case "governance":
-		res, err = runGovernance(os.Args[2:], start)
-	case "powershell":
-		res, err = runPowerShell(os.Args[2:], start)
-	default:
-		fmt.Fprintf(os.Stderr, "unknown command: %s\n", cmd)
-		printUsageAndExit(2)
-	}
-	if err != nil {
-		if res.SchemaVersion == 0 {
-			res = report.Result{SchemaVersion: 1, Command: cmd, OK: false, Message: err.Error(), ElapsedMS: report.Elapsed(start)}
-		} else if res.Message == "" {
-			res.Message = err.Error()
-		}
-	}
-	if jsonRequested(os.Args[2:]) {
-		report.WriteJSON(res)
-	} else {
-		report.WriteText(res)
-		if cmd == "codex" {
-			writeCodexUsageText(os.Stdout, res)
-		}
-	}
-	if err != nil || !res.OK {
-		os.Exit(1)
+	if code := Execute(os.Args[1:], os.Stdout, os.Stderr); code != ExitSuccess {
+		os.Exit(code)
 	}
 }
 
-func printUsageAndExit(code int) {
-	fmt.Fprintf(os.Stderr, `AiCoding fast path CLI %s
+func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
+	start := time.Now()
+	if len(args) < 1 {
+		writeUsage(stderr)
+		return ExitUsage
+	}
+	cmd := args[0]
+	commandArgs := args[1:]
+	if len(commandArgs) == 1 && isHelpArg(commandArgs[0]) && commandRequiresSubcommand(cmd) {
+		writeUsage(stdout)
+		return ExitSuccess
+	}
+	var res report.Result
+	var err error
+	switch cmd {
+	case "help", "--help", "-h":
+		writeUsage(stdout)
+		return ExitSuccess
+	case "version", "--version", "-v":
+		fmt.Fprintln(stdout, version)
+		return ExitSuccess
+	case "hook":
+		res, err = runHook(commandArgs, start)
+	case "bootstrap":
+		res, err = runBootstrap(commandArgs, start)
+	case "smoke":
+		res, err = runSmoke(commandArgs, start)
+	case "ci":
+		res, err = runCI(commandArgs, start)
+	case "test":
+		res, err = runTest(commandArgs, start)
+
+	case "docsync":
+		res, err = runDocSync(commandArgs, start)
+	case "skill":
+		res, err = runSkill(commandArgs, start)
+	case "lifecycle":
+		res, err = runLifecycle(commandArgs, start)
+	case "export":
+		res, err = runExport(commandArgs, start)
+	case "fresh-clone":
+		res, err = runFreshClone(commandArgs, start)
+	case "full":
+		res, err = runFull(commandArgs, start)
+	case "cache":
+		res, err = runCache(commandArgs, start)
+	case "codex":
+		res, err = runCodexUsage(commandArgs, start)
+	case "mcp":
+		res, err = runMCP(commandArgs, start)
+
+	case "tag":
+		res, err = runTag(commandArgs, start)
+	case "release":
+		res, err = runReleaseCommand(commandArgs, start)
+	case "kit":
+		res, err = runKit(commandArgs, start)
+	case "doctor":
+		res, err = runDoctor(commandArgs, start)
+	case "verify":
+		res, err = runVerify(commandArgs, start)
+	case "status":
+		res, err = runStatus(commandArgs, start)
+	case "governance":
+		res, err = runGovernance(commandArgs, start)
+	case "powershell":
+		res, err = runPowerShell(commandArgs, start)
+	default:
+		if jsonRequested(commandArgs) {
+			err = usageErrorf("unknown command: %s", cmd)
+			break
+		}
+		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
+		writeUsage(stderr)
+		return ExitUsage
+	}
+	if help, ok := requestedHelp(err); ok {
+		fmt.Fprint(stdout, help)
+		return ExitSuccess
+	}
+	if err != nil {
+		if res.SchemaVersion == 0 {
+			res = report.Fail(cmd, start, err.Error(), nil, err.Error())
+		} else if res.Message == "" {
+			res.Message = err.Error()
+		}
+		if len(res.Errors) == 0 {
+			res.Errors = []string{err.Error()}
+		}
+	}
+	switch {
+	case isUsageError(err):
+		res.ErrorKind = report.ErrorKindUsage
+	case report.IsValidationError(err):
+		res.ErrorKind = report.ErrorKindValidation
+	case res.ErrorKind == "" && !res.OK:
+		res.ErrorKind = report.ErrorKindValidation
+	case res.ErrorKind == "" && err != nil:
+		res.ErrorKind = report.ErrorKindExecution
+	}
+	if canonical, ok := deprecatedCommand(args); ok {
+		res = addDeprecation(res, canonical)
+	}
+	if jsonRequested(commandArgs) {
+		_ = report.WriteJSONTo(stdout, res)
+	} else {
+		report.WriteTextTo(stdout, res)
+		if cmd == "codex" {
+			writeCodexUsageText(stdout, res)
+		}
+	}
+	return exitCodeFor(res, err)
+}
+
+func writeUsage(w io.Writer) {
+	fmt.Fprintf(w, `AiCoding fast path CLI %s
 
 Usage:
+  aicoding --help
+  aicoding version
   aicoding hook pre-commit [--repo-root PATH] [--json]
   aicoding hook commit-msg --file COMMIT_MSG [--repo-root PATH] [--json]
   aicoding bootstrap [--repo-root PATH] [--json]
 
+Formal product workflow:
+  aicoding test --profile Smoke|Full|Release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]
+  aicoding lifecycle plan --action install|update|uninstall --all [--repo-root PATH] [--json]
+  aicoding lifecycle install|update|uninstall --all [--repo-root PATH] [--json]
+  aicoding lifecycle plan --action install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--migrate-unmanaged] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle plan --action uninstall --scope all [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--migrate-unmanaged] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle uninstall --scope all [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle status|doctor --scope all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle verify --scope all --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding lifecycle rollback --last [--repo-root PATH] [--json]
+  aicoding doctor --all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]
+  aicoding verify --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]
+  aicoding release verify [--repo-root PATH] [--json]
+  aicoding release gate [--repo-root PATH] [--json]
+
+Compatibility for one version (emits CLI_DEPRECATED):
   aicoding smoke [--repo-root PATH] [--json]
   aicoding ci --profile Smoke|Full|Release [--repo-root PATH] [--json]
   aicoding test full|release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]
+  aicoding full [--repo-root PATH] [--json]
+  aicoding kit lifecycle --action install|update|uninstall|status --all [--dry-run] [--repo-root PATH] [--json]
+  aicoding mcp install|update|uninstall COMPONENT|--all [--dry-run] [--codex-config PATH] [--repo-root PATH] [--json]
+  aicoding status --all [--repo-root PATH] [--json]
+
+Domain and diagnostic commands:
   aicoding test latest [--repo-root PATH] [--json]
   aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]
   aicoding skill verify --all --profile Smoke|Full|Release [--repo-root PATH] [--json]
@@ -130,12 +193,8 @@ Usage:
   aicoding skill c99-standard-c fmt --scope changed|staged|all|paths [--path PATH ...] [--preview] [--repo-root PATH] [--json]
   aicoding skill c99-standard-c check --scope changed|staged|all|paths [--path PATH ...] [--repo-root PATH] [--json]
   aicoding skill c99-standard-c verify --profile fast|full [--target PATH] [--overlay PATH ...] [--timings] [--repo-root PATH] [--json]
-  aicoding lifecycle plan --action install|update|uninstall --all [--repo-root PATH] [--json]
-  aicoding lifecycle install|update|uninstall --all [--repo-root PATH] [--json]
-  aicoding lifecycle rollback --last [--repo-root PATH] [--json]
   aicoding export --all --zip [--repo-root PATH] [--json]
   aicoding fresh-clone --profile Smoke|Full|Release [--repo-root PATH] [--json]
-  aicoding full [--repo-root PATH] [--json]
   aicoding cache status [--repo-root PATH] [--json]
   aicoding cache clean [--repo-root PATH] [--json]
   aicoding codex usage parse [--file FILE|-] [--json]
@@ -143,10 +202,7 @@ Usage:
   aicoding mcp list [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding mcp status|doctor COMPONENT [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding mcp verify COMPONENT|--all --profile Smoke|Full|Release [--configured] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding mcp install|update|uninstall COMPONENT|--all [--dry-run] [--codex-config PATH] [--repo-root PATH] [--json]
   aicoding tag audit [--repo-root PATH] [--json]
-  aicoding release verify [--repo-root PATH] [--json]
-  aicoding release gate [--repo-root PATH] [--json]
   aicoding governance lint [--repo-root PATH] [--json]
   aicoding governance dependencies [--repo-root PATH] [--json]
   aicoding governance layout [--repo-root PATH] [--json]
@@ -155,21 +211,17 @@ Usage:
   aicoding kit list [--repo-root PATH] [--json]
   aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
   aicoding kit doctor [--repo-root PATH] [--json]
-  aicoding kit lifecycle --action install|update|uninstall --all --dry-run [--repo-root PATH] [--json]
-  aicoding kit lifecycle --action status --all [--repo-root PATH] [--json]
   aicoding doctor perf [--repo-root PATH] [--json]
   aicoding doctor pwsh [--repo-root PATH] [--json]
   aicoding doctor pwsh-budget [--repo-root PATH] [--json]
   aicoding verify hooks [--repo-root PATH] [--json]
   aicoding verify repo-text [--repo-root PATH] [--json]
   aicoding verify release-notes [--repo-root PATH] [--json]
-  aicoding status --all [--repo-root PATH] [--json]
   aicoding powershell regex-lint --staged [--repo-root PATH] [--json]
   aicoding powershell regex-lint --path PATH [--repo-root PATH] [--json]
 
 This CLI owns Go-native fast, lifecycle, export, DocSync, fresh-clone, Full, and Release control paths.
 `, version)
-	os.Exit(code)
 }
 
 func jsonRequested(args []string) bool {
@@ -197,11 +249,14 @@ func (m *multiFlag) Set(value string) error {
 
 func runCStyleCommand(commandPrefix string, skillID string, args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, fmt.Errorf("%s requires subcommand: status, templates, fmt, check, or verify", commandPrefix)
+		return report.Result{}, usageErrorf("%s requires subcommand: status, templates, fmt, check, or verify", commandPrefix)
 	}
 
 	sub := args[0]
-	fs := flag.NewFlagSet(commandPrefix+" "+sub, flag.ContinueOnError)
+	if !validChoice(sub, "status", "templates", "fmt", "check", "verify") {
+		return report.Result{}, usageErrorf("unsupported %s subcommand: %s", commandPrefix, sub)
+	}
+	fs := newFlagSet(commandPrefix + " " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	scopeArg := fs.String("scope", "changed", "changed, staged, all, or paths")
 	previewArg := fs.Bool("preview", false, "preview formatting changes without writing files")
@@ -214,11 +269,8 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 	var overlayArgs multiFlag
 	fs.Var(&pathArgs, "path", "explicit path for --scope paths; can be repeated")
 	fs.Var(&overlayArgs, "overlay", "C Kit partial configuration overlay; can be repeated")
-	if err := fs.Parse(args[1:]); err != nil {
-		return report.Result{}, fmt.Errorf("%s %s arguments: %w", commandPrefix, sub, err)
-	}
-	if fs.NArg() != 0 {
-		return report.Result{}, fmt.Errorf("%s %s does not accept positional arguments: %s", commandPrefix, sub, strings.Join(fs.Args(), " "))
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
 	}
 
 	repo, err := platform.ResolveRepoRoot(*repoArg)
@@ -353,21 +405,23 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 		}, verifyErr
 
 	default:
-		return report.Result{}, fmt.Errorf("unsupported %s subcommand: %s", commandPrefix, sub)
+		return report.Result{}, usageErrorf("unsupported %s subcommand: %s", commandPrefix, sub)
 	}
 }
 
 func runHook(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("hook requires subcommand: pre-commit or commit-msg")
+		return report.Result{}, usageErrorf("hook requires subcommand: pre-commit or commit-msg")
 	}
 	sub := args[0]
 	switch sub {
 	case "pre-commit":
-		fs := flag.NewFlagSet("hook pre-commit", flag.ContinueOnError)
+		fs := newFlagSet("hook pre-commit")
 		repoArg := fs.String("repo-root", "", "repository root")
 		_ = fs.Bool("json", false, "json output")
-		_ = fs.Parse(args[1:])
+		if err := parseNoPositionals(fs, args[1:]); err != nil {
+			return report.Result{}, err
+		}
 		repo, err := platform.ResolveRepoRoot(*repoArg)
 		if err != nil {
 			return report.Fail("hook pre-commit", start, "cannot resolve repo root", nil, err.Error()), err
@@ -415,13 +469,21 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		}
 		return report.Result{SchemaVersion: 1, Command: "hook pre-commit", OK: len(errs) == 0, Message: "pre-commit Go gate", RepoRoot: repo, Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	case "commit-msg":
-		fs := flag.NewFlagSet("hook commit-msg", flag.ContinueOnError)
+		fs := newFlagSet("hook commit-msg")
 		repoArg := fs.String("repo-root", "", "repository root")
 		fileArg := fs.String("file", "", "commit message file")
 		_ = fs.Bool("json", false, "json output")
-		_ = fs.Parse(args[1:])
+		if err := parseFlags(fs, args[1:]); err != nil {
+			return report.Result{}, err
+		}
+		if fs.NArg() > 1 || (*fileArg != "" && fs.NArg() != 0) {
+			return report.Result{}, usageErrorf("hook commit-msg accepts one message file through --file or a positional argument")
+		}
 		if *fileArg == "" && fs.NArg() > 0 {
 			*fileArg = fs.Arg(0)
+		}
+		if *fileArg == "" {
+			return report.Result{}, usageErrorf("hook commit-msg requires --file COMMIT_MSG")
 		}
 		repo, err := platform.ResolveRepoRoot(*repoArg)
 		if err != nil {
@@ -430,19 +492,24 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		errs := governance.Lint(repo, "commit-msg", *fileArg)
 		return report.Result{SchemaVersion: 1, Command: "hook commit-msg", OK: len(errs) == 0, Message: "commit-msg fast gate", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	default:
-		return report.Result{}, fmt.Errorf("unsupported hook: %s", sub)
+		return report.Result{}, usageErrorf("unsupported hook: %s", sub)
 	}
 }
 func runGovernance(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("governance requires subcommand: lint, dependencies, layout, or reuse")
+		return report.Result{}, usageErrorf("governance requires subcommand: lint, dependencies, layout, or reuse")
 	}
 	sub := args[0]
-	fs := flag.NewFlagSet("governance "+sub, flag.ContinueOnError)
+	if !validChoice(sub, "lint", "dependencies", "layout", "reuse") {
+		return report.Result{}, usageErrorf("unsupported governance subcommand: %s", sub)
+	}
+	fs := newFlagSet("governance " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	mode := fs.String("mode", "all", "all or pre-commit; lint only")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("governance "+sub, start, "cannot resolve repo root", nil, err.Error()), err
@@ -461,20 +528,25 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 		check := reuse.Verify(repo)
 		return report.Result{SchemaVersion: 1, Command: "governance reuse", OK: check.OK, Message: "reuse governance evidence gate", RepoRoot: repo, Data: check, Warnings: check.Warnings, Errors: check.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(check.Errors)
 	default:
-		return report.Result{}, fmt.Errorf("unsupported governance subcommand: %s", sub)
+		return report.Result{}, usageErrorf("unsupported governance subcommand: %s", sub)
 	}
 }
 
 func runPowerShell(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 || args[0] != "regex-lint" {
-		return report.Result{}, errors.New("powershell requires subcommand: regex-lint")
+		return report.Result{}, usageErrorf("powershell requires subcommand: regex-lint")
 	}
-	fs := flag.NewFlagSet("powershell regex-lint", flag.ContinueOnError)
+	fs := newFlagSet("powershell regex-lint")
 	repoArg := fs.String("repo-root", "", "repository root")
 	pathArg := fs.String("path", "", "file or directory to scan")
 	stagedArg := fs.Bool("staged", false, "scan staged PowerShell files")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseFlags(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
+	if fs.NArg() > 1 || (*pathArg != "" && fs.NArg() != 0) {
+		return report.Result{}, usageErrorf("powershell regex-lint accepts one path through --path or a positional argument")
+	}
 
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
@@ -490,7 +562,7 @@ func runPowerShell(args []string, start time.Time) (report.Result, error) {
 			target = fs.Arg(0)
 		}
 		if target == "" {
-			return report.Fail("powershell regex-lint", start, "path is required unless --staged is used", nil, "missing --path"), errors.New("missing --path")
+			return report.Result{}, usageErrorf("path is required unless --staged is used")
 		}
 		if !filepath.IsAbs(target) {
 			target = filepath.ToSlash(target)
@@ -516,10 +588,13 @@ func runPowerShell(args []string, start time.Time) (report.Result, error) {
 
 func runKit(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("kit requires subcommand")
+		return report.Result{}, usageErrorf("kit requires subcommand")
 	}
 	sub := args[0]
-	fs := flag.NewFlagSet("kit "+sub, flag.ContinueOnError)
+	if !validChoice(sub, "list", "doctor", "lifecycle", "verify", "test") {
+		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
+	}
+	fs := newFlagSet("kit " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	kitArg := fs.String("kit", "", "kit id")
 	allArg := fs.Bool("all", false, "all enabled kits")
@@ -527,7 +602,9 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	dryRunArg := fs.Bool("dry-run", false, "plan lifecycle action without executing adapters")
 	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("kit "+sub, start, "cannot resolve repo root", nil, err.Error()), err
@@ -549,37 +626,39 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		case "install", "update", "uninstall", "status":
 			// supported planner actions
 		case "":
-			return report.Fail("kit lifecycle", start, "missing lifecycle action", nil, "use --action install|update|uninstall|status"), errors.New("missing lifecycle action")
+			return report.Result{}, usageErrorf("kit lifecycle requires --action install|update|uninstall|status")
 		default:
-			return report.Fail("kit lifecycle", start, "unsupported lifecycle action", nil, action), fmt.Errorf("unsupported lifecycle action: %s", action)
+			return report.Result{}, usageErrorf("unsupported lifecycle action: %s", action)
 		}
 		if action != "status" && !*dryRunArg {
-			return report.Fail("kit lifecycle", start, "use top-level lifecycle install/update/uninstall for real Go lifecycle actions", nil, "use aicoding lifecycle "+action+" --all --json"), errors.New("use top-level lifecycle command")
+			return report.Result{}, usageErrorf("use aicoding lifecycle %s --all for real lifecycle actions", action)
 		}
-		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
+		_, err := kit.SelectKits(entries, *kitArg, *allArg)
 		if err != nil {
 			return report.Fail("kit lifecycle", start, "kit selection failed", nil, err.Error()), err
 		}
-		mode := "kit"
-		if *allArg {
-			mode = "all"
-		}
-		plan := kit.PlanLifecycle(repo, selected, kit.LifecycleOptions{Action: action, Mode: mode, DryRun: *dryRunArg})
-		errs := []string{}
-		for _, item := range plan.Kits {
-			if !item.OK {
-				reason := item.Reason
-				if reason == "" {
-					reason = item.Status
-				}
-				errs = append(errs, item.ID+": "+reason)
-			}
-		}
+		unified := lifecyclecontrol.Run(context.Background(), repo, lifecyclecontrol.Options{
+			Action: action,
+			Scope:  lifecyclecontrol.ScopeKit,
+			All:    *allArg,
+			KitID:  *kitArg,
+			DryRun: *dryRunArg,
+		})
 		message := "kit lifecycle planner"
 		if *dryRunArg {
 			message = "kit lifecycle dry-run planner"
 		}
-		return report.Result{SchemaVersion: 1, Command: "kit lifecycle", OK: len(errs) == 0, Message: message, RepoRoot: repo, Data: plan, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+		return report.Result{
+			SchemaVersion: 1,
+			Command:       "kit lifecycle",
+			OK:            unified.OK,
+			Message:       message,
+			RepoRoot:      repo,
+			Data:          lifecycleAdapterData(unified, lifecyclecontrol.ScopeKit),
+			Warnings:      unified.Warnings,
+			Errors:        unified.Errors,
+			ElapsedMS:     report.Elapsed(start),
+		}, report.BoolErr(unified.Errors)
 	case "verify", "test":
 		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
 		if err != nil {
@@ -587,13 +666,13 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		}
 		if strings.EqualFold(*profile, "Lifecycle") {
 			if sub != "verify" {
-				return report.Fail("kit "+sub, start, "Lifecycle profile only supports kit verify", nil, "use kit verify --profile Lifecycle"), errors.New("Lifecycle profile only supports kit verify")
+				return report.Result{}, usageErrorf("Lifecycle profile only supports kit verify")
 			}
 			structure := kit.VerifyStructure(repo, selected)
 			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
 		}
 		if !strings.EqualFold(*profile, "Smoke") {
-			return report.Fail("kit "+sub, start, "kit command handles Smoke/Lifecycle only; use skill verify or full/release for broader Go gates", nil, "use aicoding skill verify --all --profile "+*profile+" --json"), errors.New("non-Smoke kit profile is not handled by kit subcommand")
+			return report.Result{}, usageErrorf("kit %s handles Smoke/Lifecycle only; use aicoding skill verify --all --profile %s", sub, *profile)
 		}
 		results := kit.SmokeKits(repo, selected)
 		errs := []string{}
@@ -606,19 +685,24 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		}
 		return report.Result{SchemaVersion: 1, Command: "kit " + sub, OK: len(errs) == 0, Message: "kit smoke " + sub, RepoRoot: repo, Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	default:
-		return report.Result{}, fmt.Errorf("unsupported kit subcommand: %s", sub)
+		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
 	}
 }
 
 func runVerify(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 {
-		return report.Result{}, errors.New("verify requires subcommand: hooks, repo-text, or release-notes")
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		return runProductVerify(args, start)
 	}
 	sub := args[0]
-	fs := flag.NewFlagSet("verify "+sub, flag.ContinueOnError)
+	if !validChoice(sub, "hooks", "repo-text", "release-notes") {
+		return report.Result{}, usageErrorf("unsupported verify subcommand: %s", sub)
+	}
+	fs := newFlagSet("verify " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("verify "+sub, start, "cannot resolve repo root", nil, err.Error()), err
@@ -634,35 +718,27 @@ func runVerify(args []string, start time.Time) (report.Result, error) {
 		checks, errs := repohealth.VerifyReleaseNotes(repo)
 		return report.Result{SchemaVersion: 1, Command: "verify release-notes", OK: len(errs) == 0, Message: "release notes and tag policy verification", RepoRoot: repo, Data: checks, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	default:
-		return report.Result{}, fmt.Errorf("unsupported verify subcommand: %s", sub)
+		return report.Result{}, usageErrorf("unsupported verify subcommand: %s", sub)
 	}
 }
 
 func runStatus(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("status", flag.ContinueOnError)
-	repoArg := fs.String("repo-root", "", "repository root")
-	allArg := fs.Bool("all", false, "summarize all local fast-path state")
-	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args)
-	if !*allArg {
-		return report.Result{}, errors.New("status requires --all")
-	}
-	repo, err := platform.ResolveRepoRoot(*repoArg)
-	if err != nil {
-		return report.Fail("status", start, "cannot resolve repo root", nil, err.Error()), err
-	}
-	status, errs := repohealth.StatusAll(repo)
-	return report.Result{SchemaVersion: 1, Command: "status --all", OK: len(errs) == 0, Message: "fast path repository status", RepoRoot: repo, Data: status, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	return runProductDoctor(args, start, "status --all")
 }
 func runDoctor(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 {
-		return report.Result{}, errors.New("doctor requires subcommand: perf, pwsh, or pwsh-budget")
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		return runProductDoctor(args, start, "doctor --all")
 	}
 	sub := args[0]
-	fs := flag.NewFlagSet("doctor "+sub, flag.ContinueOnError)
+	if !validChoice(sub, "perf", "pwsh", "pwsh-budget") {
+		return report.Result{}, usageErrorf("unsupported doctor subcommand: %s", sub)
+	}
+	fs := newFlagSet("doctor " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("doctor "+sub, start, "cannot resolve repo root", nil, err.Error()), err
@@ -676,7 +752,7 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 		return report.Result{SchemaVersion: 1, Command: "doctor pwsh-budget", OK: len(errs) == 0, Message: "PowerShell budget inventory", RepoRoot: repo, Data: budget, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	}
 	if sub != "perf" {
-		return report.Result{}, fmt.Errorf("unsupported doctor subcommand: %s", sub)
+		return report.Result{}, usageErrorf("unsupported doctor subcommand: %s", sub)
 	}
 	checks := []map[string]interface{}{}
 	measure := func(name string, fn func() error) {
@@ -697,11 +773,13 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 }
 
 func runBootstrap(args []string, start time.Time) (report.Result, error) {
-	fs := flag.NewFlagSet("bootstrap", flag.ContinueOnError)
+	fs := newFlagSet("bootstrap")
 	repoArg := fs.String("repo-root", "", "repository root")
 	noBuild := fs.Bool("no-build", false, "check and create bin directory without building")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args)
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("bootstrap", start, "cannot resolve repo root", nil, err.Error()), err
@@ -712,13 +790,18 @@ func runBootstrap(args []string, start time.Time) (report.Result, error) {
 
 func runCache(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("cache requires subcommand: status or clean")
+		return report.Result{}, usageErrorf("cache requires subcommand: status or clean")
 	}
 	sub := args[0]
-	fs := flag.NewFlagSet("cache "+sub, flag.ContinueOnError)
+	if !validChoice(sub, "status", "clean") {
+		return report.Result{}, usageErrorf("unsupported cache subcommand: %s", sub)
+	}
+	fs := newFlagSet("cache " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("cache "+sub, start, "cannot resolve repo root", nil, err.Error()), err
@@ -737,18 +820,20 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 		}
 		return report.Result{SchemaVersion: 1, Command: "cache clean", OK: true, Message: "fast path cache clean", RepoRoot: repo, Data: result, ElapsedMS: report.Elapsed(start)}, nil
 	default:
-		return report.Result{}, fmt.Errorf("unsupported cache subcommand: %s", sub)
+		return report.Result{}, usageErrorf("unsupported cache subcommand: %s", sub)
 	}
 }
 
 func runTag(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 || args[0] != "audit" {
-		return report.Result{}, errors.New("tag requires subcommand: audit")
+		return report.Result{}, usageErrorf("tag requires subcommand: audit")
 	}
-	fs := flag.NewFlagSet("tag audit", flag.ContinueOnError)
+	fs := newFlagSet("tag audit")
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("tag audit", start, "cannot resolve repo root", nil, err.Error()), err
@@ -759,12 +844,14 @@ func runTag(args []string, start time.Time) (report.Result, error) {
 
 func runRelease(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 || args[0] != "verify" {
-		return report.Result{}, errors.New("release requires subcommand: verify")
+		return report.Result{}, usageErrorf("release requires subcommand: verify")
 	}
-	fs := flag.NewFlagSet("release verify", flag.ContinueOnError)
+	fs := newFlagSet("release verify")
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
-	_ = fs.Parse(args[1:])
+	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("release verify", start, "cannot resolve repo root", nil, err.Error()), err

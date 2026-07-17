@@ -9,6 +9,15 @@
 | FAIL | 任一 REQUIRED 用例 FAIL 或 TIMEOUT |
 | INCOMPLETE | 测试环境缺失导致大量 SKIP，无法判断仓库质量 |
 
+正式产品预检使用：
+
+```powershell
+bin\aicoding.exe doctor --all --json
+bin\aicoding.exe verify --profile Smoke --json
+```
+
+Doctor 的环境缺失可以是可解释 warning；Verify 的 REQUIRED 静态/结构检查不得失败。
+
 ## 2. C99 Skill 验收
 
 必须满足：

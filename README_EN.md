@@ -22,7 +22,11 @@ AiCoding is the platform integration, installation, governance, and CodingKit as
 
 ## Current Architecture
 
-The Go CLI is the default control plane. It owns bootstrap, Smoke, CI, official test profiles, hooks, status, repo text, release notes, tag/release structural checks, governance lint, DocSync, skill verify, lifecycle, export, and fresh-clone.
+The Go CLI is the single formal product control plane. The product workflow is
+`bootstrap` → `lifecycle` → `doctor --all` / `verify --profile` →
+`test --profile` → `release verify|gate`. Domain hooks, governance, DocSync,
+Skill, MCP, export, and fresh-clone commands remain subcommands or specialty
+diagnostics rather than parallel product entrypoints.
 
 Taskfile is routing only. Business logic lives in Go packages under `internal/*`. PowerShell/Python remains for specialty quality, safety, Plan Mode helpers, external skill workflows, tag planning / overlay compatibility, and hardware or toolchain-specific flows.
 
@@ -39,11 +43,10 @@ AiCoding uses the repository Git Governance Standard.
 
 ```powershell
 go run ./cmd/aicoding bootstrap --json
-bin\aicoding.exe smoke --json
-bin\aicoding.exe ci --profile Smoke --json
-task smoke
-bin\aicoding.exe test full --json
-bin\aicoding.exe test release --json
+bin\aicoding.exe lifecycle plan --action install --scope all --runtime-profile runtime --json
+bin\aicoding.exe doctor --all --json
+bin\aicoding.exe verify --profile Smoke --json
+bin\aicoding.exe test --profile Smoke --json
 ```
 
 ## Common Entrypoints
@@ -51,22 +54,23 @@ bin\aicoding.exe test release --json
 | Scenario | Command | Notes |
 |---|---|---|
 | Bootstrap | `go run ./cmd/aicoding bootstrap --json` | Builds `bin/aicoding.exe` |
-| Local Smoke | `task smoke` | Routes to `bin/aicoding.exe smoke --json` |
-| CI Smoke | `bin\aicoding.exe ci --profile Smoke --json` | Go tests and default aggregate gates |
-| Full | `task full` | Routes to the official Full test profile |
-| Release | `task release` | Routes to the official Release test profile |
+| Lifecycle plan | `bin\aicoding.exe lifecycle plan --action install --all --json` | Defaults to Kit scope; cross-domain work uses explicit `--scope all` |
+| Product doctor | `task doctor` | Routes to `doctor --all` |
+| Product verify | `task verify` | Routes to `verify --profile Smoke` |
+| Smoke / Full / Release | `task smoke` / `task full` / `task release` | Routes to the single `test --profile` engine |
 | Latest test report | `bin\aicoding.exe test latest` | Shows the latest official test summary |
 
 ## Architecture Diagram
 
 ```text
 User / Agent
-  -> Taskfile routing
-     -> Go CLI (bin/aicoding.exe)
-        -> runner plans -> smoke / ci
-        -> test profiles -> full / release / latest
-        -> kit registry -> CodingKit assets + skill submodule
-     -> specialty scripts -> quality / safety / Plan Mode / toolchain
+  -> Go CLI
+     -> lifecycle -> Kit / MCP / runtime Skill
+     -> doctor / verify -> shared report schema
+     -> test profiles -> one test engine
+     -> release -> verify / gate
+  -> Taskfile / CI -> short routes to Go CLI
+  -> specialty tools -> quality / safety / Plan Mode / toolchain
 ```
 
 ## Documentation Index

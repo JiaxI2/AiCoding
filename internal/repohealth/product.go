@@ -1,0 +1,199 @@
+package repohealth
+
+import (
+	"context"
+	"time"
+
+	"github.com/JiaxI2/AiCoding/internal/docsync"
+	"github.com/JiaxI2/AiCoding/internal/governance"
+	"github.com/JiaxI2/AiCoding/internal/kit"
+	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
+	"github.com/JiaxI2/AiCoding/internal/mcpcontrol"
+	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/reuse"
+)
+
+type ProductOptions struct {
+	Profile           string
+	CodexConfig       string
+	IncludeConfigured bool
+	RuntimeProfile    string
+	RuntimeSkill      string
+	SourceRepository  string
+	StandaloneRoot    string
+}
+
+func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.Check {
+	checks := []report.Check{}
+	checks = append(checks, productCheck("doctor.repository", "REPOSITORY", func() (interface{}, []string, []string) {
+		status, errorsFound := StatusAll(repo)
+		return status, nil, errorsFound
+	}))
+	checks = append(checks, productCheck("doctor.kits", "LIFECYCLE", func() (interface{}, []string, []string) {
+		result := lifecyclecontrol.Run(ctx, repo, lifecyclecontrol.Options{
+			Action: "doctor",
+			Scope:  lifecyclecontrol.ScopeKit,
+			All:    true,
+		})
+		return result, result.Warnings, result.Errors
+	}))
+	checks = append(checks, productCheck("doctor.mcp", "MCP", func() (interface{}, []string, []string) {
+		return doctorInstalledMCP(ctx, repo, opts.CodexConfig)
+	}))
+	checks = append(checks, productCheck("doctor.runtime-skills", "SKILL", func() (interface{}, []string, []string) {
+		result := lifecyclecontrol.Run(ctx, repo, lifecyclecontrol.Options{
+			Action:           "doctor",
+			Scope:            lifecyclecontrol.ScopeRuntimeSkill,
+			RuntimeProfile:   opts.RuntimeProfile,
+			RuntimeSkill:     opts.RuntimeSkill,
+			SourceRepository: opts.SourceRepository,
+			StandaloneRoot:   opts.StandaloneRoot,
+		})
+		return result, result.Warnings, result.Errors
+	}))
+	checks = append(checks, productCheck("doctor.pwsh-budget", "POWERSHELL", func() (interface{}, []string, []string) {
+		budget, errorsFound := ScanPwshBudget(repo)
+		return budget, nil, errorsFound
+	}))
+	return checks
+}
+
+func doctorInstalledMCP(ctx context.Context, repo, codexConfig string) (interface{}, []string, []string) {
+	entries, err := mcpcontrol.SelectComponents(repo, "", true)
+	if err != nil {
+		return nil, nil, []string{err.Error()}
+	}
+	status := mcpcontrol.Status(repo, codexConfig, entries)
+	installed := make([]mcpcontrol.RegistryEntry, 0, len(entries))
+	warnings := []string{}
+	errorsFound := []string{}
+	for index, item := range status {
+		for _, warning := range item.Warnings {
+			warnings = append(warnings, item.ID+": "+warning)
+		}
+		for _, issue := range item.Errors {
+			errorsFound = append(errorsFound, item.ID+": "+issue)
+		}
+		if item.Installed {
+			if index < len(entries) {
+				installed = append(installed, entries[index])
+			}
+			continue
+		}
+		warnings = append(warnings, item.ID+": not installed in the current repository; doctor command skipped")
+	}
+	results := []mcpcontrol.CommandResult{}
+	if len(installed) > 0 {
+		results = mcpcontrol.DoctorComponentsContext(ctx, repo, installed)
+		for index, result := range results {
+			id := "component"
+			if index < len(installed) {
+				id = installed[index].ID
+			}
+			for _, issue := range result.Errors {
+				errorsFound = append(errorsFound, id+": "+issue)
+			}
+		}
+	}
+	return map[string]interface{}{
+		"status":  status,
+		"results": results,
+	}, warnings, errorsFound
+}
+
+func VerifyAll(ctx context.Context, repo string, opts ProductOptions) []report.Check {
+	checks := []report.Check{}
+	checks = append(checks, productCheck("verify.hooks", "REPOSITORY", func() (interface{}, []string, []string) {
+		data, errorsFound := VerifyHooks(repo)
+		return data, nil, errorsFound
+	}))
+	checks = append(checks, productCheck("verify.repo-text", "REPOSITORY", func() (interface{}, []string, []string) {
+		data, errorsFound := VerifyRepoText(repo)
+		warnings := []string{}
+		for _, item := range data {
+			for _, warning := range item.Warnings {
+				warnings = append(warnings, item.Path+": "+warning)
+			}
+		}
+		return data, warnings, errorsFound
+	}))
+	checks = append(checks, productCheck("verify.release-notes", "RELEASE", func() (interface{}, []string, []string) {
+		data, errorsFound := VerifyReleaseNotes(repo)
+		return data, nil, errorsFound
+	}))
+	checks = append(checks, productCheck("verify.governance", "GOVERNANCE", func() (interface{}, []string, []string) {
+		errorsFound := governance.Lint(repo, "verify", "")
+		return map[string]interface{}{"mode": "verify"}, nil, errorsFound
+	}))
+	checks = append(checks, productCheck("verify.dependencies", "GOVERNANCE", func() (interface{}, []string, []string) {
+		data := governance.CheckDependencies(repo)
+		return data, data.Warnings, data.Errors
+	}))
+	checks = append(checks, productCheck("verify.layout", "GOVERNANCE", func() (interface{}, []string, []string) {
+		data := governance.CheckLayout(repo)
+		return data, nil, data.Errors
+	}))
+	checks = append(checks, productCheck("verify.reuse", "GOVERNANCE", func() (interface{}, []string, []string) {
+		data := reuse.Verify(repo)
+		return data, data.Warnings, data.Errors
+	}))
+	checks = append(checks, productCheck("verify.docsync", "DOCSYNC", func() (interface{}, []string, []string) {
+		mode := "all"
+		if opts.Profile == "Release" {
+			mode = "release"
+		}
+		data := docsync.Check(repo, mode)
+		return data, data.Warnings, data.Errors
+	}))
+	checks = append(checks, productCheck("verify.kit-lifecycle", "LIFECYCLE", func() (interface{}, []string, []string) {
+		data := lifecyclecontrol.Run(ctx, repo, lifecyclecontrol.Options{
+			Action: "verify",
+			Scope:  lifecyclecontrol.ScopeKit,
+			All:    true,
+		})
+		return data, data.Warnings, data.Errors
+	}))
+	checks = append(checks, productCheck("verify.skills", "SKILL", func() (interface{}, []string, []string) {
+		entries, err := kit.LoadRegistry(repo)
+		if err != nil {
+			return nil, nil, []string{err.Error()}
+		}
+		selected, err := kit.SelectKits(entries, "", true)
+		if err != nil {
+			return nil, nil, []string{err.Error()}
+		}
+		data := kit.VerifySkills(repo, selected, opts.Profile)
+		return data, data.Warnings, data.Errors
+	}))
+	checks = append(checks, productCheck("verify.mcp-registry", "MCP", func() (interface{}, []string, []string) {
+		errorsFound := mcpcontrol.DoctorRegistry(repo)
+		return map[string]interface{}{"registry": "config/mcp-registry.json"}, nil, errorsFound
+	}))
+	checks = append(checks, productCheck("verify.runtime-skills", "SKILL", func() (interface{}, []string, []string) {
+		data := lifecyclecontrol.Run(ctx, repo, lifecyclecontrol.Options{
+			Action:           "verify",
+			Scope:            lifecyclecontrol.ScopeRuntimeSkill,
+			RuntimeProfile:   opts.RuntimeProfile,
+			RuntimeSkill:     opts.RuntimeSkill,
+			SourceRepository: opts.SourceRepository,
+			StandaloneRoot:   opts.StandaloneRoot,
+		})
+		return data, data.Warnings, data.Errors
+	}))
+	if opts.IncludeConfigured || opts.CodexConfig != "" {
+		checks = append(checks, productCheck("verify.mcp-config", "MCP", func() (interface{}, []string, []string) {
+			inventory, err := mcpcontrol.ListInventory(repo, opts.CodexConfig)
+			if err != nil {
+				return nil, nil, []string{err.Error()}
+			}
+			return inventory, inventory.Warnings, nil
+		}))
+	}
+	return checks
+}
+
+func productCheck(id, category string, run func() (interface{}, []string, []string)) report.Check {
+	started := time.Now()
+	details, warnings, errorsFound := run()
+	return report.NewCheck(id, category, started, details, warnings, errorsFound)
+}

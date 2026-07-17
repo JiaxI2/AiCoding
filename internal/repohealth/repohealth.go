@@ -512,7 +512,7 @@ func routeAdvice(category, path, line string) (string, string) {
 		return "go-now", "bin/aicoding.exe hook pre-commit --json"
 	}
 	if strings.Contains(lower, "verify hooks") {
-		return "go-now", "bin/aicoding.exe verify hooks --json"
+		return "go-now", "bin/aicoding.exe verify --profile Smoke --json"
 	}
 	if strings.Contains(lower, "verify-release-governance-overlay.ps1") {
 		return "keep-pwsh", "keep PowerShell release-governance overlay slow path"
@@ -521,10 +521,10 @@ func routeAdvice(category, path, line string) (string, string) {
 		return "go-now", "bin/aicoding.exe verify release-notes --json"
 	}
 	if category == "status" {
-		return "go-now", "bin/aicoding.exe status --all --json"
+		return "go-now", "bin/aicoding.exe doctor --all --json"
 	}
 	if category == "verify" || category == "test" {
-		return "go-orchestrate", "prefer bin/aicoding.exe verify hooks/repo-text/release-notes before PowerShell fallback"
+		return "go-orchestrate", "prefer bin/aicoding.exe verify --profile Smoke or test --profile Smoke before PowerShell fallback"
 	}
 	if category == "unknown" {
 		return "go-orchestrate", "review whether this can become a Go orchestration check"
@@ -712,7 +712,7 @@ func classifyPwshBudget(path, line, category, recommendation string) string {
 	if containsAny(lower, "profile full", "profile release", "test-kit-fresh-clone", " export ", " install", " uninstall", " rollback", "dss", "xds", "flash", "erase", "write-memory", "psscriptanalyzer") {
 		return "slow-path"
 	}
-	if recommendation == "go-now" || containsAny(lower, "profile smoke", "task smoke", "governance lint", "verify hooks", "verify release-notes", "verify repo-text") {
+	if recommendation == "go-now" || containsAny(lower, "profile smoke", "task smoke", "governance lint", "doctor --all", "verify --profile", "verify release-notes", "verify repo-text") {
 		return "hot-path"
 	}
 	if category == "release" || category == "install" || category == "uninstall" || category == "rollback" || category == "export" || category == "dss" {

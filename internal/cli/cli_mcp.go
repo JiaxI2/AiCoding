@@ -2,11 +2,10 @@ package cli
 
 import (
 	"context"
-	"errors"
-	"flag"
 	"strings"
 	"time"
 
+	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/mcpcontrol"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/report"
@@ -14,16 +13,19 @@ import (
 
 func runMCP(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, errors.New("mcp requires subcommand: list, status, doctor, verify, install, update, or uninstall")
+		return report.Result{}, usageErrorf("mcp requires subcommand: list, status, doctor, verify, install, update, or uninstall")
 	}
 	sub := strings.ToLower(args[0])
+	if !validChoice(sub, "list", "status", "doctor", "verify", "install", "update", "uninstall") {
+		return report.Result{}, usageErrorf("unsupported mcp subcommand: %s", sub)
+	}
 	component := ""
 	flagArgs := args[1:]
 	if len(flagArgs) > 0 && !strings.HasPrefix(flagArgs[0], "-") {
 		component = flagArgs[0]
 		flagArgs = flagArgs[1:]
 	}
-	fs := flag.NewFlagSet("mcp "+sub, flag.ContinueOnError)
+	fs := newFlagSet("mcp " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	componentArg := fs.String("component", component, "MCP component id")
 	allArg := fs.Bool("all", false, "all enabled managed MCP components")
@@ -32,7 +34,7 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 	configuredArg := fs.Bool("configured", false, "include currently configured Codex MCP compatibility probes")
 	dryRunArg := fs.Bool("dry-run", false, "plan lifecycle changes without writing")
 	_ = fs.Bool("json", false, "JSON output")
-	if err := fs.Parse(flagArgs); err != nil {
+	if err := parseNoPositionals(fs, flagArgs); err != nil {
 		return report.Result{}, err
 	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
@@ -110,21 +112,28 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			ElapsedMS:     report.Elapsed(start),
 		}, mcpcontrol.VerifyErrors(verification)
 	case "install", "update", "uninstall":
-		results := mcpcontrol.RunLifecycle(repo, *codexConfigArg, entries, sub, *dryRunArg)
-		errorsFound, warnings := lifecycleMessages(results)
+		unified := lifecyclecontrol.Run(context.Background(), repo, lifecyclecontrol.Options{
+			Action:      sub,
+			Scope:       lifecyclecontrol.ScopeMCP,
+			All:         *allArg,
+			ComponentID: *componentArg,
+			CodexConfig: *codexConfigArg,
+			DryRun:      *dryRunArg,
+		})
+		data := lifecycleAdapterData(unified, lifecyclecontrol.ScopeMCP)
 		return report.Result{
 			SchemaVersion: 1,
 			Command:       "mcp " + sub,
-			OK:            len(errorsFound) == 0,
+			OK:            unified.OK,
 			Message:       "MCP managed lifecycle",
 			RepoRoot:      repo,
-			Data:          results,
-			Warnings:      warnings,
-			Errors:        errorsFound,
+			Data:          data,
+			Warnings:      unified.Warnings,
+			Errors:        unified.Errors,
 			ElapsedMS:     report.Elapsed(start),
-		}, report.BoolErr(errorsFound)
+		}, report.BoolErr(unified.Errors)
 	default:
-		return report.Result{}, errors.New("unsupported mcp subcommand: " + sub)
+		return report.Result{}, usageErrorf("unsupported mcp subcommand: %s", sub)
 	}
 }
 
@@ -156,16 +165,11 @@ func commandErrors(entries []mcpcontrol.RegistryEntry, results []mcpcontrol.Comm
 	return errorsFound
 }
 
-func lifecycleMessages(results []mcpcontrol.LifecycleResult) ([]string, []string) {
-	errorsFound := []string{}
-	warnings := []string{}
-	for _, result := range results {
-		for _, issue := range result.Errors {
-			errorsFound = append(errorsFound, result.ID+": "+issue)
-		}
-		for _, issue := range result.Warnings {
-			warnings = append(warnings, result.ID+": "+issue)
+func lifecycleAdapterData(result lifecyclecontrol.Report, id string) interface{} {
+	for _, adapter := range result.Adapters {
+		if adapter.ID == id {
+			return adapter.Data
 		}
 	}
-	return errorsFound, warnings
+	return nil
 }

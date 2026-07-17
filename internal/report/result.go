@@ -11,10 +11,19 @@ import (
 	"time"
 )
 
+const SchemaVersion = 1
+
+const (
+	ErrorKindUsage      = "usage"
+	ErrorKindExecution  = "execution"
+	ErrorKindValidation = "validation"
+)
+
 type Result struct {
 	SchemaVersion int         `json:"schemaVersion"`
 	Command       string      `json:"command"`
 	OK            bool        `json:"ok"`
+	ErrorKind     string      `json:"errorKind,omitempty"`
 	Message       string      `json:"message,omitempty"`
 	RepoRoot      string      `json:"repoRoot,omitempty"`
 	Checked       interface{} `json:"checked,omitempty"`
@@ -24,19 +33,41 @@ type Result struct {
 	ElapsedMS     int64       `json:"elapsedMs"`
 }
 
+type ValidationError struct {
+	messages []string
+}
+
+func (e ValidationError) Error() string {
+	return strings.Join(e.messages, "; ")
+}
+
 func Elapsed(start time.Time) int64 {
 	return time.Since(start).Milliseconds()
 }
 
 func Fail(command string, start time.Time, message string, data interface{}, errs ...string) Result {
-	return Result{SchemaVersion: 1, Command: command, OK: false, Message: message, Data: data, Errors: errs, ElapsedMS: Elapsed(start)}
+	return Result{
+		SchemaVersion: SchemaVersion,
+		Command:       command,
+		OK:            false,
+		ErrorKind:     ErrorKindExecution,
+		Message:       message,
+		Data:          data,
+		Errors:        errs,
+		ElapsedMS:     Elapsed(start),
+	}
 }
 
 func BoolErr(errs []string) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return errors.New(strings.Join(errs, "; "))
+	return ValidationError{messages: append([]string{}, errs...)}
+}
+
+func IsValidationError(err error) bool {
+	var target ValidationError
+	return errors.As(err, &target)
 }
 
 func WriteJSON(v interface{}) {
@@ -65,6 +96,9 @@ func WriteTextTo(w io.Writer, res Result) {
 	}
 	for _, e := range res.Errors {
 		fmt.Fprintf(w, "  - %s\n", e)
+	}
+	for _, warning := range res.Warnings {
+		fmt.Fprintf(w, "  ! %s\n", warning)
 	}
 	writeDataText(w, res.Data)
 }

@@ -85,7 +85,8 @@ For AiCoding changes, use the Go CLI as the default control plane:
 go test ./...
 go run ./cmd/aicoding bootstrap --json
 go build -o bin/aicoding.exe ./cmd/aicoding
-bin/aicoding.exe status --all --json
+bin/aicoding.exe doctor --all --json
+bin/aicoding.exe verify --profile Smoke --json
 bin/aicoding.exe governance dependencies --json
 bin/aicoding.exe doctor pwsh --json
 bin/aicoding.exe doctor pwsh-budget --json
@@ -93,8 +94,8 @@ bin/aicoding.exe skill c99-standard-c status --json
 bin/aicoding.exe docsync ci --json
 bin/aicoding.exe skill verify --all --profile Smoke --json
 bin/aicoding.exe lifecycle plan --action install --all --json
-bin/aicoding.exe test full --json
-bin/aicoding.exe test release --json
+bin/aicoding.exe test --profile Full --json
+bin/aicoding.exe test --profile Release --json
 git diff --check
 ```
 

@@ -148,6 +148,9 @@ Do not update the submodule to a dirty worktree, an unpushed local commit, or an
 
 Before considering AiCoding work complete, run the repository-provided equivalents of:
 
+- `doctor --all`;
+- `verify --profile Smoke`;
+- `test --profile Smoke|Full|Release` as required by risk;
 - `verify-codex-kit`;
 - install dry-run;
 - status JSON;
@@ -158,6 +161,26 @@ Before considering AiCoding work complete, run the repository-provided equivalen
 - relevant Git hooks.
 
 For an actual release, also test real Marketplace registration, real plugin installation, plugin refresh, Hook review, rollback, and uninstall ownership behavior.
+
+## Canonical Product Control Plane
+
+The formal product workflow is:
+
+```text
+bootstrap
+-> lifecycle
+-> doctor --all / verify --profile
+-> test --profile
+-> release verify|gate
+```
+
+`internal/lifecycle`, `internal/testengine`, `internal/repohealth`, and `internal/report`
+are the sole lifecycle, test, product-check, and report authorities. Do not add a second
+aggregator in Taskfile, CI, PowerShell, Python, hooks, or documentation.
+
+Compatibility commands may remain for one version only when they route to the formal
+implementation and emit `CLI_DEPRECATED`. Current compatibility surfaces belong only in
+the compatibility table or historical decisions.
 
 ## Prohibited Actions
 
@@ -209,6 +232,11 @@ External updates resolve the highest stable semantic-version tag and advance the
 AiCoding workflow skills for SDD, MVP, BDD, architecture-first scaffolding, TDD fallback, and documentation synchronization are bundled through the AiCoding plugin only. Superpowers is optional acceleration, not a required dependency.
 
 Documentation synchronization is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/aicoding-ci.yml`. Code, script, config, hook, CI, or CodingKit changes must include a documentation update or an explicit no-doc-change review note with a meaningful reason; see `docs/architecture/DOC_SYNC_PLUS_SPEC.md` for the marker format.
+
+`cmd/**/*.go`, `internal/cli/**/*.go`, `internal/testengine/**/*.go`, `Taskfile.yml`, and
+`.github/workflows/**` are public command-contract surfaces. Changes to them must review
+`README.md`, `README_CN.md`, `README_EN.md`, `docs/COMMANDS.md`,
+`docs/ARCHITECTURE_OVERVIEW.md`, relevant test documentation, and `CHANGELOG.md`.
 
 ## README 和工具链可见性策略 / README And Toolchain Visibility Policy
 

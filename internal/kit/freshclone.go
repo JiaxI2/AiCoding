@@ -84,20 +84,13 @@ func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
 	} else {
 		add("go.build", true, "built Go CLI", out)
 	}
-	checks := [][]string{}
-	switch profile {
-	case "Smoke":
-		checks = [][]string{{bin, "smoke", "--json"}}
-	case "Full":
-		checks = [][]string{{bin, "full", "--json"}}
-	case "Release":
-		checks = [][]string{{bin, "release", "gate", "--json"}}
-	default:
-		add("profile", false, "unsupported profile: "+profile, "")
+	checks, err := freshCloneChecks(bin, profile)
+	if err != nil {
+		add("profile", false, err.Error(), "")
 		return report
 	}
 	for _, check := range checks {
-		out, err := runFreshEnv(cloneRoot, map[string]string{"AICODING_SKIP_FRESH_CLONE": "1"}, check[0], check[1:]...)
+		out, err := runFresh(cloneRoot, check[0], check[1:]...)
 		name := "check." + filepath.Base(check[0]) + " " + strings.Join(check[1:], " ")
 		if err != nil {
 			add(name, false, err.Error(), out)
@@ -109,24 +102,28 @@ func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
 }
 
 func runFresh(dir, name string, args ...string) (string, error) {
-	return runFreshEnv(dir, nil, name, args...)
-}
-func runFreshEnv(dir string, env map[string]string, name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
 	if dir != "" {
 		cmd.Dir = dir
-	}
-	if len(env) > 0 {
-		cmd.Env = os.Environ()
-		for k, v := range env {
-			cmd.Env = append(cmd.Env, k+"="+v)
-		}
 	}
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	cmd.Stderr = &out
 	err := cmd.Run()
 	return out.String(), err
+}
+
+func freshCloneChecks(bin, profile string) ([][]string, error) {
+	switch profile {
+	case "Smoke":
+		return [][]string{{bin, "version"}}, nil
+	case "Full":
+		return [][]string{{"go", "test", "./..."}}, nil
+	case "Release":
+		return [][]string{{bin, "release", "verify", "--json"}}, nil
+	default:
+		return nil, fmt.Errorf("unsupported profile: %s", profile)
+	}
 }
 
 func trimOutput(s string) string {

@@ -1,9 +1,13 @@
-# 可追溯性（Traceability）：issue-lifecycle-governance
+# 可追溯性（Traceability）：product-convergence
 
 | 需求 / 决策 | 计划章节 | 任务 | 验证 |
 |---|---|---|---|
-| Issue 创建必须结构化 | AiCoding repository Issue policy + Issue Forms | AiCoding `.github/ISSUE_TEMPLATE` | governance lint；workflow static checks |
-| Issue 必须分类与流转 | label axes + managed lifecycle profile | label manifest；issue workflow | Go unit tests；workflow static checks |
-| Issue 关闭必须有依据 | resolution/summary/evidence gate | repository policy；closed/reopened normalization | Go unit tests；workflow static checks |
-| 不新增运行时 Skill | repository policy boundary | 不修改 `aicoding-git-governance`，不新增 Issue Skill | submodule diff；runtime Skill audit |
-| 保持 kit 生命周期边界 | released Skill dependency -> read-only submodule | AiCoding 只消费已发布 gitlink | remote tag check；submodule clean check |
+| 产品入口唯一 | 方案 A 正式/兼容入口 | Phase 1、3、6 | CLI help；`CLI_DEPRECATED`；文档扫描 |
+| 唯一测试引擎 | `internal/testengine` | Phase 2、3 | test ID 单次执行；无递归调用 |
+| 唯一报告体系 | `report.Result` + test report schema | Phase 2、5 | Schema；JSON-only stdout |
+| 唯一生命周期 | `internal/lifecycle` 静态 adapter | Phase 4 | dry-run；临时配置；rollback |
+| CLI 契约稳定 | help、参数、退出码、JSON | Phase 1、5 | subprocess contract matrix |
+| 文档入口唯一 | README -> COMMANDS/Architecture hub | Phase 6 | DocSync；Markdown links |
+| Release 闭环 | release gate 复用 Release test plan | Phase 3、5 | Full/Release gate；fresh-clone |
+| 兼容一个版本 | 旧入口统一警告和路由 | Phase 1、3 | 兼容命令回归 |
+| submodule 只读 | 不修改 `CodingKit/agents/skills` | 全阶段 | submodule status clean |

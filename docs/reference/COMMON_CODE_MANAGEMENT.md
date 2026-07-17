@@ -6,7 +6,8 @@ Common CodingKit modules are repository assets governed by Go CLI checks.
 
 ```powershell
 bin\aicoding.exe kit verify --all --profile Lifecycle --json
-bin\aicoding.exe smoke --json
+bin\aicoding.exe verify --profile Smoke --json
+bin\aicoding.exe test --profile Smoke --json
 ```
 
 `common-control-kit` is declared in `config/kits/common-control-kit.json` and validated through the registry/manifest checks. No standalone PowerShell verifier is part of the current default standard.

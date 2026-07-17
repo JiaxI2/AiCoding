@@ -1,13 +1,13 @@
-# 计划模式会话（Plan Mode Session）：issue-lifecycle-governance
+# 计划模式会话（Plan Mode Session）：product-convergence
 
-Mode: Plan
+Mode: Plan -> Implement
 Plan Status: Approved
-Created: 2026-07-16 11:35:08 +08:00
-Feature Slug: issue-lifecycle-governance
+Feature Slug: product-convergence
 
 ## 需求 / Request
 
-将 Issue 创建、分类、流转与关闭标准落地为 AiCoding 仓库级 Git governance policy，并保持现有 Skill source 与 submodule 只读边界
+将 AiCoding 收敛为一个正式 CLI 入口体系、一个测试引擎、一个报告体系、
+一个生命周期和一个 Release 闭环，同时兼容旧入口一个版本。
 
 ## 必须执行的顺序
 
@@ -21,12 +21,14 @@ Feature Slug: issue-lifecycle-governance
 
 ## 当前决策状态
 
-需要用户决策：False
+需要用户决策：False；方案 A 已由目标约束确定。
 
 ## 已确认决策
 
-- 不创建独立 Issue Skill；本轮只增加 AiCoding 仓库策略、表单、label workflow 与 Go lint。
-- Codex-Skills 的 `platform/aicoding-git-governance` 保持已发布只读依赖，本轮不宣称修改 canonical source 或 generated plugin。
-- AiCoding 增加 Issue Forms、label manifest、生命周期 workflow 和 Go governance lint。
-- AiCoding 在独立干净发布 worktree 复现并验证完整修改集，不覆盖既有脏工作树。
-- `CodingKit/agents/skills` 只更新到本轮已发布的 Visio Skill commit，不与 Issue policy 建立未发布的反向绑定。
+- `test --profile Smoke|Full|Release` 是唯一正式测试入口。
+- `lifecycle` 是唯一正式产品生命周期命名空间。
+- `release gate` 调用同一个测试引擎，不递归调用 CLI 聚合器。
+- 兼容入口保留一个版本并输出 `CLI_DEPRECATED`。
+- `report.Result` 保持兼容外壳，统一参数错误、退出码、JSON stdout 和测试报告。
+- 所有实现只发生在 `codex/product-convergence` worktree。
+- `CodingKit/agents/skills` 保持只读和 clean。

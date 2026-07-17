@@ -14,29 +14,41 @@ tasks:
     cmds:
       - go run ./cmd/aicoding bootstrap --json
 
-  smoke:
-    desc: Run Go-native Smoke aggregate
+  doctor:
+    desc: Run official AiCoding product diagnostics
     deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe smoke --json
+      - bin/aicoding.exe doctor --all --json
+
+  verify:
+    desc: Run official AiCoding Smoke verification profile
+    deps: [ensure-bin]
+    cmds:
+      - bin/aicoding.exe verify --profile Smoke --json
+
+  smoke:
+    desc: Run the official AiCoding Smoke test profile
+    deps: [ensure-bin]
+    cmds:
+      - bin/aicoding.exe test --profile Smoke --json
 
   ci:
-    desc: Run Go-native CI aggregate
+    desc: Compatibility task for the official Smoke test profile
     deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe ci --profile Smoke --json
+      - bin/aicoding.exe test --profile Smoke --json
 
   full:
     desc: Run official AiCoding Full test profile
     deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe test full --json
+      - bin/aicoding.exe test --profile Full --json
 
   release:
     desc: Run official AiCoding Release test profile
     deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe test release --json
+      - bin/aicoding.exe test --profile Release --json
 
   test:latest:
     desc: Show latest official AiCoding test report

@@ -42,6 +42,7 @@
 | C99-006 | 排除目录与自包含 Kit 边界策略 | 解析 `skill.json` 并执行 Go 回归测试 | 包含常规目录名排除项与 `CodingKit/tools/c-userstyle-kit` 仓库相对路径排除项，且不误排其他 `tools` 内容 | REQUIRED |
 | C99-007 | C UserStyle Kit 快速验证 | `bin/aicoding.exe skill c99-standard-c verify --json` | fast profile 成功，输出统一 JSON，且不调用固件工具链 | REQUIRED |
 | C99-008 | C Kit 资产与参考完整性 | 检查 kit manifest、黄金/高级样例、规则目录、snippets、PDF 和 Markdown 参考 | 资产存在，manifest version 为 1.2.0 | REQUIRED |
+| SKILL-001 | 全部启用 Skill Smoke 验证 | `bin/aicoding.exe skill verify --all --profile Smoke --json` | 统一 Skill registry 验证通过 | REQUIRED |
 
 ## 5. DOCSYNC：文档同步
 
@@ -61,24 +62,26 @@
 | LIFE-003 | install plan | `bin/aicoding.exe lifecycle plan --action install --all --json` | 退出码 0，JSON 合法 | REQUIRED |
 | LIFE-004 | update plan | `bin/aicoding.exe lifecycle plan --action update --all --json` | 退出码 0，JSON 合法 | REQUIRED |
 | LIFE-005 | uninstall plan | `bin/aicoding.exe lifecycle plan --action uninstall --all --json` | 退出码 0，JSON 合法 | REQUIRED |
-| LIFE-006 | rollback 入口 | `bin/aicoding.exe lifecycle rollback --last --json` | 无历史时应有明确 JSON 结果；可为 WARN | WARN |
+| LIFE-006 | rollback 只读契约 | `bin/aicoding.exe lifecycle rollback --help` | 退出码 0，帮助中包含 `--last`；测试不得应用 rollback snapshot | REQUIRED |
+| LIFE-007 | kit lifecycle 结构验证 | `bin/aicoding.exe kit verify --all --profile Lifecycle --json` | 所有启用 kit 的 lifecycle 结构有效 | REQUIRED |
+| MCP-001 | MCP registry inventory | `bin/aicoding.exe mcp list --json` | MCP registry 与 Codex 配置 inventory 可读取 | REQUIRED |
 
 ## 7. EXPORT / FRESH_CLONE
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | EXP-001 | export zip | `bin/aicoding.exe export --all --zip --json` | 退出码 0，JSON 合法，生成 zip/manifest | REQUIRED |
-| FRESH-001 | fresh-clone Smoke | `bin/aicoding.exe fresh-clone --profile Smoke --json` | 退出码 0；网络失败保留日志 | WARN |
-| FRESH-002 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | release profile 时执行 | WARN |
+| FRESH-001 | fresh-clone Full | `bin/aicoding.exe fresh-clone --profile Full --json` | clone 内执行 `go test ./...`，不回调 Full profile | WARN |
+| FRESH-002 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | clone 内执行 `release verify`，不回调 Release profile | WARN |
 
 ## 8. README_DOCS：README 和命令文档治理
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | DOCS-001 | README 三件套 | 检查 `README.md`、`README_CN.md`、`README_EN.md` | 文件存在 | REQUIRED |
-| DOCS-002 | README 架构声明 | 静态搜索 Go CLI/Fast Path/DocSync/skill verify/lifecycle/export/fresh-clone | 关键入口存在 | REQUIRED |
-| DOCS-003 | COMMANDS 命令矩阵 | 检查 `docs/COMMANDS.md` | 包含 bootstrap/smoke/ci/full/release/C99/DocSync/lifecycle/export/fresh-clone | REQUIRED |
-| DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含 Go 默认控制面和 PowerShell boundary | REQUIRED |
+| DOCS-002 | README 架构声明 | 静态搜索 Go CLI/lifecycle/doctor/verify/test/release | README 只展示正式产品入口 | REQUIRED |
+| DOCS-003 | COMMANDS 命令矩阵 | 检查 `docs/COMMANDS.md` | 包含正式产品命令、领域命令和一个版本兼容表 | REQUIRED |
+| DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含唯一 test engine、共享 report 和 PowerShell boundary | REQUIRED |
 | DOCS-005 | C99 skill 文档 | 检查 `docs/guides/C99_STANDARD_C_SKILL.md` | 包含配置边界、C Kit 资产边界和统一 CLI 入口 | REQUIRED |
 
 ## 9. GIT_GOVERNANCE：Git 仓库治理
@@ -92,6 +95,8 @@
 | GIT-005 | governance lint | `bin/aicoding.exe governance lint --json` | 退出码 0，JSON 合法 | REQUIRED |
 | GIT-006 | tag audit | `bin/aicoding.exe tag audit --json` | 退出码 0，JSON 合法 | REQUIRED |
 | GIT-007 | `.gitattributes` 策略 | 字段级静态检查 EOL/binary 策略，允许多空格/Tab/注释 | md/go/json/yml/yaml LF；ps1/psm1 CRLF；zip/exe binary | REQUIRED |
+| GIT-008 | repository layout | `bin/aicoding.exe governance layout --json` | 仓库 ownership 与 layout 规则通过 | REQUIRED |
+| GIT-009 | reuse governance | `bin/aicoding.exe governance reuse --json` | reuse evidence gate 通过 | REQUIRED |
 
 ## 10. PWSH_BOUNDARY：PowerShell 边界
 
@@ -99,12 +104,11 @@
 |---|---|---|---|---|
 | PWSH-001 | PowerShell inventory | `bin/aicoding.exe doctor pwsh --json` | 输出当前 PS 文件清单 | WARN |
 | PWSH-002 | PowerShell budget | `bin/aicoding.exe doctor pwsh-budget --json` | 不超预算，或输出超预算明细 | REQUIRED |
-| PWSH-003 | 默认入口不经 PS 编排 | 检查 Taskfile 是否存在 Go-native 默认路由 | Smoke/Full/Release 至少存在 Go CLI 路由；允许变量、Windows/Unix 路径分隔符和拆分 smoke+ci | REQUIRED |
+| PWSH-003 | 默认入口不经 PS 编排 | 检查 Taskfile 是否存在 Go-native 默认路由 | doctor/verify/Smoke/Full/Release 均直达正式 Go CLI；允许变量和 Windows/Unix 路径分隔符 | REQUIRED |
+| HEALTH-001 | doctor performance probes | `bin/aicoding.exe doctor perf --json` | 核心本地探针可执行且输出 JSON | REQUIRED |
 
-## 11. RELEASE_GATE：Full/Release Gate
+## 11. RELEASE_GATE：Release policy
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
-| FULL-001 | Full 聚合 | `bin/aicoding.exe full --json` | full profile 执行，退出码 0 | REQUIRED |
-| REL-001 | Release gate | `bin/aicoding.exe release gate --json` | release profile 执行，退出码 0 | REQUIRED |
 | REL-002 | Release policy 文档 | 静态检查 release/tag policy 文档 | 文档存在且被 README 索引 | REQUIRED |

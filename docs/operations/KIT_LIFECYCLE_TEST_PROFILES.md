@@ -50,7 +50,7 @@ Full must not:
 Recommended command:
 
 ```powershell
-bin/aicoding.exe test full --json
+bin/aicoding.exe test --profile Full --json
 ```
 
 ## Release
@@ -83,4 +83,4 @@ bin/aicoding.exe export --all --zip --json
 - PR and default branch workflows may run Smoke only.
 - Full may be used in manual jobs or local manual validation.
 - Release may be used only in manual dispatch, release jobs, or local release preparation.
-- `bin/aicoding.exe test full --json` and `bin/aicoding.exe test release --json` guard this policy; Smoke-level checks remain Go-native and avoid package writes unless export/release explicitly requires them.
+- `bin/aicoding.exe test --profile Full --json` and `bin/aicoding.exe test --profile Release --json` guard this policy; Smoke-level checks remain Go-native and avoid package writes unless export/release explicitly requires them.

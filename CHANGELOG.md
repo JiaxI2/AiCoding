@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+- **docs(validation)**: 刷新产品收敛后的 Smoke/Full/Release、Kit、Skill、MCP、DocSync、Git Hook、Governance、Dependency 与 Markdown link 最终验收记录。
+- **fix(test)**: Full/Release 的 rollback 用例改为只读 `lifecycle rollback --help` 契约检查，禁止测试 profile 在存在 snapshot 时意外应用仓库状态。
+- **docs(control-plane)**: README 三件套、COMMANDS、Architecture、Maintenance、AGENTS、Taskfile 与测试文档统一指向 lifecycle/doctor/verify/test/release 正式入口；旧 CLI 只保留在一个版本兼容表或历史决策中，并扩展 DocSync 对 Go CLI、test engine、Taskfile、CI 与 report schema 的语义绑定。
+- **feat(verify)**: 新增带总超时的正式 `doctor --all` 与 `verify --profile Smoke|Full|Release` 产品边界；doctor 将未安装的 worktree-local MCP 作为可操作 warning，verify 只运行确定性静态/结构检查，不递归调用 test engine 或启动 Release 可见工具；未知 JSON 命令保持 stdout-only、`errorKind=usage` 和退出码 `2`。
+- **feat(report)**: 为 `report.Result` 增加兼容的 `errorKind`/validation error 契约，为 `StandardReport`/共享 check 增加 schemaVersion、PASS_WITH_WARNINGS 与统一汇总，并发布 `config/schemas/cli-report.schema.json`。
+- **refactor(cli)**: 正式 `lifecycle` 命名空间新增 `kit|mcp|runtime-skill|all` scope 与 status/doctor/verify，旧 `kit lifecycle` 和 MCP lifecycle 动词路由到同一 adapter 并输出 `CLI_DEPRECATED`；兼容期内未指定 scope 的 `--all` 保持 Kit 语义。
+- **refactor(lifecycle)**: 新增唯一 `internal/lifecycle` 静态编排层，将 Kit、MCP 与 runtime Skill 的 plan/apply/status/doctor/verify 接入同一报告；runtime Skill install/update 必须显式指定 profile，并能从 Git common repository root 安全解析 worktree 外的 Codex-Skills source。
+- **refactor(test)**: 兼容 `smoke`、`ci`、`full` 与 `release gate` 直接映射到唯一 `test --profile` 引擎，删除 CLI aggregate plan 和测试注册表中的 `FULL-001`/`REL-001` 自调用；fresh-clone 改为 leaf probe，CI/Taskfile 直接使用正式 profile，消除 Full→Full、Release→Release 与 CI→Smoke 聚合链。
+- **refactor(test)**: 将 global tester 的 Config/Profile/Registry/Timeout/Result/Summary/Report/ExitCode 内聚到唯一 `internal/testengine`，正式 CLI 改为进程内调用并复用同一报告存储；`tools/aicoding-global-tester` 退化为兼容薄壳，不再拥有测试实现。
+- **feat(cli)**: 新增可测试的 CLI 执行契约，统一全局/命令帮助、参数错误退出码 `2`、执行失败退出码 `1`、严格 JSON stdout 和文本 warning；正式支持 `test --profile Smoke|Full|Release`，旧 `smoke`、`ci`、`full` 与位置参数测试入口输出 `CLI_DEPRECATED`。
+- **docs(plan)**: 选择兼容优先的产品闭环收敛路线，定义唯一 CLI/Test/Report/Lifecycle/Release 权威面、一个版本的 `CLI_DEPRECATED` 兼容边界及分阶段验证/回滚计划；selects the compatibility-first product convergence plan and phased gates.
+
 ## [0.9.1] - 2026-07-16
 
 - **fix(test)**: FOC no-compile 报告不再版本化墙钟耗时和本机 Python 绝对路径，改为记录确定性迭代数/checksum，并统一生成文件末尾换行；removes machine-dependent timing/path drift from versioned FOC validation reports.

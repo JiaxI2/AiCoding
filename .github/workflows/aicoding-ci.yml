@@ -28,17 +28,9 @@ jobs:
         shell: cmd
         run: go build -o bin/aicoding.exe ./cmd/aicoding
 
-      - name: Repository layout gate
+      - name: AiCoding Smoke profile
         shell: cmd
-        run: .\bin\aicoding.exe governance layout --json
-
-      - name: Reuse governance gate
-        shell: cmd
-        run: .\bin\aicoding.exe governance reuse --json
-
-      - name: Go CI Smoke
-        shell: cmd
-        run: .\bin\aicoding.exe ci --profile Smoke --json
+        run: .\bin\aicoding.exe test --profile Smoke --json
 
   release-gate:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
@@ -58,14 +50,6 @@ jobs:
         shell: cmd
         run: go build -o bin/aicoding.exe ./cmd/aicoding
 
-      - name: Repository layout gate
-        shell: cmd
-        run: .\bin\aicoding.exe governance layout --json
-
-      - name: Reuse governance gate
-        shell: cmd
-        run: .\bin\aicoding.exe governance reuse --json
-
       - name: Release test profile
         shell: cmd
-        run: .\bin\aicoding.exe test release --json
+        run: .\bin\aicoding.exe test --profile Release --json
