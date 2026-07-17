@@ -61,13 +61,17 @@ validate -> plan -> render/open -> snapshot/inspect
 
 Go 控制面按 component manifest 执行以下流程：
 
-1. 解析 registry 和 component manifest；
+1. 将规范化 registry 与全部 referenced component manifest digest 组合为 `mcp-catalog`，
+   选择、plan/apply/status/doctor/verify 共用同一批 detached component values；
 2. 检查 component root、Python 下限和可选的通用运行时覆盖变量；
 3. 在 component root 内维护隔离 `.venv`，先安装 requirements，再按 `packageInstall` 安装组件自身；
 4. 将 manifest 声明的 command、args、cwd、timeout 和环境变量写入 Codex MCP 配置；
 5. 修改配置前创建时间戳备份；
 6. 写入 `.aicoding/state/mcp/<component-id>/install-state.json`；
 7. update 只更新受管块；uninstall 先将 `.venv` 原子暂存为同目录临时名，再移除受管配置和安装状态。
+
+`mcp list --json` 同时返回只覆盖 registry 的 `registryDigest` 与覆盖 registry + manifests 的
+`catalogDigest`；正式 lifecycle 另返回 adapter catalog、domain input 与 plan digest。
 
 同名但没有受管标记的 Codex MCP 配置视为用户所有，install、update 和 uninstall 都拒绝覆盖或删除。
 若活跃 MCP 进程锁定 `.venv`，暂存步骤会在修改 Codex 配置前失败，避免出现半卸载状态。

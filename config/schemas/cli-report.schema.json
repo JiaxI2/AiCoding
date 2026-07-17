@@ -35,6 +35,14 @@
     "repoRoot": {
       "type": "string"
     },
+    "inputDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "planDigest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
     "checked": true,
     "data": true,
     "warnings": {

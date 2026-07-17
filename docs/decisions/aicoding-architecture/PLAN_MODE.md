@@ -1,7 +1,7 @@
 # 计划模式：AiCoding 内核与扩展图架构
 
-Mode: Plan -> Architecture Baseline
-Plan Status: Approved
+Mode: Plan -> Architecture Baseline -> Implement -> Verify
+Plan Status: Implemented and Accepted
 
 ## 需求
 
@@ -20,9 +20,10 @@ Plan Status: Approved
 
 1. 形成唯一权威架构文档。
 2. 明确内核、扩展、porcelain、分发和 runtime 边界。
-3. 给出性能基线、预算和机器门禁。
-4. 把迁移拆成可验证提交，但不引入版本化实现路径。
-5. 不修改 Codex-Skills 子模块或 plugin cache。
+3. 形成 facts -> plan -> adapter -> domain state -> evidence 的可验证闭环。
+4. 支持 external Skill/MCP lifecycle 与 Agent CLI/JSON 调用。
+5. 定义正交模块、局部验证半径与明确冻结条件。
+6. 不修改 Codex-Skills 子模块或 plugin cache。
 
 ## 第一批执行范围
 
@@ -32,5 +33,16 @@ Plan Status: Approved
 2. Registry Snapshot + Digest；
 3. Typed Command Catalog。
 
-实现保持同一架构和 worktree 边界，不提前引入 capability graph、动态 plugin、
-state/journal 或 C 加速层。
+在这三个对象之上，本轮只继续实现已有真实消费者要求的 manifest catalog tree、静态
+adapter catalog、lifecycle ExecutionPlan 和 digest evidence。实现保持同一架构和 worktree
+边界，不引入 capability graph、全域 journal、动态 plugin、远程控制 API 或 C 加速层。
+
+## 架构停止条件
+
+- Kit/MCP 共用内容树 snapshot；
+- pre-commit/lifecycle 共用 ExecutionPlan；
+- Kit/MCP/runtime Skill 通过静态 adapter catalog 组合；
+- Agent/Skill 通过 CLI/JSON 完成 plan/apply/verify；
+- 模块职责与测试影响半径固化。
+
+满足后冻结总体架构；新增 Skill/MCP/component 属于功能扩展。

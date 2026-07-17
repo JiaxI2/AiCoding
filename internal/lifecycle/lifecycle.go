@@ -6,6 +6,7 @@ import (
 
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/mcpcontrol"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 )
 
 func Run(ctx context.Context, repo string, opts Options) Report {
@@ -22,17 +23,35 @@ func run(ctx context.Context, repo string, opts Options, execute commandExecutor
 		OK:            true,
 		Adapters:      []AdapterResult{},
 	}
-	for _, scope := range selectedScopes(opts.Scope) {
-		var adapter AdapterResult
-		switch scope {
-		case ScopeKit:
-			adapter = runKitAdapter(repo, opts)
-		case ScopeMCP:
-			adapter = runMCPAdapter(ctx, repo, opts)
-		case ScopeRuntimeSkill:
-			adapter = runRuntimeSkillAdapter(ctx, repo, opts, execute)
-		default:
-			adapter = failedAdapter(scope, opts, "unsupported lifecycle scope: "+scope)
+	catalog, err := LoadAdapterCatalogSnapshot()
+	if err != nil {
+		result.OK = false
+		result.Errors = []string{"cannot load lifecycle adapter catalog: " + err.Error()}
+		return result
+	}
+	result.CatalogDigest = catalog.Digest()
+	definitions, err := selectedAdapterDefinitions(opts.Scope, opts.Action)
+	if err != nil {
+		result.OK = false
+		result.Errors = []string{err.Error()}
+		return result
+	}
+	plan, err := buildExecutionPlan(repo, opts, result.CatalogDigest, definitions, execute)
+	if err != nil {
+		result.OK = false
+		result.Errors = []string{"cannot build lifecycle execution plan: " + err.Error()}
+		return result
+	}
+	result.PlanDigest, err = plan.Digest()
+	if err != nil {
+		result.OK = false
+		result.Errors = []string{"cannot digest lifecycle execution plan: " + err.Error()}
+		return result
+	}
+	for _, taskResult := range plan.Run(ctx, runner.Options{MaxParallel: 1}) {
+		adapter, ok := taskResult.Data.(AdapterResult)
+		if !ok {
+			adapter = failedAdapter(taskResult.ID, opts, "lifecycle adapter returned invalid result")
 		}
 		appendAdapter(&result, adapter)
 	}
@@ -66,13 +85,6 @@ func lifecycleMode(opts Options) string {
 	}
 }
 
-func selectedScopes(scope string) []string {
-	if scope == ScopeAll {
-		return []string{ScopeKit, ScopeMCP, ScopeRuntimeSkill}
-	}
-	return []string{scope}
-}
-
 func appendAdapter(report *Report, adapter AdapterResult) {
 	report.Adapters = append(report.Adapters, adapter)
 	report.Summary.Total++
@@ -96,6 +108,12 @@ func appendAdapter(report *Report, adapter AdapterResult) {
 
 func runKitAdapter(repo string, opts Options) AdapterResult {
 	result := AdapterResult{ID: ScopeKit, Action: opts.Action, DryRun: opts.DryRun, OK: false, Status: "failed"}
+	catalog, err := kit.LoadCatalogSnapshot(repo)
+	if err != nil {
+		result.Errors = []string{"cannot load kit catalog: " + err.Error()}
+		return result
+	}
+	result.InputDigest = catalog.Digest()
 	if opts.Action == "rollback" {
 		actionReport := kit.RollbackLast(repo)
 		result.OK = actionReport.OK
@@ -106,12 +124,7 @@ func runKitAdapter(repo string, opts Options) AdapterResult {
 		return result
 	}
 
-	entries, err := kit.LoadRegistry(repo)
-	if err != nil {
-		result.Errors = []string{"cannot load kit registry: " + err.Error()}
-		return result
-	}
-	selected, err := kit.SelectKits(entries, opts.KitID, opts.All || opts.Scope == ScopeAll)
+	selected, err := catalog.Select(opts.KitID, opts.All || opts.Scope == ScopeAll)
 	if err != nil {
 		result.Errors = []string{err.Error()}
 		return result
@@ -120,7 +133,7 @@ func runKitAdapter(repo string, opts Options) AdapterResult {
 	switch opts.Action {
 	case "install", "update", "uninstall", "status":
 		if opts.DryRun || opts.Action == "status" {
-			plan := kit.PlanLifecycle(repo, selected, kit.LifecycleOptions{
+			plan := kit.PlanCatalogLifecycle(repo, selected, kit.LifecycleOptions{
 				Action: opts.Action,
 				Mode:   selectionMode(opts),
 				DryRun: opts.DryRun,
@@ -132,7 +145,7 @@ func runKitAdapter(repo string, opts Options) AdapterResult {
 			result.Errors = kitPlanErrors(plan)
 			return result
 		}
-		actionReport := kit.RunAction(repo, selected, kit.ActionOptions{
+		actionReport := kit.RunCatalogAction(repo, selected, kit.ActionOptions{
 			Action: opts.Action,
 			Mode:   selectionMode(opts),
 			DryRun: false,
@@ -144,14 +157,14 @@ func runKitAdapter(repo string, opts Options) AdapterResult {
 		result.Errors = actionReport.Errors
 		return result
 	case "doctor":
-		errorsFound := kit.DoctorKits(repo, selected)
+		errorsFound := kit.DoctorCatalogKits(repo, selected)
 		result.OK = len(errorsFound) == 0
 		result.Status = statusFromOK(result.OK)
-		result.Data = kit.LoadKitViews(repo, selected)
+		result.Data = kit.CatalogKitViews(selected)
 		result.Errors = errorsFound
 		return result
 	case "verify":
-		verification := kit.VerifyStructure(repo, selected)
+		verification := kit.VerifyCatalogStructure(repo, selected)
 		result.OK = verification.OK
 		result.Status = statusFromOK(verification.OK)
 		result.Data = verification
@@ -166,14 +179,20 @@ func runKitAdapter(repo string, opts Options) AdapterResult {
 
 func runMCPAdapter(ctx context.Context, repo string, opts Options) AdapterResult {
 	result := AdapterResult{ID: ScopeMCP, Action: opts.Action, DryRun: opts.DryRun, OK: false, Status: "failed"}
-	entries, err := mcpcontrol.SelectComponents(repo, opts.ComponentID, opts.All || opts.Scope == ScopeAll)
+	catalog, err := mcpcontrol.LoadCatalogSnapshot(repo)
+	if err != nil {
+		result.Errors = []string{"cannot load MCP catalog: " + err.Error()}
+		return result
+	}
+	result.InputDigest = catalog.Digest()
+	components, err := catalog.Select(opts.ComponentID, opts.All || opts.Scope == ScopeAll)
 	if err != nil {
 		result.Errors = []string{err.Error()}
 		return result
 	}
 	switch opts.Action {
 	case "install", "update", "uninstall":
-		results := mcpcontrol.RunLifecycle(repo, opts.CodexConfig, entries, opts.Action, opts.DryRun)
+		results := mcpcontrol.RunCatalogLifecycle(repo, opts.CodexConfig, components, opts.Action, opts.DryRun)
 		errorsFound, warnings := mcpLifecycleMessages(results)
 		result.OK = len(errorsFound) == 0
 		result.Status = statusFromPlan(result.OK, opts.DryRun)
@@ -182,7 +201,7 @@ func runMCPAdapter(ctx context.Context, repo string, opts Options) AdapterResult
 		result.Errors = errorsFound
 		return result
 	case "status":
-		status := mcpcontrol.Status(repo, opts.CodexConfig, entries)
+		status := mcpcontrol.StatusCatalog(repo, opts.CodexConfig, components)
 		errorsFound, warnings := mcpStatusMessages(status)
 		result.OK = len(errorsFound) == 0
 		result.Status = statusFromOK(result.OK)
@@ -191,19 +210,19 @@ func runMCPAdapter(ctx context.Context, repo string, opts Options) AdapterResult
 		result.Errors = errorsFound
 		return result
 	case "doctor":
-		doctor := mcpcontrol.DoctorComponentsContext(ctx, repo, entries)
-		errorsFound := mcpCommandErrors(entries, doctor)
+		doctor := mcpcontrol.DoctorCatalogComponentsContext(ctx, repo, components)
+		errorsFound := mcpCommandErrors(mcpSnapshotEntries(components), doctor)
 		result.OK = len(errorsFound) == 0
 		result.Status = statusFromOK(result.OK)
 		result.Data = doctor
 		result.Errors = errorsFound
 		return result
 	case "verify":
-		verification := mcpcontrol.Verify(
+		verification := mcpcontrol.VerifyCatalog(
 			ctx,
 			repo,
 			opts.CodexConfig,
-			entries,
+			components,
 			opts.VerifyProfile,
 			opts.IncludeConfigured,
 		)
@@ -217,6 +236,14 @@ func runMCPAdapter(ctx context.Context, repo string, opts Options) AdapterResult
 		result.Errors = []string{"unsupported MCP lifecycle action: " + opts.Action}
 		return result
 	}
+}
+
+func mcpSnapshotEntries(snapshots []mcpcontrol.ComponentSnapshot) []mcpcontrol.RegistryEntry {
+	entries := make([]mcpcontrol.RegistryEntry, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		entries = append(entries, snapshot.Entry())
+	}
+	return entries
 }
 
 func selectionMode(opts Options) string {

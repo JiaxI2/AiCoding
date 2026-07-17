@@ -26,6 +26,8 @@ type Result struct {
 	ErrorKind     string      `json:"errorKind,omitempty"`
 	Message       string      `json:"message,omitempty"`
 	RepoRoot      string      `json:"repoRoot,omitempty"`
+	InputDigest   string      `json:"inputDigest,omitempty"`
+	PlanDigest    string      `json:"planDigest,omitempty"`
 	Checked       interface{} `json:"checked,omitempty"`
 	Data          interface{} `json:"data,omitempty"`
 	Warnings      []string    `json:"warnings,omitempty"`

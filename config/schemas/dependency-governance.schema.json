@@ -14,7 +14,8 @@
     "kitRegistry",
     "mcpRegistry",
     "skills",
-    "externalDependencies"
+    "externalDependencies",
+    "goPackageBoundaries"
   ],
   "additionalProperties": false,
   "properties": {
@@ -135,9 +136,39 @@
           }
         }
       }
+    },
+    "goPackageBoundaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/goPackageBoundary"
+      }
     }
   },
   "$defs": {
+    "goPackageBoundary": {
+      "type": "object",
+      "required": [
+        "path",
+        "forbiddenImports"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^internal/[a-z0-9][a-z0-9/-]*$"
+        },
+        "forbiddenImports": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^internal/[a-z0-9][a-z0-9/-]*$"
+          }
+        }
+      }
+    },
     "layer": {
       "type": "object",
       "required": [

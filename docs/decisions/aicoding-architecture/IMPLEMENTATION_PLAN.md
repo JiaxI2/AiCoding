@@ -1,32 +1,35 @@
-# 实施计划：AiCoding 内核与扩展图架构
+# 实施计划：正交内核闭环
 
-Plan Status: Approved
+Plan Status: Implemented and Accepted
 
-## 架构确定
+## 已完成
 
-- 建立 `docs/architecture/AICODING_CORE_ARCHITECTURE.md` 为权威架构。
-- 更新总览、维护入口和 Agent 必读文档。
-- 记录选项、用户选择、性能基线和拒绝项。
+1. 固化 `ExecutionPlan` descriptor、不可变选择、snapshot 和 digest，迁移 pre-commit。
+2. 建立规范化 Registry Snapshot + Digest，迁移 Kit/MCP loader。
+3. 建立 Typed Command Catalog，统一 handler routing、alias、namespace 和 help。
+4. 建立通用 `CatalogSnapshot` 内容树，组合 registry 与 referenced manifest digest。
+5. 建立 Kit/MCP domain catalog，并让 lifecycle/领域命令消费 detached manifest values。
+6. 建立静态 lifecycle Adapter Catalog，声明 input、state owner、entrypoint 与 action effect。
+7. 删除 lifecycle scope switch，把 adapter selection 转为 `ExecutionPlan`，成为第二真实消费者。
+8. 在 JSON 中暴露 adapter catalog、domain input 与 plan digest。
+9. 明确 external Skill/MCP 的 install/update/sync/uninstall、Agent 调用与 state/rollback 边界。
+10. 用正交模块、局部测试半径与冻结条件替换无限迁移列表。
 
-## 已实现的第一批核心对象
+## 验收
 
-1. `ExecutionPlan`：稳定 descriptor、不可变选择、snapshot、digest，并迁移 pre-commit 真实消费者。
-2. Registry Snapshot + Digest：建立通用 snapshot 对象，迁移 Kit/MCP loader，MCP inventory 暴露 digest。
-3. Typed Command Catalog：用 typed ID 绑定 handler、alias、namespace 和 help，并删除 CLI 顶层 switch 与手写 help。
+1. Module contracts：registry、runner、Kit、MCP、lifecycle、report、CLI。
+2. Consumer regression：Kit/MCP/runtime Skill lifecycle 与真实 CLI JSON。
+3. Repository gates：DocSync、Markdown、dependency/layout/lint、hooks、diff checks。
+4. Product gates：doctor、Smoke、Full、Release；子模块保持 clean。
+5. 独立提交本批实现，不 push/PR/release。
 
-## 后续代码迁移
+## 非本计划
 
-1. 统一 root/path 与 manifest snapshot。
-2. 引入 capability graph 和静态 adapter factory。
-3. 为 plan 增加 read/write 与 journal 语义。
-4. 用 typed command catalog 校验 Taskfile、命令文档和兼容命令。
-5. 统一内部 result/check，并保留外部兼容。
-6. 接入 digest cache 与 benchmark gate。
-7. 删除旧路径并执行 Full/Release。
+- capability graph；
+- 全域 journal/atomic rollback；
+- HTTP/gRPC/MCP 产品控制 API；
+- dynamic plugin ABI；
+- C/native core；
+- Taskfile/docs 自动生成器、通用 result 大重构或 speculative cache framework。
 
-## 实施纪律
-
-- 每个提交迁移真实消费者并删除对应旧路径。
-- 不先搭空框架，不保留长期双轨。
-- 不修改子模块源、生成插件或 plugin cache。
-- 不 push、PR 或 release，除非用户另行授权。
+这些不是“未完成架构项”。只有新的现实证据满足解冻规则时才进入独立 ADR。

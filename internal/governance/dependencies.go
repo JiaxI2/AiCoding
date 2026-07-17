@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +31,7 @@ type dependencyPolicy struct {
 	MCPRegistry          dependencyRegistry    `json:"mcpRegistry"`
 	Skills               dependencySkillPolicy `json:"skills"`
 	ExternalDependencies []externalDependency  `json:"externalDependencies"`
+	GoPackageBoundaries  []goPackageBoundary   `json:"goPackageBoundaries"`
 }
 
 type dependencyLayer struct {
@@ -103,6 +107,11 @@ type dependencySkillPolicy struct {
 type externalDependency struct {
 	ID    string `json:"id"`
 	Layer string `json:"layer"`
+}
+
+type goPackageBoundary struct {
+	Path             string   `json:"path"`
+	ForbiddenImports []string `json:"forbiddenImports"`
 }
 
 type dependencyRegistryFile struct {
@@ -203,6 +212,7 @@ func CheckDependencies(repo string) DependencyReport {
 	report.addDependencyCheck("Skill naming and exposure", checkSkillDependencyPolicy(repo, policy, layers), nil)
 	report.addDependencyCheck("asset identity version opacity", checkAssetVersionOpacity(repo, policy), nil)
 	report.addDependencyCheck("README version badge authority", checkReadmeVersionBadges(repo, policy), nil)
+	report.addDependencyCheck("orthogonal Go package boundaries", checkGoPackageBoundaries(repo, policy.GoPackageBoundaries), nil)
 
 	for _, rel := range []string{
 		"config/schemas/dependency-governance.schema.json",
@@ -216,6 +226,52 @@ func CheckDependencies(repo string) DependencyReport {
 		}
 	}
 	return report
+}
+
+func checkGoPackageBoundaries(repo string, boundaries []goPackageBoundary) []string {
+	errs := []string{}
+	for _, boundary := range boundaries {
+		rel := filepath.ToSlash(filepath.Clean(boundary.Path))
+		if rel == "." || rel == "" || strings.HasPrefix(rel, "../") || !strings.HasPrefix(rel, "internal/") {
+			errs = append(errs, "Go package boundary path must stay under internal/: "+boundary.Path)
+			continue
+		}
+		root := platform.RepoPath(repo, rel)
+		if !platform.IsDir(root) {
+			errs = append(errs, "Go package boundary directory is missing: "+rel)
+			continue
+		}
+		walkErr := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+			if entry.IsDir() || filepath.Ext(path) != ".go" || strings.HasSuffix(path, "_test.go") {
+				return nil
+			}
+			file, parseErr := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+			if parseErr != nil {
+				return parseErr
+			}
+			for _, imported := range file.Imports {
+				value, unquoteErr := strconv.Unquote(imported.Path.Value)
+				if unquoteErr != nil {
+					return unquoteErr
+				}
+				for _, forbidden := range boundary.ForbiddenImports {
+					prefix := "github.com/JiaxI2/AiCoding/" + strings.TrimSuffix(filepath.ToSlash(forbidden), "/")
+					if value == prefix || strings.HasPrefix(value, prefix+"/") {
+						relFile, _ := filepath.Rel(repo, path)
+						errs = append(errs, filepath.ToSlash(relFile)+" imports forbidden package "+value)
+					}
+				}
+			}
+			return nil
+		})
+		if walkErr != nil {
+			errs = append(errs, "cannot inspect Go package boundary "+rel+": "+walkErr.Error())
+		}
+	}
+	return errs
 }
 
 func (r *DependencyReport) addDependencyCheck(name string, errs, warnings []string) {

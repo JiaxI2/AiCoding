@@ -1,243 +1,265 @@
-# AiCoding 内核与扩展图架构
+# AiCoding 正交内核与扩展架构
 
-Status: Accepted
+Status: Accepted and Frozen
 
-## 1. 架构结论
+## 1. 结论
 
-AiCoding 采用“稳定内核（plumbing）+ 扩展图（extension graph）+ 用户工作流（porcelain）”架构。
+AiCoding 采用“正交深模块（orthogonal deep modules）+ 仓库控制面 + 静态扩展适配器”架构。
 
-内核只负责跨领域、可证明稳定的基础能力；Kit、MCP、runtime Skill、治理规则、
-测试 profile 和专项工具全部通过声明式能力与静态 adapter 组合。用户可玩功能建立在
-同一组基础能力上，不再各自实现路径解析、registry 加载、执行调度、报告或回滚。
+它不是一个不断吸收职责的微内核，也不是一组由 Agent 临时拼接的脚本。稳定基础由六个
+互不拥有对方职责的模块组成：
 
-实现目录、文件名、包名、模块名、服务名和稳定 ID 不编码版本。版本只允许出现在
-README、CHANGELOG、Release、manifest 元数据和其他说明文档中。架构演进通过兼容
-契约、ADR 和迁移记录表达，不创建平行的“新版内核”。
+```text
+snapshot = 事实身份
+plan     = 目标意图
+runner   = 执行调度
+adapter  = 领域翻译
+report   = 可验证证据
+state    = 领域所有
+```
 
-## 2. 为什么这样定
+Kit、MCP、runtime Skill 等功能在这些基础上扩展。新增或更新功能通常只增加或修改领域
+manifest、领域实现和契约测试，不扩大内核权力。架构阶段在本文定义的闭环与冻结条件满足后
+结束；后续工作默认是功能扩展或模块内部优化，不再被称为“继续升级架构”。
 
-Git 的可扩展性来自少量可靠 plumbing、内容寻址对象、可移动 refs 和清晰的
-porcelain 边界；协议通过 capability negotiation 扩展，而不是让基础对象理解所有
-上层工作流。GitHub 在此基础上把仓库内事件自动化交给 Actions，把长期、跨仓库集成
-交给权限更细且使用短期令牌的 GitHub Apps。mattpocock/skills 则把 Skill 保持为
-小型、可组合资产，区分用户调用与模型调用，并用领域文档和 ADR 控制扩展边界。
+实现目录、文件名、包名、模块名、服务名和稳定 ID 不编码版本。版本只出现在 manifest
+元数据、README、CHANGELOG、Tag、Release 或其他说明文档中。
 
-AiCoding 当前已经具备正确方向：单 Go CLI、静态 lifecycle adapter、唯一测试引擎、
-统一报告和有界并发 runner。需要优化的不是再造一个框架，而是把这些深模块提升为
-所有扩展共用的稳定基础，并消除命令、路径、registry 和报告的重复真相。
+## 2. 设计来源与对抗性结论
 
-参考：
+本架构综合了以下证据：
+
+- Git 的内容寻址对象、Merkle DAG、轻量 refs、index 候选状态、对象传输和安全 ref 更新；
+- GitHub Actions 的可复用工作流与权限递减，以及 GitHub App 的细粒度、短期凭据边界；
+- mattpocock/skills 的小型、可组合 Skill，以及 source copy 与 managed plugin 两种分发语义；
+- `Orthogonal_Architecture_Design_Kit` 的 God Core 禁令、状态所有权和局部验证原则；
+- 用户 Git MOC 与 12 个索引，尤其“稳定边界优先于无限优化”的停止规则。
+
+参考资料：
 
 - [Git plumbing 与 porcelain](https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain)
-- [Git protocol capability negotiation](https://git-scm.com/docs/protocol-v2)
+- [Git 安全更新 refs](https://git-scm.com/docs/git-update-ref)
+- [Git protocol v2](https://git-scm.com/docs/protocol-v2)
 - [Git packfiles](https://git-scm.com/book/en/v2/Git-Internals-Packfiles.html)
-- [GitHub reusable workflows](https://docs.github.com/en/actions/concepts/workflows-and-actions/reusing-workflow-configurations)
-- [GitHub Apps 与 Actions 的边界](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/deciding-when-to-build-a-github-app)
+- [GitHub 可复用工作流](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations)
+- [GitHub Actions 的 GITHUB_TOKEN](https://docs.github.com/en/actions/concepts/security/github_token)
 - [mattpocock/skills](https://github.com/mattpocock/skills)
 
-## 3. 总体结构
+关键结论不是“复制 Git”，而是保留其边界思想：
+
+1. 身份与名称分离：digest 标识不可变事实，profile/selection 是可移动引用。
+2. 事实与视图分离：catalog 是事实输入，list/status/report 是可重建视图。
+3. 候选状态与发布分离：plan 描述意图，apply 才修改领域状态。
+4. 逻辑模型与物理优化分离：先固定语义，再由测量决定缓存、并发或原生加速。
+5. 乐观并发与所有权明确：写操作只能修改登记资产，不能以全局清理代替 rollback。
+6. 架构必须知道何时停止：没有第二个真实消费者和稳定变化点，不抽象。
+
+## 3. 闭环
 
 ```mermaid
-flowchart TD
-    U["User / Agent"] --> P["Porcelain: CLI / Skills / profiles"]
-    P --> C["Control plane: catalog / graph / plan"]
-    C --> A["Capability adapters"]
-    C --> K["Stable kernel"]
-    A --> K
-    A --> R["External runtimes"]
-    K --> R
+flowchart LR
+    A["User / Agent / Skill"] --> C["Typed Command Catalog"]
+    C --> L["Lifecycle Control Plane"]
+    L --> AC["Static Adapter Catalog"]
+    AC --> S["Domain Catalog Snapshot"]
+    S --> P["ExecutionPlan"]
+    P --> AD["Domain Adapter"]
+    AD --> D["Kit / MCP / Runtime Skill"]
+    D --> ST["Domain-owned State"]
+    D --> R["Result Evidence"]
+    S -. "inputDigest" .-> R
+    P -. "planDigest" .-> R
+    AC -. "catalogDigest" .-> R
 ```
 
-与现有语义层一一对应：
+一次正式生命周期调用完成以下闭环：
 
-| 语义层 | 架构职责 | 主要资产 |
-|---|---|---|
-| platform | 用户意图与 porcelain | `cmd/aicoding`、`internal/cli`、Taskfile、平台 Skills、CI |
-| integration | 组合与控制面 | catalog、capability graph、profile、lifecycle、repohealth、testengine |
-| capability | 可复用能力 adapter | Kit、MCP、C99、governance、docsync、专项工具 |
-| runtime | 稳定内核与外部执行 | root/path、manifest、plan/runner、report、state/journal、process/filesystem |
+1. Typed Command Catalog 把用户或 Agent 的命令解析为稳定 action 与参数。
+2. Static Adapter Catalog 选择 Kit、MCP 或 runtime Skill adapter，并声明 action 的
+   `read`/`write` effect、输入种类、entrypoint 与状态所有者。
+3. Kit/MCP 将 registry 和其引用的 manifest 组合为内容树快照；runtime Skill 将平台配置
+   与可用的 source commit 组合为输入快照。
+4. Lifecycle 生成 `ExecutionPlan`；摘要只包含稳定意图，不包含函数地址和 repo 绝对路径。
+5. Runner 只按 plan 调度，不做领域判断；当前跨 adapter 顺序执行，避免并行写状态。
+6. Adapter 只把统一 action 翻译给领域模块；安装、同步、验证和状态规则仍由领域拥有。
+7. JSON 结果同时携带 adapter catalog、输入与 plan digest，调用者可确认“对什么事实执行了
+   什么意图”。领域 state、backup 或 rollback 证据继续由对应领域返回。
 
-依赖只允许同层或向下。低层不能观察、命名、配置或记录高层产品身份。
+这条链路已经有真实消费者：
 
-## 4. 稳定内核
+- `ExecutionPlan`：pre-commit 与 lifecycle；
+- 内容树快照：Kit 与 MCP；
+- lifecycle adapter：Kit、MCP 与 runtime Skill；
+- JSON digest 证据：正式 lifecycle、Kit list 和 MCP list/领域命令。
 
-内核只包含下列六类基础能力：
+## 4. 正交模块契约
 
-| 内核能力 | 唯一职责 | 不应包含 |
-|---|---|---|
-| root/path | 一次解析 repo root、规范化路径、拒绝越界 | 具体 Kit、Skill 或 hook 路径 |
-| manifest snapshot | 统一读取、schema 校验、规范化、排序并生成 digest | 领域 workflow |
-| capability graph | 根据 `provides` / `requires` 构图、检查环、选择 profile | 用户提示词或安装步骤 |
-| plan/runner | 生成确定性计划；只读有界并发，写操作串行；timeout/cancel | 领域判断 |
-| report/contract | 单一结果 envelope、check、错误类别、退出码与 JSON stdout | 领域特有文本渲染分支 |
-| state/journal | mutable refs、安装状态、事务日志、精确 rollback | 任意未登记文件清理 |
+| 模块 | 唯一职责 | 输入/输出 | 禁止承担 | 权威实现 |
+|---|---|---|---|---|
+| root/path | repo root、规范路径、越界拒绝 | path value | 领域发现、生命周期策略 | `internal/platform` |
+| snapshot | 规范化事实、内容树、digest、只读 decode | value -> snapshot | action 选择、I/O 执行 | `internal/registry` |
+| plan | 确定性意图、选择、snapshot、digest | task descriptors | 外部资源操作、领域判断 | `internal/runner.ExecutionPlan` |
+| runner | timeout、cancel、有界并发、稳定结果顺序 | plan -> task results | lifecycle 策略、状态所有权 | `internal/runner` |
+| adapter catalog | 静态领域翻译登记与 effect 声明 | action + selection | manifest 业务规则、全局状态 | `internal/lifecycle` |
+| domain | Kit/MCP/runtime Skill 的业务与状态规则 | typed domain values | 改写其他领域状态 | `internal/kit`、`internal/mcpcontrol`、受控 specialty |
+| report | envelope、证据、错误分类、JSON contract | results -> evidence | 调度、领域修复 | `internal/report` |
+| command catalog | command ID、alias、handler、help | argv -> command | 领域生命周期实现 | `internal/cli` |
 
-`internal/runner` 当前的稳定顺序、有界并发、超时和 critical fail-fast 语义保留；
-`internal/report` 的现有兼容 envelope 保留。迁移通过加深现有模块完成，不先创建
-大量空目录或抽象接口。
+允许的连接方式是不可变值对象、descriptor、snapshot 和 result。禁止：
 
-### 4.1 已落地的核心对象
+- snapshot 调用 runner 或领域逻辑；
+- runner 识别 Kit、MCP、Skill 等领域身份；
+- adapter 保存所有领域状态或重写领域策略；
+- report 触发修复；
+- 任一 `Core`、`Manager` 或全局 registry 聚合全部状态与流程。
 
-第一批实现把三个已有变化点提升为可检查对象：
+模块可以单独优化。例如 snapshot 的规范化、runner 的调度算法或 report 的序列化可以在
+保持公开契约时独立替换，不要求重构其他模块。
 
-| 对象 | 当前权威 | 固化语义 |
-|---|---|---|
-| `ExecutionPlan` | `internal/runner` | task 顺序、稳定 `action`、参数、group、timeout、critical；不可变选择；可生成 snapshot 与 SHA-256 digest |
-| Registry Snapshot | `internal/registry` + Kit/MCP domain loader | domain registry 只解析一次，先规范化与稳定排序，再形成只读 snapshot 和 digest |
-| Typed Command Catalog | `internal/cli` | command ID、名称/alias、namespace、handler、help form；路由与 help 共用同一目录，并形成 catalog digest |
+## 5. 仓库控制面与 Agent 边界
 
-`ExecutionPlan` digest 标识“计划意图”，不包含 Go 函数地址、进程状态或 worktree
-绝对路径；相同 action 和参数在不同进程中保持同一摘要。未绑定执行函数的 plan 仍可
-描述、检查和摘要，真正执行时会明确报告 executor 缺失。
+生命周期由 AiCoding 仓库拥有更合适，原因是仓库拥有 registry、manifest、Marketplace
+绑定、安装状态、治理规则与验证入口；Agent 只拥有一次会话中的用户意图。若让 Agent
+自己实现安装/更新/卸载，每种 Agent 都会复制状态判断、权限与 rollback 逻辑。
 
-Registry digest 当前只覆盖规范化 registry 文档，不把它指向的 manifest 内容折叠进来。
-这样 registry loader、manifest loader 和 doctor 的既有失败边界不被暗中改变；后续
-manifest snapshot 会把 registry digest 与各 manifest digest 组合成更高层输入对象。
-
-## 5. 扩展契约
-
-扩展是声明式 descriptor 与一个受控 adapter 的组合。descriptor 至少表达：
-
-- `id`：稳定、无版本的身份；
-- `kind`：Kit、MCP、runtime-skill、check、tool 等领域种类；
-- `layer`：依赖治理层；
-- `provides` / `requires`：能力协商；
-- `actions`：支持的 `plan`、`status`、`doctor`、`verify`、`apply`、`rollback`；
-- `effects`：`read` 或 `write`，写操作必须可审计；
-- `entrypoint`：编译内建或受控外部进程；
-- `timeoutClass`：执行预算类别；
-- `source` / `distribution`：来源、打包与运行时暴露边界。
-
-实现规则：
-
-1. Go 内建 adapter 静态链接，由 `kind -> factory` 注册；不使用 Go dynamic plugin ABI。
-2. PowerShell、Python、MCP 和第三方 CLI 只能通过有界进程 adapter 运行。
-3. 同一 descriptor snapshot 在一次命令内只解析一次，所有选择与执行共享该 snapshot。
-4. 新增领域能力优先增加 descriptor 和 adapter，不修改 runner、report 或根路径算法。
-5. 只有出现两个真实 adapter 且变化点稳定时才抽取接口；单一实现保持具体。
-6. 删除某个扩展时，内核无需修改；若必须修改内核，说明扩展边界不完整。
-
-## 6. Porcelain 与可玩性
-
-可玩性来自组合，而不是让内核动态执行任意代码：
-
-- profile 是一组 capability refs，可组合 Smoke、Full、Release、runtime、开发态能力；
-- CLI 与 Skills 表达用户意图，调用 control plane 生成 plan；
-- user-invoked Skill 负责高风险或明确的用户流程，model-invoked Skill 负责可复用步骤；
-- `list` / `describe` / `plan` 先暴露可发现性，再允许 `apply`；
-- 本地开发态来源与 Marketplace 管理态来源明确分离；
-- Hook、CI 和 reusable workflow 只消费正式命令，不复制业务实现；
-- 任意写操作先生成同构 plan，apply 记录 journal，rollback 只处理自身拥有的变更。
-
-## 7. 控制面边界
+正式边界是：
 
 ```text
-bootstrap
--> lifecycle plan|apply|status
--> doctor / verify
--> test
--> release
+Agent / Skill
+  -> execute bin/aicoding.exe ... --json
+     -> validate report.Result
+        -> inspect inputDigest / planDigest / data
 ```
 
-- `internal/lifecycle` 是 lifecycle 组合权威；
-- `internal/repohealth` 是 product doctor / verify 权威；
-- `internal/testengine` 是测试 profile 与执行权威；
-- `internal/report` 是报告权威；
-- Taskfile、CI、PowerShell、Python 和文档不能新增第二聚合器；
-- CLI 帮助、命令 contract、Taskfile 路由和命令文档应由同一 typed command catalog
-  校验或生成，逐步消除手写重复列表。
+Agent 不导入 `internal/*` Go 包，不直接修改 plugin cache、Codex 配置或 runtime junction。
+Skill 可以编排多条正式命令，但不能实现第二 lifecycle。MCP server 只暴露领域工具和资源，
+不注册 AiCoding 安装/更新工作流；若将来出现第二个独立、真实的远程控制客户端，再基于同一
+命令契约评估服务 API，而不是预建 HTTP/gRPC/MCP 控制面。
 
-## 8. Source、distribution 与 runtime 分离
+详见 [CLI 与 MCP 控制面](CLI_MCP_CONTROL_PLANE.md)。
+
+## 6. 外部 Skill 与 MCP 的生命周期
+
+### 6.1 Skill
+
+Skill 状态必须区分：
 
 ```text
-Codex-Skills source / released gitlink
--> Marketplace package source
--> installed plugin state
--> runtime Skill exposure
+upstream source pin
+-> released plugin package / standalone source path
+-> installed plugin or junction
+-> runtime discovery
 ```
 
-四个状态不能折叠：
+- 外部 GitHub Skill 先进入 Codex-Skills 的 declared nested submodule 与 binding registry；
+- AiCoding 只登记 released source path、profile 和 runtime exposure；
+- `install`/`update`/`uninstall` 通过 `runtime-skill` adapter 调用受控 profile 实现；
+- AiCoding plugin 的 install/update 归 Kit adapter 所有；
+- source pin 更新是跨仓库维护，不等同于 runtime update；
+- 同名 Skill 只能有一个 active runtime source。
 
-- `CodingKit/agents/skills` 是只读发布依赖；
-- Marketplace 指向子模块内已生成并验证的 package；
-- plugin cache 由 Codex 管理，AiCoding 不直接修改；
-- standalone runtime junction 只暴露 registry 明确登记的 Skill 目录；
-- submodule 更新不等于 plugin refresh，也不等于 runtime profile 已收敛。
+### 6.2 MCP
 
-## 9. 性能模型
+- `config/mcp-registry.json` 是组件引用目录；component manifest 是组件事实；
+- `install`/`update` 管理组件 runtime、package、Codex managed block 和 install state；
+- `uninstall` 只删除登记的 managed block、owned runtime 与 state；
+- `status`/`doctor`/`verify` 是只读观察；
+- MCP server 的 tools/resources 属于 capability，用户工作流属于 Skill。
 
-本次 Windows 本地编译后二进制基线：
+### 6.3 统一 action 语义
 
-| 路径 | p50 | p95 |
-|---|---:|---:|
-| `version` | 43 ms | 95 ms |
-| `--help` | 47 ms | 68 ms |
-| `kit list` | 47 ms | 89 ms |
-| dependency governance | 264 ms | 402 ms |
-| layout governance | 226 ms | 346 ms |
+| Action | 语义 | Effect |
+|---|---|---|
+| `plan` | 为 install/update/uninstall 生成候选意图，不写状态 | read |
+| `install` | 从登记事实建立 owned runtime/state | write |
+| `update` | 依据相同 identity 收敛 package/runtime/config，不创建新 identity | write |
+| `uninstall` | 删除领域明确拥有的 exposure/runtime/state | write |
+| `status` | 对比登记事实、运行时和 state | read |
+| `doctor` | 诊断环境与漂移 | read |
+| `verify` | 执行确定性契约/兼容验证 | read |
+| `rollback` | 使用领域证据恢复领域拥有状态；不是全域业务补偿 | write |
 
-长期性能预算：
+“同步”不是新的顶层 action。它是 Kit update 内的 plugin refresh、MCP update 内的配置收敛，
+或 runtime Skill update 内的 exposure 收敛；同步失败由领域结果说明，不能由 Core 猜测。
 
-- `version`、help、catalog/list 不启动外部进程，参考机 p95 不超过 100 ms；
-- 单项结构治理参考机 p95 不超过 500 ms；
-- catalog 加载为一次 parse + normalize + digest，后续查询为内存操作；
-- capability graph 选择复杂度为 `O(V+E)`；
-- 只读任务并发上限为 `min(CPU, 8)`，写任务不并发；
-- 缓存以 manifest digest 和输入集合为 key，命中不改变语义，诊断可关闭缓存；
-- 同一基准环境 p95 回退超过 20% 时阻止合并，除非 ADR 记录原因。
+## 7. 状态、事务与并发边界
 
-绝对耗时用于本机预算，算法、外部进程数、磁盘扫描次数和相对回退用于 CI 门禁，
-避免把机器差异误判为架构回退。
+不存在虚构的全局事务：
 
-## 10. 当前热点与目标归属
+- Kit 保存 install state 与 last rollback snapshot；
+- MCP 保存 install state，并在单次配置/runtime 操作中使用 backup/staging 恢复；
+- runtime Skill specialty 实现保存自身 migration/rollback 证据；
+- lifecycle 聚合结果，但不声称三个领域可以原子提交或统一 rollback。
 
-| 当前热点 | 目标 |
-|---|---|
-| CLI switch、contract、Taskfile、文档重复命令表 | typed command catalog 已接管路由、namespace 和 help；Taskfile/文档一致性门禁待接入 |
-| Kit 与 MCP 各自实现 registry load/select/validate | registry load 已共用 snapshot/digest；manifest snapshot 与 graph 待接入 |
-| lifecycle 用 scope switch 直接绑定三个领域 | 静态 factory 注册真实 adapter |
-| runtime Skill adapter 硬编码脚本路径 | descriptor 提供受治理 entrypoint |
-| runner plan 只有可执行 closure | `ExecutionPlan` 已提供稳定 descriptor、snapshot、digest 与不可变选择；read/write 调度和 journal 待接入 |
-| plan-mode generator 与 gate 使用不同目录/root 算法 | 统一 root/path 与 immutable decision record + current ref |
-| report.Result、StandardReport、TaskResult 语义重叠 | 保持兼容 envelope，统一内部 check/result 模型 |
-| 大文件继续增长 | 只按稳定变化点加深模块，不按行数机械拆包 |
+写 action 跨 adapter 顺序执行。只读 action 将来只有在基准证明收益、输出顺序保持且领域
+契约声明线程安全时才能并行；该优化属于 runner/control-plane 内部变化，不改变 action。
 
-## 11. 迁移顺序
+## 8. 性能与 C 语言边界
 
-迁移在同一架构下分提交，不创建平行实现：
+Go 单二进制、静态 adapter 与一次 parse/normalize/digest 是当前默认。C 不是“更底层”就
+自动更快：跨语言 ABI、内存所有权、Windows 构建与测试矩阵会增加稳定边界成本。
 
-1. 固化行为测试、性能基线和现有 JSON contract。
-2. 将现有 runner plan 提升为 `ExecutionPlan`，支持 descriptor、snapshot、digest 和不可变选择。（已完成）
-3. 建立 Registry Snapshot + Digest，先替换 Kit/MCP registry 读取链。（已完成）
-4. 建立 typed command catalog，先接管 handler routing、namespace contract 与全局 help。（已完成）
-5. 建立统一 root/path 与 manifest snapshot，把 registry 和 manifest digest 组合成命令输入。
-6. 增加 capability graph 与静态 adapter factory，替换 lifecycle scope switch。
-7. 将 plan 分为 read/write，给 apply 增加 state/journal。
-8. 让 typed command catalog 校验 Taskfile、命令文档和兼容命令。
-9. 统一内部 check/result，接入 digest cache 与 benchmark gate，并保持外部 schema 向后兼容。
-10. 删除旧 loader、硬编码路径和重复 contract；最后运行 Full/Release 门禁。
+只有同时满足以下条件才允许提议 C/Rust/native module：
 
-每一步必须先迁移一个真实消费者并删除旧路径；禁止“新框架先落地、旧实现长期并存”。
+1. 可重复 profile 证明热点位于纯计算内核，而不是进程启动、磁盘或网络；
+2. Go 优化无法达到已批准预算；
+3. 该算法有至少两个真实消费者和小型稳定的 buffer-in/buffer-out ABI；
+4. native 与 Go fallback 通过同一 golden/contract tests；
+5. 收益覆盖构建、供应链、跨平台和故障诊断成本。
 
-## 12. 机器门禁
+当前 snapshot、JSON、文件与子进程路径不满足这些条件，因此不引入 C 层。此结论不禁止
+未来基于证据的局部 native 加速，但禁止让 native module 变成新 Core。
 
-已有门禁继续作为底线：
+## 9. 验证半径
 
-- `config/dependency-governance.json`：层级、namespace、稳定 identity；
-- `config/repository-layout.json`：目录和 source-of-truth；
-- `internal/testengine`：Smoke / Full / Release；
-- `docsync`：代码、配置、文档同步；
-- `git diff --check` 与 hooks：提交前一致性。
+验证范围由公开契约影响半径决定：
 
-迁移新增门禁时，只扩展现有 `governance`、`doctor`、`verify` 或 `testengine`，
-不在 CI、Taskfile 或脚本中建立第二套聚合逻辑。
+| 变化 | 最小必跑 | 扩大条件 |
+|---|---|---|
+| snapshot 内部实现 | `internal/registry` contract tests | digest/JSON contract 变化时跑 Kit/MCP consumers |
+| Kit manifest/实现 | `internal/kit` + 对应 lifecycle consumer | 公共 action/report 变化时跑 CLI contracts |
+| MCP manifest/实现 | `internal/mcpcontrol` + 对应 lifecycle consumer | Codex config/report 变化时跑 CLI contracts |
+| runner 内部实现 | `internal/runner` tests | plan/task contract 变化时跑所有 consumers |
+| adapter descriptor/selection | `internal/lifecycle` tests | action 或 effect 变化时跑 CLI、Smoke/Full |
+| report/schema | `internal/report` + CLI contract | 外部 JSON 变化时跑 Full/Release |
+| command catalog | `internal/cli` catalog/contract tests | 正式命令变化时跑 docs/governance/Full |
+| release、跨模块契约或依赖治理 | consumer regressions + Full/Release | 始终 |
 
-## 13. 明确拒绝
+局部测试是开发反馈，不替代交付门禁。实际 release 仍按仓库规则执行 Marketplace、安装、
+refresh、rollback 和 uninstall ownership 验证。
 
-- 不做 Go 动态插件内核；
-- 不拆成微服务或多个产品仓库；
-- 不允许扩展进程内执行任意第三方代码；
-- 不复制 Skill 源码到 AiCoding；
-- 不新增第二 CLI、第二 lifecycle、第二测试引擎或第二报告体系；
-- 不在实现路径、文件名、ID、包名、模块名或服务名中编码版本；
-- 不为推测中的未来扩展预建接口、目录或兼容层。
+`config/dependency-governance.json` 的 `goPackageBoundaries` 将关键禁令接入现有
+`governance dependencies`：registry/runner/report 不得反向依赖 lifecycle 或领域，Kit/MCP
+不得互相依赖，领域不得依赖 CLI/repohealth/testengine。它检查 production Go imports，测试
+可以引用相邻消费者以完成 contract verification。
+
+## 10. 架构冻结条件
+
+本架构在以下条件全部满足时冻结：
+
+- 六个正交职责及依赖禁令有权威文档；
+- registry 与 manifest 已形成内容树快照，且 Kit/MCP 两个消费者复用；
+- lifecycle 使用静态 adapter catalog，不再用 scope switch 绑定领域；
+- lifecycle 使用 `ExecutionPlan`，报告携带 catalog/input/plan digest；
+- Kit、MCP、runtime Skill 的 action、状态所有权和 rollback 边界明确；
+- Agent 只通过正式 CLI/JSON 调用，MCP 不反向拥有平台 workflow；
+- 模块、消费者与全量验证半径已定义并由测试覆盖。
+
+冻结后的规则：
+
+1. 新 Kit/MCP/Skill 优先增加 manifest/registry entry 与领域测试，不修改六个模块契约。
+2. 新领域只有在无法由已有领域表达时才增加静态 adapter；仍不增加中心判断。
+3. capability graph、全域 journal、远程控制 API、动态 plugin ABI、native core 均不在基线内。
+4. 只有现实问题、稳定变化点和至少两个消费者同时出现，才以 ADR 解冻对应边界。
+5. 架构文档记录长期不变量；功能计划、性能实验和迁移任务进入各自 backlog/ADR。
+
+## 11. 明确拒绝
+
+- God Core、全局状态仓库或跨领域 `SystemManager`；
+- Go dynamic plugin ABI、任意第三方代码进程内加载；
+- 第二 CLI、第二 lifecycle、第二 test engine、第二 report authority；
+- 让 runner 做领域决策、让 adapter 承载业务策略、让 report 触发修复；
+- 把 source pin、package、installed state 和 runtime discovery 折叠为一个布尔值；
+- 默认每次局部修改都跑全量回归，或反过来用局部测试声称 release 完成；
+- 为推测中的未来能力预建 capability graph、全域事务或服务 API；
+- 在实现 identity 中编码版本，或用平行目录表达架构演进。

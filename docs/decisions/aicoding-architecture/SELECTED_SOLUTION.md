@@ -1,31 +1,37 @@
-# 已选方案：稳定内核 + 扩展图
+# 已选方案：正交深模块 + 仓库控制面 + 静态扩展
 
-Decision Status: Selected
+Decision Status: Selected and Implemented
 
-Selected option: 以稳定 plumbing 内核作为唯一基础，通过声明式 capability graph、
-静态 adapter 和 porcelain 工作流扩展 AiCoding。
+## 选择
 
-## 决策约束
+AiCoding 以 snapshot、plan、runner、adapter、report 和 domain-owned state 六个正交职责为
+稳定基础；Go CLI 是仓库唯一产品控制面；Kit、MCP、runtime Skill 通过静态 adapter 和
+领域 manifest 扩展。
 
-- 实现目录、文件名、包名、模块名、服务名和稳定 ID 不编码版本。
-- README、CHANGELOG、Release、manifest 元数据和说明文档可以记录版本。
-- 单 Go 二进制、单 lifecycle、单 test engine、单 report authority 保持不变。
-- 不使用 Go 动态插件，不引入微服务。
-- 扩展只能依赖同层或更低层，内核不观察具体产品 workflow。
-- 所有写操作必须可 plan、可审计，并只回滚自身拥有的状态。
-- Codex-Skills source、Marketplace package、installed state、runtime exposure 保持分离。
-- 实施分提交进行，但所有提交服务于同一架构，不建立长期双轨。
+该选择替代早期“把 capability graph、全域 journal 都放入稳定内核”的设想。当前 manifest
+没有两个真实消费者需要通用 provides/requires graph，三个领域也没有共同的原子事务语义，
+因此把它们提前放入 Core 会违反稳定边界优先与 No God Core 原则。
 
-## 决策证据
+## 不变量
 
-- 当前 `internal/runner` 已提供可复用的有界并发与稳定输出。
-- 当前 Kit/MCP/runtime Skill 已形成三个真实 adapter，足以证明统一扩展 seam。
-- 当前主要债务集中在路径、registry、命令 contract 与报告语义重复，而非缺少框架。
-- 编译后二进制的轻路径已在百毫秒内；静态链接应保留。
+- 实现 identity 不编码版本；文档、manifest、Tag/Release 可记录版本。
+- 单 Go CLI、单 lifecycle、单 test engine、单 report authority。
+- 模块按变化原因分离，通过 immutable values/snapshots/results 连接。
+- runner 不理解领域，adapter 不拥有业务策略，state 不进入 global core。
+- 所有 write action 可先 plan，并只修改领域登记资产。
+- source pin、package、installed state、runtime exposure/discovery 保持分离。
+- 不使用 Go dynamic plugin、不预建第二 transport API、不引入无 profile 证据的 C core。
 
-## 第一批实现证据
+## 实现证据
 
-- pre-commit 已从 mutable `Plan` 迁移到可摘要的 `ExecutionPlan`。
-- Kit/MCP registry loader 已共用 snapshot/digest primitive，不再各自定义摘要算法。
-- CLI 顶层路由、alias、namespace help 和全局 help 已由 typed command catalog 统一描述。
-- 三类对象都使用稳定 ID 和 SHA-256 digest，不把函数地址、绝对路径或实现代际写入 identity。
+- `ExecutionPlan` 被 pre-commit 与 lifecycle 两个真实消费者使用。
+- `CatalogSnapshot` 将 registry 与 referenced manifests 组合为内容树，Kit/MCP 复用。
+- lifecycle 静态 catalog 登记 Kit/MCP/runtime Skill 的 input/state owner/entrypoint/effect。
+- lifecycle 顶层 scope switch 已删除，选择结果生成 plan 并串行调度。
+- JSON 返回 adapter catalog、domain input 和 plan digest。
+- Typed Command Catalog 继续统一 CLI routing/help，与 adapter catalog 保持正交。
+
+## 停止决定
+
+架构闭环满足后冻结。新增 component/Skill 是功能扩展；模块内部性能或错误处理是维护。
+只有真实问题、稳定变化点和至少两个消费者同时出现时，才以 ADR 解冻对应模块契约。

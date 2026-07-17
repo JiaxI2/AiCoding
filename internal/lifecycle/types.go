@@ -30,6 +30,8 @@ type Report struct {
 	Mode          string          `json:"mode"`
 	Scope         string          `json:"scope"`
 	DryRun        bool            `json:"dryRun"`
+	CatalogDigest string          `json:"catalogDigest"`
+	PlanDigest    string          `json:"planDigest"`
 	OK            bool            `json:"ok"`
 	Summary       Summary         `json:"summary"`
 	Adapters      []AdapterResult `json:"adapters"`
@@ -45,12 +47,13 @@ type Summary struct {
 }
 
 type AdapterResult struct {
-	ID       string      `json:"id"`
-	Action   string      `json:"action"`
-	DryRun   bool        `json:"dryRun"`
-	OK       bool        `json:"ok"`
-	Status   string      `json:"status"`
-	Data     interface{} `json:"data,omitempty"`
-	Warnings []string    `json:"warnings,omitempty"`
-	Errors   []string    `json:"errors,omitempty"`
+	ID          string      `json:"id"`
+	Action      string      `json:"action"`
+	DryRun      bool        `json:"dryRun"`
+	InputDigest string      `json:"inputDigest,omitempty"`
+	OK          bool        `json:"ok"`
+	Status      string      `json:"status"`
+	Data        interface{} `json:"data,omitempty"`
+	Warnings    []string    `json:"warnings,omitempty"`
+	Errors      []string    `json:"errors,omitempty"`
 }

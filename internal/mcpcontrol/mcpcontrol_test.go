@@ -57,11 +57,55 @@ bearer_token_env_var = "REMOTE_TOKEN"
 	if len(inventory.Managed) != 1 || len(inventory.Configured) != 2 {
 		t.Fatalf("unexpected inventory: %#v", inventory)
 	}
-	if !strings.HasPrefix(inventory.RegistryDigest, "sha256:") {
-		t.Fatalf("registry digest is missing: %#v", inventory)
+	if !strings.HasPrefix(inventory.RegistryDigest, "sha256:") || !strings.HasPrefix(inventory.CatalogDigest, "sha256:") {
+		t.Fatalf("registry or catalog digest is missing: %#v", inventory)
 	}
 	if len(inventory.Configured[0].EnvKeys) != 1 || inventory.Configured[0].EnvKeys[0] != "TOKEN" {
 		t.Fatalf("environment keys were not redacted: %#v", inventory.Configured[0])
+	}
+}
+
+func TestCatalogDigestChangesWithComponentManifestOnly(t *testing.T) {
+	repo := t.TempDir()
+	writeTestFile(t, filepath.Join(repo, "config", "mcp-registry.json"), `{
+  "schemaVersion":1,
+  "name":"test",
+  "components":[{"id":"sample","enabled":true,"order":10,"manifest":"config/mcp/components/sample.json"}]
+}`)
+	manifestPath := filepath.Join(repo, "config", "mcp", "components", "sample.json")
+	writeTestFile(t, manifestPath, `{
+  "schemaVersion":1,
+  "id":"sample",
+  "name":"Sample",
+  "version":"1.0.0",
+  "transport":"stdio",
+  "runtime":{"kind":"python-venv","root":"asset","requirements":"requirements.txt","minimumPython":"3.10","pythonEnvVar":"SAMPLE_PYTHON","module":"sample","packageInstall":[],"serverArgs":[],"env":{}},
+  "codex":{"serverName":"sample","startupTimeoutSec":30,"toolTimeoutSec":120},
+  "doctor":{"args":[]},
+  "verify":{}
+}`)
+	first, err := LoadCatalogSnapshot(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, manifestPath, `{
+  "schemaVersion":1,
+  "id":"sample",
+  "name":"Changed",
+  "version":"1.0.0",
+  "transport":"stdio",
+  "runtime":{"kind":"python-venv","root":"asset","requirements":"requirements.txt","minimumPython":"3.10","pythonEnvVar":"SAMPLE_PYTHON","module":"sample","packageInstall":[],"serverArgs":[],"env":{}},
+  "codex":{"serverName":"sample","startupTimeoutSec":30,"toolTimeoutSec":120},
+  "doctor":{"args":[]},
+  "verify":{}
+}`)
+	second, err := LoadCatalogSnapshot(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.RegistryDigest() != second.RegistryDigest() || first.Digest() == second.Digest() {
+		t.Fatalf("manifest-only change was not isolated: registry %q/%q catalog %q/%q",
+			first.RegistryDigest(), second.RegistryDigest(), first.Digest(), second.Digest())
 	}
 }
 

@@ -34,6 +34,16 @@ type RegistrySnapshot struct {
 	registry Registry
 }
 
+type ComponentSnapshot struct {
+	entry  RegistryEntry
+	object registryobject.Snapshot
+}
+
+type CatalogSnapshot struct {
+	object     registryobject.CatalogSnapshot
+	components []ComponentSnapshot
+}
+
 func LoadRegistrySnapshot(repo string) (RegistrySnapshot, error) {
 	path := platform.RepoPath(repo, "config/mcp-registry.json")
 	data, err := os.ReadFile(path)
@@ -83,16 +93,111 @@ func cloneRegistryEntries(entries []RegistryEntry) []RegistryEntry {
 	return out
 }
 
-func LoadComponent(repo, manifest string) (Component, error) {
-	data, err := os.ReadFile(platform.RepoPath(repo, manifest))
+func LoadComponentSnapshot(repo string, entry RegistryEntry) (ComponentSnapshot, error) {
+	data, err := os.ReadFile(platform.RepoPath(repo, entry.Manifest))
 	if err != nil {
-		return Component{}, err
+		return ComponentSnapshot{}, err
 	}
 	var component Component
 	if err := json.Unmarshal(data, &component); err != nil {
+		return ComponentSnapshot{}, err
+	}
+	object, err := registryobject.NewSnapshot("mcp-component-manifest", component)
+	if err != nil {
+		return ComponentSnapshot{}, err
+	}
+	return ComponentSnapshot{entry: entry, object: object}, nil
+}
+
+func LoadComponent(repo, manifest string) (Component, error) {
+	snapshot, err := LoadComponentSnapshot(repo, RegistryEntry{Manifest: manifest})
+	if err != nil {
+		return Component{}, err
+	}
+	return snapshot.Component()
+}
+
+func LoadCatalogSnapshot(repo string) (CatalogSnapshot, error) {
+	registry, err := LoadRegistrySnapshot(repo)
+	if err != nil {
+		return CatalogSnapshot{}, err
+	}
+	components := make([]ComponentSnapshot, 0, len(registry.registry.Components))
+	entries := make([]registryobject.CatalogEntry, 0, len(registry.registry.Components))
+	for _, entry := range registry.registry.Components {
+		component, err := LoadComponentSnapshot(repo, entry)
+		if err != nil {
+			return CatalogSnapshot{}, err
+		}
+		components = append(components, component)
+		entries = append(entries, registryobject.CatalogEntry{
+			ID:     entry.ID,
+			Path:   entry.Manifest,
+			Digest: component.Digest(),
+		})
+	}
+	object, err := registryobject.NewCatalogSnapshot("mcp-catalog", registry.Object(), entries)
+	if err != nil {
+		return CatalogSnapshot{}, err
+	}
+	return CatalogSnapshot{object: object, components: cloneComponentSnapshots(components)}, nil
+}
+
+func (s ComponentSnapshot) Entry() RegistryEntry {
+	return s.entry
+}
+
+func (s ComponentSnapshot) Digest() string {
+	return s.object.Digest()
+}
+
+func (s ComponentSnapshot) Component() (Component, error) {
+	var component Component
+	if err := s.object.Decode(&component); err != nil {
 		return Component{}, err
 	}
 	return component, nil
+}
+
+func (s CatalogSnapshot) Digest() string {
+	return s.object.Digest()
+}
+
+func (s CatalogSnapshot) RegistryDigest() string {
+	return s.object.RegistryDigest()
+}
+
+func (s CatalogSnapshot) Components() []ComponentSnapshot {
+	return cloneComponentSnapshots(s.components)
+}
+
+func (s CatalogSnapshot) Select(id string, all bool) ([]ComponentSnapshot, error) {
+	if all && id != "" {
+		return nil, errors.New("use either --all or a component id, not both")
+	}
+	if !all && id == "" {
+		return nil, errors.New("component selection requires --all or a component id")
+	}
+	selected := []ComponentSnapshot{}
+	for _, item := range s.components {
+		entry := item.Entry()
+		if all && entry.Enabled {
+			selected = append(selected, item)
+		}
+		if id != "" && entry.ID == id {
+			selected = append(selected, item)
+		}
+	}
+	if len(selected) == 0 {
+		return nil, errors.New("no MCP component matched")
+	}
+	return cloneComponentSnapshots(selected), nil
+}
+
+func cloneComponentSnapshots(snapshots []ComponentSnapshot) []ComponentSnapshot {
+	out := make([]ComponentSnapshot, len(snapshots))
+	copy(out, snapshots)
+	return out
 }
 
 func SelectComponents(repo, id string, all bool) ([]RegistryEntry, error) {
@@ -180,24 +285,25 @@ func LoadConfigured(path string) ([]Endpoint, error) {
 }
 
 func ListInventory(repo, codexPath string) (Inventory, error) {
-	snapshot, err := LoadRegistrySnapshot(repo)
+	snapshot, err := LoadCatalogSnapshot(repo)
 	if err != nil {
 		return Inventory{}, err
 	}
-	registry := snapshot.Registry()
 	configPath, err := ResolveCodexConfig(codexPath)
 	if err != nil {
 		return Inventory{}, err
 	}
 	inventory := Inventory{
 		RegistryPath:    platform.RepoPath(repo, "config/mcp-registry.json"),
-		RegistryDigest:  snapshot.Digest(),
+		RegistryDigest:  snapshot.RegistryDigest(),
+		CatalogDigest:   snapshot.Digest(),
 		CodexConfigPath: configPath,
 		Managed:         []ManagedView{},
 		Configured:      []ConfiguredView{},
 	}
-	for _, entry := range registry.Components {
-		component, loadErr := LoadComponent(repo, entry.Manifest)
+	for _, item := range snapshot.Components() {
+		entry := item.Entry()
+		component, loadErr := item.Component()
 		if loadErr != nil {
 			inventory.Warnings = append(inventory.Warnings, entry.ID+": "+loadErr.Error())
 			continue

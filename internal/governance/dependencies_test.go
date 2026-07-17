@@ -103,6 +103,34 @@ func TestCheckDependenciesAllowsExternalProtocolVersion(t *testing.T) {
 	}
 }
 
+func TestGoPackageBoundariesRejectReverseCoreDependency(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "internal", "registry", "bad.go"), `package registry
+import _ "github.com/JiaxI2/AiCoding/internal/lifecycle"
+`)
+	errs := checkGoPackageBoundaries(repo, []goPackageBoundary{{
+		Path:             "internal/registry",
+		ForbiddenImports: []string{"internal/lifecycle"},
+	}})
+	if !hasErrorContaining(errs, "imports forbidden package") {
+		t.Fatalf("expected orthogonal package boundary error, got %#v", errs)
+	}
+}
+
+func TestGoPackageBoundariesAllowLowerUtilityDependency(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "internal", "kit", "good.go"), `package kit
+import _ "github.com/JiaxI2/AiCoding/internal/registry"
+`)
+	errs := checkGoPackageBoundaries(repo, []goPackageBoundary{{
+		Path:             "internal/kit",
+		ForbiddenImports: []string{"internal/lifecycle", "internal/mcpcontrol"},
+	}})
+	if len(errs) != 0 {
+		t.Fatalf("valid lower utility dependency was rejected: %#v", errs)
+	}
+}
+
 func dependencyFixture(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()

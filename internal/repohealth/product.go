@@ -59,12 +59,16 @@ func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 }
 
 func doctorInstalledMCP(ctx context.Context, repo, codexConfig string) (interface{}, []string, []string) {
-	entries, err := mcpcontrol.SelectComponents(repo, "", true)
+	catalog, err := mcpcontrol.LoadCatalogSnapshot(repo)
 	if err != nil {
 		return nil, nil, []string{err.Error()}
 	}
-	status := mcpcontrol.Status(repo, codexConfig, entries)
-	installed := make([]mcpcontrol.RegistryEntry, 0, len(entries))
+	components, err := catalog.Select("", true)
+	if err != nil {
+		return nil, nil, []string{err.Error()}
+	}
+	status := mcpcontrol.StatusCatalog(repo, codexConfig, components)
+	installed := make([]mcpcontrol.ComponentSnapshot, 0, len(components))
 	warnings := []string{}
 	errorsFound := []string{}
 	for index, item := range status {
@@ -75,8 +79,8 @@ func doctorInstalledMCP(ctx context.Context, repo, codexConfig string) (interfac
 			errorsFound = append(errorsFound, item.ID+": "+issue)
 		}
 		if item.Installed {
-			if index < len(entries) {
-				installed = append(installed, entries[index])
+			if index < len(components) {
+				installed = append(installed, components[index])
 			}
 			continue
 		}
@@ -84,11 +88,11 @@ func doctorInstalledMCP(ctx context.Context, repo, codexConfig string) (interfac
 	}
 	results := []mcpcontrol.CommandResult{}
 	if len(installed) > 0 {
-		results = mcpcontrol.DoctorComponentsContext(ctx, repo, installed)
+		results = mcpcontrol.DoctorCatalogComponentsContext(ctx, repo, installed)
 		for index, result := range results {
 			id := "component"
 			if index < len(installed) {
-				id = installed[index].ID
+				id = installed[index].Entry().ID
 			}
 			for _, issue := range result.Errors {
 				errorsFound = append(errorsFound, id+": "+issue)
@@ -96,8 +100,9 @@ func doctorInstalledMCP(ctx context.Context, repo, codexConfig string) (interfac
 		}
 	}
 	return map[string]interface{}{
-		"status":  status,
-		"results": results,
+		"inputDigest": catalog.Digest(),
+		"status":      status,
+		"results":     results,
 	}, warnings, errorsFound
 }
 
@@ -154,15 +159,15 @@ func VerifyAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 		return data, data.Warnings, data.Errors
 	}))
 	checks = append(checks, productCheck("verify.skills", "SKILL", func() (interface{}, []string, []string) {
-		entries, err := kit.LoadRegistry(repo)
+		catalog, err := kit.LoadCatalogSnapshot(repo)
 		if err != nil {
 			return nil, nil, []string{err.Error()}
 		}
-		selected, err := kit.SelectKits(entries, "", true)
+		selected, err := catalog.Select("", true)
 		if err != nil {
 			return nil, nil, []string{err.Error()}
 		}
-		data := kit.VerifySkills(repo, selected, opts.Profile)
+		data := kit.VerifyCatalogSkills(repo, selected, opts.Profile)
 		return data, data.Warnings, data.Errors
 	}))
 	checks = append(checks, productCheck("verify.mcp-registry", "MCP", func() (interface{}, []string, []string) {

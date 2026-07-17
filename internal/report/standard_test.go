@@ -51,11 +51,17 @@ func TestCLIReportSchemaAndGoTypesStayAligned(t *testing.T) {
 	if !ok || definitions["standardReport"] == nil || definitions["check"] == nil {
 		t.Fatalf("CLI report schema is missing shared definitions: %#v", definitions)
 	}
+	properties, ok := schema["properties"].(map[string]interface{})
+	if !ok || properties["inputDigest"] == nil || properties["planDigest"] == nil {
+		t.Fatalf("CLI report schema is missing digest evidence fields: %#v", properties)
+	}
 
 	sample := Result{
 		SchemaVersion: SchemaVersion,
 		Command:       "verify --profile Smoke",
 		OK:            true,
+		InputDigest:   "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		PlanDigest:    "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 		Data: StandardReport{
 			SchemaVersion: SchemaVersion,
 			Status:        "PASS",
@@ -77,7 +83,8 @@ func TestCLIReportSchemaAndGoTypesStayAligned(t *testing.T) {
 	if err := json.Unmarshal(encoded, &object); err != nil {
 		t.Fatal(err)
 	}
-	if object["schemaVersion"] != float64(SchemaVersion) || object["command"] == "" || object["elapsedMs"] == nil {
+	if object["schemaVersion"] != float64(SchemaVersion) || object["command"] == "" || object["elapsedMs"] == nil ||
+		object["inputDigest"] == nil || object["planDigest"] == nil {
 		t.Fatalf("result JSON does not match schema-required fields: %s", encoded)
 	}
 	standard, ok := object["data"].(map[string]interface{})

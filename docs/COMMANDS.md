@@ -44,8 +44,12 @@ Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`
 catalog，并通过 catalog 完整性与 CLI contract 测试；不能再在 router、help 和
 namespace 判断中分别维护字符串列表。
 
-本次没有新增或删除用户命令。`mcp list --json` 的 inventory 增加
-`registryDigest`，用于标识本次读取的规范化 MCP registry snapshot；原字段保持不变。
+本次没有新增或删除用户命令。`kit list --json` 与 `mcp list --json` 的外层报告增加
+`inputDigest`；MCP inventory 同时保留 `registryDigest` 并增加 `catalogDigest`。前者只标识
+规范化 registry，后者标识 registry 与全部 referenced manifests 的内容树。
+正式 `lifecycle ... --json` 在 `data` 中返回静态 adapter `catalogDigest`、本次
+`planDigest`，并在每个 adapter result 中返回 `inputDigest`。Agent/Skill 应使用这些字段
+追踪“对什么事实执行了什么意图”，不解析人类文本或直接调用 specialty 脚本。
 `aicoding version` 从构建注入值或 `config/codex-kit.json` manifest 元数据读取版本，
 不再把实现代际标签硬编码到 Go 文件。
 Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 versioned cache
@@ -125,6 +129,13 @@ bin\aicoding.exe mcp status visio-mcp --json
 bin\aicoding.exe mcp doctor visio-mcp --json
 bin\aicoding.exe mcp verify visio-mcp --profile Smoke --json
 bin\aicoding.exe mcp verify --all --profile Smoke --json
+```
+
+Agent/Skill 执行写操作时使用正式 lifecycle plan/apply：
+
+```powershell
+bin\aicoding.exe lifecycle plan --scope mcp --action update --component visio-mcp --json
+bin\aicoding.exe lifecycle update --scope mcp --component visio-mcp --json
 ```
 
 `--configured` 显式包含 Codex 当前配置的 stdio/Streamable HTTP MCP 只读 initialize/discovery。

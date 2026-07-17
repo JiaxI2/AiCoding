@@ -39,12 +39,18 @@ func TestRunAllPlanUsesStaticAdaptersWithoutWritingCodexConfig(t *testing.T) {
 	if !result.OK || result.Mode != "plan" || len(result.Adapters) != 3 {
 		t.Fatalf("unexpected lifecycle plan: %#v", result)
 	}
+	if !strings.HasPrefix(result.CatalogDigest, "sha256:") || !strings.HasPrefix(result.PlanDigest, "sha256:") {
+		t.Fatalf("lifecycle evidence digests are missing: %#v", result)
+	}
 	if executed != 1 {
 		t.Fatalf("runtime adapter executions = %d, want 1", executed)
 	}
 	for _, adapter := range result.Adapters {
 		if !adapter.OK || adapter.Status != "planned" {
 			t.Fatalf("unexpected adapter result: %#v", adapter)
+		}
+		if !strings.HasPrefix(adapter.InputDigest, "sha256:") {
+			t.Fatalf("adapter input digest is missing: %#v", adapter)
 		}
 	}
 	after, err := os.ReadFile(configPath)
@@ -56,6 +62,63 @@ func TestRunAllPlanUsesStaticAdaptersWithoutWritingCodexConfig(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(repo, "asset", ".venv")); !os.IsNotExist(err) {
 		t.Fatalf("dry-run created MCP venv: %v", err)
+	}
+}
+
+func TestAdapterCatalogIsInspectableStableAndDetached(t *testing.T) {
+	first, err := LoadAdapterCatalogSnapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := LoadAdapterCatalogSnapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.Digest() != second.Digest() || !strings.HasPrefix(first.Digest(), "sha256:") {
+		t.Fatalf("adapter catalog digest is unstable: %q != %q", first.Digest(), second.Digest())
+	}
+	descriptors := first.Descriptors()
+	if len(descriptors) != 3 {
+		t.Fatalf("adapter descriptors = %d, want 3", len(descriptors))
+	}
+	descriptors[0].Actions[0].Name = "mutated"
+	if first.Descriptors()[0].Actions[0].Name == "mutated" {
+		t.Fatal("adapter catalog was mutable through returned descriptors")
+	}
+}
+
+func TestLifecycleExecutionPlanDigestTracksOnlyStableIntent(t *testing.T) {
+	catalog, err := LoadAdapterCatalogSnapshot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	definitions, err := selectedAdapterDefinitions(ScopeKit, "install")
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := normalizeOptions(Options{Action: "install", Scope: ScopeKit, KitID: "sample", DryRun: true})
+	first, err := buildExecutionPlan(t.TempDir(), base, catalog.Digest(), definitions, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base.VerifyProfile = "Release"
+	second, err := buildExecutionPlan(t.TempDir(), base, catalog.Digest(), definitions, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	firstDigest, _ := first.Digest()
+	secondDigest, _ := second.Digest()
+	if firstDigest != secondDigest {
+		t.Fatalf("irrelevant verify profile changed install plan: %q != %q", firstDigest, secondDigest)
+	}
+	base.KitID = "other"
+	changed, err := buildExecutionPlan(t.TempDir(), base, catalog.Digest(), definitions, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changedDigest, _ := changed.Digest()
+	if firstDigest == changedDigest {
+		t.Fatal("selection change did not change lifecycle plan digest")
 	}
 }
 

@@ -53,7 +53,36 @@ type LifecycleKitPlan struct {
 	ElapsedMS            int64    `json:"elapsedMs"`
 }
 
+type lifecycleInput struct {
+	entry    RegistryKit
+	manifest Manifest
+	err      error
+	resolved bool
+}
+
 func PlanLifecycle(repo string, entries []RegistryKit, opts LifecycleOptions) LifecyclePlan {
+	inputs := make([]lifecycleInput, 0, len(entries))
+	for _, entry := range entries {
+		inputs = append(inputs, lifecycleInput{entry: entry})
+	}
+	return planLifecycle(repo, inputs, opts)
+}
+
+func PlanCatalogLifecycle(repo string, snapshots []ManifestSnapshot, opts LifecycleOptions) LifecyclePlan {
+	inputs := make([]lifecycleInput, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		manifest, err := snapshot.Manifest()
+		inputs = append(inputs, lifecycleInput{
+			entry:    snapshot.Entry(),
+			manifest: manifest,
+			err:      err,
+			resolved: true,
+		})
+	}
+	return planLifecycle(repo, inputs, opts)
+}
+
+func planLifecycle(repo string, inputs []lifecycleInput, opts LifecycleOptions) LifecyclePlan {
 	start := time.Now()
 	action := strings.ToLower(opts.Action)
 	plan := LifecyclePlan{
@@ -64,14 +93,14 @@ func PlanLifecycle(repo string, entries []RegistryKit, opts LifecycleOptions) Li
 		OK:            true,
 		Kits:          []LifecycleKitPlan{},
 	}
-	tasks := make([]runner.Task, 0, len(entries))
-	for _, entry := range entries {
-		entry := entry
+	tasks := make([]runner.Task, 0, len(inputs))
+	for _, input := range inputs {
+		input := input
 		tasks = append(tasks, runner.Task{
-			ID:    entry.ID,
+			ID:    input.entry.ID,
 			Group: "lifecycle-plan",
 			Run: func(context.Context) runner.TaskResult {
-				return runner.TaskResult{ID: entry.ID, OK: true, Data: planLifecycleKit(repo, entry, action, opts.DryRun)}
+				return runner.TaskResult{ID: input.entry.ID, OK: true, Data: planLifecycleKit(repo, input, action, opts.DryRun)}
 			},
 		})
 	}
@@ -104,8 +133,9 @@ func PlanLifecycle(repo string, entries []RegistryKit, opts LifecycleOptions) Li
 	return plan
 }
 
-func planLifecycleKit(repo string, entry RegistryKit, action string, dryRun bool) LifecycleKitPlan {
+func planLifecycleKit(repo string, input lifecycleInput, action string, dryRun bool) LifecycleKitPlan {
 	start := time.Now()
+	entry := input.entry
 	result := LifecycleKitPlan{
 		ID:       entry.ID,
 		Manifest: entry.Manifest,
@@ -114,7 +144,7 @@ func planLifecycleKit(repo string, entry RegistryKit, action string, dryRun bool
 		OK:       true,
 		Status:   "planned",
 	}
-	manifest, err := LoadManifest(repo, entry.Manifest)
+	manifest, err := lifecycleManifest(repo, input)
 	if err != nil {
 		result.OK = false
 		result.Status = "failed"
@@ -215,6 +245,13 @@ func planLifecycleKit(repo string, entry RegistryKit, action string, dryRun bool
 
 	result.Warnings = appendPluginPackageWarning(repo, manifest, result.Warnings)
 	return finishLifecycleKitPlan(result, start)
+}
+
+func lifecycleManifest(repo string, input lifecycleInput) (Manifest, error) {
+	if input.resolved {
+		return input.manifest, input.err
+	}
+	return LoadManifest(repo, input.entry.Manifest)
 }
 
 func finishLifecycleKitPlan(result LifecycleKitPlan, start time.Time) LifecycleKitPlan {

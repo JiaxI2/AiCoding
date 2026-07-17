@@ -20,6 +20,8 @@ bin\aicoding.exe mcp doctor visio-mcp --json
 ```
 
 - `list` 合并显示 registry 中的受管 components 与 Codex 当前配置中的 MCP；
+- `registryDigest` 只标识规范化 registry，`catalogDigest`/外层 `inputDigest` 标识 registry
+  与全部 referenced component manifests；
 - `status` 检查 component root、`.venv`、安装状态、受管配置块和同名非受管冲突；
 - `doctor` 在 component 隔离环境中运行 manifest 声明的诊断命令。
 

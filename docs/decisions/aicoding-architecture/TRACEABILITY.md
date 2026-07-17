@@ -1,33 +1,57 @@
-# 可追溯性：AiCoding 内核与扩展图架构
+# 可追溯性：正交内核闭环
 
-| 需求 / 决策 | 架构章节 | 验证 |
+| 需求 / 决策 | 实现证据 | 验证证据 |
 |---|---|---|
-| Git 式稳定基础 | 稳定内核、控制面边界 | Go tests、contract tests |
-| 扩展建立在基础上 | 扩展契约、Porcelain | dependency governance、adapter tests |
-| 可玩性 | Porcelain 与可玩性 | profile/plan tests |
-| 高性能 | 性能模型 | `doctor perf`、benchmarks |
-| 实现 identity 不编码版本 | 架构结论、明确拒绝 | dependency governance |
-| 单一控制面 | 控制面边界 | Smoke / Full / Release |
-| source/runtime 分离 | Source、distribution 与 runtime | runtime Skill audit |
-| ExecutionPlan 成为核心对象 | 稳定内核、已落地的核心对象 | `internal/runner` unit tests、pre-commit contract |
-| Registry Snapshot + Digest | 稳定内核、Registry 与命令目录边界 | `internal/registry`、Kit/MCP loader tests、MCP inventory JSON |
-| Typed Command Catalog | 控制面边界、当前热点 | CLI catalog/contract tests、`aicoding --help` |
+| Git 式 facts 与 movable intent 分离 | Registry/manifest `CatalogSnapshot`、`ExecutionPlan` | registry/runner contracts |
+| 稳定边界优先于无限优化 | Accepted/Frozen 文档、明确解冻条件 | Plan Mode、architecture docs review |
+| No God Core | 六个正交职责、domain-owned state | dependency `goPackageBoundaries` |
+| 模块可独立优化 | production import 禁令、模块测试矩阵 | module tests + consumer regressions |
+| Kit/MCP 内容树 | `internal/registry` + domain catalog loaders | manifest-only digest tests、detached-value tests |
+| ExecutionPlan 第二消费者 | lifecycle adapter selection -> plan | lifecycle plan digest tests |
+| 静态扩展 | Adapter Descriptor/Catalog，三领域 static function | lifecycle catalog tests |
+| Agent 调用接口 | process + `report.Result` JSON | real CLI plan/list/status probes |
+| External Skill lifecycle | runtime registry/source digest + bounded specialty adapter | runtime plan/audit、Full/Release |
+| MCP lifecycle | component catalog + MCP domain state/config ownership | MCP tests、plan、Full/Release |
+| 安装/更新/同步/卸载 | action/effect 与 domain contract | lifecycle tests、dry-run profiles |
+| 可追踪证据 | `catalogDigest`、`inputDigest`、`planDigest` | report/schema/CLI contracts |
+| 不引入 speculative graph/journal/API/C | architecture rejection + evidence thresholds | doc review、dependency gates |
+| 实现 identity 不编码版本 | stable package/path/ID | dependency governance |
 
-## 公共契约审查
+## 公共契约同步
 
-- `README.md`、`README_CN.md`、`README_EN.md`：已审查；本批没有新增顶层产品入口、默认运行体系或 badge authority，不需要改动。
-- `docs/COMMANDS.md`：记录 typed catalog 权威与 MCP `registryDigest` 加法字段。
-- `docs/ARCHITECTURE_OVERVIEW.md`：同步三个已落地对象及尚未完成的边界。
-- 测试文档：同步 plan/digest/catalog 单元契约与 Full/Release 验证范围。
+- `docs/architecture/AICODING_CORE_ARCHITECTURE.md`：正交模块、闭环、冻结与测试半径权威。
+- `docs/architecture/CLI_MCP_CONTROL_PLANE.md`：仓库生命周期、Agent API 与 MCP/Skill 边界。
+- `docs/architecture/EXTENSION_ADAPTER_CONTRACT.md`：真实 descriptor、输入/输出/state contract。
+- `docs/ARCHITECTURE_OVERVIEW.md`：同步当前实现权威与内容树/plan/adapter 关系。
+- `docs/COMMANDS.md`：同步 Agent lifecycle 用法和 digest 加法字段。
+- `docs/operations/testing/REPORT_SCHEMA.md` 与 CLI schema：同步 input/plan digest。
+- `config/dependency-governance.json` 与 schema：增加 orthogonal production import gate。
+- README 三件套已审查：本批未新增顶层产品入口、默认工具链或 badge authority，无需改动。
 
-## 实际验证记录
+## 验收记录
 
-- `go test ./...`、`go vet ./...`：通过。
-- `go test -race ./internal/runner ./internal/registry ./internal/kit ./internal/mcpcontrol ./internal/cli`：通过。
-- 真实二进制：`--help` 由 catalog 渲染；`version` 读取 manifest 元数据；`mcp list --json` 输出 `registryDigest`；`hook pre-commit --json` 使用 `ExecutionPlan` 并通过。
-- 产品门禁：Smoke 38 PASS / 0 WARN / 0 FAIL / 16 SKIP；Full 52 / 0 / 0 / 2；Release 53 / 0 / 0 / 1。
-- `verify-codex-kit.ps1 -Json`：通过，复用 Full 得到 52 / 0 / 0 / 2；唯一 warning 为兼容入口的 `CLI_DEPRECATED`。
-- Doctor、Verify Smoke、DocSync CI、dependency/layout/lint governance、lifecycle install/update plan、status、Skill Smoke、Hook/repo-text/release-notes、Plan Mode 24 checks：通过。
-- Markdown links：116 个目标、50 个唯一链接、63 OK、0 error、53 个 offline excluded。
-- 同机交替 A/B：candidate `version` p50 48.2 ms / p95 78.5 ms，`main` 为 49.2 / 77.8；candidate `kit list` 43.6 / 97.1，`main` 为 44.5 / 115.3；优化后 help p50 50.8 vs 53.9，p95 138.8 vs 122.0，相对回退 13.8%，未超过 20% 阻断线。该轮 host 抖动使两者绝对 p95 同时超过 100 ms，因此只用配对相对值判定回退。
-- 稳定 identity 审计：Fast Path cache 已收敛为 `.aicoding/cache/fast-path`；实现范围内不再匹配 `fast-path-vN`、`fast_path_vN` 或 `fastpathvN`。
+- `go test ./...`：通过。
+- `go vet ./...`：通过。
+- `go test -race` 覆盖 registry、runner、report、Kit、MCP、lifecycle、governance、
+  repohealth 与 CLI：通过。
+- 真实 `kit list`、`mcp list`、Kit/MCP/runtime Skill lifecycle plan 和 Kit status：均返回
+  `sha256:` input/plan/catalog evidence；所有 plan/status 无写入。
+- `governance dependencies`：通过，`orthogonal Go package boundaries` check 为 PASS。
+- DocSync CI、governance lint/layout、hooks、repo-text、release-notes：通过。
+- 变更 Markdown link validation：15 个文件通过。
+- Plan Mode verification：通过。
+- Doctor：4 PASS / 1 WARN / 0 FAIL；warning 仅为 worktree 未安装 visio-mcp。
+- Verify Smoke：11 PASS / 1 WARN / 0 FAIL；warning 仅为当前 worktree 缺少可选
+  `CodingKit/examples`、`CodingKit/platforms` 目录。
+- Smoke：38 PASS / 0 WARN / 0 FAIL / 16 SKIP。
+- Full：52 PASS / 0 WARN / 0 FAIL / 2 SKIP。
+- Release：53 PASS / 0 WARN / 0 FAIL / 1 SKIP。
+- `verify-codex-kit.ps1 -Json`：通过，Full 52 PASS / 0 WARN / 0 FAIL / 2 SKIP；唯一 warning
+  为兼容入口 `CLI_DEPRECATED`。
+- `git diff --check`：通过；Codex-Skills submodule 保持 clean 且 gitlink 未变化。
+
+## 需求结论
+
+用户要求的 Git/正交设计哲学、有限架构闭环、Skill/MCP lifecycle、Agent 接口、模块化局部
+验证、worktree 实现与全量验收均有直接实现和运行证据。总体架构满足冻结条件；后续新增
+component/Skill 属于功能扩展，模块内部性能优化属于维护，不再保留无限架构迁移清单。

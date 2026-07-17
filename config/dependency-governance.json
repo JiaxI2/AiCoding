@@ -262,5 +262,72 @@
       "id": "runtime:microsoft-visio",
       "layer": "runtime"
     }
+  ],
+  "goPackageBoundaries": [
+    {
+      "path": "internal/registry",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/repohealth",
+        "internal/report",
+        "internal/runner",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/runner",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/repohealth",
+        "internal/report",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/report",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/repohealth",
+        "internal/runner",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/kit",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/repohealth",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/mcpcontrol",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/repohealth",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/lifecycle",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/repohealth",
+        "internal/testengine"
+      ]
+    }
   ]
 }

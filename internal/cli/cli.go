@@ -530,14 +530,28 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	if err != nil {
 		return report.Fail("kit "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
+	if sub == "list" {
+		catalog, loadErr := kit.LoadCatalogSnapshot(repo)
+		if loadErr != nil {
+			return report.Fail("kit list", start, "cannot load kit catalog", nil, loadErr.Error()), loadErr
+		}
+		return report.Result{
+			SchemaVersion: 1,
+			Command:       "kit list",
+			OK:            true,
+			Message:       "kit catalog",
+			RepoRoot:      repo,
+			InputDigest:   catalog.Digest(),
+			Data:          kit.CatalogKitViews(catalog.Kits()),
+			ElapsedMS:     report.Elapsed(start),
+		}, nil
+	}
 	entries, err := kit.LoadRegistry(repo)
 	if err != nil {
 		return report.Fail("kit "+sub, start, "cannot load registry", nil, err.Error()), err
 	}
 	withManifests := kit.LoadKitViews(repo, entries)
 	switch sub {
-	case "list":
-		return report.Result{SchemaVersion: 1, Command: "kit list", OK: true, Message: "kit registry", RepoRoot: repo, Data: withManifests, ElapsedMS: report.Elapsed(start)}, nil
 	case "doctor":
 		errs := kit.DoctorKits(repo, entries)
 		return report.Result{SchemaVersion: 1, Command: "kit doctor", OK: len(errs) == 0, Message: "kit registry doctor", RepoRoot: repo, Data: withManifests, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
@@ -575,13 +589,19 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			OK:            unified.OK,
 			Message:       message,
 			RepoRoot:      repo,
+			InputDigest:   lifecycleAdapterInputDigest(unified, lifecyclecontrol.ScopeKit),
+			PlanDigest:    unified.PlanDigest,
 			Data:          lifecycleAdapterData(unified, lifecyclecontrol.ScopeKit),
 			Warnings:      unified.Warnings,
 			Errors:        unified.Errors,
 			ElapsedMS:     report.Elapsed(start),
 		}, report.BoolErr(unified.Errors)
 	case "verify", "test":
-		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
+		catalog, loadErr := kit.LoadCatalogSnapshot(repo)
+		if loadErr != nil {
+			return report.Fail("kit "+sub, start, "cannot load kit catalog", nil, loadErr.Error()), loadErr
+		}
+		selected, err := catalog.Select(*kitArg, *allArg)
 		if err != nil {
 			return report.Fail("kit "+sub, start, "kit selection failed", nil, err.Error()), err
 		}
@@ -589,13 +609,13 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			if sub != "verify" {
 				return report.Result{}, usageErrorf("Lifecycle profile only supports kit verify")
 			}
-			structure := kit.VerifyStructure(repo, selected)
-			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
+			structure := kit.VerifyCatalogStructure(repo, selected)
+			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, InputDigest: catalog.Digest(), Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
 		}
 		if !strings.EqualFold(*profile, "Smoke") {
 			return report.Result{}, usageErrorf("kit %s handles Smoke/Lifecycle only; use aicoding skill verify --all --profile %s", sub, *profile)
 		}
-		results := kit.SmokeKits(repo, selected)
+		results := kit.SmokeCatalogKits(repo, selected)
 		errs := []string{}
 		for _, r := range results {
 			if !r.OK {
@@ -604,7 +624,7 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 				}
 			}
 		}
-		return report.Result{SchemaVersion: 1, Command: "kit " + sub, OK: len(errs) == 0, Message: "kit smoke " + sub, RepoRoot: repo, Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+		return report.Result{SchemaVersion: 1, Command: "kit " + sub, OK: len(errs) == 0, Message: "kit smoke " + sub, RepoRoot: repo, InputDigest: catalog.Digest(), Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	default:
 		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
 	}

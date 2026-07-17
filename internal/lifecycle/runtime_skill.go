@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	registryobject "github.com/JiaxI2/AiCoding/internal/registry"
 )
 
 type commandExecutor func(context.Context, string, string, []string) ([]byte, []byte, error)
@@ -31,6 +33,11 @@ func runRuntimeSkillAdapter(ctx context.Context, repo string, opts Options, exec
 		sourceExists = isDirectory(sourceRepository)
 	}
 	opts.SourceRepository = sourceRepository
+	if digest, digestErr := runtimeSkillInputDigest(repo, sourceRepository, sourceExists); digestErr == nil {
+		result.InputDigest = digest
+	} else {
+		result.Warnings = append(result.Warnings, "runtime Skill input snapshot is unavailable: "+digestErr.Error())
+	}
 	if !sourceExists {
 		warning := "runtime Skill source repository could not be resolved"
 		if sourceRepository != "" {
@@ -109,6 +116,32 @@ func runRuntimeSkillAdapter(ctx context.Context, repo string, opts Options, exec
 		result.Status = "ok"
 	}
 	return result
+}
+
+func runtimeSkillInputDigest(repo, sourceRepository string, sourceExists bool) (string, error) {
+	data, err := os.ReadFile(filepath.Join(repo, "config", "codex-kit.json"))
+	if err != nil {
+		return "", err
+	}
+	var config interface{}
+	if err := json.Unmarshal(data, &config); err != nil {
+		return "", err
+	}
+	sourceCommit := ""
+	if sourceExists {
+		command := exec.Command("git", "-C", sourceRepository, "rev-parse", "HEAD")
+		if output, commitErr := command.Output(); commitErr == nil {
+			sourceCommit = strings.TrimSpace(string(output))
+		}
+	}
+	snapshot, err := registryobject.NewSnapshot("runtime-skill-registry", struct {
+		Config       interface{} `json:"config"`
+		SourceCommit string      `json:"sourceCommit,omitempty"`
+	}{Config: config, SourceCommit: sourceCommit})
+	if err != nil {
+		return "", err
+	}
+	return snapshot.Digest(), nil
 }
 
 func resolveRuntimeSourceRepository(repo string) (string, bool) {

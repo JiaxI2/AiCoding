@@ -1,34 +1,49 @@
 # AiCoding 架构路线选项
 
-Decision Status: Selected
+Decision Status: Selected and refined by implementation evidence
 
 ## 目标
 
-在保持单 Go CLI、现有依赖方向和 source/distribution/runtime 边界的前提下，
-同时提升可扩展性、可玩性和性能，并避免再造平行控制面。
+在保持单 Go CLI、依赖方向和 source/distribution/runtime 边界的前提下，提高扩展性、
+可玩性、性能与局部可验证性，并避免 God Core 或平行控制面。
 
-## 方案 A：稳定内核 + 扩展图（已选择）
+## 方案 A：正交深模块 + 静态扩展（已选择）
 
-- 把 root/path、manifest snapshot、capability graph、plan/runner、report、
-  state/journal 定为最小稳定 plumbing。
-- Kit、MCP、runtime Skill、checks 和工具用声明式 descriptor + 静态 adapter 扩展。
-- 用户 CLI、Skills、profiles、hooks 和 CI 作为 porcelain 组合基础能力。
-- 保留单二进制与静态链接；外部工具使用有界子进程。
-- 适合当前三个真实 lifecycle adapter，能渐进迁移且不牺牲启动性能。
+- snapshot、plan、runner、adapter、report、domain state 按变化原因分离。
+- Kit/MCP/runtime Skill 用领域 manifest 与静态 adapter 扩展。
+- Agent/Skill/Hook/CI 通过唯一 CLI/JSON 调用。
+- Registry/manifest 形成内容树；plan/input/result 都可追踪。
+- 新组件优先修改领域模块和契约测试，不扩大 Core。
 
-## 方案 B：只修重复路径与文档
+这是早期“稳定内核 + 扩展图”方案的实证收敛：保留稳定 plumbing 与静态扩展，但删除
+没有真实依赖数据的 capability graph 和没有共同事务语义的 global journal。
 
-- 修正 Plan Mode root/path、合并部分 registry loader，不建立 capability graph。
-- 风险最低，但每新增领域仍需修改 CLI、lifecycle switch 和多份 contract。
-- 无法解决长期扩展成本，拒绝作为长期架构。
+## 方案 B：中央能力图 + 全域生命周期引擎（拒绝）
 
-## 方案 C：动态插件微内核
+- 把所有 provides/requires、状态、事务和 rollback 放入一个 control core。
+- 表面统一，但要求 Core 理解 Kit/MCP/Skill 业务，形成 God Core。
+- 当前没有第二个稳定消费者证明 capability graph，也没有可诚实实现的跨域原子事务。
 
-- 第三方能力以动态 Go plugin 或任意进程内模块加载。
-- 表面可玩性最高，但 Windows ABI、供应链、安全、调试和缓存复杂度显著增加。
-- 与单二进制、高性能、受治理分发和当前真实需求冲突，拒绝。
+## 方案 C：只修文档与重复 loader（拒绝）
 
-## 用户选择依据
+- 不建立可摘要的 catalog、adapter contract 与 lifecycle plan。
+- 变更小，但 Agent 无法确认输入/意图，新增领域继续修改 scope switch。
+- 不能满足闭环、可维护与局部测试目标。
 
-用户明确要求以 Git 为参照：基础功能必须足够稳定，扩展功能建立在基础能力之上；
-同时要求实现路径和稳定 identity 不出现版本信息，并尽量一次确定长期方案。因此选择方案 A。
+## 方案 D：动态 plugin 或远程微内核（拒绝）
+
+- 第三方代码动态进程内加载，或预建 HTTP/gRPC/MCP control service。
+- 增加 Windows ABI、供应链、授权、调试和第二控制面复杂度。
+- 当前本地 Agent/Skill/CI 都能由 process + JSON 满足，不存在第二 transport consumer。
+
+## 方案 E：C/native 基础层（暂不采用）
+
+- 只有 profile 证明纯计算热点、Go 优化不足、稳定 ABI 有两个消费者且 fallback/golden tests
+  完整时才成立。
+- 当前主要成本是进程、文件、JSON 和外部 runtime；native Core 不会解决真实瓶颈。
+
+## 选择依据
+
+Git 的先进性来自正交对象/ref/index/transport 与稳定 plumbing，而不是一个理解所有命令的
+中心对象。用户新增的“稳定边界优先于无限优化”和 Orthogonal Architecture Design Kit
+进一步要求：状态归领域、修改影响半径可局部验证、架构在闭环后停止。因此选择方案 A。
