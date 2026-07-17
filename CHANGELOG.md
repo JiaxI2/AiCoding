@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-17
+
 - **docs(validation)**: 刷新产品收敛后的 Smoke/Full/Release、Kit、Skill、MCP、DocSync、Git Hook、Governance、Dependency 与 Markdown link 最终验收记录。
 - **fix(test)**: Full/Release 的 rollback 用例改为只读 `lifecycle rollback --help` 契约检查，禁止测试 profile 在存在 snapshot 时意外应用仓库状态。
 - **docs(control-plane)**: README 三件套、COMMANDS、Architecture、Maintenance、AGENTS、Taskfile 与测试文档统一指向 lifecycle/doctor/verify/test/release 正式入口；旧 CLI 只保留在一个版本兼容表或历史决策中，并扩展 DocSync 对 Go CLI、test engine、Taskfile、CI 与 report schema 的语义绑定。
@@ -81,7 +83,8 @@
 - **docs**: README、命令文档、架构文档、PowerShell 边界文档、Tag policy 和 Release policy 只描述当前 main 的可观测标准。
 - **chore(pwsh)**: Go 默认控制面之外只保留 PowerShell 专项质量、安全、Plan Mode、外部 skill、tag planning / overlay compatibility 和硬件/工具链边界脚本。
 
-[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/JiaxI2/AiCoding/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/JiaxI2/AiCoding/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/JiaxI2/AiCoding/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/JiaxI2/AiCoding/compare/v0.7.0...v0.8.0
