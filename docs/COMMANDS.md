@@ -48,6 +48,8 @@ namespace 判断中分别维护字符串列表。
 `registryDigest`，用于标识本次读取的规范化 MCP registry snapshot；原字段保持不变。
 `aicoding version` 从构建注入值或 `config/codex-kit.json` manifest 元数据读取版本，
 不再把实现代际标签硬编码到 Go 文件。
+Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 versioned cache
+是可删除的临时数据，不再由当前 `cache status|clean` 管理。
 
 ## 领域与专项命令
 

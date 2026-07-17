@@ -30,3 +30,4 @@
 - Doctor、Verify Smoke、DocSync CI、dependency/layout/lint governance、lifecycle install/update plan、status、Skill Smoke、Hook/repo-text/release-notes、Plan Mode 24 checks：通过。
 - Markdown links：116 个目标、50 个唯一链接、63 OK、0 error、53 个 offline excluded。
 - 同机交替 A/B：candidate `version` p50 48.2 ms / p95 78.5 ms，`main` 为 49.2 / 77.8；candidate `kit list` 43.6 / 97.1，`main` 为 44.5 / 115.3；优化后 help p50 50.8 vs 53.9，p95 138.8 vs 122.0，相对回退 13.8%，未超过 20% 阻断线。该轮 host 抖动使两者绝对 p95 同时超过 100 ms，因此只用配对相对值判定回退。
+- 稳定 identity 审计：Fast Path cache 已收敛为 `.aicoding/cache/fast-path`；实现范围内不再匹配 `fast-path-vN`、`fast_path_vN` 或 `fastpathvN`。

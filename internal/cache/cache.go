@@ -7,7 +7,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
-const relPath = ".aicoding/cache/fast-path-v2"
+const relPath = ".aicoding/cache/fast-path"
 
 type StatusResult struct {
 	Path       string `json:"path"`
