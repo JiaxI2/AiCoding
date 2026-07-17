@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "replace-me",
+  "type": "skill",
+  "version": "1.0.0",
+  "name": "Replace Me",
+  "paths": {"payload": "payload", "defaults": "config.default.json"},
+  "dependencies": [],
+  "entrypoints": {},
+  "capabilities": ["pack", "install", "update", "uninstall", "verify"]
+}

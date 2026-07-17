@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JiaxI2/AiCoding/schemas/asset.schema.json",
+  "type": "object",
+  "required": ["schemaVersion", "id", "type", "version", "paths"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "type": {"enum": ["kit", "skill", "mcp", "template", "ruleset", "profile"]},
+    "version": {"type": "string", "minLength": 1},
+    "paths": {"type": "object", "required": ["payload"], "properties": {"payload": {"type": "string"}}},
+    "dependencies": {"type": "array"},
+    "entrypoints": {"type": "object"},
+    "capabilities": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

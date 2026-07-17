@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "universal-asset-lifecycle",
+  "type": "kit",
+  "version": "1.0.0",
+  "name": "Universal Asset Lifecycle Kit",
+  "description": "Unified packaging, configuration and lifecycle template for Kit, Skill, MCP and reusable assets.",
+  "platforms": ["windows", "linux", "darwin"],
+  "capabilities": ["validate", "pack", "install", "update", "uninstall", "rollback", "verify", "config"],
+  "paths": {"payload": "payload", "defaults": "defaults/config.json", "schema": "schemas/asset.schema.json", "tests": "tests"}
+}

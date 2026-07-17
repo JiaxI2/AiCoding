@@ -1,0 +1,7 @@
+{
+  "installMode": "managed",
+  "preserveUserConfig": true,
+  "verifyChecksum": true,
+  "atomicReplace": true,
+  "rollbackRetention": 1
+}
