@@ -1,5 +1,11 @@
 # Architecture Overview
 
+## Architecture Authority
+
+[AiCoding 内核与扩展图架构](architecture/AICODING_CORE_ARCHITECTURE.md) 是总体控制面、
+稳定内核、扩展契约、性能预算和迁移纪律的权威文档。本文只保留仓库导航和当前实现
+总览；Kit、MCP、PowerShell、DocSync 等专项文档必须服从该总体架构。
+
 ## Repository Role
 
 AiCoding 是本地 AI coding 工作流的平台仓库。它拥有 kit registry、kit manifest、本地 hook、Taskfile 路由、Go CLI 控制面、发布治理文档和 CodingKit 平台资产。
@@ -52,15 +58,35 @@ internal/lifecycle  -> Kit / MCP / runtime Skill 静态 adapter
 internal/repohealth -> product doctor / verify 的确定性检查组合
 internal/testengine -> 唯一 Smoke / Full / Release Registry 与执行器
 internal/report     -> Result / StandardReport / Check / errorKind Schema
+internal/runner     -> ExecutionPlan、snapshot/digest、有界并发、超时、取消与稳定输出
+internal/registry   -> 规范化 snapshot、稳定 digest 与只读 view
+internal/cli        -> typed command catalog、handler routing、help 与退出契约
 ```
 
 `doctor` 只诊断环境和状态；`verify` 只执行静态/结构验证；`test` 独占测试执行；
 `release` 只执行发布结构验证或复用 Release test profile。CI 直接调用
 `test --profile`，不再叠加第二个聚合器。
 
-## Concurrent Plan Boundary
+目标架构不增加动态 Go plugin 或第二控制面。现有深模块逐步收敛为 root/path、
+manifest snapshot、capability graph、plan/runner、report/contract 和 state/journal
+六类稳定 plumbing；领域功能通过声明式 descriptor 与静态 adapter 组合。
 
-`internal/runner` 提供可组合并发 Plan。只读检查通过任务 ID 注册到 Plan 中，有界并发执行并保持输出顺序。需要新增、替换或移除检查点时，修改 Plan 注册即可，不改调度器。
+## Execution Plan Boundary
+
+`internal/runner.ExecutionPlan` 是计划意图的核心对象。每个 task 用稳定 `action` 和参数
+描述，可生成 snapshot 与 digest；选择或删除 task 会返回新 plan，不修改原对象。执行函数
+不进入摘要，因此摘要不依赖进程地址。当前只读检查继续有界并发并保持输出顺序；写操作
+串行化与 journal 属于后续迁移，不能在领域 adapter 中自行实现第二调度器。
+
+## Registry And Command Catalog Boundary
+
+Kit 与 MCP registry 通过 `internal/registry.Snapshot` 规范化和摘要，原 `LoadRegistry`
+兼容入口只返回 snapshot 的只读副本。Registry digest 只表示 registry 文档，manifest
+内容由后续 manifest snapshot 单独建模。
+
+`internal/cli` 的 typed command catalog 是顶层 command ID、alias、namespace、handler 和
+全局 help form 的权威源。CLI 不再维护平行的字符串 switch 与 help 列表；Taskfile 和命令
+文档的机器一致性校验仍是后续工作。
 
 写状态、写 ZIP、安装/卸载等有副作用路径保持在对应 Go 包中串行执行。Doctor/Verify
 以及 MCP 子进程使用显式总超时或 context，避免外部工具无限等待。

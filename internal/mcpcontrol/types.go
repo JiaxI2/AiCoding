@@ -83,6 +83,7 @@ type ConfiguredView struct {
 
 type Inventory struct {
 	RegistryPath    string           `json:"registryPath"`
+	RegistryDigest  string           `json:"registryDigest"`
 	CodexConfigPath string           `json:"codexConfigPath"`
 	Managed         []ManagedView    `json:"managed"`
 	Configured      []ConfiguredView `json:"configured"`

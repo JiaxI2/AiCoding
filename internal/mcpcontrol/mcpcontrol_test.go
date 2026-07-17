@@ -57,6 +57,9 @@ bearer_token_env_var = "REMOTE_TOKEN"
 	if len(inventory.Managed) != 1 || len(inventory.Configured) != 2 {
 		t.Fatalf("unexpected inventory: %#v", inventory)
 	}
+	if !strings.HasPrefix(inventory.RegistryDigest, "sha256:") {
+		t.Fatalf("registry digest is missing: %#v", inventory)
+	}
 	if len(inventory.Configured[0].EnvKeys) != 1 || inventory.Configured[0].EnvKeys[0] != "TOKEN" {
 		t.Fatalf("environment keys were not redacted: %#v", inventory.Configured[0])
 	}

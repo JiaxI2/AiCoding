@@ -22,6 +22,16 @@ Meaning:
 4. `config/` and retained scripts define executable specialty surfaces.
 5. CI, Git hooks, and local verification decide whether work can be considered complete.
 
+The overall architecture authority is:
+
+```text
+docs/architecture/AICODING_CORE_ARCHITECTURE.md
+```
+
+Architecture work must deepen the stable kernel or add a governed capability adapter.
+It must not create a second root resolver, registry loader, runner, report authority,
+lifecycle, test engine, state store, or versioned implementation path.
+
 ## Maintenance Skill
 
 The canonical maintenance workflow is maintained in Codex-Skills:

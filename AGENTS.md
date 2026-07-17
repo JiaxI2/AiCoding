@@ -14,6 +14,7 @@ through a Git submodule.
 
 Before making changes, read:
 
+- `docs/architecture/AICODING_CORE_ARCHITECTURE.md`
 - `docs/architecture/CODEX_KIT_ARCHITECTURE.md`
 - `docs/operations/MAINTENANCE_METHOD.md`
 - `CodingKit/README.md`
@@ -46,6 +47,8 @@ Required rules:
 - Stable asset identities must not encode versions in paths, IDs, package/module/service names, C/CMake symbols, model names, or runtime code.
 - Asset versions are visible only through manifest metadata, asset documentation, `CHANGELOG.md`, Tag/Release authority, or README badges linked to an exact authority.
 - README version badges must be identical across `README.md`, `README_CN.md`, and `README_EN.md`. Third-party versions link to the exact upstream version page; local Kit versions link to the authoritative local Kit document and must match the Kit manifest.
+- Implementation directories, filenames, package/module/service names, and stable IDs must not encode versions. README, CHANGELOG, Release, manifest metadata, and explanatory documentation may record versions.
+- New product capabilities must compose the stable kernel and capability graph defined by `docs/architecture/AICODING_CORE_ARCHITECTURE.md`; do not add parallel root resolution, registry loading, runner, report, lifecycle, test, or state authorities.
 
 Do not add a time-limited exception for a new reverse dependency or versioned identity. Existing violations must be corrected before integration.
 

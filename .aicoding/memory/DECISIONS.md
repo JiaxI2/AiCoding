@@ -69,3 +69,25 @@ Constraints:
 - Do not add another CLI, test framework, report system, UI or complex plugin system.
 - Do not create a Release or automatically merge a PR.
 - Validate and commit every Phase independently without squashing the staged history.
+
+## AiCoding Core And Extension Graph Architecture
+
+Decision Status: Selected
+
+Selected option: keep a small, stable plumbing kernel and compose all product behavior
+through a declarative capability graph, statically linked adapters, and porcelain workflows.
+
+Rationale:
+
+- The user selected the Git-like model: excellent base primitives first, playful features on top.
+- Implementation paths, files, packages, modules, services, and stable identities do not encode versions.
+- README, CHANGELOG, Release, manifest metadata, and explanatory docs may record versions.
+- Existing runner, lifecycle adapters, test engine, and report contracts should be deepened,
+  not replaced by a parallel framework.
+
+Constraints:
+
+- Keep one Go binary, lifecycle, test engine, and report authority.
+- Do not use dynamic Go plugins or split the product into microservices.
+- Keep source, Marketplace distribution, installed state, and runtime exposure separate.
+- Implement in verified commits under one architecture; do not retain parallel paths.

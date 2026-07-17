@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 确定 Git 式“稳定 plumbing 内核 + 声明式扩展图 + porcelain 工作流”长期架构，明确 root/path、manifest snapshot、capability graph、plan/runner、report/contract 与 state/journal 基础能力，以及静态 adapter、性能预算、无版本实现 identity 和单控制面迁移纪律。
+- **feat(core)**: 将 runner plan 提升为可验证、不可变选择、可 snapshot/digest 的 `ExecutionPlan`；增加通用 Registry Snapshot + Digest 并迁移 Kit/MCP loader；建立 Typed Command Catalog 统一 CLI handler routing、alias、namespace contract 与全局 help；`aicoding version` 改从构建或 manifest 元数据读取，不再硬编码实现代际标签。
+
 ## [0.10.0] - 2026-07-17
 
 - **docs(validation)**: 刷新产品收敛后的 Smoke/Full/Release、Kit、Skill、MCP、DocSync、Git Hook、Governance、Dependency 与 Markdown link 最终验收记录。

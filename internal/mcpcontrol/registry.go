@@ -10,6 +10,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/JiaxI2/AiCoding/internal/platform"
+	registryobject "github.com/JiaxI2/AiCoding/internal/registry"
 )
 
 type codexConfig struct {
@@ -28,20 +29,58 @@ type codexServer struct {
 	ToolTimeoutSec    int               `toml:"tool_timeout_sec"`
 }
 
-func LoadRegistry(repo string) (Registry, error) {
+type RegistrySnapshot struct {
+	object   registryobject.Snapshot
+	registry Registry
+}
+
+func LoadRegistrySnapshot(repo string) (RegistrySnapshot, error) {
 	path := platform.RepoPath(repo, "config/mcp-registry.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return Registry{}, err
+		return RegistrySnapshot{}, err
 	}
 	var registry Registry
 	if err := json.Unmarshal(data, &registry); err != nil {
-		return Registry{}, err
+		return RegistrySnapshot{}, err
 	}
 	sort.SliceStable(registry.Components, func(i, j int) bool {
 		return registry.Components[i].Order < registry.Components[j].Order
 	})
-	return registry, nil
+	object, err := registryobject.NewSnapshot("mcp-registry", registry)
+	if err != nil {
+		return RegistrySnapshot{}, err
+	}
+	registry.Components = cloneRegistryEntries(registry.Components)
+	return RegistrySnapshot{object: object, registry: registry}, nil
+}
+
+func LoadRegistry(repo string) (Registry, error) {
+	snapshot, err := LoadRegistrySnapshot(repo)
+	if err != nil {
+		return Registry{}, err
+	}
+	return snapshot.Registry(), nil
+}
+
+func (s RegistrySnapshot) Digest() string {
+	return s.object.Digest()
+}
+
+func (s RegistrySnapshot) Object() registryobject.Snapshot {
+	return s.object
+}
+
+func (s RegistrySnapshot) Registry() Registry {
+	registry := s.registry
+	registry.Components = cloneRegistryEntries(s.registry.Components)
+	return registry
+}
+
+func cloneRegistryEntries(entries []RegistryEntry) []RegistryEntry {
+	out := make([]RegistryEntry, len(entries))
+	copy(out, entries)
+	return out
 }
 
 func LoadComponent(repo, manifest string) (Component, error) {
@@ -141,16 +180,18 @@ func LoadConfigured(path string) ([]Endpoint, error) {
 }
 
 func ListInventory(repo, codexPath string) (Inventory, error) {
-	registry, err := LoadRegistry(repo)
+	snapshot, err := LoadRegistrySnapshot(repo)
 	if err != nil {
 		return Inventory{}, err
 	}
+	registry := snapshot.Registry()
 	configPath, err := ResolveCodexConfig(codexPath)
 	if err != nil {
 		return Inventory{}, err
 	}
 	inventory := Inventory{
 		RegistryPath:    platform.RepoPath(repo, "config/mcp-registry.json"),
+		RegistryDigest:  snapshot.Digest(),
 		CodexConfigPath: configPath,
 		Managed:         []ManagedView{},
 		Configured:      []ConfiguredView{},

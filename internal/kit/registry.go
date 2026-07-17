@@ -7,20 +7,56 @@ import (
 	"sort"
 
 	"github.com/JiaxI2/AiCoding/internal/platform"
+	registryobject "github.com/JiaxI2/AiCoding/internal/registry"
 )
 
-func LoadRegistry(repo string) ([]RegistryKit, error) {
+type RegistrySnapshot struct {
+	object  registryobject.Snapshot
+	entries []RegistryKit
+}
+
+func LoadRegistrySnapshot(repo string) (RegistrySnapshot, error) {
 	p := platform.RepoPath(repo, "config/kit-registry.json")
 	b, err := os.ReadFile(p)
 	if err != nil {
-		return nil, err
+		return RegistrySnapshot{}, err
 	}
 	var reg registry
 	if err := json.Unmarshal(b, &reg); err != nil {
-		return nil, err
+		return RegistrySnapshot{}, err
 	}
 	sort.SliceStable(reg.Kits, func(i, j int) bool { return reg.Kits[i].Order < reg.Kits[j].Order })
-	return reg.Kits, nil
+	object, err := registryobject.NewSnapshot("kit-registry", reg)
+	if err != nil {
+		return RegistrySnapshot{}, err
+	}
+	return RegistrySnapshot{object: object, entries: cloneRegistryKits(reg.Kits)}, nil
+}
+
+func LoadRegistry(repo string) ([]RegistryKit, error) {
+	snapshot, err := LoadRegistrySnapshot(repo)
+	if err != nil {
+		return nil, err
+	}
+	return snapshot.Entries(), nil
+}
+
+func (s RegistrySnapshot) Digest() string {
+	return s.object.Digest()
+}
+
+func (s RegistrySnapshot) Object() registryobject.Snapshot {
+	return s.object
+}
+
+func (s RegistrySnapshot) Entries() []RegistryKit {
+	return cloneRegistryKits(s.entries)
+}
+
+func cloneRegistryKits(entries []RegistryKit) []RegistryKit {
+	out := make([]RegistryKit, len(entries))
+	copy(out, entries)
+	return out
 }
 
 func LoadManifest(repo, rel string) (Manifest, error) {

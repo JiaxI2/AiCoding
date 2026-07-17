@@ -37,6 +37,18 @@ Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`
 测试 profile 对 rollback 只执行 `lifecycle rollback --help` 的只读契约检查，不会应用
 本地 rollback snapshot。
 
+## 命令契约固化
+
+顶层 command ID、名称/alias、是否要求 subcommand、handler 和 `aicoding --help` form
+由 `internal/cli` 的 typed command catalog 统一描述。新增或删除顶层命令必须先更新该
+catalog，并通过 catalog 完整性与 CLI contract 测试；不能再在 router、help 和
+namespace 判断中分别维护字符串列表。
+
+本次没有新增或删除用户命令。`mcp list --json` 的 inventory 增加
+`registryDigest`，用于标识本次读取的规范化 MCP registry snapshot；原字段保持不变。
+`aicoding version` 从构建注入值或 `config/codex-kit.json` manifest 元数据读取版本，
+不再把实现代际标签硬编码到 Go 文件。
+
 ## 领域与专项命令
 
 | 目的 | 命令 |
