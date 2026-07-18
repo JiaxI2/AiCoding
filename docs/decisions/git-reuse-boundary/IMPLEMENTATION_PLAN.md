@@ -1,6 +1,6 @@
 # Implementation Plan: Git Reuse Boundary
 
-Plan Status: Proposed（用户批准后改为 Approved）
+Plan Status: Approved
 
 目标：把 [GIT_REUSE_BOUNDARY.md](../../architecture/GIT_REUSE_BOUNDARY.md) 声明的边界
 变成可执行门禁。不新增 CLI 命令，不修改 snapshot/runner/report 契约，不新增 adapter。

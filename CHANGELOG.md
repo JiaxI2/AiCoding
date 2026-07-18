@@ -9,6 +9,7 @@
 - **feat(evidence)**: CLI report 增加可选 `inputDigest`/`planDigest`，lifecycle report 增加 adapter `catalogDigest`、`planDigest` 和每领域 `inputDigest`；MCP inventory 保留 `registryDigest` 并增加包含 referenced manifests 的 `catalogDigest`。
 - **feat(governance)**: 在现有 dependency gate 增加 production Go package boundary 检查，机器阻断 snapshot/runner/report 反向依赖领域、Kit/MCP 互相依赖及领域反向依赖 CLI/repohealth/testengine，使正交模块和局部测试边界可执行。
 - **feat(git-boundary)**: 固化 Git 事实层复用边界，将生产 Git 进程统一收编到零 internal 依赖的 `internal/gitx` 薄封装，并以进程所有权、importer 白名单和 CLI porcelain 动词禁用三条门禁阻断重复实现 Git 能力。
+- **docs(architecture)**: 记录 Git 复用边界 Phase 0–5 独立验收证据并将契约冻结，同时补全 Agent 知识面的进入点、生命周期与新功能知识检查。
 - **fix(identity)**: 将 Fast Path cache 从 versioned 实现路径迁移到稳定的 `.aicoding/cache/fast-path` identity；旧 cache 仅为可删除临时数据，不再参与当前 status/clean。
 - **docs(architecture)**: checkpoint CLI/MCP control-plane 与 Extension Adapter 草稿，作为本轮 Git 原理学习和有限架构闭环的可追溯输入；草稿状态不代表最终 Accepted 契约。
 

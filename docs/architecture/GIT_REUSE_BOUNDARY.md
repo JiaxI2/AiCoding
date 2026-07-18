@@ -1,6 +1,6 @@
 # Git 复用边界
 
-Status: Proposed（验收通过后改为 Accepted and Frozen）
+Status: Accepted and Frozen
 
 ## 1. 结论
 

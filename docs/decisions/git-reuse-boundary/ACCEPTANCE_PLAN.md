@@ -92,4 +92,13 @@ GIT_REUSE_BOUNDARY.md §9.1 的最小半径执行，不默认全量。
 
 签收记录：
 
-- （待填）
+- 2026-07-18 验收通过（PASS）。基线 5adb402，实现提交 b34718e（17 文件，白名单差异 0）。
+  独立验收会话执行 Phase 0–5：范围/静态审查通过（gitx 外直启 git 进程 0、
+  allowedImporters 与实际一致、27 动词逐词一致）；门禁全绿——
+  `go build` 2.994s、包测试 3.019s、`governance dependencies` ok=true 0.458s、
+  `docsync all` 528 checked/0 error 0.519s、Smoke 38 PASS/0 FAIL 13.267s、
+  Full 52 PASS/0 FAIL 116.101s；突变验证 M1–M4 均按预期失败且还原后全绿；
+  行为等价（pre-commit、doctor、lifecycle runtime-skill status、LIFE-007）通过。
+  偏差记录：验收计划中 `docsync --json` 按当前 CLI 语法修正为 `docsync all --json`。
+  签收会话（Claude）复核抽查：governance 两项新 check、porcelain catalog 测试、
+  TASKS 14/14，均通过。GIT_REUSE_BOUNDARY.md 自本记录起 Accepted and Frozen。
