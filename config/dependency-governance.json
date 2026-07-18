@@ -280,6 +280,23 @@
       "layer": "runtime"
     }
   ],
+  "acquisitionBoundary": {
+    "activationUrlFreeFiles": [
+      "config/kit-registry.json",
+      "config/kits",
+      "config/mcp-registry.json",
+      "config/mcp/components",
+      "config/codex-kit.json"
+    ],
+    "cloneableSourcePattern": "(?i)^(((https?|ssh|git)://[^\\s]+\\.git)|(git@[^\\s:]+:[^\\s]+\\.git)|(https?://(www\\.)?(github\\.com|gitcode\\.[a-z]+)/[^/]+/[^/]+/?))$",
+    "acquisitionRegistryFiles": [
+      ".gitmodules",
+      "config/skill-sources.json"
+    ],
+    "scanRoots": [
+      "config"
+    ]
+  },
   "gitProcessBoundary": {
     "ownerPackage": "internal/gitx",
     "scanRoots": [

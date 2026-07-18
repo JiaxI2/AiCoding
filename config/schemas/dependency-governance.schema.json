@@ -15,6 +15,7 @@
     "mcpRegistry",
     "skills",
     "externalDependencies",
+    "acquisitionBoundary",
     "gitProcessBoundary",
     "goPackageBoundaries"
   ],
@@ -138,6 +139,9 @@
         }
       }
     },
+    "acquisitionBoundary": {
+      "$ref": "#/$defs/acquisitionBoundary"
+    },
     "gitProcessBoundary": {
       "$ref": "#/$defs/gitProcessBoundary"
     },
@@ -150,6 +154,49 @@
     }
   },
   "$defs": {
+    "acquisitionBoundary": {
+      "type": "object",
+      "required": [
+        "activationUrlFreeFiles",
+        "cloneableSourcePattern",
+        "acquisitionRegistryFiles",
+        "scanRoots"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "activationUrlFreeFiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "cloneableSourcePattern": {
+          "type": "string",
+          "minLength": 1
+        },
+        "acquisitionRegistryFiles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "scanRoots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "gitProcessBoundary": {
       "type": "object",
       "required": [

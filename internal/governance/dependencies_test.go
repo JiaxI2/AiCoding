@@ -176,6 +176,67 @@ func TestGitxImporterAllowlistAllowsRegisteredImporter(t *testing.T) {
 	}
 }
 
+func TestActivationManifestsURLFreeAllowsLocalValues(t *testing.T) {
+	report := CheckDependencies(dependencyFixture(t))
+
+	check, ok := dependencyCheckByName(report.Checks, "activation manifests URL-free")
+	if !ok || !check.OK {
+		t.Fatalf("expected local activation manifest values to pass, got %#v", check)
+	}
+}
+
+func TestActivationManifestsURLFreeRejectsNestedURL(t *testing.T) {
+	repo := dependencyFixture(t)
+	mustWrite(t, filepath.Join(repo, "config", "kits", "platform-kit.json"), `{
+  "id": "platform-kit",
+  "runtime": {"endpoint": "https://example.com/package"}
+}`)
+
+	report := CheckDependencies(repo)
+
+	if !hasErrorContaining(report.Errors, `activation manifests URL-free: config/kits/platform-kit.json $["runtime"]["endpoint"] contains URL`) {
+		t.Fatalf("expected activation URL error with JSON path, got %#v", report.Errors)
+	}
+}
+
+func TestCloneableSourcesRegistryAllowsDeclaredRegistries(t *testing.T) {
+	repo := dependencyFixture(t)
+	mustWrite(t, filepath.Join(repo, ".gitmodules"), `[submodule "dependency"]
+	path = dependency
+	url = https://github.com/example/dependency.git
+`)
+	mustWrite(t, filepath.Join(repo, "config", "skill-sources.json"), `{
+  "sources": [{"url": "https://github.com/example/skill.git"}]
+}`)
+
+	report := CheckDependencies(repo)
+
+	check, ok := dependencyCheckByName(report.Checks, "cloneable sources registry")
+	if !ok || !check.OK {
+		t.Fatalf("expected declared acquisition registries to pass, got %#v", check)
+	}
+}
+
+func TestCloneableSourcesRegistryRejectsUndeclaredFile(t *testing.T) {
+	repo := dependencyFixture(t)
+	mustWrite(t, filepath.Join(repo, "config", "rogue-source.json"), `{
+  "source": "https://github.com/example/rogue.git"
+}`)
+
+	report := CheckDependencies(repo)
+
+	if !hasErrorContaining(report.Errors, `cloneable sources registry: config/rogue-source.json $["source"] contains cloneable source outside acquisition registry`) {
+		t.Fatalf("expected cloneable source registry error with JSON path, got %#v", report.Errors)
+	}
+}
+
+func TestAcquisitionBoundaryRejectsMissingPolicy(t *testing.T) {
+	err := checkActivationManifestsURLFree(t.TempDir(), acquisitionBoundary{})
+	if !hasErrorContaining(err, "acquisitionBoundary policy is missing or incomplete") {
+		t.Fatalf("expected missing acquisition policy error, got %#v", err)
+	}
+}
+
 func dependencyFixture(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
@@ -242,6 +303,18 @@ func dependencyFixture(t *testing.T) string {
     "standaloneForbiddenPrefixes": ["aicoding-"]
   },
   "externalDependencies": [{"id": "runtime:mcp", "layer": "runtime"}],
+  "acquisitionBoundary": {
+    "activationUrlFreeFiles": [
+      "config/kit-registry.json",
+      "config/kits",
+      "config/mcp-registry.json",
+      "config/mcp/components",
+      "config/codex-kit.json"
+    ],
+    "cloneableSourcePattern": "(?i)^(((https?|ssh|git)://[^\\s]+\\.git)|(git@[^\\s:]+:[^\\s]+\\.git)|(https?://(www\\.)?(github\\.com|gitcode\\.[a-z]+)/[^/]+/[^/]+/?))$",
+    "acquisitionRegistryFiles": [".gitmodules", "config/skill-sources.json"],
+    "scanRoots": ["config"]
+  },
   "gitProcessBoundary": {
     "ownerPackage": "internal/gitx",
     "scanRoots": ["cmd", "internal"],

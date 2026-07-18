@@ -17,6 +17,7 @@
 ## 2. 测试原则
 
 - **官方入口统一在 Go CLI**：`bin\aicoding.exe test --profile Smoke|Full|Release --json` 和 `bin\aicoding.exe test latest`。
+- **三档语义冻结**：Smoke/Full 不启动可见外部工具，Release 才执行真实桌面回归；演进规则见 [契约冻结与获取/激活边界](../../architecture/FREEZE_AND_ACQUISITION_BOUNDARY.md)。
 - **所有命令必须有超时**：测试驱动使用 `context.WithTimeout`，禁止无限等待。
 - **优先非破坏性测试**：默认只跑 plan/check/gate/export，不直接修改用户全局状态。
 - **rollback 只读验证**：测试 profile 只运行 `lifecycle rollback --scope kit --help`，不读取或应用本地 rollback snapshot。

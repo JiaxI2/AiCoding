@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(governance)**: 新增契约冻结与获取/激活分离边界，通过 `activation manifests URL-free` 和 `cloneable sources registry` 两条依赖治理检查阻断激活 manifest URL 与越界可克隆源。 / Adds the contract-freeze and acquisition/activation boundary with two dependency gates for activation URLs and cloneable-source ownership.
+
 ## [1.0.0] - 2026-07-18
 
 - **refactor(cli)**: 移除已到期的 `smoke`、`ci`、`full`、位置参数 test、`kit lifecycle`、MCP lifecycle 动词与 `status --all` 兼容路由；正式测试统一使用 `test --profile`，lifecycle 调用必须显式声明 `--scope`。 / Removes the expired compatibility routes and requires canonical test profiles plus explicit lifecycle scopes.
