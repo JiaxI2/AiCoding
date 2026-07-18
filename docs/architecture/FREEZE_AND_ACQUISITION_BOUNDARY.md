@@ -61,7 +61,7 @@ Status: Accepted and Frozen
 ### 3.2 外部来源标准接入流程
 
 所有 GitHub/URL 起源的 Skill、MCP、Kit 一律走四步，与集成决策
-（pin / fork-pin / adopt，见 `aicoding-external-integration` Skill）正交组合：
+（pin / fork-pin / adopt 三路径）正交组合：
 
 | 步骤 | 动作 | 网络 | 权威面 |
 |---|---|---|---|
