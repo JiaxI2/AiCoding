@@ -1,0 +1,10 @@
+# Repository-wide link checks cover AiCoding-owned files. Released Skill source
+# and the external debug fixture are separate Git repositories with their own
+# validation authority, so this repository must not reinterpret their templates
+# or unresolved fixture links as AiCoding defects.
+exclude_path = [
+  '(^|[\\/])CodingKit[\\/]agents[\\/]skills([\\/]|$)',
+  '(^|[\\/])CodingKit[\\/]tests[\\/]ai-debug-kit[\\/]_external([\\/]|$)',
+  # This retained module document is GBK, while lychee accepts UTF-8 input.
+  '(^|[\\/])CodingKit[\\/]modules[\\/]common[\\/]vofa\+[\\/]README\.md$',
+]
