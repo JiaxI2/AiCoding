@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-18
+
 - **refactor(cli)**: 移除已到期的 `smoke`、`ci`、`full`、位置参数 test、`kit lifecycle`、MCP lifecycle 动词与 `status --all` 兼容路由；正式测试统一使用 `test --profile`，lifecycle 调用必须显式声明 `--scope`。 / Removes the expired compatibility routes and requires canonical test profiles plus explicit lifecycle scopes.
 
 - **docs(architecture)**: 将 Git MOC、12 个索引和 Orthogonal Architecture Design Kit 落为“snapshot 事实、plan 意图、runner 调度、adapter 翻译、report 证据、state 领域所有”的正交深模块架构；固化仓库 lifecycle 与 Agent CLI/JSON 边界、Skill/MCP 生命周期、局部测试半径、C/native 采用条件及闭环后的架构冻结规则，删除 speculative capability graph/global journal 无限迁移表。
@@ -98,7 +100,8 @@
 - **docs**: README、命令文档、架构文档、PowerShell 边界文档、Tag policy 和 Release policy 只描述当前 main 的可观测标准。
 - **chore(pwsh)**: Go 默认控制面之外只保留 PowerShell 专项质量、安全、Plan Mode、外部 skill、tag planning / overlay compatibility 和硬件/工具链边界脚本。
 
-[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/JiaxI2/AiCoding/compare/v0.10.0...v1.0.0
 [0.10.0]: https://github.com/JiaxI2/AiCoding/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/JiaxI2/AiCoding/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/JiaxI2/AiCoding/compare/v0.8.0...v0.9.0
