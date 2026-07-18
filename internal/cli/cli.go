@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -27,7 +28,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/tagpolicy"
 )
 
-const version = "fast-path-v2"
+var buildVersion string
 
 func Main() {
 	if code := Execute(os.Args[1:], os.Stdout, os.Stderr); code != ExitSuccess {
@@ -41,75 +42,40 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 		writeUsage(stderr)
 		return ExitUsage
 	}
-	cmd := args[0]
+	requestedCommand := args[0]
 	commandArgs := args[1:]
-	if len(commandArgs) == 1 && isHelpArg(commandArgs[0]) && commandRequiresSubcommand(cmd) {
+	route, known := commands.lookup(requestedCommand)
+	if !known {
+		if jsonRequested(commandArgs) {
+			message := "unknown command: " + requestedCommand
+			res := report.Fail(requestedCommand, start, message, nil, message)
+			res.ErrorKind = report.ErrorKindUsage
+			_ = report.WriteJSONTo(stdout, res)
+			return ExitUsage
+		}
+		fmt.Fprintf(stderr, "unknown command: %s\n", requestedCommand)
+		writeUsage(stderr)
+		return ExitUsage
+	}
+	cmd := route.descriptor.Name
+	if len(commandArgs) == 1 && isHelpArg(commandArgs[0]) && route.descriptor.RequiresSubcommand {
 		writeUsage(stdout)
+		return ExitSuccess
+	}
+	if route.direct == directHelp {
+		writeUsage(stdout)
+		return ExitSuccess
+	}
+	if route.direct == directVersion {
+		fmt.Fprintln(stdout, productVersion())
 		return ExitSuccess
 	}
 	var res report.Result
 	var err error
-	switch cmd {
-	case "help", "--help", "-h":
-		writeUsage(stdout)
-		return ExitSuccess
-	case "version", "--version", "-v":
-		fmt.Fprintln(stdout, version)
-		return ExitSuccess
-	case "hook":
-		res, err = runHook(commandArgs, start)
-	case "bootstrap":
-		res, err = runBootstrap(commandArgs, start)
-	case "smoke":
-		res, err = runSmoke(commandArgs, start)
-	case "ci":
-		res, err = runCI(commandArgs, start)
-	case "test":
-		res, err = runTest(commandArgs, start)
-
-	case "docsync":
-		res, err = runDocSync(commandArgs, start)
-	case "skill":
-		res, err = runSkill(commandArgs, start)
-	case "lifecycle":
-		res, err = runLifecycle(commandArgs, start)
-	case "export":
-		res, err = runExport(commandArgs, start)
-	case "fresh-clone":
-		res, err = runFreshClone(commandArgs, start)
-	case "full":
-		res, err = runFull(commandArgs, start)
-	case "cache":
-		res, err = runCache(commandArgs, start)
-	case "codex":
-		res, err = runCodexUsage(commandArgs, start)
-	case "mcp":
-		res, err = runMCP(commandArgs, start)
-
-	case "tag":
-		res, err = runTag(commandArgs, start)
-	case "release":
-		res, err = runReleaseCommand(commandArgs, start)
-	case "kit":
-		res, err = runKit(commandArgs, start)
-	case "doctor":
-		res, err = runDoctor(commandArgs, start)
-	case "verify":
-		res, err = runVerify(commandArgs, start)
-	case "status":
-		res, err = runStatus(commandArgs, start)
-	case "governance":
-		res, err = runGovernance(commandArgs, start)
-	case "powershell":
-		res, err = runPowerShell(commandArgs, start)
-	default:
-		if jsonRequested(commandArgs) {
-			err = usageErrorf("unknown command: %s", cmd)
-			break
-		}
-		fmt.Fprintf(stderr, "unknown command: %s\n", cmd)
-		writeUsage(stderr)
-		return ExitUsage
+	if route.handler == nil {
+		err = usageErrorf("command route is unavailable: %s", cmd)
+	} else {
+		res, err = route.handler(commandArgs, start)
 	}
 	if help, ok := requestedHelp(err); ok {
 		fmt.Fprint(stdout, help)
@@ -149,79 +115,31 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 	return exitCodeFor(res, err)
 }
 
+func productVersion() string {
+	if buildVersion != "" {
+		return buildVersion
+	}
+	candidates := []string{filepath.Join("config", "codex-kit.json")}
+	if executable, err := os.Executable(); err == nil {
+		candidates = append(candidates, filepath.Join(filepath.Dir(executable), "..", "config", "codex-kit.json"))
+	}
+	for _, candidate := range candidates {
+		data, err := os.ReadFile(candidate)
+		if err != nil {
+			continue
+		}
+		var metadata struct {
+			Version string `json:"version"`
+		}
+		if err := json.Unmarshal(data, &metadata); err == nil && metadata.Version != "" {
+			return metadata.Version
+		}
+	}
+	return "development"
+}
+
 func writeUsage(w io.Writer) {
-	fmt.Fprintf(w, `AiCoding fast path CLI %s
-
-Usage:
-  aicoding --help
-  aicoding version
-  aicoding hook pre-commit [--repo-root PATH] [--json]
-  aicoding hook commit-msg --file COMMIT_MSG [--repo-root PATH] [--json]
-  aicoding bootstrap [--repo-root PATH] [--json]
-
-Formal product workflow:
-  aicoding test --profile Smoke|Full|Release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]
-  aicoding lifecycle plan --action install|update|uninstall --all [--repo-root PATH] [--json]
-  aicoding lifecycle install|update|uninstall --all [--repo-root PATH] [--json]
-  aicoding lifecycle plan --action install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--migrate-unmanaged] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding lifecycle plan --action uninstall --scope all [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding lifecycle install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--migrate-unmanaged] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding lifecycle uninstall --scope all [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding lifecycle status|doctor --scope all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding lifecycle verify --scope all --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding lifecycle rollback --last [--repo-root PATH] [--json]
-  aicoding doctor --all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]
-  aicoding verify --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]
-  aicoding release verify [--repo-root PATH] [--json]
-  aicoding release gate [--repo-root PATH] [--json]
-
-Compatibility for one version (emits CLI_DEPRECATED):
-  aicoding smoke [--repo-root PATH] [--json]
-  aicoding ci --profile Smoke|Full|Release [--repo-root PATH] [--json]
-  aicoding test full|release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]
-  aicoding full [--repo-root PATH] [--json]
-  aicoding kit lifecycle --action install|update|uninstall|status --all [--dry-run] [--repo-root PATH] [--json]
-  aicoding mcp install|update|uninstall COMPONENT|--all [--dry-run] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding status --all [--repo-root PATH] [--json]
-
-Domain and diagnostic commands:
-  aicoding test latest [--repo-root PATH] [--json]
-  aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]
-  aicoding skill verify --all --profile Smoke|Full|Release [--repo-root PATH] [--json]
-  aicoding skill c99-standard-c status [--repo-root PATH] [--json]
-  aicoding skill c99-standard-c templates [--repo-root PATH] [--json]
-  aicoding skill c99-standard-c fmt --scope changed|staged|all|paths [--path PATH ...] [--preview] [--repo-root PATH] [--json]
-  aicoding skill c99-standard-c check --scope changed|staged|all|paths [--path PATH ...] [--repo-root PATH] [--json]
-  aicoding skill c99-standard-c verify --profile fast|full [--target PATH] [--overlay PATH ...] [--timings] [--repo-root PATH] [--json]
-  aicoding export --all --zip [--repo-root PATH] [--json]
-  aicoding fresh-clone --profile Smoke|Full|Release [--repo-root PATH] [--json]
-  aicoding cache status [--repo-root PATH] [--json]
-  aicoding cache clean [--repo-root PATH] [--json]
-  aicoding codex usage parse [--file FILE|-] [--json]
-  aicoding codex usage run [--json] -- codex exec --json "PROMPT"
-  aicoding mcp list [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding mcp status|doctor COMPONENT [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding mcp verify COMPONENT|--all --profile Smoke|Full|Release [--configured] [--codex-config PATH] [--repo-root PATH] [--json]
-  aicoding tag audit [--repo-root PATH] [--json]
-  aicoding governance lint [--repo-root PATH] [--json]
-  aicoding governance dependencies [--repo-root PATH] [--json]
-  aicoding governance layout [--repo-root PATH] [--json]
-  aicoding governance reuse [--repo-root PATH] [--json]
-
-  aicoding kit list [--repo-root PATH] [--json]
-  aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]
-  aicoding kit doctor [--repo-root PATH] [--json]
-  aicoding doctor perf [--repo-root PATH] [--json]
-  aicoding doctor pwsh [--repo-root PATH] [--json]
-  aicoding doctor pwsh-budget [--repo-root PATH] [--json]
-  aicoding verify hooks [--repo-root PATH] [--json]
-  aicoding verify repo-text [--repo-root PATH] [--json]
-  aicoding verify release-notes [--repo-root PATH] [--json]
-  aicoding powershell regex-lint --staged [--repo-root PATH] [--json]
-  aicoding powershell regex-lint --path PATH [--repo-root PATH] [--json]
-
-This CLI owns Go-native fast, lifecycle, export, DocSync, fresh-clone, Full, and Release control paths.
-`, version)
+	writeCatalogHelp(w)
 }
 
 func jsonRequested(args []string) bool {
@@ -427,20 +345,20 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 			return report.Fail("hook pre-commit", start, "cannot resolve repo root", nil, err.Error()), err
 		}
 
-		plan := runner.NewPlan(
-			runner.Task{ID: "governance pre-commit", Group: "hook", Run: func(context.Context) runner.TaskResult {
+		plan, planErr := runner.NewExecutionPlan(
+			runner.Task{ID: "governance pre-commit", Action: "governance.lint", Group: "hook", Run: func(context.Context) runner.TaskResult {
 				errs := governance.Lint(repo, "pre-commit", "")
 				return runner.TaskResult{OK: len(errs) == 0, Errors: errs}
 			}},
-			runner.Task{ID: "docsync staged", Group: "hook", Run: func(context.Context) runner.TaskResult {
+			runner.Task{ID: "docsync staged", Action: "docsync.lint-staged", Group: "hook", Run: func(context.Context) runner.TaskResult {
 				errs := docsync.LintStaged(repo)
 				return runner.TaskResult{OK: len(errs) == 0, Errors: errs}
 			}},
-			runner.Task{ID: "reuse governance", Group: "hook", Run: func(context.Context) runner.TaskResult {
+			runner.Task{ID: "reuse governance", Action: "reuse.verify", Group: "hook", Run: func(context.Context) runner.TaskResult {
 				check := reuse.Verify(repo)
 				return runner.TaskResult{OK: check.OK, Errors: check.Errors, Warnings: check.Warnings, Data: check}
 			}},
-			runner.Task{ID: "powershell regex staged", Group: "hook", Run: func(context.Context) runner.TaskResult {
+			runner.Task{ID: "powershell regex staged", Action: "powershell.regex-lint-staged", Group: "hook", Run: func(context.Context) runner.TaskResult {
 				issues, scanErr := pwshregex.LintStaged(repo)
 				errs := []string{}
 				if scanErr != nil {
@@ -449,7 +367,7 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 				errs = append(errs, pwshregex.BlockingMessages(issues)...)
 				return runner.TaskResult{OK: len(errs) == 0, Errors: errs, Data: issues}
 			}},
-			runner.Task{ID: "c99-standard-c staged check", Group: "hook", Run: func(context.Context) runner.TaskResult {
+			runner.Task{ID: "c99-standard-c staged check", Action: "c99-standard-c.check-staged", Group: "hook", Run: func(context.Context) runner.TaskResult {
 				data, runErr := cstyle.CheckBySkill(cstyle.DefaultSkillID, cstyle.Options{RepoRoot: repo, Scope: cstyle.ScopeStaged})
 				errs := append([]string{}, data.Errors...)
 				if runErr != nil && len(errs) == 0 {
@@ -458,6 +376,9 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 				return runner.TaskResult{OK: len(errs) == 0, Errors: errs, Data: data}
 			}},
 		)
+		if planErr != nil {
+			return report.Fail("hook pre-commit", start, "cannot build execution plan", nil, planErr.Error()), planErr
+		}
 		results := plan.Run(context.Background(), runner.Options{MaxParallel: 4})
 		errs := []string{}
 		for _, result := range results {
@@ -609,14 +530,28 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	if err != nil {
 		return report.Fail("kit "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
+	if sub == "list" {
+		catalog, loadErr := kit.LoadCatalogSnapshot(repo)
+		if loadErr != nil {
+			return report.Fail("kit list", start, "cannot load kit catalog", nil, loadErr.Error()), loadErr
+		}
+		return report.Result{
+			SchemaVersion: 1,
+			Command:       "kit list",
+			OK:            true,
+			Message:       "kit catalog",
+			RepoRoot:      repo,
+			InputDigest:   catalog.Digest(),
+			Data:          kit.CatalogKitViews(catalog.Kits()),
+			ElapsedMS:     report.Elapsed(start),
+		}, nil
+	}
 	entries, err := kit.LoadRegistry(repo)
 	if err != nil {
 		return report.Fail("kit "+sub, start, "cannot load registry", nil, err.Error()), err
 	}
 	withManifests := kit.LoadKitViews(repo, entries)
 	switch sub {
-	case "list":
-		return report.Result{SchemaVersion: 1, Command: "kit list", OK: true, Message: "kit registry", RepoRoot: repo, Data: withManifests, ElapsedMS: report.Elapsed(start)}, nil
 	case "doctor":
 		errs := kit.DoctorKits(repo, entries)
 		return report.Result{SchemaVersion: 1, Command: "kit doctor", OK: len(errs) == 0, Message: "kit registry doctor", RepoRoot: repo, Data: withManifests, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
@@ -654,13 +589,19 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			OK:            unified.OK,
 			Message:       message,
 			RepoRoot:      repo,
+			InputDigest:   lifecycleAdapterInputDigest(unified, lifecyclecontrol.ScopeKit),
+			PlanDigest:    unified.PlanDigest,
 			Data:          lifecycleAdapterData(unified, lifecyclecontrol.ScopeKit),
 			Warnings:      unified.Warnings,
 			Errors:        unified.Errors,
 			ElapsedMS:     report.Elapsed(start),
 		}, report.BoolErr(unified.Errors)
 	case "verify", "test":
-		selected, err := kit.SelectKits(entries, *kitArg, *allArg)
+		catalog, loadErr := kit.LoadCatalogSnapshot(repo)
+		if loadErr != nil {
+			return report.Fail("kit "+sub, start, "cannot load kit catalog", nil, loadErr.Error()), loadErr
+		}
+		selected, err := catalog.Select(*kitArg, *allArg)
 		if err != nil {
 			return report.Fail("kit "+sub, start, "kit selection failed", nil, err.Error()), err
 		}
@@ -668,13 +609,13 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			if sub != "verify" {
 				return report.Result{}, usageErrorf("Lifecycle profile only supports kit verify")
 			}
-			structure := kit.VerifyStructure(repo, selected)
-			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
+			structure := kit.VerifyCatalogStructure(repo, selected)
+			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, InputDigest: catalog.Digest(), Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
 		}
 		if !strings.EqualFold(*profile, "Smoke") {
 			return report.Result{}, usageErrorf("kit %s handles Smoke/Lifecycle only; use aicoding skill verify --all --profile %s", sub, *profile)
 		}
-		results := kit.SmokeKits(repo, selected)
+		results := kit.SmokeCatalogKits(repo, selected)
 		errs := []string{}
 		for _, r := range results {
 			if !r.OK {
@@ -683,7 +624,7 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 				}
 			}
 		}
-		return report.Result{SchemaVersion: 1, Command: "kit " + sub, OK: len(errs) == 0, Message: "kit smoke " + sub, RepoRoot: repo, Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+		return report.Result{SchemaVersion: 1, Command: "kit " + sub, OK: len(errs) == 0, Message: "kit smoke " + sub, RepoRoot: repo, InputDigest: catalog.Digest(), Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	default:
 		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
 	}

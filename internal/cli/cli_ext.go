@@ -63,11 +63,19 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
 		return report.Result{}, err
 	}
-	repo, entries, err := selectedKits(*repoArg, *kitArg, *allArg)
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("skill verify", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	catalog, err := kit.LoadCatalogSnapshot(repo)
+	if err != nil {
+		return report.Fail("skill verify", start, "cannot load kit catalog", nil, err.Error()), err
+	}
+	selected, err := catalog.Select(*kitArg, *allArg)
 	if err != nil {
 		return report.Fail("skill verify", start, "kit selection failed", nil, err.Error()), err
 	}
-	res := kit.VerifySkills(repo, entries, *profile)
+	res := kit.VerifyCatalogSkills(repo, selected, *profile)
 	reuseCheck := reuse.Verify(repo)
 	for _, issue := range reuseCheck.Errors {
 		res.Errors = append(res.Errors, "reuse governance: "+issue)
@@ -76,7 +84,7 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 		res.Warnings = append(res.Warnings, "reuse governance: "+warning)
 	}
 	res.OK = res.OK && reuseCheck.OK
-	return report.Result{SchemaVersion: 1, Command: "skill verify", OK: res.OK, Message: "Go skill structure verification", RepoRoot: repo, Data: res, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
+	return report.Result{SchemaVersion: 1, Command: "skill verify", OK: res.OK, Message: "Go skill structure verification", RepoRoot: repo, InputDigest: catalog.Digest(), Data: res, Warnings: res.Warnings, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
 }
 
 func runLifecycle(args []string, start time.Time) (report.Result, error) {
@@ -195,6 +203,7 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 		OK:            lifecycleReport.OK,
 		Message:       "unified lifecycle control plane",
 		RepoRoot:      repo,
+		PlanDigest:    lifecycleReport.PlanDigest,
 		Data:          lifecycleReport,
 		Warnings:      lifecycleReport.Warnings,
 		Errors:        lifecycleReport.Errors,

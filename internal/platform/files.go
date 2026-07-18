@@ -1,12 +1,11 @@
 package platform
 
 import (
-	"bytes"
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 )
 
 func ResolveRepoRoot(repoArg string) (string, error) {
@@ -17,14 +16,11 @@ func ResolveRepoRoot(repoArg string) (string, error) {
 		}
 		return p, nil
 	}
-	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return stdout.String(), fmt.Errorf("git rev-parse --show-toplevel: %w: %s", err, strings.TrimSpace(stderr.String()))
+	stdout, err := gitx.Run("", "rev-parse", "--show-toplevel")
+	if err != nil {
+		return stdout, err
 	}
-	return strings.TrimSpace(stdout.String()), nil
+	return strings.TrimSpace(stdout), nil
 }
 
 func RepoPath(repo, rel string) string {

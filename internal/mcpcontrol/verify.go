@@ -13,9 +13,21 @@ func DoctorComponents(repo string, entries []RegistryEntry) []CommandResult {
 }
 
 func DoctorComponentsContext(ctx context.Context, repo string, entries []RegistryEntry) []CommandResult {
-	results := make([]CommandResult, 0, len(entries))
+	inputs := make([]componentInput, 0, len(entries))
 	for _, entry := range entries {
-		component, err := LoadComponent(repo, entry.Manifest)
+		inputs = append(inputs, componentInput{entry: entry})
+	}
+	return doctorComponentInputs(ctx, repo, inputs)
+}
+
+func DoctorCatalogComponentsContext(ctx context.Context, repo string, snapshots []ComponentSnapshot) []CommandResult {
+	return doctorComponentInputs(ctx, repo, componentInputs(snapshots))
+}
+
+func doctorComponentInputs(ctx context.Context, repo string, inputs []componentInput) []CommandResult {
+	results := make([]CommandResult, 0, len(inputs))
+	for _, input := range inputs {
+		component, err := resolvedComponent(repo, input)
 		if err != nil {
 			results = append(results, CommandResult{OK: false, Errors: []string{err.Error()}})
 			continue
@@ -35,6 +47,32 @@ func Verify(
 	profile string,
 	includeConfigured bool,
 ) VerifyReport {
+	inputs := make([]componentInput, 0, len(entries))
+	for _, entry := range entries {
+		inputs = append(inputs, componentInput{entry: entry})
+	}
+	return verifyComponentInputs(ctx, repo, codexPath, inputs, profile, includeConfigured)
+}
+
+func VerifyCatalog(
+	ctx context.Context,
+	repo string,
+	codexPath string,
+	snapshots []ComponentSnapshot,
+	profile string,
+	includeConfigured bool,
+) VerifyReport {
+	return verifyComponentInputs(ctx, repo, codexPath, componentInputs(snapshots), profile, includeConfigured)
+}
+
+func verifyComponentInputs(
+	ctx context.Context,
+	repo string,
+	codexPath string,
+	inputs []componentInput,
+	profile string,
+	includeConfigured bool,
+) VerifyReport {
 	normalized := normalizeProfile(profile)
 	report := VerifyReport{
 		Profile:    normalized,
@@ -42,8 +80,9 @@ func Verify(
 		Managed:    []ComponentVerifyResult{},
 		Configured: []ProbeResult{},
 	}
-	for _, entry := range entries {
-		component, err := LoadComponent(repo, entry.Manifest)
+	for _, input := range inputs {
+		entry := input.entry
+		component, err := resolvedComponent(repo, input)
 		if err != nil {
 			item := ComponentVerifyResult{ID: entry.ID, Profile: normalized, OK: false, Errors: []string{err.Error()}}
 			report.Managed = append(report.Managed, item)

@@ -18,12 +18,19 @@ bin\aicoding.exe test latest
   "command": "verify --profile Smoke",
   "ok": true,
   "message": "AiCoding product verification",
+  "inputDigest": "sha256:<normalized-input>",
+  "planDigest": "sha256:<execution-plan>",
   "data": {},
   "warnings": [],
   "errors": [],
   "elapsedMs": 635
 }
 ```
+
+`inputDigest` 与 `planDigest` 是可选的加法字段：catalog/list/lifecycle 等有稳定事实输入或
+计划意图的命令提供它们；普通诊断不伪造摘要。Lifecycle 的 `data.catalogDigest` 标识静态
+adapter catalog，`data.adapters[*].inputDigest` 标识各领域输入。Digest 用于完整性与追踪，
+不替代来源信任、授权和运行结果。
 
 失败时可选 `errorKind` 只使用：
 

@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 )
 
 type Scope string
@@ -410,9 +412,9 @@ func resolveRepoRoot(repoRoot string) (string, error) {
 		return abs, nil
 	}
 
-	out, err := exec.Command("git", "rev-parse", "--show-toplevel").CombinedOutput()
+	out, err := gitx.Run("", "rev-parse", "--show-toplevel")
 	if err == nil {
-		root := strings.TrimSpace(string(out))
+		root := strings.TrimSpace(out)
 		if root != "" {
 			return filepath.Abs(root)
 		}
@@ -422,15 +424,13 @@ func resolveRepoRoot(repoRoot string) (string, error) {
 }
 
 func gitLines(repoRoot string, args ...string) ([]string, error) {
-	cmd := exec.Command("git", args...)
-	cmd.Dir = repoRoot
-	out, err := cmd.CombinedOutput()
+	out, err := gitx.Run(repoRoot, args...)
 	if err != nil {
-		return nil, fmt.Errorf("git %s failed: %s", strings.Join(args, " "), strings.TrimSpace(string(out)))
+		return nil, fmt.Errorf("git %s failed: %w", strings.Join(args, " "), err)
 	}
 
 	var lines []string
-	for _, line := range strings.Split(string(out), "\n") {
+	for _, line := range strings.Split(out, "\n") {
 		line = strings.TrimSpace(line)
 		if line != "" {
 			lines = append(lines, line)

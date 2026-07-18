@@ -55,9 +55,11 @@ bin/aicoding.exe skill c99-standard-c verify --json
 
 ## Windows Automation MCP
 
-`tools/windows-automation/visio-mcp` 是通用 Visio capability。AiCoding 只在上层 MCP registry 和 Go 控制面中登记、安装、诊断和验证它；该组件的 package、module、环境变量、schema、示例和测试不观察 AiCoding。
+`tools/windows-automation/visio-mcp` 与 `tools/windows-automation/ppt-mcp` 分别是通用 Visio、PowerPoint capability。AiCoding 只在上层 MCP registry 和 Go 控制面中登记、安装、诊断和验证它们；组件的 package、module、环境变量、schema、示例和测试不观察 AiCoding。
 
 组件提供 Diagram IR、Visio tools、快照、检查、质量检测、有限 repair 和 VSDX/PNG/SVG/PDF 导出。简单同质图可使用全局统一尺寸；复杂图按 `sizeClass`、文字安全区、端口密度和容器职责确定有界尺寸，并检查中心轴、绝对端口、紧凑度、箭头净空和文字碰撞。
+
+`ppt-mcp` 以普通源码 vendor 到本仓库，作为 AiCoding 自行维护的 canonical source；它不保留上游 remote、submodule 或自动更新关系。组件提供 PowerPoint COM tools，Smoke/Full 只运行 mock 回归，Release 才显式启动可见 PowerPoint COM 冒烟。
 
 MCP 不注册工作流 prompt。完整画图流程属于上层通用 `visio-diagram` Skill；控制面与运维入口见 [MCP Control Plane](../docs/architecture/MCP_CONTROL_PLANE.md) 和 [MCP Components](../docs/operations/MCP_COMPONENTS.md)。
 

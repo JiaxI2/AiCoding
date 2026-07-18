@@ -60,19 +60,36 @@ type rawSkill struct {
 }
 
 func VerifySkills(repo string, entries []RegistryKit, profile string) SkillVerifyReport {
+	inputs := make([]lifecycleInput, 0, len(entries))
+	for _, entry := range entries {
+		inputs = append(inputs, lifecycleInput{entry: entry})
+	}
+	return verifySkills(repo, inputs, profile)
+}
+
+func VerifyCatalogSkills(repo string, snapshots []ManifestSnapshot, profile string) SkillVerifyReport {
+	inputs := make([]lifecycleInput, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		manifest, err := snapshot.Manifest()
+		inputs = append(inputs, lifecycleInput{entry: snapshot.Entry(), manifest: manifest, err: err, resolved: true})
+	}
+	return verifySkills(repo, inputs, profile)
+}
+
+func verifySkills(repo string, inputs []lifecycleInput, profile string) SkillVerifyReport {
 	profile = strings.Title(strings.ToLower(strings.TrimSpace(profile)))
 	if profile == "" {
 		profile = "Smoke"
 	}
 	report := SkillVerifyReport{SchemaVersion: 1, Profile: profile, OK: true}
-	tasks := make([]runner.Task, 0, len(entries))
-	for _, entry := range entries {
-		entry := entry
+	tasks := make([]runner.Task, 0, len(inputs))
+	for _, input := range inputs {
+		input := input
 		tasks = append(tasks, runner.Task{
-			ID:    entry.ID,
+			ID:    input.entry.ID,
 			Group: "skill-verify",
 			Run: func(context.Context) runner.TaskResult {
-				return runner.TaskResult{ID: entry.ID, OK: true, Data: verifyKitSkills(repo, entry, profile)}
+				return runner.TaskResult{ID: input.entry.ID, OK: true, Data: verifyKitSkills(repo, input, profile)}
 			},
 		})
 	}
@@ -101,9 +118,10 @@ func VerifySkills(repo string, entries []RegistryKit, profile string) SkillVerif
 	return report
 }
 
-func verifyKitSkills(repo string, entry RegistryKit, profile string) SkillKitResult {
+func verifyKitSkills(repo string, input lifecycleInput, profile string) SkillKitResult {
+	entry := input.entry
 	result := SkillKitResult{ID: entry.ID, OK: true}
-	manifest, err := LoadManifest(repo, entry.Manifest)
+	manifest, err := lifecycleManifest(repo, input)
 	if err != nil {
 		result.OK = false
 		result.Errors = append(result.Errors, "cannot load manifest: "+err.Error())

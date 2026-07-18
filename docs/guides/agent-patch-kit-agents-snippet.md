@@ -26,6 +26,6 @@ For Markdown changes, run:
 apatch links --mode offline --include-fragments full --input README.md --input README_CN.md --input README_EN.md --input CHANGELOG.md --input "docs/*.md" --input ".github/workflows/*.yml"
 ```
 
-This is the default maintained-docs link check. Run a full audit explicitly with `apatch links --mode offline --include-fragments full` when templates, generated assets, and fixtures must be included.
+This is the default maintained-docs link check. Run `apatch links --mode offline --include-fragments full` for the full AiCoding-owned repository audit. The root `lychee.toml` excludes the read-only `CodingKit/agents/skills` source dependency and `CodingKit/tests/ai-debug-kit/_external` fixture repository; validate those Git submodules in their own source repositories. It also excludes the exact GBK-encoded `CodingKit/modules/common/vofa+/README.md` path because lychee accepts UTF-8 input only. First-party UTF-8 templates, generated assets, and fixtures remain in scope.
 
 Do not use broad PowerShell regex replacement as the first choice.

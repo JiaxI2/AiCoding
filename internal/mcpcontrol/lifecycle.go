@@ -26,11 +26,31 @@ type installState struct {
 	CodexConfig   string    `json:"codexConfig"`
 }
 
+type componentInput struct {
+	entry     RegistryEntry
+	component Component
+	err       error
+	resolved  bool
+}
+
 func Status(repo, codexPath string, entries []RegistryEntry) []StatusResult {
-	configPath, configErr := ResolveCodexConfig(codexPath)
-	results := make([]StatusResult, 0, len(entries))
+	inputs := make([]componentInput, 0, len(entries))
 	for _, entry := range entries {
-		component, err := LoadComponent(repo, entry.Manifest)
+		inputs = append(inputs, componentInput{entry: entry})
+	}
+	return statusComponents(repo, codexPath, inputs)
+}
+
+func StatusCatalog(repo, codexPath string, snapshots []ComponentSnapshot) []StatusResult {
+	return statusComponents(repo, codexPath, componentInputs(snapshots))
+}
+
+func statusComponents(repo, codexPath string, inputs []componentInput) []StatusResult {
+	configPath, configErr := ResolveCodexConfig(codexPath)
+	results := make([]StatusResult, 0, len(inputs))
+	for _, input := range inputs {
+		entry := input.entry
+		component, err := resolvedComponent(repo, input)
 		if err != nil {
 			results = append(results, StatusResult{ID: entry.ID, OK: false, Errors: []string{err.Error()}})
 			continue
@@ -78,9 +98,22 @@ func Status(repo, codexPath string, entries []RegistryEntry) []StatusResult {
 }
 
 func RunLifecycle(repo, codexPath string, entries []RegistryEntry, action string, dryRun bool) []LifecycleResult {
-	results := make([]LifecycleResult, 0, len(entries))
+	inputs := make([]componentInput, 0, len(entries))
 	for _, entry := range entries {
-		component, err := LoadComponent(repo, entry.Manifest)
+		inputs = append(inputs, componentInput{entry: entry})
+	}
+	return runComponentLifecycle(repo, codexPath, inputs, action, dryRun)
+}
+
+func RunCatalogLifecycle(repo, codexPath string, snapshots []ComponentSnapshot, action string, dryRun bool) []LifecycleResult {
+	return runComponentLifecycle(repo, codexPath, componentInputs(snapshots), action, dryRun)
+}
+
+func runComponentLifecycle(repo, codexPath string, inputs []componentInput, action string, dryRun bool) []LifecycleResult {
+	results := make([]LifecycleResult, 0, len(inputs))
+	for _, input := range inputs {
+		entry := input.entry
+		component, err := resolvedComponent(repo, input)
 		if err != nil {
 			results = append(results, LifecycleResult{
 				ID:     entry.ID,
@@ -95,6 +128,27 @@ func RunLifecycle(repo, codexPath string, entries []RegistryEntry, action string
 		results = append(results, runLifecycle(repo, codexPath, component, action, dryRun))
 	}
 	return results
+}
+
+func componentInputs(snapshots []ComponentSnapshot) []componentInput {
+	inputs := make([]componentInput, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		component, err := snapshot.Component()
+		inputs = append(inputs, componentInput{
+			entry:     snapshot.Entry(),
+			component: component,
+			err:       err,
+			resolved:  true,
+		})
+	}
+	return inputs
+}
+
+func resolvedComponent(repo string, input componentInput) (Component, error) {
+	if input.resolved {
+		return input.component, input.err
+	}
+	return LoadComponent(repo, input.entry.Manifest)
 }
 
 func runLifecycle(repo, codexPath string, component Component, action string, dryRun bool) LifecycleResult {

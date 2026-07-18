@@ -12,7 +12,7 @@ func TestStatusReportsCacheWithoutAffectingPassFail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status: %v", err)
 	}
-	if status.Path != ".aicoding/cache/fast-path-v2" {
+	if status.Path != ".aicoding/cache/fast-path" {
 		t.Fatalf("Path = %q", status.Path)
 	}
 	if status.Exists || status.EntryCount != 0 {
@@ -22,7 +22,7 @@ func TestStatusReportsCacheWithoutAffectingPassFail(t *testing.T) {
 
 func TestCleanRemovesFastPathCacheOnly(t *testing.T) {
 	repo := t.TempDir()
-	cacheDir := filepath.Join(repo, ".aicoding", "cache", "fast-path-v2")
+	cacheDir := filepath.Join(repo, ".aicoding", "cache", "fast-path")
 	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 		t.Fatal(err)
 	}

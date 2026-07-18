@@ -4,10 +4,14 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -28,6 +32,8 @@ type dependencyPolicy struct {
 	MCPRegistry          dependencyRegistry    `json:"mcpRegistry"`
 	Skills               dependencySkillPolicy `json:"skills"`
 	ExternalDependencies []externalDependency  `json:"externalDependencies"`
+	GitProcessBoundary   gitProcessBoundary    `json:"gitProcessBoundary"`
+	GoPackageBoundaries  []goPackageBoundary   `json:"goPackageBoundaries"`
 }
 
 type dependencyLayer struct {
@@ -103,6 +109,17 @@ type dependencySkillPolicy struct {
 type externalDependency struct {
 	ID    string `json:"id"`
 	Layer string `json:"layer"`
+}
+
+type goPackageBoundary struct {
+	Path             string   `json:"path"`
+	ForbiddenImports []string `json:"forbiddenImports"`
+}
+
+type gitProcessBoundary struct {
+	OwnerPackage     string   `json:"ownerPackage"`
+	ScanRoots        []string `json:"scanRoots"`
+	AllowedImporters []string `json:"allowedImporters"`
 }
 
 type dependencyRegistryFile struct {
@@ -203,6 +220,9 @@ func CheckDependencies(repo string) DependencyReport {
 	report.addDependencyCheck("Skill naming and exposure", checkSkillDependencyPolicy(repo, policy, layers), nil)
 	report.addDependencyCheck("asset identity version opacity", checkAssetVersionOpacity(repo, policy), nil)
 	report.addDependencyCheck("README version badge authority", checkReadmeVersionBadges(repo, policy), nil)
+	report.addDependencyCheck("orthogonal Go package boundaries", checkGoPackageBoundaries(repo, policy.GoPackageBoundaries), nil)
+	report.addDependencyCheck("git process ownership", checkGitProcessOwnership(repo, policy.GitProcessBoundary), nil)
+	report.addDependencyCheck("gitx importer allowlist", checkGitxImporterAllowlist(repo, policy.GitProcessBoundary), nil)
 
 	for _, rel := range []string{
 		"config/schemas/dependency-governance.schema.json",
@@ -216,6 +236,239 @@ func CheckDependencies(repo string) DependencyReport {
 		}
 	}
 	return report
+}
+
+func checkGoPackageBoundaries(repo string, boundaries []goPackageBoundary) []string {
+	errs := []string{}
+	for _, boundary := range boundaries {
+		rel := filepath.ToSlash(filepath.Clean(boundary.Path))
+		if rel == "." || rel == "" || strings.HasPrefix(rel, "../") || !strings.HasPrefix(rel, "internal/") {
+			errs = append(errs, "Go package boundary path must stay under internal/: "+boundary.Path)
+			continue
+		}
+		root := platform.RepoPath(repo, rel)
+		if !platform.IsDir(root) {
+			errs = append(errs, "Go package boundary directory is missing: "+rel)
+			continue
+		}
+		walkErr := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+			if entry.IsDir() || filepath.Ext(path) != ".go" || strings.HasSuffix(path, "_test.go") {
+				return nil
+			}
+			file, parseErr := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+			if parseErr != nil {
+				return parseErr
+			}
+			for _, imported := range file.Imports {
+				value, unquoteErr := strconv.Unquote(imported.Path.Value)
+				if unquoteErr != nil {
+					return unquoteErr
+				}
+				for _, forbidden := range boundary.ForbiddenImports {
+					prefix := "github.com/JiaxI2/AiCoding/" + strings.TrimSuffix(filepath.ToSlash(forbidden), "/")
+					if value == prefix || strings.HasPrefix(value, prefix+"/") {
+						relFile, _ := filepath.Rel(repo, path)
+						errs = append(errs, filepath.ToSlash(relFile)+" imports forbidden package "+value)
+					}
+				}
+			}
+			return nil
+		})
+		if walkErr != nil {
+			errs = append(errs, "cannot inspect Go package boundary "+rel+": "+walkErr.Error())
+		}
+	}
+	return errs
+}
+
+func checkGitProcessOwnership(repo string, boundary gitProcessBoundary) []string {
+	if errs := validateGitProcessBoundary(boundary); len(errs) != 0 {
+		return errs
+	}
+	return inspectGitBoundaryFiles(repo, boundary, true, func(path, relFile string) []string {
+		startsGit, err := startsLiteralGitProcess(path)
+		if err != nil {
+			return []string{relFile + ": " + err.Error()}
+		}
+		if startsGit {
+			return []string{relFile + " starts git process outside " + boundary.OwnerPackage}
+		}
+		return nil
+	})
+}
+
+func checkGitxImporterAllowlist(repo string, boundary gitProcessBoundary) []string {
+	if errs := validateGitProcessBoundary(boundary); len(errs) != 0 {
+		return errs
+	}
+	allowed := make(map[string]struct{}, len(boundary.AllowedImporters))
+	for _, importer := range boundary.AllowedImporters {
+		allowed[filepath.ToSlash(filepath.Clean(importer))] = struct{}{}
+	}
+	return inspectGitBoundaryFiles(repo, boundary, false, func(path, relFile string) []string {
+		importsGitx, err := importsInternalGitx(path)
+		if err != nil {
+			return []string{relFile + ": " + err.Error()}
+		}
+		if !importsGitx {
+			return nil
+		}
+		importer := filepath.ToSlash(filepath.Dir(relFile))
+		if _, ok := allowed[importer]; !ok {
+			return []string{relFile + " imports internal/gitx from non-allowlisted package " + importer}
+		}
+		return nil
+	})
+}
+
+func validateGitProcessBoundary(boundary gitProcessBoundary) []string {
+	if strings.TrimSpace(boundary.OwnerPackage) == "" || len(boundary.ScanRoots) == 0 || len(boundary.AllowedImporters) == 0 {
+		return []string{"gitProcessBoundary policy is missing or incomplete"}
+	}
+	owner := filepath.ToSlash(filepath.Clean(boundary.OwnerPackage))
+	if owner == "." || strings.HasPrefix(owner, "../") || !strings.HasPrefix(owner, "internal/") {
+		return []string{"gitProcessBoundary ownerPackage must stay under internal/: " + boundary.OwnerPackage}
+	}
+	return nil
+}
+
+func inspectGitBoundaryFiles(repo string, boundary gitProcessBoundary, skipOwner bool, inspect func(string, string) []string) []string {
+	errs := []string{}
+	owner := filepath.ToSlash(filepath.Clean(boundary.OwnerPackage))
+	for _, scanRoot := range boundary.ScanRoots {
+		root := filepath.ToSlash(filepath.Clean(scanRoot))
+		if root == "." || filepath.IsAbs(scanRoot) || strings.HasPrefix(root, "../") {
+			errs = append(errs, "gitProcessBoundary scan root must stay inside the repository: "+scanRoot)
+			continue
+		}
+		absoluteRoot := platform.RepoPath(repo, root)
+		if !platform.IsDir(absoluteRoot) {
+			errs = append(errs, "gitProcessBoundary scan root is missing: "+root)
+			continue
+		}
+		walkErr := filepath.WalkDir(absoluteRoot, func(path string, entry os.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+			relFile, relErr := filepath.Rel(repo, path)
+			if relErr != nil {
+				return relErr
+			}
+			relFile = filepath.ToSlash(relFile)
+			if entry.IsDir() {
+				if skipOwner && relFile == owner {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+			if filepath.Ext(path) != ".go" || strings.HasSuffix(path, "_test.go") {
+				return nil
+			}
+			errs = append(errs, inspect(path, relFile)...)
+			return nil
+		})
+		if walkErr != nil {
+			errs = append(errs, "cannot inspect git process boundary "+root+": "+walkErr.Error())
+		}
+	}
+	return errs
+}
+
+func startsLiteralGitProcess(path string) (bool, error) {
+	file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+	if err != nil {
+		return false, err
+	}
+	execNames := map[string]struct{}{}
+	dotImport := false
+	for _, imported := range file.Imports {
+		value, unquoteErr := strconv.Unquote(imported.Path.Value)
+		if unquoteErr != nil {
+			return false, unquoteErr
+		}
+		if value != "os/exec" {
+			continue
+		}
+		if imported.Name == nil {
+			execNames["exec"] = struct{}{}
+			continue
+		}
+		switch imported.Name.Name {
+		case ".":
+			dotImport = true
+		case "_":
+		default:
+			execNames[imported.Name.Name] = struct{}{}
+		}
+	}
+	found := false
+	ast.Inspect(file, func(node ast.Node) bool {
+		call, ok := node.(*ast.CallExpr)
+		if !ok || found {
+			return !found
+		}
+		argument := -1
+		switch function := call.Fun.(type) {
+		case *ast.SelectorExpr:
+			identifier, ok := function.X.(*ast.Ident)
+			if !ok {
+				return true
+			}
+			if _, ok := execNames[identifier.Name]; !ok {
+				return true
+			}
+			switch function.Sel.Name {
+			case "Command":
+				argument = 0
+			case "CommandContext":
+				argument = 1
+			}
+		case *ast.Ident:
+			if !dotImport {
+				return true
+			}
+			switch function.Name {
+			case "Command":
+				argument = 0
+			case "CommandContext":
+				argument = 1
+			}
+		}
+		if argument < 0 || len(call.Args) <= argument {
+			return true
+		}
+		literal, ok := call.Args[argument].(*ast.BasicLit)
+		if !ok || literal.Kind != token.STRING {
+			return true
+		}
+		value, unquoteErr := strconv.Unquote(literal.Value)
+		if unquoteErr == nil && value == "git" {
+			found = true
+		}
+		return !found
+	})
+	return found, nil
+}
+
+func importsInternalGitx(path string) (bool, error) {
+	file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+	if err != nil {
+		return false, err
+	}
+	const gitxImport = "github.com/JiaxI2/AiCoding/internal/gitx"
+	for _, imported := range file.Imports {
+		value, unquoteErr := strconv.Unquote(imported.Path.Value)
+		if unquoteErr != nil {
+			return false, unquoteErr
+		}
+		if value == gitxImport || strings.HasPrefix(value, gitxImport+"/") {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (r *DependencyReport) addDependencyCheck(name string, errs, warnings []string) {

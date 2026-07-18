@@ -69,7 +69,36 @@ type rollbackSnapshot struct {
 	States        map[string]*installState `json:"states"`
 }
 
+type actionInput struct {
+	entry    RegistryKit
+	manifest Manifest
+	err      error
+	resolved bool
+}
+
 func RunAction(repo string, entries []RegistryKit, opts ActionOptions) ActionReport {
+	inputs := make([]actionInput, 0, len(entries))
+	for _, entry := range entries {
+		inputs = append(inputs, actionInput{entry: entry})
+	}
+	return runActions(repo, inputs, opts)
+}
+
+func RunCatalogAction(repo string, snapshots []ManifestSnapshot, opts ActionOptions) ActionReport {
+	inputs := make([]actionInput, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		manifest, err := snapshot.Manifest()
+		inputs = append(inputs, actionInput{
+			entry:    snapshot.Entry(),
+			manifest: manifest,
+			err:      err,
+			resolved: true,
+		})
+	}
+	return runActions(repo, inputs, opts)
+}
+
+func runActions(repo string, inputs []actionInput, opts ActionOptions) ActionReport {
 	action := strings.ToLower(strings.TrimSpace(opts.Action))
 	report := ActionReport{SchemaVersion: 1, Action: action, Mode: opts.Mode, DryRun: opts.DryRun, OK: true, Kits: []ActionResult{}}
 	if action == "" {
@@ -78,7 +107,7 @@ func RunAction(repo string, entries []RegistryKit, opts ActionOptions) ActionRep
 		return report
 	}
 	if !opts.DryRun && (action == "install" || action == "update" || action == "uninstall") {
-		file, err := saveRollbackSnapshot(repo, entries, action)
+		file, err := saveRollbackSnapshot(repo, inputs, action)
 		if err != nil {
 			report.OK = false
 			report.Errors = append(report.Errors, "cannot save rollback snapshot: "+err.Error())
@@ -86,8 +115,9 @@ func RunAction(repo string, entries []RegistryKit, opts ActionOptions) ActionRep
 		}
 		report.RollbackFile = file
 	}
-	for _, entry := range entries {
-		result := runActionForKit(repo, entry, action, opts.DryRun)
+	for _, input := range inputs {
+		entry := input.entry
+		result := runActionForKit(repo, input, action, opts.DryRun)
 		report.Kits = append(report.Kits, result)
 		report.Summary.Total++
 		if result.OK {
@@ -110,8 +140,9 @@ func RunAction(repo string, entries []RegistryKit, opts ActionOptions) ActionRep
 	return report
 }
 
-func runActionForKit(repo string, entry RegistryKit, action string, dryRun bool) ActionResult {
-	manifest, err := LoadManifest(repo, entry.Manifest)
+func runActionForKit(repo string, input actionInput, action string, dryRun bool) ActionResult {
+	entry := input.entry
+	manifest, err := actionManifest(repo, input)
 	if err != nil {
 		return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{"cannot load manifest: " + err.Error()}}
 	}
@@ -138,7 +169,7 @@ func runActionForKit(repo string, entry RegistryKit, action string, dryRun bool)
 		results := []ActionResult{}
 		ok := true
 		for _, step := range command.Steps {
-			stepResult := runActionForKit(repo, entry, step, dryRun)
+			stepResult := runActionForKit(repo, input, step, dryRun)
 			results = append(results, stepResult)
 			if !stepResult.OK {
 				ok = false
@@ -157,6 +188,13 @@ func runActionForKit(repo string, entry RegistryKit, action string, dryRun bool)
 	default:
 		return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{"unsupported command type: " + command.Type}}
 	}
+}
+
+func actionManifest(repo string, input actionInput) (Manifest, error) {
+	if input.resolved {
+		return input.manifest, input.err
+	}
+	return LoadManifest(repo, input.entry.Manifest)
 }
 
 func runBuiltinLifecycle(repo string, entry RegistryKit, manifest Manifest, command CommandDef, action string, dryRun bool) ActionResult {
@@ -277,10 +315,11 @@ func readInstallState(path string) (*installState, error) {
 	return &state, nil
 }
 
-func saveRollbackSnapshot(repo string, entries []RegistryKit, action string) (string, error) {
+func saveRollbackSnapshot(repo string, inputs []actionInput, action string) (string, error) {
 	snap := rollbackSnapshot{SchemaVersion: 1, CreatedAt: time.Now().UTC(), Action: action, States: map[string]*installState{}}
-	for _, entry := range entries {
-		manifest, err := LoadManifest(repo, entry.Manifest)
+	for _, input := range inputs {
+		entry := input.entry
+		manifest, err := actionManifest(repo, input)
 		if err != nil {
 			continue
 		}

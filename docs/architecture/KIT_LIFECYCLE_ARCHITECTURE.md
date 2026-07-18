@@ -1,7 +1,8 @@
 # Kit Lifecycle Architecture
 
-当前产品使用 Go-native lifecycle control。`internal/lifecycle` 以静态 adapter 组合 Kit、MCP
-和 runtime Skill；不引入动态插件系统，也不复制各领域已有实现。Lifecycle 的可观测入口是
+当前产品使用 Go-native lifecycle control。`internal/lifecycle` 以静态 Adapter Catalog
+组合 Kit、MCP 和 runtime Skill，并将选择结果转换为 `ExecutionPlan`；不引入动态插件系统，
+也不复制各领域已有实现。Lifecycle 的可观测入口是
 `bin/aicoding.exe lifecycle ...`、`bin/aicoding.exe export ...` 和聚合门禁。
 
 ## Unified Static Adapters
@@ -27,6 +28,10 @@ bin\aicoding.exe lifecycle verify --scope all --profile Smoke --json
 `rollback --last` 当前只恢复 Kit lifecycle snapshot。MCP 在单次操作内负责配置/venv 失败回滚；
 runtime Skill 对被迁移路径写入独立 rollback manifest。CLI 不把这两类局部恢复证据伪装成已完成
 的跨域自动 rollback。
+
+每次 Kit 命令先把 registry 与 referenced manifests 组合为 `kit-catalog` 内容树。Plan、apply、
+doctor 和 verify 使用同一批 detached manifest values；JSON adapter result 返回
+`inputDigest`，lifecycle 返回静态 adapter `catalogDigest` 与 `planDigest`。
 
 ## Manifest Model
 
@@ -59,7 +64,9 @@ bin\aicoding.exe lifecycle install --all --json
 bin\aicoding.exe export --all --zip --json
 ```
 
-Read-only planning and verification paths use `internal/runner` for bounded parallelism and stable result ordering. State-writing actions and ZIP writing remain serialized.
+Kit 内部只读 planning/verification 使用 `internal/runner` 有界并发并保持稳定结果顺序；
+lifecycle 跨 adapter 当前以单并发执行。State-writing actions 和 ZIP writing 保持串行，state
+与 rollback 仍由 Kit 领域拥有。
 
 ## PowerShell Specialty
 

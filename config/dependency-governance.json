@@ -172,7 +172,8 @@
         "platformAgnostic": false,
         "roots": [],
         "dependsOn": [
-          "mcp:visio-mcp"
+          "mcp:visio-mcp",
+          "mcp:ppt-mcp"
         ]
       },
       {
@@ -236,6 +237,18 @@
           "runtime:microsoft-visio",
           "runtime:mcp"
         ]
+      },
+      {
+        "id": "ppt-mcp",
+        "layer": "capability",
+        "platformAgnostic": true,
+        "roots": [
+          "CodingKit/tools/windows-automation/ppt-mcp"
+        ],
+        "dependsOn": [
+          "runtime:microsoft-powerpoint",
+          "runtime:mcp"
+        ]
       }
     ]
   },
@@ -261,6 +274,120 @@
     {
       "id": "runtime:microsoft-visio",
       "layer": "runtime"
+    },
+    {
+      "id": "runtime:microsoft-powerpoint",
+      "layer": "runtime"
+    }
+  ],
+  "gitProcessBoundary": {
+    "ownerPackage": "internal/gitx",
+    "scanRoots": [
+      "cmd",
+      "internal"
+    ],
+    "allowedImporters": [
+      "internal/cli",
+      "internal/cstyle",
+      "internal/docsync",
+      "internal/governance",
+      "internal/kit",
+      "internal/lifecycle",
+      "internal/platform",
+      "internal/pwshregex",
+      "internal/repohealth",
+      "internal/tagpolicy"
+    ]
+  },
+  "goPackageBoundaries": [
+    {
+      "path": "internal/gitx",
+      "forbiddenImports": [
+        "internal/bootstrap",
+        "internal/cache",
+        "internal/cli",
+        "internal/cstyle",
+        "internal/docsync",
+        "internal/governance",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/platform",
+        "internal/pwshregex",
+        "internal/registry",
+        "internal/releasegate",
+        "internal/report",
+        "internal/repohealth",
+        "internal/reuse",
+        "internal/runner",
+        "internal/tagpolicy",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/registry",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/repohealth",
+        "internal/report",
+        "internal/runner",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/runner",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/repohealth",
+        "internal/report",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/report",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/repohealth",
+        "internal/runner",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/kit",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/repohealth",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/mcpcontrol",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/repohealth",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/lifecycle",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/repohealth",
+        "internal/testengine"
+      ]
     }
   ]
 }

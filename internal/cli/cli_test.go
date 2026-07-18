@@ -174,53 +174,37 @@ func TestMainSwitchRoutesNewCommands(t *testing.T) {
 	}
 }
 
-func TestMainSwitchWiresGoFirstTopLevelCommands(t *testing.T) {
-	b, err := os.ReadFile("cli.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	source := string(b)
-	for _, needle := range []string{
-		`case "smoke":`,
-		`res, err = runSmoke`,
-		`case "ci":`,
-		`res, err = runCI`,
-		`case "test":`,
-		`res, err = runTest`,
-		`case "docsync":`,
-		`res, err = runDocSync`,
-		`case "skill":`,
-		`res, err = runSkill`,
-		`case "lifecycle":`,
-		`res, err = runLifecycle`,
-		`case "export":`,
-		`res, err = runExport`,
-		`case "fresh-clone":`,
-		`res, err = runFreshClone`,
-		`case "full":`,
-		`res, err = runFull`,
-		`case "release":`,
-		`res, err = runReleaseCommand`,
-		`case "codex":`,
-		`res, err = runCodexUsage`,
-		`aicoding test full|release`,
-		`aicoding release gate`,
-		`aicoding codex usage parse`,
-		`aicoding codex usage run`,
-		`aicoding skill c99-standard-c status`,
-		`aicoding skill c99-standard-c verify`,
+func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
+	for _, name := range []string{
+		"smoke", "ci", "test", "docsync", "skill", "lifecycle", "export",
+		"fresh-clone", "full", "release", "codex",
 	} {
-		if !strings.Contains(source, needle) {
-			t.Fatalf("cli.go is missing %q", needle)
+		route, ok := commands.lookup(name)
+		if !ok || route.handler == nil {
+			t.Fatalf("catalog route is missing for %q", name)
 		}
 	}
-	outdated := "Full/Release gates remain" + " in PowerShell/Python"
-	if strings.Contains(source, outdated) {
-		t.Fatal("usage still describes Full/Release as PowerShell/Python gates")
+
+	var help strings.Builder
+	for _, form := range Catalog().Help {
+		help.WriteString(form.Usage)
+		help.WriteByte('\n')
 	}
-	for _, forbidden := range []string{`case "workflow":`, `case "cstyle":`} {
-		if strings.Contains(source, forbidden) {
-			t.Fatalf("cli.go still exposes removed entry %q", forbidden)
+	for _, usage := range []string{
+		"aicoding test full|release",
+		"aicoding release gate",
+		"aicoding codex usage parse",
+		"aicoding codex usage run",
+		"aicoding skill c99-standard-c status",
+		"aicoding skill c99-standard-c verify",
+	} {
+		if !strings.Contains(help.String(), usage) {
+			t.Fatalf("catalog help is missing %q", usage)
+		}
+	}
+	for _, forbidden := range []string{"workflow", "cstyle"} {
+		if _, exists := commands.lookup(forbidden); exists {
+			t.Fatalf("catalog still exposes removed command %q", forbidden)
 		}
 	}
 }

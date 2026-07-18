@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
@@ -216,7 +217,7 @@ func syncPlatformPlugin(repo string, manifest Manifest) (PlatformPluginSync, err
 }
 
 func configurePlatformRepository(repo string, result *PlatformPluginSync) ([]string, error) {
-	if _, err := exec.Command("git", "-C", repo, "config", "core.hooksPath", ".githooks").CombinedOutput(); err != nil {
+	if _, err := gitx.Run(repo, "config", "core.hooksPath", ".githooks"); err != nil {
 		return nil, err
 	}
 

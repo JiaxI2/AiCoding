@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 将 Git MOC、12 个索引和 Orthogonal Architecture Design Kit 落为“snapshot 事实、plan 意图、runner 调度、adapter 翻译、report 证据、state 领域所有”的正交深模块架构；固化仓库 lifecycle 与 Agent CLI/JSON 边界、Skill/MCP 生命周期、局部测试半径、C/native 采用条件及闭环后的架构冻结规则，删除 speculative capability graph/global journal 无限迁移表。
+- **feat(core)**: 将 runner plan 提升为可验证、不可变选择、可 snapshot/digest 的 `ExecutionPlan`；增加通用 Registry Snapshot + Digest 并迁移 Kit/MCP loader；建立 Typed Command Catalog 统一 CLI handler routing、alias、namespace contract 与全局 help；`aicoding version` 改从构建或 manifest 元数据读取，不再硬编码实现代际标签。
+- **feat(catalog)**: 增加通用内容树 `CatalogSnapshot`，将规范化 registry digest 与有序 referenced manifest digest 组合；Kit/MCP catalog 在单次命令中只解析 manifest 一次，并让 list、plan/apply、status、doctor、verify 消费 detached snapshot values。
+- **refactor(lifecycle)**: 用静态 Adapter Catalog 替换 Kit/MCP/runtime Skill scope switch，明确 input kind、state owner、entrypoint 与 read/write effect；lifecycle 将 adapter selection 转为 `ExecutionPlan` 串行执行，成为第二个真实消费者，同时保留各领域独立 state/rollback 语义。
+- **feat(evidence)**: CLI report 增加可选 `inputDigest`/`planDigest`，lifecycle report 增加 adapter `catalogDigest`、`planDigest` 和每领域 `inputDigest`；MCP inventory 保留 `registryDigest` 并增加包含 referenced manifests 的 `catalogDigest`。
+- **feat(governance)**: 在现有 dependency gate 增加 production Go package boundary 检查，机器阻断 snapshot/runner/report 反向依赖领域、Kit/MCP 互相依赖及领域反向依赖 CLI/repohealth/testengine，使正交模块和局部测试边界可执行。
+- **feat(git-boundary)**: 固化 Git 事实层复用边界，将生产 Git 进程统一收编到零 internal 依赖的 `internal/gitx` 薄封装，并以进程所有权、importer 白名单和 CLI porcelain 动词禁用三条门禁阻断重复实现 Git 能力。
+- **docs(architecture)**: 记录 Git 复用边界 Phase 0–5 独立验收证据并将契约冻结，同时补全 Agent 知识面的进入点、生命周期与新功能知识检查。
+- **feat(mcp)**: 将 MIT 许可的 PowerPoint COM MCP 源码收养为仓库私有维护的 `ppt-mcp` canonical component，补齐 provenance、隔离依赖、doctor、Smoke/Full/Release 与受管 lifecycle 登记，不保留上游 VCS 或自动更新关系。
+- **fix(validation)**: 将仓库级 Markdown link audit 限定为 AiCoding 所有内容，由各自源仓库验证只读 Skill 与外部 fixture submodule；同时跟踪声明的 examples/platforms 稳定根，消除 fresh worktree 的虚假链接与缺失资产 warning。
+- **fix(identity)**: 将 Fast Path cache 从 versioned 实现路径迁移到稳定的 `.aicoding/cache/fast-path` identity；旧 cache 仅为可删除临时数据，不再参与当前 status/clean。
+- **docs(architecture)**: checkpoint CLI/MCP control-plane 与 Extension Adapter 草稿，作为本轮 Git 原理学习和有限架构闭环的可追溯输入；草稿状态不代表最终 Accepted 契约。
+
 ## [0.10.0] - 2026-07-17
 
 - **docs(validation)**: 刷新产品收敛后的 Smoke/Full/Release、Kit、Skill、MCP、DocSync、Git Hook、Governance、Dependency 与 Markdown link 最终验收记录。

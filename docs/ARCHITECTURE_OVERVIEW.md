@@ -1,5 +1,11 @@
 # Architecture Overview
 
+## Architecture Authority
+
+[AiCoding 内核与扩展图架构](architecture/AICODING_CORE_ARCHITECTURE.md) 是总体控制面、
+稳定内核、扩展契约、性能预算和迁移纪律的权威文档。本文只保留仓库导航和当前实现
+总览；Kit、MCP、PowerShell、DocSync 等专项文档必须服从该总体架构。
+
 ## Repository Role
 
 AiCoding 是本地 AI coding 工作流的平台仓库。它拥有 kit registry、kit manifest、本地 hook、Taskfile 路由、Go CLI 控制面、发布治理文档和 CodingKit 平台资产。
@@ -48,22 +54,46 @@ MCP lifecycle 动词和 `status --all` 只保留一个版本并输出 `CLI_DEPRE
 
 ```text
 internal/cli        -> 参数、帮助、兼容路由、退出码
-internal/lifecycle  -> Kit / MCP / runtime Skill 静态 adapter
+internal/lifecycle  -> 静态 adapter catalog、lifecycle ExecutionPlan 与结果聚合
 internal/repohealth -> product doctor / verify 的确定性检查组合
 internal/testengine -> 唯一 Smoke / Full / Release Registry 与执行器
 internal/report     -> Result / StandardReport / Check / errorKind Schema
+internal/runner     -> ExecutionPlan、snapshot/digest、有界并发、超时、取消与稳定输出
+internal/registry   -> 规范化 object/catalog snapshot、稳定 digest 与只读 decode
+internal/cli        -> typed command catalog、handler routing、help 与退出契约
 ```
 
 `doctor` 只诊断环境和状态；`verify` 只执行静态/结构验证；`test` 独占测试执行；
 `release` 只执行发布结构验证或复用 Release test profile。CI 直接调用
 `test --profile`，不再叠加第二个聚合器。
 
-## Concurrent Plan Boundary
+目标架构不增加动态 Go plugin 或第二控制面。稳定基础由 snapshot（事实）、plan（意图）、
+runner（调度）、adapter（翻译）、report（证据）和 domain-owned state 六个正交职责组合；
+不存在理解所有领域的 God Core，也不预建没有真实依赖关系的 capability graph 或全域事务。
 
-`internal/runner` 提供可组合并发 Plan。只读检查通过任务 ID 注册到 Plan 中，有界并发执行并保持输出顺序。需要新增、替换或移除检查点时，修改 Plan 注册即可，不改调度器。
+## Execution Plan Boundary
 
-写状态、写 ZIP、安装/卸载等有副作用路径保持在对应 Go 包中串行执行。Doctor/Verify
-以及 MCP 子进程使用显式总超时或 context，避免外部工具无限等待。
+`internal/runner.ExecutionPlan` 是计划意图对象。每个 task 用稳定 `action` 和参数描述，可
+生成 snapshot 与 digest；选择或删除 task 会返回新 plan，不修改原对象。执行函数不进入
+摘要，因此摘要不依赖进程地址。pre-commit 和 lifecycle 是两个真实消费者。Lifecycle 将
+选择的 adapter 转换为 plan，并以单并发保持跨领域顺序；runner 不解释 Kit/MCP/Skill，
+领域 state/rollback 仍由领域拥有。
+
+## Registry And Command Catalog Boundary
+
+Kit 与 MCP 通过 `internal/registry.Snapshot` 规范化 registry/manifest，再用
+`CatalogSnapshot` 将 registry digest 与有序的 `(id, path, manifestDigest)` 组合为内容树。
+Registry digest 只表示引用目录；catalog digest 表示 registry 与全部 referenced manifests。
+Lifecycle、Kit list/verify 和 MCP list/status/doctor/verify 消费 detached snapshot values，
+同一命令不在执行阶段重新读取 manifest。
+
+`internal/cli` 的 typed command catalog 是顶层 command ID、alias、namespace、handler 和
+全局 help form 的权威源。Lifecycle 的 adapter catalog 则是 domain/input/state owner/
+entrypoint/action effect 的独立权威；两种 catalog 职责正交，不合并为全能目录。
+
+写状态、写 ZIP、安装/卸载等有副作用路径保持在对应领域 Go 包中串行执行。Doctor/Verify
+以及 MCP 子进程使用显式总超时或 context，避免外部工具无限等待。模块内部优化先运行模块
+contract tests；跨模块公开契约变化才扩大 consumer/Full/Release 验证，详见权威架构。
 
 ## Manifest Contract
 

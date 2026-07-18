@@ -15,6 +15,24 @@ var allowedManifestModes = map[string]bool{
 }
 
 func DoctorKits(repo string, entries []RegistryKit) []string {
+	return doctorKits(repo, entries, nil)
+}
+
+func DoctorCatalogKits(repo string, snapshots []ManifestSnapshot) []string {
+	entries := make([]RegistryKit, 0, len(snapshots))
+	manifests := make(map[string]Manifest, len(snapshots))
+	for _, snapshot := range snapshots {
+		entry := snapshot.Entry()
+		entries = append(entries, entry)
+		manifest, err := snapshot.Manifest()
+		if err == nil {
+			manifests[entry.ID] = manifest
+		}
+	}
+	return doctorKits(repo, entries, manifests)
+}
+
+func doctorKits(repo string, entries []RegistryKit, manifests map[string]Manifest) []string {
 	errs := []string{}
 	seen := map[string]bool{}
 	for _, e := range entries {
@@ -29,10 +47,14 @@ func DoctorKits(repo string, entries []RegistryKit) []string {
 			errs = append(errs, e.ID+": manifest is empty")
 			continue
 		}
-		m, err := LoadManifest(repo, e.Manifest)
-		if err != nil {
-			errs = append(errs, e.ID+": cannot load manifest: "+err.Error())
-			continue
+		m, resolved := manifests[e.ID]
+		if !resolved {
+			var err error
+			m, err = LoadManifest(repo, e.Manifest)
+			if err != nil {
+				errs = append(errs, e.ID+": cannot load manifest: "+err.Error())
+				continue
+			}
 		}
 		if m.ID != e.ID {
 			errs = append(errs, e.ID+": manifest id mismatch: "+m.ID)
@@ -51,14 +73,31 @@ func DoctorKits(repo string, entries []RegistryKit) []string {
 }
 
 func SmokeKits(repo string, entries []RegistryKit) []SmokeResult {
-	tasks := make([]runner.Task, 0, len(entries))
-	for _, e := range entries {
-		e := e
+	inputs := make([]lifecycleInput, 0, len(entries))
+	for _, entry := range entries {
+		inputs = append(inputs, lifecycleInput{entry: entry})
+	}
+	return smokeKits(repo, inputs)
+}
+
+func SmokeCatalogKits(repo string, snapshots []ManifestSnapshot) []SmokeResult {
+	inputs := make([]lifecycleInput, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		manifest, err := snapshot.Manifest()
+		inputs = append(inputs, lifecycleInput{entry: snapshot.Entry(), manifest: manifest, err: err, resolved: true})
+	}
+	return smokeKits(repo, inputs)
+}
+
+func smokeKits(repo string, inputs []lifecycleInput) []SmokeResult {
+	tasks := make([]runner.Task, 0, len(inputs))
+	for _, input := range inputs {
+		input := input
 		tasks = append(tasks, runner.Task{
-			ID:    e.ID,
+			ID:    input.entry.ID,
 			Group: "kit-smoke",
 			Run: func(context.Context) runner.TaskResult {
-				return runner.TaskResult{ID: e.ID, OK: true, Data: smokeKit(repo, e)}
+				return runner.TaskResult{ID: input.entry.ID, OK: true, Data: smokeKit(repo, input)}
 			},
 		})
 	}
@@ -74,12 +113,13 @@ func SmokeKits(repo string, entries []RegistryKit) []SmokeResult {
 	return results
 }
 
-func smokeKit(repo string, e RegistryKit) SmokeResult {
+func smokeKit(repo string, input lifecycleInput) SmokeResult {
+	e := input.entry
 	errs := []string{}
-	if !platform.IsFile(platform.RepoPath(repo, e.Manifest)) {
+	if !input.resolved && !platform.IsFile(platform.RepoPath(repo, e.Manifest)) {
 		errs = append(errs, "manifest missing")
 	}
-	m, err := LoadManifest(repo, e.Manifest)
+	m, err := lifecycleManifest(repo, input)
 	if err != nil {
 		errs = append(errs, "manifest parse failed: "+err.Error())
 	} else {

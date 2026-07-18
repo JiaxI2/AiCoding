@@ -87,15 +87,6 @@ func isHelpArg(value string) bool {
 	}
 }
 
-func commandRequiresSubcommand(command string) bool {
-	switch command {
-	case "hook", "docsync", "skill", "lifecycle", "cache", "codex", "mcp", "tag", "release", "kit", "doctor", "verify", "governance", "powershell":
-		return true
-	default:
-		return false
-	}
-}
-
 func validChoice(value string, choices ...string) bool {
 	for _, choice := range choices {
 		if value == choice {
@@ -145,14 +136,18 @@ func deprecatedCommand(args []string) (string, bool) {
 	if len(args) == 0 {
 		return "", false
 	}
-	switch strings.ToLower(args[0]) {
-	case "smoke":
+	route, ok := commands.lookup(strings.ToLower(args[0]))
+	if !ok {
+		return "", false
+	}
+	switch route.descriptor.ID {
+	case CommandSmoke:
 		return "aicoding test --profile Smoke", true
-	case "ci":
+	case CommandCI:
 		return "aicoding test --profile " + flagValue(args[1:], "profile", "Smoke"), true
-	case "full":
+	case CommandFull:
 		return "aicoding test --profile Full", true
-	case "test":
+	case CommandTest:
 		if len(args) < 2 {
 			return "", false
 		}
@@ -162,7 +157,7 @@ func deprecatedCommand(args []string) (string, bool) {
 		case "release":
 			return "aicoding test --profile Release", true
 		}
-	case "kit":
+	case CommandKit:
 		if len(args) >= 2 && strings.EqualFold(args[1], "lifecycle") {
 			action := strings.ToLower(flagValue(args[2:], "action", "status"))
 			if action == "status" {
@@ -170,14 +165,14 @@ func deprecatedCommand(args []string) (string, bool) {
 			}
 			return "aicoding lifecycle plan --action " + action + " --scope kit", true
 		}
-	case "mcp":
+	case CommandMCP:
 		if len(args) >= 2 {
 			switch strings.ToLower(args[1]) {
 			case "install", "update", "uninstall":
 				return "aicoding lifecycle " + strings.ToLower(args[1]) + " --scope mcp", true
 			}
 		}
-	case "status":
+	case CommandStatus:
 		return "aicoding doctor --all", true
 	}
 	return "", false

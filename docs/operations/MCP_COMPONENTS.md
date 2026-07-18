@@ -6,10 +6,10 @@
 
 - Windows 上使用 PowerShell 7 或更高版本；
 - component manifest 指定的 Python 最低版本可用；
-- `visio-mcp` 默认可通过 `python.exe` 或本机 Python 安装目录发现解释器，不要求存在 `py.exe`；
-- 需要指定解释器时使用 component manifest 声明的 `VISIO_MCP_PYTHON`；
-- Smoke 和 Full 不要求安装 Microsoft Visio；
-- Release 需要 Windows 桌面版 Microsoft Visio，并会显式打开可见 COM 会话。
+- `visio-mcp` 与 `ppt-mcp` 默认可通过 `python.exe` 或本机 Python 安装目录发现解释器，不要求存在 `py.exe`；
+- 需要指定解释器时分别使用 component manifest 声明的 `VISIO_MCP_PYTHON` 或 `PPT_MCP_PYTHON`；
+- 两个组件的 Smoke 和 Full 都不启动可见 Office COM；
+- Release 需要对应的 Windows 桌面版 Microsoft Visio 或 PowerPoint，并会显式打开可见 COM 会话。
 
 ## Inventory 与状态
 
@@ -17,9 +17,13 @@
 bin\aicoding.exe mcp list --json
 bin\aicoding.exe mcp status visio-mcp --json
 bin\aicoding.exe mcp doctor visio-mcp --json
+bin\aicoding.exe mcp status ppt-mcp --json
+bin\aicoding.exe mcp doctor ppt-mcp --json
 ```
 
 - `list` 合并显示 registry 中的受管 components 与 Codex 当前配置中的 MCP；
+- `registryDigest` 只标识规范化 registry，`catalogDigest`/外层 `inputDigest` 标识 registry
+  与全部 referenced component manifests；
 - `status` 检查 component root、`.venv`、安装状态、受管配置块和同名非受管冲突；
 - `doctor` 在 component 隔离环境中运行 manifest 声明的诊断命令。
 
@@ -33,6 +37,7 @@ bin\aicoding.exe mcp doctor visio-mcp --json
 bin\aicoding.exe lifecycle plan --action install --scope mcp --component visio-mcp --json
 bin\aicoding.exe lifecycle plan --action update --scope mcp --component visio-mcp --json
 bin\aicoding.exe lifecycle plan --action uninstall --scope mcp --component visio-mcp --json
+bin\aicoding.exe lifecycle plan --action install --scope mcp --component ppt-mcp --json
 ```
 
 确认后执行：
@@ -41,6 +46,7 @@ bin\aicoding.exe lifecycle plan --action uninstall --scope mcp --component visio
 bin\aicoding.exe lifecycle install --scope mcp --component visio-mcp --json
 bin\aicoding.exe lifecycle update --scope mcp --component visio-mcp --json
 bin\aicoding.exe lifecycle uninstall --scope mcp --component visio-mcp --json
+bin\aicoding.exe lifecycle install --scope mcp --component ppt-mcp --json
 ```
 
 也可以使用 `--scope mcp --all`，处理 registry 中全部启用的 components。旧
@@ -64,6 +70,9 @@ bin\aicoding.exe lifecycle uninstall --scope mcp --component visio-mcp --json
 bin\aicoding.exe mcp verify visio-mcp --profile Smoke --json
 bin\aicoding.exe mcp verify visio-mcp --profile Full --json
 bin\aicoding.exe mcp verify visio-mcp --profile Release --json
+bin\aicoding.exe mcp verify ppt-mcp --profile Smoke --json
+bin\aicoding.exe mcp verify ppt-mcp --profile Full --json
+bin\aicoding.exe mcp verify ppt-mcp --profile Release --json
 ```
 
 当前 Codex MCP 兼容性：
@@ -77,11 +86,14 @@ bin\aicoding.exe mcp verify --all --profile Smoke --json
 
 ### Profile 选择
 
-- Smoke：默认回归。覆盖协议、Diagram IR、mock renderer、统一尺寸和对齐质量，不触发真实 Visio；
-- Full：在 Smoke 基础上增加 benchmark；
-- Release：在 Full 基础上运行可见 Visio COM smoke，并验证 VSDX、PNG、SVG、PDF、quality 和 inspection 输出。
+- Visio Smoke：覆盖协议、Diagram IR、mock renderer、统一尺寸和对齐质量，不触发真实 Visio；
+- Visio Full：在 Smoke 基础上增加 benchmark；
+- Visio Release：在 Full 基础上运行可见 Visio COM smoke，并验证 VSDX、PNG、SVG、PDF、quality 和 inspection 输出；
+- PowerPoint Smoke：运行 vendored 上游 pytest 回归，使用 mock，不启动可见 PowerPoint；
+- PowerPoint Full：当前无独立 benchmark，执行与 Smoke 相同的完整 pytest 集；
+- PowerPoint Release：在 pytest 后显式运行可见 PowerPoint COM round-trip，生成并验证 PPTX。
 
-Release 属于显式慢路径。执行后检查没有遗留 `VISIO.EXE`。
+Release 属于显式慢路径。执行后检查没有遗留 `VISIO.EXE` 或 `POWERPNT.EXE`。
 
 ## 框图对齐验收
 
@@ -160,6 +172,8 @@ points 的坐标相交检查决定。
 ```powershell
 $env:VISIO_MCP_PYTHON = 'C:\path\to\python.exe'
 bin\aicoding.exe mcp doctor visio-mcp --json
+$env:PPT_MCP_PYTHON = 'C:\path\to\python.exe'
+bin\aicoding.exe mcp doctor ppt-mcp --json
 ```
 
 `py -3.11` 不是前置条件；控制面直接验证解释器路径和实际 major/minor。
@@ -167,6 +181,8 @@ bin\aicoding.exe mcp doctor visio-mcp --json
 ### 同名非受管配置
 
 不要让控制面覆盖用户配置。先检查 `mcp list`/`mcp status` 输出，由用户决定重命名、迁移或手工保留现有 server。
+
+收养 `ppt-mcp` 时，历史手动 `[mcp_servers.ppt-mcp]` 必须在用户确认并完成配置备份后移除；控制面随后写入自己的受管块。旧的手动 clone 不属于受管卸载范围，只有用户另行确认后才能删除。
 
 ### 卸载提示 `.venv` 被占用
 
@@ -176,6 +192,10 @@ bin\aicoding.exe mcp doctor visio-mcp --json
 ### Release 无法启动 Visio
 
 先运行 Smoke 和 Full 排除协议、依赖和布局问题，再确认桌面版 Visio COM 可用。Release 失败后关闭已知测试会话，并检查是否存在孤立 `VISIO.EXE`；不要终止用户正在编辑的未知会话。
+
+### Release 无法启动 PowerPoint
+
+先运行 PowerPoint Smoke 和 Full 排除依赖及 mock 回归问题，再确认桌面版 PowerPoint COM 已注册。Release smoke 要求事先关闭现有 PowerPoint 会话，避免附着、修改或关闭用户正在编辑的演示文稿。
 
 ## 新增 Component
 

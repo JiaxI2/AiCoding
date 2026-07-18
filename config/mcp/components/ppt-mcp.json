@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "id": "ppt-mcp",
+  "name": "PowerPoint MCP",
+  "version": "1.6.0",
+  "description": "Windows PowerPoint control through COM automation and MCP stdio.",
+  "transport": "stdio",
+  "platforms": [
+    "windows"
+  ],
+  "runtime": {
+    "kind": "python-venv",
+    "root": "CodingKit/tools/windows-automation/ppt-mcp",
+    "requirements": "requirements-windows.txt",
+    "minimumPython": "3.10",
+    "pythonEnvVar": "PPT_MCP_PYTHON",
+    "module": "src.server",
+    "packageInstall": [
+      "-e",
+      "."
+    ],
+    "serverArgs": [
+      "-m",
+      "src.server"
+    ],
+    "env": {
+      "PPT_AUTO_DISMISS_DIALOG": "false"
+    }
+  },
+  "codex": {
+    "serverName": "ppt-mcp",
+    "startupTimeoutSec": 30,
+    "toolTimeoutSec": 120
+  },
+  "doctor": {
+    "args": [
+      "scripts/doctor.py",
+      "--json"
+    ]
+  },
+  "verify": {
+    "Smoke": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ]
+    ],
+    "Full": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ]
+    ],
+    "Release": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      [
+        "scripts/powerpoint_smoke.py",
+        "--visible"
+      ]
+    ]
+  },
+  "security": {
+    "allowArbitraryShell": false,
+    "allowMacros": false,
+    "visibleEditingRequiresExplicitProfile": true,
+    "rationale": {
+      "allowArbitraryShell": "The component exposes PowerPoint domain tools and has no arbitrary process or shell contract.",
+      "allowMacros": "Macro-enabled file constants may be recognized, but managed operation does not authorize macro execution."
+    }
+  },
+  "outputs": [
+    "pptx",
+    "pdf",
+    "png",
+    "jpg"
+  ]
+}

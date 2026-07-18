@@ -2,18 +2,37 @@ package runner
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 )
 
 type Task struct {
-	ID       string
-	Group    string
-	Timeout  time.Duration
-	Critical bool
-	Run      func(context.Context) TaskResult
+	ID         string
+	Action     string
+	Group      string
+	Parameters map[string]string
+	Timeout    time.Duration
+	Critical   bool
+	Run        func(context.Context) TaskResult
+}
+
+type TaskDescriptor struct {
+	ID         string            `json:"id"`
+	Action     string            `json:"action"`
+	Group      string            `json:"group,omitempty"`
+	Parameters map[string]string `json:"parameters,omitempty"`
+	Timeout    string            `json:"timeout,omitempty"`
+	Critical   bool              `json:"critical,omitempty"`
+}
+
+type ExecutionPlanSnapshot struct {
+	Object string           `json:"object"`
+	Tasks  []TaskDescriptor `json:"tasks"`
 }
 
 type TaskResult struct {
@@ -32,65 +51,132 @@ type Options struct {
 	FailFast    bool
 }
 
-type Plan struct {
+type ExecutionPlan struct {
 	tasks []Task
 }
 
-func NewPlan(tasks ...Task) Plan {
-	p := Plan{}
-	for _, task := range tasks {
-		p.Add(task)
+func NewExecutionPlan(tasks ...Task) (ExecutionPlan, error) {
+	p := ExecutionPlan{tasks: cloneTasks(tasks)}
+	if err := p.Validate(); err != nil {
+		return ExecutionPlan{}, err
 	}
-	return p
+	return p, nil
 }
 
-func (p *Plan) Add(task Task) {
-	p.Remove(task.ID)
-	p.tasks = append(p.tasks, task)
-}
-
-func (p *Plan) Remove(ids ...string) {
+func (p ExecutionPlan) Without(ids ...string) ExecutionPlan {
 	if len(ids) == 0 {
-		return
+		return ExecutionPlan{tasks: cloneTasks(p.tasks)}
 	}
 	remove := map[string]bool{}
 	for _, id := range ids {
 		remove[id] = true
 	}
-	kept := p.tasks[:0]
+	kept := make([]Task, 0, len(p.tasks))
 	for _, task := range p.tasks {
 		if !remove[task.ID] {
-			kept = append(kept, task)
+			kept = append(kept, cloneTask(task))
 		}
 	}
-	p.tasks = kept
+	return ExecutionPlan{tasks: kept}
 }
 
-func (p Plan) Only(ids ...string) Plan {
+func (p ExecutionPlan) Only(ids ...string) ExecutionPlan {
 	if len(ids) == 0 {
-		return p
+		return ExecutionPlan{tasks: cloneTasks(p.tasks)}
 	}
 	keep := map[string]bool{}
 	for _, id := range ids {
 		keep[id] = true
 	}
-	out := Plan{}
+	out := ExecutionPlan{}
 	for _, task := range p.tasks {
 		if keep[task.ID] {
-			out.tasks = append(out.tasks, task)
+			out.tasks = append(out.tasks, cloneTask(task))
 		}
 	}
 	return out
 }
 
-func (p Plan) Tasks() []Task {
-	out := make([]Task, len(p.tasks))
-	copy(out, p.tasks)
+func (p ExecutionPlan) Tasks() []Task {
+	return cloneTasks(p.tasks)
+}
+
+func (p ExecutionPlan) Validate() error {
+	seen := make(map[string]struct{}, len(p.tasks))
+	for index, task := range p.tasks {
+		if strings.TrimSpace(task.ID) == "" {
+			return fmt.Errorf("task %d id is required", index)
+		}
+		if strings.TrimSpace(task.Action) == "" {
+			return fmt.Errorf("task %q action is required", task.ID)
+		}
+		if task.Timeout < 0 {
+			return fmt.Errorf("task %q timeout must not be negative", task.ID)
+		}
+		if _, exists := seen[task.ID]; exists {
+			return fmt.Errorf("duplicate task id: %s", task.ID)
+		}
+		seen[task.ID] = struct{}{}
+	}
+	return nil
+}
+
+func (p ExecutionPlan) Snapshot() ExecutionPlanSnapshot {
+	tasks := make([]TaskDescriptor, 0, len(p.tasks))
+	for _, task := range p.tasks {
+		descriptor := TaskDescriptor{
+			ID:         task.ID,
+			Action:     task.Action,
+			Group:      task.Group,
+			Parameters: cloneParameters(task.Parameters),
+			Critical:   task.Critical,
+		}
+		if task.Timeout > 0 {
+			descriptor.Timeout = task.Timeout.String()
+		}
+		tasks = append(tasks, descriptor)
+	}
+	return ExecutionPlanSnapshot{Object: "execution-plan", Tasks: tasks}
+}
+
+func (p ExecutionPlan) Digest() (string, error) {
+	if err := p.Validate(); err != nil {
+		return "", err
+	}
+	data, err := json.Marshal(p.Snapshot())
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(data)
+	return fmt.Sprintf("sha256:%x", sum), nil
+}
+
+func (p ExecutionPlan) Run(ctx context.Context, opts Options) []TaskResult {
+	return Run(ctx, p.tasks, opts)
+}
+
+func cloneTasks(tasks []Task) []Task {
+	out := make([]Task, len(tasks))
+	for index, task := range tasks {
+		out[index] = cloneTask(task)
+	}
 	return out
 }
 
-func (p Plan) Run(ctx context.Context, opts Options) []TaskResult {
-	return Run(ctx, p.tasks, opts)
+func cloneTask(task Task) Task {
+	task.Parameters = cloneParameters(task.Parameters)
+	return task
+}
+
+func cloneParameters(parameters map[string]string) map[string]string {
+	if len(parameters) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(parameters))
+	for key, value := range parameters {
+		out[key] = value
+	}
+	return out
 }
 
 func Run(ctx context.Context, tasks []Task, opts Options) []TaskResult {

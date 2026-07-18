@@ -14,7 +14,9 @@
     "kitRegistry",
     "mcpRegistry",
     "skills",
-    "externalDependencies"
+    "externalDependencies",
+    "gitProcessBoundary",
+    "goPackageBoundaries"
   ],
   "additionalProperties": false,
   "properties": {
@@ -135,9 +137,74 @@
           }
         }
       }
+    },
+    "gitProcessBoundary": {
+      "$ref": "#/$defs/gitProcessBoundary"
+    },
+    "goPackageBoundaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/goPackageBoundary"
+      }
     }
   },
   "$defs": {
+    "gitProcessBoundary": {
+      "type": "object",
+      "required": [
+        "ownerPackage",
+        "scanRoots",
+        "allowedImporters"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ownerPackage": {
+          "type": "string",
+          "pattern": "^internal/[a-z0-9][a-z0-9/-]*$"
+        },
+        "scanRoots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(?:cmd|internal)(?:/[a-z0-9][a-z0-9/-]*)?$"
+          }
+        },
+        "allowedImporters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^internal/[a-z0-9][a-z0-9/-]*$"
+          }
+        }
+      }
+    },
+    "goPackageBoundary": {
+      "type": "object",
+      "required": [
+        "path",
+        "forbiddenImports"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^internal/[a-z0-9][a-z0-9/-]*$"
+        },
+        "forbiddenImports": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^internal/[a-z0-9][a-z0-9/-]*$"
+          }
+        }
+      }
+    },
     "layer": {
       "type": "object",
       "required": [

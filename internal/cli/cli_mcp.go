@@ -52,19 +52,25 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			OK:            true,
 			Message:       "MCP component and Codex configuration inventory",
 			RepoRoot:      repo,
+			InputDigest:   inventory.CatalogDigest,
 			Data:          inventory,
 			Warnings:      inventory.Warnings,
 			ElapsedMS:     report.Elapsed(start),
 		}, nil
 	}
 
-	entries, err := mcpcontrol.SelectComponents(repo, *componentArg, *allArg)
+	catalog, err := mcpcontrol.LoadCatalogSnapshot(repo)
+	if err != nil {
+		return report.Fail("mcp "+sub, start, "cannot load MCP catalog", nil, err.Error()), err
+	}
+	components, err := catalog.Select(*componentArg, *allArg)
 	if err != nil {
 		return report.Fail("mcp "+sub, start, "MCP component selection failed", nil, err.Error()), err
 	}
+	entries := componentSnapshotEntries(components)
 	switch sub {
 	case "status":
-		status := mcpcontrol.Status(repo, *codexConfigArg, entries)
+		status := mcpcontrol.StatusCatalog(repo, *codexConfigArg, components)
 		errorsFound, warnings := statusMessages(status)
 		return report.Result{
 			SchemaVersion: 1,
@@ -72,13 +78,14 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			OK:            len(errorsFound) == 0,
 			Message:       "MCP component status",
 			RepoRoot:      repo,
+			InputDigest:   catalog.Digest(),
 			Data:          status,
 			Warnings:      warnings,
 			Errors:        errorsFound,
 			ElapsedMS:     report.Elapsed(start),
 		}, report.BoolErr(errorsFound)
 	case "doctor":
-		doctor := mcpcontrol.DoctorComponents(repo, entries)
+		doctor := mcpcontrol.DoctorCatalogComponentsContext(context.Background(), repo, components)
 		errorsFound := commandErrors(entries, doctor)
 		return report.Result{
 			SchemaVersion: 1,
@@ -86,17 +93,18 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			OK:            len(errorsFound) == 0,
 			Message:       "MCP managed component doctor",
 			RepoRoot:      repo,
+			InputDigest:   catalog.Digest(),
 			Data:          doctor,
 			Errors:        errorsFound,
 			ElapsedMS:     report.Elapsed(start),
 		}, report.BoolErr(errorsFound)
 	case "verify":
 		includeConfigured := *configuredArg || *allArg
-		verification := mcpcontrol.Verify(
+		verification := mcpcontrol.VerifyCatalog(
 			context.Background(),
 			repo,
 			*codexConfigArg,
-			entries,
+			components,
 			*profileArg,
 			includeConfigured,
 		)
@@ -106,6 +114,7 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			OK:            verification.OK,
 			Message:       "MCP managed and configured compatibility verification",
 			RepoRoot:      repo,
+			InputDigest:   catalog.Digest(),
 			Data:          verification,
 			Warnings:      verification.Warnings,
 			Errors:        verification.Errors,
@@ -127,6 +136,8 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			OK:            unified.OK,
 			Message:       "MCP managed lifecycle",
 			RepoRoot:      repo,
+			InputDigest:   lifecycleAdapterInputDigest(unified, lifecyclecontrol.ScopeMCP),
+			PlanDigest:    unified.PlanDigest,
 			Data:          data,
 			Warnings:      unified.Warnings,
 			Errors:        unified.Errors,
@@ -135,6 +146,14 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 	default:
 		return report.Result{}, usageErrorf("unsupported mcp subcommand: %s", sub)
 	}
+}
+
+func componentSnapshotEntries(snapshots []mcpcontrol.ComponentSnapshot) []mcpcontrol.RegistryEntry {
+	entries := make([]mcpcontrol.RegistryEntry, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		entries = append(entries, snapshot.Entry())
+	}
+	return entries
 }
 
 func statusMessages(results []mcpcontrol.StatusResult) ([]string, []string) {
@@ -172,4 +191,13 @@ func lifecycleAdapterData(result lifecyclecontrol.Report, id string) interface{}
 		}
 	}
 	return nil
+}
+
+func lifecycleAdapterInputDigest(result lifecyclecontrol.Report, id string) string {
+	for _, adapter := range result.Adapters {
+		if adapter.ID == id {
+			return adapter.InputDigest
+		}
+	}
+	return ""
 }

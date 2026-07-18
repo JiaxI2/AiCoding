@@ -1,16 +1,15 @@
 package kit
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
@@ -100,8 +99,11 @@ type skillShape struct {
 }
 
 type structureVerifier struct {
-	repo   string
-	report *StructureReport
+	repo             string
+	report           *StructureReport
+	manifests        map[string]Manifest
+	catalog          []ManifestSnapshot
+	registryResolved bool
 }
 
 var allowedManifestCommandNames = map[string]bool{
@@ -128,6 +130,19 @@ var allowedManifestCommandTypes = map[string]bool{
 }
 
 func VerifyStructure(repo string, entries []RegistryKit) StructureReport {
+	return verifyStructure(repo, entries, nil)
+}
+
+func VerifyCatalogStructure(repo string, snapshots []ManifestSnapshot) StructureReport {
+	entries := make([]RegistryKit, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		entry := snapshot.Entry()
+		entries = append(entries, entry)
+	}
+	return verifyStructure(repo, entries, snapshots)
+}
+
+func verifyStructure(repo string, entries []RegistryKit, catalog []ManifestSnapshot) StructureReport {
 	start := time.Now()
 	report := StructureReport{
 		SchemaVersion:  1,
@@ -138,7 +153,20 @@ func VerifyStructure(repo string, entries []RegistryKit) StructureReport {
 		Errors:         []string{},
 		Warnings:       []string{},
 	}
-	verifier := structureVerifier{repo: repo, report: &report}
+	manifests := map[string]Manifest{}
+	for _, snapshot := range catalog {
+		manifest, err := snapshot.Manifest()
+		if err == nil {
+			manifests[snapshot.Entry().ID] = manifest
+		}
+	}
+	verifier := structureVerifier{
+		repo:             repo,
+		report:           &report,
+		manifests:        manifests,
+		catalog:          cloneManifestSnapshots(catalog),
+		registryResolved: catalog != nil,
+	}
 	verifier.checkCodexKitConfig()
 	verifier.checkRegistry(entries)
 	verifier.checkLifecyclePlans(entries)
@@ -270,14 +298,16 @@ func (v structureVerifier) checkPackagedSkillNames(pluginRel string) []string {
 }
 
 func (v structureVerifier) checkRegistry(entries []RegistryKit) {
-	registryPath := platform.RepoPath(v.repo, "config/kit-registry.json")
-	if !platform.IsFile(registryPath) {
-		v.addCheck("kit registry", false, "missing", "config/kit-registry.json is missing", []string{"missing config/kit-registry.json"}, nil)
-		return
-	}
-	if _, err := LoadRegistry(v.repo); err != nil {
-		v.addCheck("kit registry", false, "invalid", "kit registry cannot be loaded", []string{err.Error()}, nil)
-		return
+	if !v.registryResolved {
+		registryPath := platform.RepoPath(v.repo, "config/kit-registry.json")
+		if !platform.IsFile(registryPath) {
+			v.addCheck("kit registry", false, "missing", "config/kit-registry.json is missing", []string{"missing config/kit-registry.json"}, nil)
+			return
+		}
+		if _, err := LoadRegistry(v.repo); err != nil {
+			v.addCheck("kit registry", false, "invalid", "kit registry cannot be loaded", []string{err.Error()}, nil)
+			return
+		}
 	}
 
 	errs := []string{}
@@ -303,16 +333,20 @@ func (v structureVerifier) checkRegistry(entries []RegistryKit) {
 func (v structureVerifier) checkManifest(entry RegistryKit) {
 	result := StructureKitResult{ID: entry.ID, Enabled: entry.Enabled, Manifest: entry.Manifest, OK: true}
 	manifestPath := platform.RepoPath(v.repo, entry.Manifest)
-	if entry.Manifest == "" || !platform.IsFile(manifestPath) {
+	manifest, resolved := v.manifests[entry.ID]
+	if entry.Manifest == "" || (!resolved && !platform.IsFile(manifestPath)) {
 		result.Errors = append(result.Errors, "manifest file missing: "+entry.Manifest)
 		v.addKitResult(result)
 		return
 	}
-	manifest, err := LoadManifest(v.repo, entry.Manifest)
-	if err != nil {
-		result.Errors = append(result.Errors, "cannot parse manifest: "+err.Error())
-		v.addKitResult(result)
-		return
+	if !resolved {
+		var err error
+		manifest, err = LoadManifest(v.repo, entry.Manifest)
+		if err != nil {
+			result.Errors = append(result.Errors, "cannot parse manifest: "+err.Error())
+			v.addKitResult(result)
+			return
+		}
 	}
 	if manifest.ID != entry.ID {
 		result.Errors = append(result.Errors, fmt.Sprintf("manifest id mismatch: registry %s != manifest %s", entry.ID, manifest.ID))
@@ -449,7 +483,12 @@ func (v structureVerifier) checkManifestSkills(manifest Manifest, result *Struct
 func (v structureVerifier) checkLifecyclePlans(entries []RegistryKit) {
 	for _, action := range []string{"install", "update", "uninstall", "status"} {
 		dryRun := action != "status"
-		plan := PlanLifecycle(v.repo, entries, LifecycleOptions{Action: action, Mode: "all", DryRun: dryRun})
+		var plan LifecyclePlan
+		if len(v.catalog) > 0 {
+			plan = PlanCatalogLifecycle(v.repo, v.catalog, LifecycleOptions{Action: action, Mode: "all", DryRun: dryRun})
+		} else {
+			plan = PlanLifecycle(v.repo, entries, LifecycleOptions{Action: action, Mode: "all", DryRun: dryRun})
+		}
 		v.report.LifecyclePlans = append(v.report.LifecyclePlans, plan)
 		errs := []string{}
 		warnings := []string{}
@@ -543,14 +582,11 @@ func gitStatusShort(path string) (string, error) {
 	if _, err := os.Stat(filepath.Join(path, ".git")); err != nil {
 		return "", fmt.Errorf("not a git checkout")
 	}
-	cmd := exec.Command("git", "-C", path, "status", "--short")
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("git status --short failed: %w: %s", err, strings.TrimSpace(stderr.String()))
+	stdout, err := gitx.Run(path, "status", "--short")
+	if err != nil {
+		return "", fmt.Errorf("git status --short failed: %w", err)
 	}
-	return strings.TrimSpace(stdout.String()), nil
+	return strings.TrimSpace(stdout), nil
 }
 
 func cleanRel(rel string) string {

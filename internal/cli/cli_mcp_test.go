@@ -3,6 +3,7 @@ package cli
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -42,6 +43,9 @@ func TestRunMCPList(t *testing.T) {
 	}
 	if len(inventory.Managed) != 1 || len(inventory.Configured) != 1 {
 		t.Fatalf("unexpected inventory: %#v", inventory)
+	}
+	if !strings.HasPrefix(result.InputDigest, "sha256:") || result.InputDigest != inventory.CatalogDigest {
+		t.Fatalf("MCP list input evidence is missing: %#v", result)
 	}
 }
 
@@ -110,6 +114,10 @@ func TestRunUnifiedLifecycleMCPPlan(t *testing.T) {
 	data, ok := result.Data.(lifecyclecontrol.Report)
 	if !ok || data.Scope != lifecyclecontrol.ScopeMCP || data.Mode != "plan" || len(data.Adapters) != 1 {
 		t.Fatalf("unexpected unified lifecycle data: %#v", result.Data)
+	}
+	if !strings.HasPrefix(result.PlanDigest, "sha256:") || result.PlanDigest != data.PlanDigest ||
+		!strings.HasPrefix(data.CatalogDigest, "sha256:") || !strings.HasPrefix(data.Adapters[0].InputDigest, "sha256:") {
+		t.Fatalf("unified lifecycle evidence is missing: %#v", result)
 	}
 	after, err := os.ReadFile(config)
 	if err != nil {

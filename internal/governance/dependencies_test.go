@@ -103,6 +103,79 @@ func TestCheckDependenciesAllowsExternalProtocolVersion(t *testing.T) {
 	}
 }
 
+func TestGoPackageBoundariesRejectReverseCoreDependency(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "internal", "registry", "bad.go"), `package registry
+import _ "github.com/JiaxI2/AiCoding/internal/lifecycle"
+`)
+	errs := checkGoPackageBoundaries(repo, []goPackageBoundary{{
+		Path:             "internal/registry",
+		ForbiddenImports: []string{"internal/lifecycle"},
+	}})
+	if !hasErrorContaining(errs, "imports forbidden package") {
+		t.Fatalf("expected orthogonal package boundary error, got %#v", errs)
+	}
+}
+
+func TestGoPackageBoundariesAllowLowerUtilityDependency(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "internal", "kit", "good.go"), `package kit
+import _ "github.com/JiaxI2/AiCoding/internal/registry"
+`)
+	errs := checkGoPackageBoundaries(repo, []goPackageBoundary{{
+		Path:             "internal/kit",
+		ForbiddenImports: []string{"internal/lifecycle", "internal/mcpcontrol"},
+	}})
+	if len(errs) != 0 {
+		t.Fatalf("valid lower utility dependency was rejected: %#v", errs)
+	}
+}
+
+func TestGitProcessOwnershipRejectsGitOutsideGitx(t *testing.T) {
+	repo := dependencyFixture(t)
+	mustWrite(t, filepath.Join(repo, "internal", "report", "bad.go"), `package report
+import "os/exec"
+func bad() { _ = exec.Command("git", "version") }
+`)
+
+	report := CheckDependencies(repo)
+
+	if !hasErrorContaining(report.Errors, "git process ownership: internal/report/bad.go starts git process outside internal/gitx") {
+		t.Fatalf("expected git process ownership error, got %#v", report.Errors)
+	}
+}
+
+func TestGitProcessOwnershipAllowsOwnerPackage(t *testing.T) {
+	report := CheckDependencies(dependencyFixture(t))
+
+	check, ok := dependencyCheckByName(report.Checks, "git process ownership")
+	if !ok || !check.OK {
+		t.Fatalf("expected git process owner package to pass, got %#v", check)
+	}
+}
+
+func TestGitxImporterAllowlistRejectsUnknownImporter(t *testing.T) {
+	repo := dependencyFixture(t)
+	mustWrite(t, filepath.Join(repo, "internal", "runner", "bad.go"), `package runner
+import _ "github.com/JiaxI2/AiCoding/internal/gitx"
+`)
+
+	report := CheckDependencies(repo)
+
+	if !hasErrorContaining(report.Errors, "gitx importer allowlist: internal/runner/bad.go imports internal/gitx from non-allowlisted package internal/runner") {
+		t.Fatalf("expected gitx importer allowlist error, got %#v", report.Errors)
+	}
+}
+
+func TestGitxImporterAllowlistAllowsRegisteredImporter(t *testing.T) {
+	report := CheckDependencies(dependencyFixture(t))
+
+	check, ok := dependencyCheckByName(report.Checks, "gitx importer allowlist")
+	if !ok || !check.OK {
+		t.Fatalf("expected registered gitx importer to pass, got %#v", check)
+	}
+}
+
 func dependencyFixture(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
@@ -168,7 +241,18 @@ func dependencyFixture(t *testing.T) string {
     "standaloneLayer": "capability",
     "standaloneForbiddenPrefixes": ["aicoding-"]
   },
-  "externalDependencies": [{"id": "runtime:mcp", "layer": "runtime"}]
+  "externalDependencies": [{"id": "runtime:mcp", "layer": "runtime"}],
+  "gitProcessBoundary": {
+    "ownerPackage": "internal/gitx",
+    "scanRoots": ["cmd", "internal"],
+    "allowedImporters": ["internal/cli"]
+  },
+  "goPackageBoundaries": [
+    {
+      "path": "internal/gitx",
+      "forbiddenImports": ["internal/platform"]
+    }
+  ]
 }`)
 	mustWrite(t, filepath.Join(repo, "config", "schemas", "dependency-governance.schema.json"), "{}")
 	mustWrite(t, filepath.Join(repo, "config", "kit-registry.json"), `{
@@ -191,7 +275,24 @@ func dependencyFixture(t *testing.T) string {
 }`)
 	mustWrite(t, filepath.Join(repo, "CodingKit", "tools", "visio-mcp", "server.py"), `SERVICE = "visio-mcp"`)
 	mustWrite(t, filepath.Join(repo, "plugin", "skills", "aicoding-platform", "SKILL.md"), "---\nname: aicoding-platform\n---\n")
+	mustWrite(t, filepath.Join(repo, "cmd", "aicoding", "main.go"), "package main\n")
+	mustWrite(t, filepath.Join(repo, "internal", "gitx", "git.go"), `package gitx
+import "os/exec"
+func run() { _ = exec.Command("git", "version") }
+`)
+	mustWrite(t, filepath.Join(repo, "internal", "cli", "cli.go"), `package cli
+import _ "github.com/JiaxI2/AiCoding/internal/gitx"
+`)
 	return repo
+}
+
+func dependencyCheckByName(checks []DependencyCheck, name string) (DependencyCheck, bool) {
+	for _, check := range checks {
+		if check.Name == name {
+			return check, true
+		}
+	}
+	return DependencyCheck{}, false
 }
 
 func hasDependencyErrorContaining(errs []string, needle string) bool {
