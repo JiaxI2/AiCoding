@@ -43,7 +43,7 @@
 |---|---|
 | `id` | 用例编号 |
 | `category` | 功能域 |
-| `title` | 用例名称 |
+| `title` | 中文优先的人读用例名称；必须是无 `U+FFFD` 的有效 UTF-8 |
 | `status` | PASS/FAIL/WARN/SKIP |
 | `severity` | REQUIRED/WARN/OPTIONAL |
 | `duration_ms` | 用例耗时 |
