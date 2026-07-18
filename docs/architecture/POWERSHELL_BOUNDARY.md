@@ -38,6 +38,7 @@ bin\aicoding.exe doctor pwsh-budget --json
 
 ## 禁止事项
 
+- 专项命令面停止增长：不新增专项脚本，不新增保留类别；新能力一律进入 Go 控制面。
 - 不新增 PowerShell 默认门禁。
 - 不通过 Taskfile 承载业务逻辑。
 - 不把 Go 默认入口重新包装成 PowerShell。
