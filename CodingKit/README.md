@@ -68,7 +68,7 @@ MCP 不注册工作流 prompt。完整画图流程属于上层通用 `visio-diag
 ```powershell
 git clone --recurse-submodules https://github.com/JiaxI2/AiCoding.git
 cd AiCoding
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/specialty/verify-codex-kit.ps1
+bin\aicoding.exe test --profile Full --json
 bin/aicoding.exe lifecycle install --all --json
 bin/aicoding.exe doctor --all --json
 bin/aicoding.exe verify --profile Smoke --json

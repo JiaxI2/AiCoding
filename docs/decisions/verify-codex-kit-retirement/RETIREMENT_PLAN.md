@@ -1,6 +1,6 @@
 # Retirement Plan: verify-codex-kit.ps1
 
-Plan Status: Proposed（Phase 0 已随本轮修复落地；Phase 1/2 待验收后执行）
+Plan Status: Active（Phase 0/1 已完成；Phase 2 待 Phase 1 落地满一个发布版本后执行）
 
 目标：按 [POWERSHELL_BOUNDARY.md](../../architecture/POWERSHELL_BOUNDARY.md) 的
 "不删除专项脚本除非有单独计划和验证"规则，为 `tools/specialty/verify-codex-kit.ps1`
@@ -62,27 +62,27 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tools\specialty\verify-codex-kit.p
 - [x] 脚本 `-Json` stdout 是无前缀/后缀、无替换字符的严格 UTF-8 JSON，退出码与 JSON 判读一致；
 - [x] 除脚本、本计划、KIT_LIFECYCLE_TEST_PROFILES.md、CHANGELOG 外零改动。
 
-## Phase 1：引用迁移（待验收后执行）
+## Phase 1：引用迁移（已完成）
 
 - `AGENTS.md` 两处 `verify-codex-kit` 门禁改为 `bin\aicoding.exe test --profile Full --json`；
 - `CodingKit/README.md:71` 同步替换；
 - `.agents/skills/aicoding-agent-patch-kit/SKILL.md` 修正旧路径漂移，直接指向正式入口；
-- Codex-Skills 上游 SKILL.md 的 `scripts/verify-codex-kit.ps1` 门禁行提交上游修正，
-  随下次按 AGENTS.md Cross-Repository Upgrade Workflow 的 submodule 升级带入本仓。
+- Codex-Skills 上游 SKILL.md 的 `scripts/verify-codex-kit.ps1` 门禁行不在本仓修改；记录为
+  上游事项，随下次按 AGENTS.md Cross-Repository Upgrade Workflow 的 submodule 升级带入本仓。
 
 验证：
 
 ```powershell
-# 期望：仅命中本计划与 TRACEABILITY 历史记录（及未升级前的 submodule 内文件）
+# 期望：不命中 AGENTS/CodingKit README/.agents SKILL 活跃门禁；允许包装器自身、兼容/退役说明与历史记录
 git grep -n "verify-codex-kit"
 bin\aicoding.exe docsync --json
 bin\aicoding.exe test --profile Smoke --json
 ```
 
-- [ ] 仓库自有文件中不再有指向脚本的活跃门禁引用；
-- [ ] docsync 与 Smoke 全绿。
+- [x] 仓库自有文件中不再有指向脚本的活跃门禁引用；
+- [x] docsync 与 Smoke 全绿。
 
-## Phase 2：移除（Phase 1 落地满一个发布版本后）
+## Phase 2：移除（待 Phase 1 落地满一个发布版本后）
 
 - 删除 `tools/specialty/verify-codex-kit.ps1`；
 - CHANGELOG 记录移除，与 `bce8282` 兼容路由移除条目同风格；

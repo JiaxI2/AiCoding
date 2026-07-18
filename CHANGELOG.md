@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(maintenance)**: 完成 `verify-codex-kit.ps1` 退役 Phase 1，将 `AGENTS.md`、`CodingKit/README.md` 与仓库内 Agent Patch Kit 的活跃门禁引用迁移到正式 `test --profile Full --json` 入口；只读 Codex-Skills 子模块中的旧引用保留为上游升级事项。 / Completes retirement Phase 1 by migrating repository-owned gate references to the canonical Full profile while leaving read-only submodule references for an upstream upgrade.
+
 - **fix(specialty)**: `tools/specialty/verify-codex-kit.ps1` 从 v1.0.0 已移除的 `full` 兼容命令改为正式 `test --profile Full --json` 入口，并按 JSON `ok`/`errorKind` 契约判读退出码（ok→0、usage→2、其余→1）；按 PowerShell 边界"单独计划和验证"规则新增 [退役计划](docs/decisions/verify-codex-kit-retirement/RETIREMENT_PLAN.md)，并修正 KIT_LIFECYCLE_TEST_PROFILES 中该脚本仍是 Smoke 默认门禁的过时描述。 / Repairs the broken wrapper onto the canonical Full test entry with JSON-contract exit codes, adds the boundary-mandated retirement plan instead of deleting, and corrects stale profile-policy claims.
 
 ## [1.0.0] - 2026-07-18
