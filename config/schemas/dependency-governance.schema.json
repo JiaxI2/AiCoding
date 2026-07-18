@@ -15,6 +15,7 @@
     "mcpRegistry",
     "skills",
     "externalDependencies",
+    "gitProcessBoundary",
     "goPackageBoundaries"
   ],
   "additionalProperties": false,
@@ -137,6 +138,9 @@
         }
       }
     },
+    "gitProcessBoundary": {
+      "$ref": "#/$defs/gitProcessBoundary"
+    },
     "goPackageBoundaries": {
       "type": "array",
       "minItems": 1,
@@ -146,6 +150,38 @@
     }
   },
   "$defs": {
+    "gitProcessBoundary": {
+      "type": "object",
+      "required": [
+        "ownerPackage",
+        "scanRoots",
+        "allowedImporters"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "ownerPackage": {
+          "type": "string",
+          "pattern": "^internal/[a-z0-9][a-z0-9/-]*$"
+        },
+        "scanRoots": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(?:cmd|internal)(?:/[a-z0-9][a-z0-9/-]*)?$"
+          }
+        },
+        "allowedImporters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^internal/[a-z0-9][a-z0-9/-]*$"
+          }
+        }
+      }
+    },
     "goPackageBoundary": {
       "type": "object",
       "required": [

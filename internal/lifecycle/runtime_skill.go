@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 	registryobject "github.com/JiaxI2/AiCoding/internal/registry"
 )
 
@@ -129,9 +130,8 @@ func runtimeSkillInputDigest(repo, sourceRepository string, sourceExists bool) (
 	}
 	sourceCommit := ""
 	if sourceExists {
-		command := exec.Command("git", "-C", sourceRepository, "rev-parse", "HEAD")
-		if output, commitErr := command.Output(); commitErr == nil {
-			sourceCommit = strings.TrimSpace(string(output))
+		if output, commitErr := gitx.Run(sourceRepository, "rev-parse", "HEAD"); commitErr == nil {
+			sourceCommit = strings.TrimSpace(output)
 		}
 	}
 	snapshot, err := registryobject.NewSnapshot("runtime-skill-registry", struct {
@@ -182,12 +182,11 @@ func resolveRuntimeSourceRepository(repo string) (string, bool) {
 }
 
 func gitCommonRepositoryRoot(repo string) string {
-	cmd := exec.Command("git", "-C", repo, "rev-parse", "--path-format=absolute", "--git-common-dir")
-	output, err := cmd.Output()
+	output, err := gitx.Run(repo, "rev-parse", "--path-format=absolute", "--git-common-dir")
 	if err != nil {
 		return ""
 	}
-	commonDir := strings.TrimSpace(string(output))
+	commonDir := strings.TrimSpace(output)
 	if commonDir == "" {
 		return ""
 	}

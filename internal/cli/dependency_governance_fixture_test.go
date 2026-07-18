@@ -1,10 +1,28 @@
 package cli
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestGovernanceDependenciesReportsGitProcessBoundaryChecks(t *testing.T) {
+	repo := t.TempDir()
+	writeGoControlFixture(t, repo)
+
+	var stdout, stderr bytes.Buffer
+	code := Execute([]string{"governance", "dependencies", "--repo-root", repo, "--json"}, &stdout, &stderr)
+	if code != ExitSuccess {
+		t.Fatalf("governance dependencies failed: code=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
+	}
+	for _, check := range []string{"git process ownership", "gitx importer allowlist"} {
+		if !strings.Contains(stdout.String(), `"name": "`+check+`"`) {
+			t.Fatalf("governance dependencies JSON is missing %q: %s", check, stdout.String())
+		}
+	}
+}
 
 func writeDependencyGovernanceFixture(t *testing.T, repo string) {
 	t.Helper()
@@ -66,7 +84,26 @@ version_badge_policy = "config/dependency-governance.json#versionVisibility.read
     "standaloneLayer": "capability",
     "standaloneForbiddenPrefixes": ["aicoding-"]
   },
-  "externalDependencies": []
+  "externalDependencies": [],
+  "gitProcessBoundary": {
+    "ownerPackage": "internal/gitx",
+    "scanRoots": ["cmd", "internal"],
+    "allowedImporters": ["internal/cli"]
+  },
+  "goPackageBoundaries": [
+    {
+      "path": "internal/gitx",
+      "forbiddenImports": ["internal/platform"]
+    }
+  ]
 }
+`)
+	mustWrite(t, filepath.Join(repo, "cmd", "aicoding", "main.go"), "package main\n")
+	mustWrite(t, filepath.Join(repo, "internal", "gitx", "git.go"), `package gitx
+import "os/exec"
+func run() { _ = exec.Command("git", "version") }
+`)
+	mustWrite(t, filepath.Join(repo, "internal", "cli", "cli.go"), `package cli
+import _ "github.com/JiaxI2/AiCoding/internal/gitx"
 `)
 }

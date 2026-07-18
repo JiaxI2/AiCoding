@@ -63,3 +63,25 @@ func TestCommandCatalogRejectsIncompleteRoutes(t *testing.T) {
 		t.Fatal("catalog accepted a command without a route")
 	}
 }
+
+func TestCommandCatalogRejectsGitPorcelainVerbs(t *testing.T) {
+	// docs/architecture/GIT_REUSE_BOUNDARY.md §9 reserves Git porcelain verbs.
+	// Section 8 explicitly retains status, tag, and fresh-clone because their
+	// AiCoding meanings are lifecycle reconciliation, policy audit, and a
+	// registered verification workflow rather than Git porcelain aliases.
+	forbidden := map[string]struct{}{
+		"add": {}, "am": {}, "apply": {}, "bisect": {}, "blame": {},
+		"branch": {}, "checkout": {}, "cherry-pick": {}, "clone": {},
+		"commit": {}, "diff": {}, "fetch": {}, "init": {}, "log": {},
+		"merge": {}, "pull": {}, "push": {}, "rebase": {}, "remote": {},
+		"reset": {}, "restore": {}, "revert": {}, "show": {}, "stash": {},
+		"submodule": {}, "switch": {}, "worktree": {},
+	}
+	for _, command := range Catalog().Commands {
+		for _, name := range append([]string{command.Name}, command.Aliases...) {
+			if _, exists := forbidden[strings.ToLower(name)]; exists {
+				t.Fatalf("command catalog exposes reserved Git porcelain verb %q through %s", name, command.ID)
+			}
+		}
+	}
+}

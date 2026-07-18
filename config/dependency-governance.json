@@ -263,7 +263,50 @@
       "layer": "runtime"
     }
   ],
+  "gitProcessBoundary": {
+    "ownerPackage": "internal/gitx",
+    "scanRoots": [
+      "cmd",
+      "internal"
+    ],
+    "allowedImporters": [
+      "internal/cli",
+      "internal/cstyle",
+      "internal/docsync",
+      "internal/governance",
+      "internal/kit",
+      "internal/lifecycle",
+      "internal/platform",
+      "internal/pwshregex",
+      "internal/repohealth",
+      "internal/tagpolicy"
+    ]
+  },
   "goPackageBoundaries": [
+    {
+      "path": "internal/gitx",
+      "forbiddenImports": [
+        "internal/bootstrap",
+        "internal/cache",
+        "internal/cli",
+        "internal/cstyle",
+        "internal/docsync",
+        "internal/governance",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/platform",
+        "internal/pwshregex",
+        "internal/registry",
+        "internal/releasegate",
+        "internal/report",
+        "internal/repohealth",
+        "internal/reuse",
+        "internal/runner",
+        "internal/tagpolicy",
+        "internal/testengine"
+      ]
+    },
     {
       "path": "internal/registry",
       "forbiddenImports": [

@@ -1,16 +1,15 @@
 package kit
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
@@ -583,14 +582,11 @@ func gitStatusShort(path string) (string, error) {
 	if _, err := os.Stat(filepath.Join(path, ".git")); err != nil {
 		return "", fmt.Errorf("not a git checkout")
 	}
-	cmd := exec.Command("git", "-C", path, "status", "--short")
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("git status --short failed: %w: %s", err, strings.TrimSpace(stderr.String()))
+	stdout, err := gitx.Run(path, "status", "--short")
+	if err != nil {
+		return "", fmt.Errorf("git status --short failed: %w", err)
 	}
-	return strings.TrimSpace(stdout.String()), nil
+	return strings.TrimSpace(stdout), nil
 }
 
 func cleanRel(rel string) string {
