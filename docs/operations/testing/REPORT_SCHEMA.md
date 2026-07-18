@@ -62,7 +62,8 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 `status` 只使用 `PASS`、`PASS_WITH_WARNINGS`、`FAIL`。doctor/verify 的 `details`
 是共享 check 列表，每项包含稳定的 `id`、`category`、`ok`、`status`、
 `duration_ms`、warnings、errors 和领域详情；`test` 的 details 仍是唯一 test engine
-生成的 summary/results。
+生成的 summary/results。test engine 在执行和写报告前校验 Registry 的 `title`：文本必须是
+有效 UTF-8 且不得包含 Unicode 替换字符 `U+FFFD`，避免不可读标题进入任何 JSON 消费者。
 
 ## 1. 测试 `summary.json`
 

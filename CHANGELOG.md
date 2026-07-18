@@ -6,6 +6,12 @@
 
 - **feat(governance)**: 新增契约冻结与获取/激活分离边界，通过 `activation manifests URL-free` 和 `cloneable sources registry` 两条依赖治理检查阻断激活 manifest URL 与越界可克隆源。 / Adds the contract-freeze and acquisition/activation boundary with two dependency gates for activation URLs and cloneable-source ownership.
 
+- **fix(testengine)**: 在执行与写报告前拒绝无效 UTF-8 或含 `U+FFFD` 的 Registry `title`，并以 JSON 往返回归锁定“仓库根目录识别”“Go 版本”等中文标题，防止不可读文本进入所有测试报告消费者。 / Rejects unreadable registry titles before execution and locks Chinese title preservation through the JSON report contract.
+
+- **docs(maintenance)**: 完成 `verify-codex-kit.ps1` 退役 Phase 1，将 `AGENTS.md`、`CodingKit/README.md` 与仓库内 Agent Patch Kit 的活跃门禁引用迁移到正式 `test --profile Full --json` 入口；只读 Codex-Skills 子模块中的旧引用保留为上游升级事项。 / Completes retirement Phase 1 by migrating repository-owned gate references to the canonical Full profile while leaving read-only submodule references for an upstream upgrade.
+
+- **fix(specialty)**: `tools/specialty/verify-codex-kit.ps1` 从 v1.0.0 已移除的 `full` 兼容命令改为正式 `test --profile Full --json` 入口，并按 JSON `ok`/`errorKind` 契约判读退出码（ok→0、usage→2、其余→1）；按 PowerShell 边界"单独计划和验证"规则新增 [退役计划](docs/decisions/verify-codex-kit-retirement/RETIREMENT_PLAN.md)，并修正 KIT_LIFECYCLE_TEST_PROFILES 中该脚本仍是 Smoke 默认门禁的过时描述。 / Repairs the broken wrapper onto the canonical Full test entry with JSON-contract exit codes, adds the boundary-mandated retirement plan instead of deleting, and corrects stale profile-policy claims.
+
 ## [1.0.0] - 2026-07-18
 
 - **refactor(cli)**: 移除已到期的 `smoke`、`ci`、`full`、位置参数 test、`kit lifecycle`、MCP lifecycle 动词与 `status --all` 兼容路由；正式测试统一使用 `test --profile`，lifecycle 调用必须显式声明 `--scope`。 / Removes the expired compatibility routes and requires canonical test profiles plus explicit lifecycle scopes.

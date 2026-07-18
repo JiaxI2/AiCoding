@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 type Severity string
@@ -193,11 +194,15 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 	if err != nil {
 		return Report{}, err
 	}
+	testCases := Registry(cfg)
+	if err := validateRegistryTitles(testCases); err != nil {
+		return Report{}, err
+	}
 	start := time.Now()
 	if err := os.MkdirAll(filepath.Join(cfg.Out, "logs"), 0o755); err != nil {
 		return Report{}, fmt.Errorf("create output directory: %w", err)
 	}
-	results := runAll(ctx, cfg)
+	results := runAll(ctx, cfg, testCases)
 	summary := summarize(cfg, start, time.Now(), results)
 	testReport := Report{Summary: summary, Results: results}
 	if err := Write(cfg.Out, testReport); err != nil {
@@ -216,8 +221,7 @@ func ExitCode(testReport Report, err error) int {
 	return 0
 }
 
-func runAll(ctx context.Context, cfg Config) []Result {
-	tests := Registry(cfg)
+func runAll(ctx context.Context, cfg Config, tests []TestCase) []Result {
 	var results []Result
 	for _, tc := range tests {
 		if err := ctx.Err(); err != nil {
@@ -329,6 +333,18 @@ func Registry(cfg Config) []TestCase {
 
 		{ID: "REL-002", Category: "RELEASE_GATE", Title: "Release policy 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 	}
+}
+
+func validateRegistryTitles(testCases []TestCase) error {
+	for _, testCase := range testCases {
+		if !utf8.ValidString(testCase.Title) {
+			return fmt.Errorf("测试用例 %q 的 title 不是有效 UTF-8", testCase.ID)
+		}
+		if strings.ContainsRune(testCase.Title, utf8.RuneError) {
+			return fmt.Errorf("测试用例 %q 的 title 含 Unicode 替换字符 U+FFFD", testCase.ID)
+		}
+	}
+	return nil
 }
 
 func allProfiles() []Profile {

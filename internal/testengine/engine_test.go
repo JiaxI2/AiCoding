@@ -3,12 +3,14 @@ package testengine
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 )
 
 func TestNormalizeConfigAndRegistry(t *testing.T) {
@@ -68,6 +70,56 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 
 	if _, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: "nightly"}); err == nil {
 		t.Fatal("invalid profile must fail")
+	}
+}
+
+func TestRegistryTitlesPreserveReadableUTF8InJSON(t *testing.T) {
+	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCases := Registry(cfg)
+	if err := validateRegistryTitles(testCases); err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]string{
+		"ENV-001": "仓库根目录识别",
+		"ENV-002": "Go 版本",
+	}
+	results := make([]Result, 0, len(testCases))
+	for _, testCase := range testCases {
+		if !utf8.ValidString(testCase.Title) || strings.ContainsRune(testCase.Title, utf8.RuneError) {
+			t.Fatalf("%s title is not readable UTF-8: %q", testCase.ID, testCase.Title)
+		}
+		results = append(results, Result{ID: testCase.ID, Title: testCase.Title})
+	}
+
+	encoded, err := json.Marshal(Report{Results: results})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var decoded Report
+	if err := json.Unmarshal(encoded, &decoded); err != nil {
+		t.Fatal(err)
+	}
+	for _, result := range decoded.Results {
+		if expected, ok := want[result.ID]; ok && result.Title != expected {
+			t.Fatalf("%s title = %q, want %q", result.ID, result.Title, expected)
+		}
+		delete(want, result.ID)
+	}
+	if len(want) != 0 {
+		t.Fatalf("missing expected registry titles after JSON round trip: %#v", want)
+	}
+}
+
+func TestValidateRegistryTitlesRejectsUnreadableText(t *testing.T) {
+	for _, title := range []string{"Go \uFFFD汾", string([]byte{'G', 'o', ' ', 0xff})} {
+		err := validateRegistryTitles([]TestCase{{ID: "ENV-002", Title: title}})
+		if err == nil {
+			t.Fatalf("validateRegistryTitles(%q) succeeded, want error", title)
+		}
 	}
 }
 

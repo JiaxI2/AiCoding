@@ -138,7 +138,7 @@ To upgrade the Codex kit:
 2. Confirm that commit contains a fully generated and validated plugin.
 3. Update `CodingKit/agents/skills` to the approved commit.
 4. Stage only the submodule gitlink and intended AiCoding changes.
-5. Run `verify-codex-kit`.
+5. Run `bin\aicoding.exe test --profile Full --json`.
 6. Run install/update dry-runs.
 7. Run status JSON validation.
 8. Run Markdown, governance, and Git diff checks.
@@ -154,7 +154,7 @@ Before considering AiCoding work complete, run the repository-provided equivalen
 - `doctor --all`;
 - `verify --profile Smoke`;
 - `test --profile Smoke|Full|Release` as required by risk;
-- `verify-codex-kit`;
+- `bin\aicoding.exe test --profile Full --json`;
 - install dry-run;
 - status JSON;
 - update dry-run;
