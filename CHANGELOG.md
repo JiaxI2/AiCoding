@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(skills)**: 将经三重门禁验证（`aicoding-skill.ps1 verify`、`quick_validate`、`skill_gate`）与架构审计（八动词编排、命令真实性实测、分域 rollback、获取/激活分离）的用户 Skill `aicoding-upgrade-train`（升级列车）与 `aicoding-environment-rebuild`（环境重建）从 Draft 安装进 RepoLocal（`.agents/skills/`），进入版本管理并可被 agent 发现；adopt 进 Kit 留待真实试用反馈。 / Installs the gate-verified and architecture-audited user skills aicoding-upgrade-train and aicoding-environment-rebuild from draft into the version-controlled repo-local runtime path; Kit adoption is deferred pending real usage.
+
 - **docs(architecture)**: 记录契约冻结与获取/激活边界的独立 Phase 0–5 验收证据，将架构文档状态收敛为 `Accepted and Frozen`，并将实施计划标记为已批准。 / Records the independent Phase 0–5 acceptance evidence for the contract-freeze and acquisition/activation boundary, freezes the accepted architecture contract, and marks the implementation plan approved.
 
 - **feat(governance)**: 新增契约冻结与获取/激活分离边界，通过 `activation manifests URL-free` 和 `cloneable sources registry` 两条依赖治理检查阻断激活 manifest URL 与越界可克隆源。 / Adds the contract-freeze and acquisition/activation boundary with two dependency gates for activation URLs and cloneable-source ownership.
