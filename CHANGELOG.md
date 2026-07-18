@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **fix(specialty)**: `tools/specialty/verify-codex-kit.ps1` 从 v1.0.0 已移除的 `full` 兼容命令改为正式 `test --profile Full --json` 入口，并按 JSON `ok`/`errorKind` 契约判读退出码（ok→0、usage→2、其余→1）；按 PowerShell 边界"单独计划和验证"规则新增 [退役计划](docs/decisions/verify-codex-kit-retirement/RETIREMENT_PLAN.md)，并修正 KIT_LIFECYCLE_TEST_PROFILES 中该脚本仍是 Smoke 默认门禁的过时描述。 / Repairs the broken wrapper onto the canonical Full test entry with JSON-contract exit codes, adds the boundary-mandated retirement plan instead of deleting, and corrects stale profile-policy claims.
+
 ## [1.0.0] - 2026-07-18
 
 - **refactor(cli)**: 移除已到期的 `smoke`、`ci`、`full`、位置参数 test、`kit lifecycle`、MCP lifecycle 动词与 `status --all` 兼容路由；正式测试统一使用 `test --profile`，lifecycle 调用必须显式声明 `--scope`。 / Removes the expired compatibility routes and requires canonical test profiles plus explicit lifecycle scopes.

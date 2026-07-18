@@ -4,7 +4,7 @@ Kit Lifecycle v2 uses three explicit validation profiles. Default repository gat
 
 ## Smoke
 
-Smoke is the default gate for development, PR checks, and `verify-codex-kit.ps1`.
+Smoke is the default gate for development and PR checks.
 
 Smoke must:
 
@@ -26,7 +26,7 @@ Smoke must not:
 Recommended commands:
 
 ```powershell
-pwsh tools/specialty/verify-codex-kit.ps1
+bin\aicoding.exe test --profile Smoke --json
 bin\aicoding.exe kit verify --all --profile Smoke --json
 bin/aicoding.exe fresh-clone --profile Smoke --json
 ```
@@ -43,7 +43,6 @@ Full may:
 
 Full must not:
 
-- be called by default `verify-codex-kit.ps1`;
 - run release bundle restore checks;
 - write release package artifacts unless the invoked command explicitly does so.
 
@@ -52,6 +51,10 @@ Recommended command:
 ```powershell
 bin/aicoding.exe test --profile Full --json
 ```
+
+`tools/specialty/verify-codex-kit.ps1` is a compatibility wrapper that forwards to this
+Full entry; its retirement is tracked in
+[docs/decisions/verify-codex-kit-retirement/RETIREMENT_PLAN.md](../decisions/verify-codex-kit-retirement/RETIREMENT_PLAN.md).
 
 ## Release
 
@@ -68,7 +71,6 @@ Release may:
 Release must not:
 
 - be called by PR/default workflows;
-- be called by default `verify-codex-kit.ps1`;
 - commit generated package artifacts unless they are intentionally published release artifacts.
 
 Recommended release commands:
