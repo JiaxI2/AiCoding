@@ -1,6 +1,6 @@
 # Implementation Plan: Contract Freeze And Acquisition Boundary
 
-Plan Status: Proposed（用户批准后改为 Approved）
+Plan Status: Approved
 
 目标：落地 [FREEZE_AND_ACQUISITION_BOUNDARY.md](../../architecture/FREEZE_AND_ACQUISITION_BOUNDARY.md)。
 量级明显小于 Git 复用边界：一份新架构文档 + 两条 governance check + 契约测试，

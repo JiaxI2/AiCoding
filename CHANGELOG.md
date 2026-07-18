@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 记录契约冻结与获取/激活边界的独立 Phase 0–5 验收证据，将架构文档状态收敛为 `Accepted and Frozen`，并将实施计划标记为已批准。 / Records the independent Phase 0–5 acceptance evidence for the contract-freeze and acquisition/activation boundary, freezes the accepted architecture contract, and marks the implementation plan approved.
+
 - **feat(governance)**: 新增契约冻结与获取/激活分离边界，通过 `activation manifests URL-free` 和 `cloneable sources registry` 两条依赖治理检查阻断激活 manifest URL 与越界可克隆源。 / Adds the contract-freeze and acquisition/activation boundary with two dependency gates for activation URLs and cloneable-source ownership.
 
 ## [1.0.0] - 2026-07-18

@@ -57,4 +57,21 @@ bin\aicoding.exe test --profile Full --json
 
 签收记录：
 
-- （待填）
+- 2026-07-18 验收通过（PASS）。基线 200183d（v1.0.0），实现提交 116dfbf（13 文件，
+  全部在计划清单内；registry/runner/report/CLI catalog 与冻结文档零契约改动）。
+  验收会话（Claude）独立执行 Phase 0–5：
+  静态审查通过（allowlist 恰为两项获取登记面；正则按 T1 审计收紧为全 URL 锚定，
+  不误伤裸 `.git` 目录名；两 check 名与文档 §4 逐词一致）；
+  门禁复跑全绿——`go build` OK、governance/cli 包测试 OK、
+  `governance dependencies` 16/16 checks（含两条新 check）532ms、
+  `docsync all` ok、Smoke 38 PASS/0 FAIL 14.1s、Full ok 101.7s
+  （实现者附加 Release 53 PASS/0 FAIL）；
+  突变验证 M1（visio-mcp env 注入 URL→URL-free 单杀，JSON path 精确定位）、
+  M2（codex-kit 注入 clone URL→双杀）、M3（kits 新文件注入→双杀）均按预期失败，
+  还原后全绿无残留；
+  行为等价：`lifecycle status --scope all`、`lifecycle plan --scope mcp`（本地 dry-run）
+  ok；离线断网抽查未以物理断网执行，本地 dry-run 路径已验证，与 §3.4
+  "手工抽查非门禁"定位一致；
+  文档收尾：CHANGELOG 条目、handbook §8 地图行、COMMANDS/GLOBAL_TEST_PLAN
+  交叉引用齐备。
+  FREEZE_AND_ACQUISITION_BOUNDARY.md 自本记录起 Accepted and Frozen。
