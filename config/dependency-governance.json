@@ -172,7 +172,8 @@
         "platformAgnostic": false,
         "roots": [],
         "dependsOn": [
-          "mcp:visio-mcp"
+          "mcp:visio-mcp",
+          "mcp:ppt-mcp"
         ]
       },
       {
@@ -236,6 +237,18 @@
           "runtime:microsoft-visio",
           "runtime:mcp"
         ]
+      },
+      {
+        "id": "ppt-mcp",
+        "layer": "capability",
+        "platformAgnostic": true,
+        "roots": [
+          "CodingKit/tools/windows-automation/ppt-mcp"
+        ],
+        "dependsOn": [
+          "runtime:microsoft-powerpoint",
+          "runtime:mcp"
+        ]
       }
     ]
   },
@@ -260,6 +273,10 @@
     },
     {
       "id": "runtime:microsoft-visio",
+      "layer": "runtime"
+    },
+    {
+      "id": "runtime:microsoft-powerpoint",
       "layer": "runtime"
     }
   ],

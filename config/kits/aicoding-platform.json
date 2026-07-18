@@ -47,6 +47,7 @@
         "config/schemas/dependency-governance.schema.json",
         "config/mcp-registry.json",
         "config/mcp/components/visio-mcp.json",
+        "config/mcp/components/ppt-mcp.json",
         "config/schemas/mcp-registry.schema.json",
         "config/schemas/mcp-component.schema.json",
         "CodingKit/agents/skills/visio-diagram/SKILL.md",

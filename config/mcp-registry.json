@@ -7,6 +7,12 @@
       "enabled": true,
       "order": 10,
       "manifest": "config/mcp/components/visio-mcp.json"
+    },
+    {
+      "id": "ppt-mcp",
+      "enabled": true,
+      "order": 20,
+      "manifest": "config/mcp/components/ppt-mcp.json"
     }
   ]
 }

@@ -13,9 +13,9 @@ AiCoding platform
 
 依赖只允许由高层指向同层或低层：
 
-- `config/mcp-registry.json` 和 `config/mcp/components/*.json` 可以绑定 `visio-mcp`；
+- `config/mcp-registry.json` 和 `config/mcp/components/*.json` 可以绑定 `visio-mcp` 与 `ppt-mcp`；
 - `internal/mcpcontrol` 可以读取组件 manifest、管理运行环境并探测 Codex 中已配置的 MCP；
-- `visio-mcp` 的 package、module、service、schema、环境变量、示例和测试保持领域命名，不包含 `aicoding-*`、`AICODING_*` 或其他上层产品身份；
+- 两个 capability 的 package、module、service、schema、环境变量、示例和测试保持领域命名，不包含 `aicoding-*`、`AICODING_*` 或其他上层产品身份；
 - 上层 Skill 可以编排 MCP tools，但 MCP 不注册工作流 prompt，也不依赖 Skill 名称。
 
 可执行边界由 `config/dependency-governance.json` 定义，并通过以下命令验证：
@@ -34,6 +34,7 @@ bin\aicoding.exe governance dependencies --json
 | Go package | `internal/mcpcontrol` | inventory、status、doctor、lifecycle 和 protocol probe |
 | CLI | `bin\aicoding.exe mcp ...` | 对用户暴露稳定的 Go 控制面 |
 | Capability | `CodingKit/tools/windows-automation/visio-mcp` | 提供通用 Visio tools、Diagram IR schema 和渲染实现 |
+| Capability | `CodingKit/tools/windows-automation/ppt-mcp` | 提供通用 PowerPoint COM tools；源码由本仓库私有维护，不跟随 derived-from 仓库 |
 
 ## 控制面与工作流的分离
 
@@ -86,17 +87,20 @@ Go 控制面按 component manifest 执行以下流程：
 - 不把 bearer token、headers 或环境变量 secret 写入报告；
 - `--all` 在验证所有已启用受管 component 的同时自动包含当前配置的 MCP probe。
 
-`prompts/list` 只用于验证第三方 MCP 的协议兼容性，不表示 Visio capability 应拥有工作流 prompt。受管 `visio-mcp` 的预期 prompt 数量为零。
+`prompts/list` 只用于验证第三方 MCP 的协议兼容性，不表示 Office capability 应拥有工作流 prompt。受管 `visio-mcp` 与 `ppt-mcp` 的预期 prompt 数量均为零。
 
 ## 验证 Profile
 
-| Profile | Visio component 范围 | 副作用边界 |
+| Profile | Component 范围 | 副作用边界 |
 |---|---|---|
-| Smoke | Python tests、mock renderer、协议与布局质量回归 | 不要求 Visio，不启动可见 COM |
-| Full | Smoke 加 mock benchmark | 不要求 Visio，不启动可见 COM |
-| Release | Full 加真实可见 Visio COM smoke 与 VSDX/PNG/SVG/PDF 导出 | 仅 Windows 桌面环境，显式执行 |
+| Visio Smoke | Python tests、mock renderer、协议与布局质量回归 | 不要求 Visio，不启动可见 COM |
+| Visio Full | Smoke 加 mock benchmark | 不要求 Visio，不启动可见 COM |
+| Visio Release | Full 加真实可见 Visio COM smoke 与 VSDX/PNG/SVG/PDF 导出 | 仅 Windows 桌面环境，显式执行 |
+| PowerPoint Smoke | vendored pytest mock 回归 | 不启动可见 PowerPoint COM |
+| PowerPoint Full | 当前与 Smoke 相同；组件没有独立 benchmark | 不启动可见 PowerPoint COM |
+| PowerPoint Release | pytest 加真实可见 PowerPoint COM round-trip 与 PPTX 输出 | 仅 Windows 桌面环境，显式执行；先关闭用户 PowerPoint 会话 |
 
-Release 必须确认导出文件存在、质量/检查结果有效，并且没有遗留孤立 `VISIO.EXE`。
+Release 必须确认输出文件存在、检查结果有效，并且没有遗留孤立 `VISIO.EXE` 或 `POWERPNT.EXE`。
 
 ## 框图质量契约
 

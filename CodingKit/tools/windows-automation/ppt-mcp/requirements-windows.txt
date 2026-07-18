@@ -1,0 +1,8 @@
+# Runtime dependencies mirror pyproject.toml so lifecycle can provision them
+# before the editable package install.
+mcp[cli]>=1.0.0
+pywin32>=306
+pydantic>=2.0.0
+
+# Smoke and Full verification run in the same isolated environment.
+pytest>=9.0.2
