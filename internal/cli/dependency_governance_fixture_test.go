@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestGovernanceDependenciesReportsGitProcessBoundaryChecks(t *testing.T) {
+func TestGovernanceDependenciesReportsBoundaryChecks(t *testing.T) {
 	repo := t.TempDir()
 	writeGoControlFixture(t, repo)
 
@@ -17,7 +17,12 @@ func TestGovernanceDependenciesReportsGitProcessBoundaryChecks(t *testing.T) {
 	if code != ExitSuccess {
 		t.Fatalf("governance dependencies failed: code=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
 	}
-	for _, check := range []string{"git process ownership", "gitx importer allowlist"} {
+	for _, check := range []string{
+		"activation manifests URL-free",
+		"cloneable sources registry",
+		"git process ownership",
+		"gitx importer allowlist",
+	} {
 		if !strings.Contains(stdout.String(), `"name": "`+check+`"`) {
 			t.Fatalf("governance dependencies JSON is missing %q: %s", check, stdout.String())
 		}
@@ -40,6 +45,7 @@ readme_version_surface = "badges-only"
 version_badge_policy = "config/dependency-governance.json#versionVisibility.readmeBadges"
 `)
 	mustWrite(t, filepath.Join(repo, "config", "schemas", "dependency-governance.schema.json"), "{}\n")
+	mustWrite(t, filepath.Join(repo, "config", "kits", "release-governance-overlay-kit.json"), "{}\n")
 	mustWrite(t, filepath.Join(repo, "config", "dependency-mcp-registry.json"), `{"components":[]}`+"\n")
 	mustWrite(t, filepath.Join(repo, "config", "dependency-governance.json"), `{
   "schemaVersion": 1,
@@ -85,6 +91,17 @@ version_badge_policy = "config/dependency-governance.json#versionVisibility.read
     "standaloneForbiddenPrefixes": ["aicoding-"]
   },
   "externalDependencies": [],
+  "acquisitionBoundary": {
+    "activationUrlFreeFiles": [
+      "config/kit-registry.json",
+      "config/kits",
+      "config/dependency-mcp-registry.json",
+      "config/codex-kit.json"
+    ],
+    "cloneableSourcePattern": "(?i)^(((https?|ssh|git)://[^\\s]+\\.git)|(git@[^\\s:]+:[^\\s]+\\.git)|(https?://(www\\.)?(github\\.com|gitcode\\.[a-z]+)/[^/]+/[^/]+/?))$",
+    "acquisitionRegistryFiles": [".gitmodules", "config/skill-sources.json"],
+    "scanRoots": ["config"]
+  },
   "gitProcessBoundary": {
     "ownerPackage": "internal/gitx",
     "scanRoots": ["cmd", "internal"],

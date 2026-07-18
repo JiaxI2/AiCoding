@@ -32,6 +32,7 @@ type dependencyPolicy struct {
 	MCPRegistry          dependencyRegistry    `json:"mcpRegistry"`
 	Skills               dependencySkillPolicy `json:"skills"`
 	ExternalDependencies []externalDependency  `json:"externalDependencies"`
+	AcquisitionBoundary  acquisitionBoundary   `json:"acquisitionBoundary"`
 	GitProcessBoundary   gitProcessBoundary    `json:"gitProcessBoundary"`
 	GoPackageBoundaries  []goPackageBoundary   `json:"goPackageBoundaries"`
 }
@@ -120,6 +121,18 @@ type gitProcessBoundary struct {
 	OwnerPackage     string   `json:"ownerPackage"`
 	ScanRoots        []string `json:"scanRoots"`
 	AllowedImporters []string `json:"allowedImporters"`
+}
+
+type acquisitionBoundary struct {
+	ActivationURLFreeFiles   []string `json:"activationUrlFreeFiles"`
+	CloneableSourcePattern   string   `json:"cloneableSourcePattern"`
+	AcquisitionRegistryFiles []string `json:"acquisitionRegistryFiles"`
+	ScanRoots                []string `json:"scanRoots"`
+}
+
+type dependencyJSONString struct {
+	Path  string
+	Value string
 }
 
 type dependencyRegistryFile struct {
@@ -220,6 +233,8 @@ func CheckDependencies(repo string) DependencyReport {
 	report.addDependencyCheck("Skill naming and exposure", checkSkillDependencyPolicy(repo, policy, layers), nil)
 	report.addDependencyCheck("asset identity version opacity", checkAssetVersionOpacity(repo, policy), nil)
 	report.addDependencyCheck("README version badge authority", checkReadmeVersionBadges(repo, policy), nil)
+	report.addDependencyCheck("activation manifests URL-free", checkActivationManifestsURLFree(repo, policy.AcquisitionBoundary), nil)
+	report.addDependencyCheck("cloneable sources registry", checkCloneableSourcesRegistry(repo, policy.AcquisitionBoundary), nil)
 	report.addDependencyCheck("orthogonal Go package boundaries", checkGoPackageBoundaries(repo, policy.GoPackageBoundaries), nil)
 	report.addDependencyCheck("git process ownership", checkGitProcessOwnership(repo, policy.GitProcessBoundary), nil)
 	report.addDependencyCheck("gitx importer allowlist", checkGitxImporterAllowlist(repo, policy.GitProcessBoundary), nil)
@@ -501,6 +516,217 @@ func loadDependencyPolicy(repo string) (dependencyPolicy, error) {
 		return policy, fmt.Errorf("unsupported dependency direction: %s", policy.Direction)
 	}
 	return policy, nil
+}
+
+func checkActivationManifestsURLFree(repo string, boundary acquisitionBoundary) []string {
+	if errs := validateAcquisitionBoundary(boundary); len(errs) != 0 {
+		return errs
+	}
+	files, errs := activationJSONFiles(repo, boundary.ActivationURLFreeFiles)
+	for _, rel := range files {
+		values, err := loadDependencyJSONStrings(platform.RepoPath(repo, rel))
+		if err != nil {
+			errs = append(errs, rel+": "+err.Error())
+			continue
+		}
+		for _, value := range values {
+			if strings.Contains(value.Value, "://") {
+				errs = append(errs, rel+" "+value.Path+" contains URL")
+			}
+		}
+	}
+	return errs
+}
+
+func checkCloneableSourcesRegistry(repo string, boundary acquisitionBoundary) []string {
+	if errs := validateAcquisitionBoundary(boundary); len(errs) != 0 {
+		return errs
+	}
+	pattern, err := regexp.Compile(boundary.CloneableSourcePattern)
+	if err != nil {
+		return []string{"invalid acquisitionBoundary cloneableSourcePattern: " + err.Error()}
+	}
+	allowed := make(map[string]struct{}, len(boundary.AcquisitionRegistryFiles))
+	errList := []string{}
+	for _, rel := range boundary.AcquisitionRegistryFiles {
+		normalized, normalizeErr := normalizeDependencyPath(rel)
+		if normalizeErr != nil {
+			errList = append(errList, "acquisitionBoundary acquisition registry path "+normalizeErr.Error())
+			continue
+		}
+		allowed[normalized] = struct{}{}
+	}
+	for _, scanRoot := range boundary.ScanRoots {
+		normalizedRoot, normalizeErr := normalizeDependencyPath(scanRoot)
+		if normalizeErr != nil {
+			errList = append(errList, "acquisitionBoundary scan root "+normalizeErr.Error())
+			continue
+		}
+		root := platform.RepoPath(repo, normalizedRoot)
+		if !platform.IsDir(root) {
+			errList = append(errList, "acquisitionBoundary scan root is missing: "+normalizedRoot)
+			continue
+		}
+		walkErr := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				return walkErr
+			}
+			if entry.IsDir() || !strings.EqualFold(filepath.Ext(path), ".json") {
+				return nil
+			}
+			relFile, relErr := filepath.Rel(repo, path)
+			if relErr != nil {
+				return relErr
+			}
+			relFile = filepath.ToSlash(relFile)
+			values, loadErr := loadDependencyJSONStrings(path)
+			if loadErr != nil {
+				errList = append(errList, relFile+": "+loadErr.Error())
+				return nil
+			}
+			for _, value := range values {
+				if !pattern.MatchString(value.Value) {
+					continue
+				}
+				if _, ok := allowed[relFile]; !ok {
+					errList = append(errList, relFile+" "+value.Path+" contains cloneable source outside acquisition registry")
+				}
+			}
+			return nil
+		})
+		if walkErr != nil {
+			errList = append(errList, "cannot inspect acquisitionBoundary scan root "+normalizedRoot+": "+walkErr.Error())
+		}
+	}
+	gitmodules := ".gitmodules"
+	if platform.IsFile(platform.RepoPath(repo, gitmodules)) {
+		fileErrors := checkGitmodulesCloneableSources(platform.RepoPath(repo, gitmodules), gitmodules, pattern, allowed)
+		errList = append(errList, fileErrors...)
+	}
+	return errList
+}
+
+func validateAcquisitionBoundary(boundary acquisitionBoundary) []string {
+	if len(boundary.ActivationURLFreeFiles) == 0 || strings.TrimSpace(boundary.CloneableSourcePattern) == "" || len(boundary.AcquisitionRegistryFiles) == 0 || len(boundary.ScanRoots) == 0 {
+		return []string{"acquisitionBoundary policy is missing or incomplete"}
+	}
+	return nil
+}
+
+func activationJSONFiles(repo string, configured []string) ([]string, []string) {
+	files := []string{}
+	errs := []string{}
+	for _, rel := range configured {
+		normalized, err := normalizeDependencyPath(rel)
+		if err != nil {
+			errs = append(errs, "activationUrlFreeFiles path "+err.Error())
+			continue
+		}
+		path := platform.RepoPath(repo, normalized)
+		info, statErr := os.Stat(path)
+		if statErr != nil {
+			errs = append(errs, "activationUrlFreeFiles path is missing: "+normalized)
+			continue
+		}
+		if !info.IsDir() {
+			if !strings.EqualFold(filepath.Ext(path), ".json") {
+				errs = append(errs, "activationUrlFreeFiles entry is not JSON: "+normalized)
+				continue
+			}
+			files = append(files, normalized)
+			continue
+		}
+		entries, readErr := os.ReadDir(path)
+		if readErr != nil {
+			errs = append(errs, "cannot read activationUrlFreeFiles directory "+normalized+": "+readErr.Error())
+			continue
+		}
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".json") {
+				continue
+			}
+			files = append(files, filepath.ToSlash(filepath.Join(normalized, entry.Name())))
+		}
+	}
+	sort.Strings(files)
+	return files, errs
+}
+
+func normalizeDependencyPath(rel string) (string, error) {
+	trimmed := strings.TrimSpace(rel)
+	cleaned := filepath.Clean(filepath.FromSlash(trimmed))
+	normalized := filepath.ToSlash(cleaned)
+	if trimmed == "" || normalized == "." || filepath.IsAbs(cleaned) || normalized == ".." || strings.HasPrefix(normalized, "../") {
+		return "", fmt.Errorf("must stay inside the repository: %s", rel)
+	}
+	return normalized, nil
+}
+
+func loadDependencyJSONStrings(path string) ([]dependencyJSONString, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var value interface{}
+	if err := json.Unmarshal(data, &value); err != nil {
+		return nil, err
+	}
+	values := []dependencyJSONString{}
+	collectDependencyJSONStrings(value, "$", &values)
+	return values, nil
+}
+
+func collectDependencyJSONStrings(value interface{}, path string, values *[]dependencyJSONString) {
+	switch typed := value.(type) {
+	case string:
+		*values = append(*values, dependencyJSONString{Path: path, Value: typed})
+	case []interface{}:
+		for index, item := range typed {
+			collectDependencyJSONStrings(item, fmt.Sprintf("%s[%d]", path, index), values)
+		}
+	case map[string]interface{}:
+		keys := make([]string, 0, len(typed))
+		for key := range typed {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		for _, key := range keys {
+			collectDependencyJSONStrings(typed[key], path+"["+strconv.Quote(key)+"]", values)
+		}
+	}
+}
+
+func checkGitmodulesCloneableSources(path, rel string, pattern *regexp.Regexp, allowed map[string]struct{}) []string {
+	file, err := os.Open(path)
+	if err != nil {
+		return []string{rel + ": " + err.Error()}
+	}
+	defer file.Close()
+	errs := []string{}
+	scanner := bufio.NewScanner(file)
+	line := 0
+	for scanner.Scan() {
+		line++
+		text := strings.TrimSpace(scanner.Text())
+		if text == "" || strings.HasPrefix(text, "#") || strings.HasPrefix(text, ";") {
+			continue
+		}
+		parts := strings.SplitN(text, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		value := strings.TrimSpace(parts[1])
+		if !pattern.MatchString(value) {
+			continue
+		}
+		if _, ok := allowed[rel]; !ok {
+			errs = append(errs, fmt.Sprintf("%s line %d contains cloneable source outside acquisition registry", rel, line))
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		errs = append(errs, rel+": "+err.Error())
+	}
+	return errs
 }
 
 func dependencyLayers(policy dependencyPolicy) (map[string]int, []string) {

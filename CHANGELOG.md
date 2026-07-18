@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 记录契约冻结与获取/激活边界的独立 Phase 0–5 验收证据，将架构文档状态收敛为 `Accepted and Frozen`，并将实施计划标记为已批准。 / Records the independent Phase 0–5 acceptance evidence for the contract-freeze and acquisition/activation boundary, freezes the accepted architecture contract, and marks the implementation plan approved.
+
+- **feat(governance)**: 新增契约冻结与获取/激活分离边界，通过 `activation manifests URL-free` 和 `cloneable sources registry` 两条依赖治理检查阻断激活 manifest URL 与越界可克隆源。 / Adds the contract-freeze and acquisition/activation boundary with two dependency gates for activation URLs and cloneable-source ownership.
+
 - **fix(testengine)**: 在执行与写报告前拒绝无效 UTF-8 或含 `U+FFFD` 的 Registry `title`，并以 JSON 往返回归锁定“仓库根目录识别”“Go 版本”等中文标题，防止不可读文本进入所有测试报告消费者。 / Rejects unreadable registry titles before execution and locks Chinese title preservation through the JSON report contract.
 
 - **docs(maintenance)**: 完成 `verify-codex-kit.ps1` 退役 Phase 1，将 `AGENTS.md`、`CodingKit/README.md` 与仓库内 Agent Patch Kit 的活跃门禁引用迁移到正式 `test --profile Full --json` 入口；只读 Codex-Skills 子模块中的旧引用保留为上游升级事项。 / Completes retirement Phase 1 by migrating repository-owned gate references to the canonical Full profile while leaving read-only submodule references for an upstream upgrade.
