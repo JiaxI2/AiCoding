@@ -18,15 +18,12 @@ const (
 	CommandVersion    CommandID = "version"
 	CommandHook       CommandID = "hook"
 	CommandBootstrap  CommandID = "bootstrap"
-	CommandSmoke      CommandID = "smoke"
-	CommandCI         CommandID = "ci"
 	CommandTest       CommandID = "test"
 	CommandDocSync    CommandID = "docsync"
 	CommandSkill      CommandID = "skill"
 	CommandLifecycle  CommandID = "lifecycle"
 	CommandExport     CommandID = "export"
 	CommandFreshClone CommandID = "fresh-clone"
-	CommandFull       CommandID = "full"
 	CommandCache      CommandID = "cache"
 	CommandCodex      CommandID = "codex"
 	CommandMCP        CommandID = "mcp"
@@ -35,7 +32,6 @@ const (
 	CommandKit        CommandID = "kit"
 	CommandDoctor     CommandID = "doctor"
 	CommandVerify     CommandID = "verify"
-	CommandStatus     CommandID = "status"
 	CommandGovernance CommandID = "governance"
 	CommandPowerShell CommandID = "powershell"
 )
@@ -50,10 +46,9 @@ type CommandDescriptor struct {
 type HelpSectionID string
 
 const (
-	HelpUsage         HelpSectionID = "usage"
-	HelpFormal        HelpSectionID = "formal"
-	HelpCompatibility HelpSectionID = "compatibility"
-	HelpDomain        HelpSectionID = "domain"
+	HelpUsage  HelpSectionID = "usage"
+	HelpFormal HelpSectionID = "formal"
+	HelpDomain HelpSectionID = "domain"
 )
 
 type HelpSection struct {
@@ -108,15 +103,12 @@ var commands = mustCommandCatalog(
 		{descriptor: CommandDescriptor{ID: CommandVersion, Name: "version", Aliases: []string{"--version", "-v"}}, direct: directVersion},
 		{descriptor: CommandDescriptor{ID: CommandHook, Name: "hook", RequiresSubcommand: true}, handler: runHook},
 		{descriptor: CommandDescriptor{ID: CommandBootstrap, Name: "bootstrap"}, handler: runBootstrap},
-		{descriptor: CommandDescriptor{ID: CommandSmoke, Name: "smoke"}, handler: runSmoke},
-		{descriptor: CommandDescriptor{ID: CommandCI, Name: "ci"}, handler: runCI},
 		{descriptor: CommandDescriptor{ID: CommandTest, Name: "test"}, handler: runTest},
 		{descriptor: CommandDescriptor{ID: CommandDocSync, Name: "docsync", RequiresSubcommand: true}, handler: runDocSync},
 		{descriptor: CommandDescriptor{ID: CommandSkill, Name: "skill", RequiresSubcommand: true}, handler: runSkill},
 		{descriptor: CommandDescriptor{ID: CommandLifecycle, Name: "lifecycle", RequiresSubcommand: true}, handler: runLifecycle},
 		{descriptor: CommandDescriptor{ID: CommandExport, Name: "export"}, handler: runExport},
 		{descriptor: CommandDescriptor{ID: CommandFreshClone, Name: "fresh-clone"}, handler: runFreshClone},
-		{descriptor: CommandDescriptor{ID: CommandFull, Name: "full"}, handler: runFull},
 		{descriptor: CommandDescriptor{ID: CommandCache, Name: "cache", RequiresSubcommand: true}, handler: runCache},
 		{descriptor: CommandDescriptor{ID: CommandCodex, Name: "codex", RequiresSubcommand: true}, handler: runCodexUsage},
 		{descriptor: CommandDescriptor{ID: CommandMCP, Name: "mcp", RequiresSubcommand: true}, handler: runMCP},
@@ -125,14 +117,12 @@ var commands = mustCommandCatalog(
 		{descriptor: CommandDescriptor{ID: CommandKit, Name: "kit", RequiresSubcommand: true}, handler: runKit},
 		{descriptor: CommandDescriptor{ID: CommandDoctor, Name: "doctor", RequiresSubcommand: true}, handler: runDoctor},
 		{descriptor: CommandDescriptor{ID: CommandVerify, Name: "verify", RequiresSubcommand: true}, handler: runVerify},
-		{descriptor: CommandDescriptor{ID: CommandStatus, Name: "status"}, handler: runStatus},
 		{descriptor: CommandDescriptor{ID: CommandGovernance, Name: "governance", RequiresSubcommand: true}, handler: runGovernance},
 		{descriptor: CommandDescriptor{ID: CommandPowerShell, Name: "powershell", RequiresSubcommand: true}, handler: runPowerShell},
 	},
 	[]HelpSection{
 		{ID: HelpUsage, Title: "Usage:"},
 		{ID: HelpFormal, Title: "Formal product workflow:"},
-		{ID: HelpCompatibility, Title: "Compatibility commands (emit CLI_DEPRECATED):"},
 		{ID: HelpDomain, Title: "Domain and diagnostic commands:"},
 	},
 	[]HelpForm{
@@ -143,27 +133,19 @@ var commands = mustCommandCatalog(
 		{Command: CommandBootstrap, Section: HelpUsage, Usage: "aicoding bootstrap [--repo-root PATH] [--json]"},
 
 		{Command: CommandTest, Section: HelpFormal, Usage: "aicoding test --profile Smoke|Full|Release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]"},
-		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle plan --action install|update|uninstall --all [--repo-root PATH] [--json]"},
-		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle install|update|uninstall --all [--repo-root PATH] [--json]"},
+		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle plan --action install|update|uninstall --scope kit --all [--repo-root PATH] [--json]"},
+		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle install|update|uninstall --scope kit --all [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle plan --action install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--migrate-unmanaged] [--codex-config PATH] [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle plan --action uninstall --scope all [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--migrate-unmanaged] [--codex-config PATH] [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle uninstall --scope all [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle status|doctor --scope all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle verify --scope all --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--repo-root PATH] [--json]"},
-		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle rollback --last [--repo-root PATH] [--json]"},
+		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle rollback --scope kit --last [--repo-root PATH] [--json]"},
 		{Command: CommandDoctor, Section: HelpFormal, Usage: "aicoding doctor --all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
 		{Command: CommandVerify, Section: HelpFormal, Usage: "aicoding verify --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
 		{Command: CommandRelease, Section: HelpFormal, Usage: "aicoding release verify [--repo-root PATH] [--json]"},
 		{Command: CommandRelease, Section: HelpFormal, Usage: "aicoding release gate [--repo-root PATH] [--json]"},
-
-		{Command: CommandSmoke, Section: HelpCompatibility, Usage: "aicoding smoke [--repo-root PATH] [--json]"},
-		{Command: CommandCI, Section: HelpCompatibility, Usage: "aicoding ci --profile Smoke|Full|Release [--repo-root PATH] [--json]"},
-		{Command: CommandTest, Section: HelpCompatibility, Usage: "aicoding test full|release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]"},
-		{Command: CommandFull, Section: HelpCompatibility, Usage: "aicoding full [--repo-root PATH] [--json]"},
-		{Command: CommandKit, Section: HelpCompatibility, Usage: "aicoding kit lifecycle --action install|update|uninstall|status --all [--dry-run] [--repo-root PATH] [--json]"},
-		{Command: CommandMCP, Section: HelpCompatibility, Usage: "aicoding mcp install|update|uninstall COMPONENT|--all [--dry-run] [--codex-config PATH] [--repo-root PATH] [--json]"},
-		{Command: CommandStatus, Section: HelpCompatibility, Usage: "aicoding status --all [--repo-root PATH] [--json]"},
 
 		{Command: CommandTest, Section: HelpDomain, Usage: "aicoding test latest [--repo-root PATH] [--json]"},
 		{Command: CommandDocSync, Section: HelpDomain, Usage: "aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]"},

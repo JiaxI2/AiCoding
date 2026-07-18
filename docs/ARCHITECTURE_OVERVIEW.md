@@ -47,20 +47,19 @@ Go CLI 是唯一正式产品控制面，提供稳定 `report.Result` JSON 与共
 - `release verify` 和 `release gate`。
 
 Hook、governance、DocSync、Skill、MCP、export、fresh-clone、C99 和专项 doctor/verify
-命令属于领域子命令；旧 `smoke`、`ci`、`full`、位置参数 test、`kit lifecycle`、
-MCP lifecycle 动词和 `status --all` 只保留一个版本并输出 `CLI_DEPRECATED`。
+命令属于领域子命令。旧 `smoke`、`ci`、`full`、位置参数 test、`kit lifecycle`、
+MCP lifecycle 动词和 `status --all` 的兼容期已结束，不再由 catalog 或 router 暴露。
 
 ## Single Implementation Authorities
 
 ```text
-internal/cli        -> 参数、帮助、兼容路由、退出码
+internal/cli        -> typed command catalog、参数/帮助、handler routing 与退出契约
 internal/lifecycle  -> 静态 adapter catalog、lifecycle ExecutionPlan 与结果聚合
 internal/repohealth -> product doctor / verify 的确定性检查组合
 internal/testengine -> 唯一 Smoke / Full / Release Registry 与执行器
 internal/report     -> Result / StandardReport / Check / errorKind Schema
 internal/runner     -> ExecutionPlan、snapshot/digest、有界并发、超时、取消与稳定输出
 internal/registry   -> 规范化 object/catalog snapshot、稳定 digest 与只读 decode
-internal/cli        -> typed command catalog、handler routing、help 与退出契约
 ```
 
 `doctor` 只诊断环境和状态；`verify` 只执行静态/结构验证；`test` 独占测试执行；

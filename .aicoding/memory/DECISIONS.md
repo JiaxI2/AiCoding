@@ -70,6 +70,19 @@ Constraints:
 - Do not create a Release or automatically merge a PR.
 - Validate and commit every Phase independently without squashing the staged history.
 
+## Stable CLI Contract
+
+Decision Status: Selected
+
+Selected option: close the one-release compatibility window before the stable release.
+
+Rationale:
+
+- Canonical test execution is `test --profile Smoke|Full|Release`.
+- Canonical lifecycle writes use `lifecycle ... --scope <domain>` with an explicit scope.
+- Expired top-level and domain compatibility forms are absent from routing and help.
+- Historical migration mappings remain documented without preserving executable aliases.
+
 ## AiCoding Core And Extension Graph Architecture
 
 Decision Status: Selected

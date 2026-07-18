@@ -54,7 +54,7 @@ bin\aicoding.exe test --profile Smoke --json
 | Scenario | Command | Notes |
 |---|---|---|
 | Bootstrap | `go run ./cmd/aicoding bootstrap --json` | Builds `bin/aicoding.exe` |
-| Lifecycle plan | `bin\aicoding.exe lifecycle plan --action install --all --json` | Defaults to Kit scope; cross-domain work uses explicit `--scope all` |
+| Lifecycle plan | `bin\aicoding.exe lifecycle plan --action install --scope kit --all --json` | `--scope` is always explicit; cross-domain work uses `--scope all` |
 | Product doctor | `task doctor` | Routes to `doctor --all` |
 | Product verify | `task verify` | Routes to `verify --profile Smoke` |
 | Smoke / Full / Release | `task smoke` / `task full` / `task release` | Routes to the single `test --profile` engine |

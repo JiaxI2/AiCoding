@@ -59,10 +59,10 @@
 |---|---|---|---|---|
 | LIFE-001 | registry 结构 | 解析 `config/kit-registry.json` | schemaVersion/name/kits/manifest 完整 | REQUIRED |
 | LIFE-002 | manifest 存在性 | 检查 registry 中每个 manifest | 文件存在 | REQUIRED |
-| LIFE-003 | install plan | `bin/aicoding.exe lifecycle plan --action install --all --json` | 退出码 0，JSON 合法 | REQUIRED |
-| LIFE-004 | update plan | `bin/aicoding.exe lifecycle plan --action update --all --json` | 退出码 0，JSON 合法 | REQUIRED |
-| LIFE-005 | uninstall plan | `bin/aicoding.exe lifecycle plan --action uninstall --all --json` | 退出码 0，JSON 合法 | REQUIRED |
-| LIFE-006 | rollback 只读契约 | `bin/aicoding.exe lifecycle rollback --help` | 退出码 0，帮助中包含 `--last`；测试不得应用 rollback snapshot | REQUIRED |
+| LIFE-003 | install plan | `bin/aicoding.exe lifecycle plan --action install --scope kit --all --json` | 退出码 0，JSON 合法 | REQUIRED |
+| LIFE-004 | update plan | `bin/aicoding.exe lifecycle plan --action update --scope kit --all --json` | 退出码 0，JSON 合法 | REQUIRED |
+| LIFE-005 | uninstall plan | `bin/aicoding.exe lifecycle plan --action uninstall --scope kit --all --json` | 退出码 0，JSON 合法 | REQUIRED |
+| LIFE-006 | rollback 只读契约 | `bin/aicoding.exe lifecycle rollback --scope kit --help` | 退出码 0，帮助中包含 `--last`；测试不得应用 rollback snapshot | REQUIRED |
 | LIFE-007 | kit lifecycle 结构验证 | `bin/aicoding.exe kit verify --all --profile Lifecycle --json` | 所有启用 kit 的 lifecycle 结构有效 | REQUIRED |
 | MCP-001 | MCP registry inventory | `bin/aicoding.exe mcp list --json` | MCP registry 与 Codex 配置 inventory 可读取，`registryDigest` 为稳定 SHA-256 摘要 | REQUIRED |
 

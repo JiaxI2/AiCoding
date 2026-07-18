@@ -19,7 +19,7 @@ Do not create a parallel source of truth outside this domain. Add new items only
 
 | Package | Sole responsibility |
 |---|---|
-| `cli` | command parsing, help, compatibility routing, JSON stdout and exit codes |
+| `cli` | typed command catalog, command parsing, help, JSON stdout and exit codes |
 | `lifecycle` | static Kit, MCP and runtime Skill adapter composition |
 | `repohealth` | product doctor and deterministic verify checks |
 | `testengine` | Smoke, Full and Release test registry, execution, timeout and reports |

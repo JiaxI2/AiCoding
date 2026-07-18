@@ -53,7 +53,7 @@ Codex-Skills resolves updates from the highest non-prerelease semantic-version t
 ```powershell
 bin\aicoding.exe doctor --all --json
 bin\aicoding.exe verify --profile Smoke --json
-bin\aicoding.exe lifecycle plan --action install --all --json
+bin\aicoding.exe lifecycle plan --action install --scope kit --all --json
 bin\aicoding.exe test --profile Smoke --json
 bin\aicoding.exe test --profile Full --json
 bin\aicoding.exe test --profile Release --json

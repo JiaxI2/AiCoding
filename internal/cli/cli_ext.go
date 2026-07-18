@@ -97,7 +97,7 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	}
 	fs := newFlagSet("lifecycle " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
-	scopeArg := fs.String("scope", lifecyclecontrol.ScopeKit, "kit, mcp, runtime-skill, or all")
+	scopeArg := fs.String("scope", "", "kit, mcp, runtime-skill, or all")
 	kitArg := fs.String("kit", "", "kit id")
 	componentArg := fs.String("component", "", "MCP component id")
 	allArg := fs.Bool("all", false, "all enabled entries in the selected adapter")
@@ -105,7 +105,7 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	lastArg := fs.Bool("last", false, "rollback last snapshot")
 	profileArg := fs.String("profile", "Smoke", "verification profile: Smoke, Full or Release")
 	codexConfigArg := fs.String("codex-config", "", "Codex config.toml path")
-	configuredArg := fs.Bool("configured", false, "include configured Codex MCP compatibility probes")
+	configuredArg := fs.Bool("configured", false, "include configured Codex MCP probes")
 	runtimeProfileArg := fs.String("runtime-profile", "", "runtime, full, or skill-development")
 	runtimeSkillArg := fs.String("runtime-skill", "", "selected canonical Skill for skill-development or targeted removal")
 	sourceRepositoryArg := fs.String("source-repository", "", "Codex-Skills source repository")
@@ -121,6 +121,9 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	}
 
 	scope := strings.ToLower(strings.TrimSpace(*scopeArg))
+	if scope == "" {
+		return report.Result{}, usageErrorf("lifecycle requires --scope kit|mcp|runtime-skill|all")
+	}
 	if !validChoice(scope, lifecyclecontrol.ScopeKit, lifecyclecontrol.ScopeMCP, lifecyclecontrol.ScopeRuntimeSkill, lifecyclecontrol.ScopeAll) {
 		return report.Result{}, usageErrorf("unsupported lifecycle scope: %s", scope)
 	}
@@ -250,32 +253,6 @@ func runFreshClone(args []string, start time.Time) (report.Result, error) {
 	}
 	res := kit.FreshClone(repo, *profile, *keepTemp)
 	return report.Result{SchemaVersion: 1, Command: "fresh-clone", OK: res.OK, Message: "Go fresh clone gate", RepoRoot: repo, Data: res, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
-}
-
-func runSmoke(args []string, start time.Time) (report.Result, error) {
-	return runTestProfile("smoke", args, "smoke", start)
-}
-
-func runCI(args []string, start time.Time) (report.Result, error) {
-	fs := newFlagSet("ci")
-	repoArg := fs.String("repo-root", "", "repository root")
-	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
-	jsonArg := fs.Bool("json", false, "json output")
-	if err := parseNoPositionals(fs, args); err != nil {
-		return report.Result{}, err
-	}
-	testArgs := []string{"--profile", *profile}
-	if *repoArg != "" {
-		testArgs = append(testArgs, "--repo-root", *repoArg)
-	}
-	if *jsonArg {
-		testArgs = append(testArgs, "--json")
-	}
-	return runTestProfile("", testArgs, "ci", start)
-}
-
-func runFull(args []string, start time.Time) (report.Result, error) {
-	return runTestProfile("full", args, "full", start)
 }
 
 func runReleaseCommand(args []string, start time.Time) (report.Result, error) {

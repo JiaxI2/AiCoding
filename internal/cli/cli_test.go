@@ -176,8 +176,8 @@ func TestMainSwitchRoutesNewCommands(t *testing.T) {
 
 func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 	for _, name := range []string{
-		"smoke", "ci", "test", "docsync", "skill", "lifecycle", "export",
-		"fresh-clone", "full", "release", "codex",
+		"test", "docsync", "skill", "lifecycle", "export",
+		"fresh-clone", "release", "codex",
 	} {
 		route, ok := commands.lookup(name)
 		if !ok || route.handler == nil {
@@ -191,7 +191,7 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		help.WriteByte('\n')
 	}
 	for _, usage := range []string{
-		"aicoding test full|release",
+		"aicoding test --profile Smoke|Full|Release",
 		"aicoding release gate",
 		"aicoding codex usage parse",
 		"aicoding codex usage run",
@@ -202,7 +202,7 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 			t.Fatalf("catalog help is missing %q", usage)
 		}
 	}
-	for _, forbidden := range []string{"workflow", "cstyle"} {
+	for _, forbidden := range []string{"smoke", "ci", "full", "status", "workflow", "cstyle"} {
 		if _, exists := commands.lookup(forbidden); exists {
 			t.Fatalf("catalog still exposes removed command %q", forbidden)
 		}
@@ -252,20 +252,12 @@ func TestGoControlPlaneCommandsUseRealGoImplementations(t *testing.T) {
 			return resultErr(res.OK && res.Command == "skill verify", err)
 		}},
 		{"lifecycle plan", func() error {
-			res, err := runLifecycle([]string{"plan", "--action", "install", "--all", "--repo-root", repo, "--json"}, start)
+			res, err := runLifecycle([]string{"plan", "--action", "install", "--scope", "kit", "--all", "--repo-root", repo, "--json"}, start)
 			return resultErr(res.OK && res.Command == "lifecycle plan", err)
 		}},
-		{"smoke", func() error {
-			res, err := runSmoke([]string{"--repo-root", repo, "--json"}, start)
-			return resultErr(res.OK && res.Command == "smoke", err)
-		}},
-		{"ci", func() error {
-			res, err := runCI([]string{"--profile", "Smoke", "--repo-root", repo, "--json"}, start)
-			return resultErr(res.OK && res.Command == "ci", err)
-		}},
-		{"full", func() error {
-			res, err := runFull([]string{"--repo-root", repo, "--json"}, start)
-			return resultErr(res.OK && res.Command == "full", err)
+		{"test", func() error {
+			res, err := runTest([]string{"--profile", "Smoke", "--repo-root", repo, "--json"}, start)
+			return resultErr(res.OK && res.Command == "test --profile Smoke", err)
 		}},
 		{"release gate", func() error {
 			res, err := runReleaseCommand([]string{"gate", "--repo-root", repo, "--json"}, start)
@@ -352,9 +344,9 @@ func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 	repo := t.TempDir()
 	installPassingTestEngine(t)
 
-	res, err := runTest([]string{"full", "--repo-root", repo, "--runner-timeout-sec", "30", "--json"}, time.Now())
-	if err != nil || !res.OK || res.Command != "test full" {
-		t.Fatalf("test full failed: res=%#v err=%v", res, err)
+	res, err := runTest([]string{"--profile", "Full", "--repo-root", repo, "--runner-timeout-sec", "30", "--json"}, time.Now())
+	if err != nil || !res.OK || res.Command != "test --profile Full" {
+		t.Fatalf("canonical Full profile failed: res=%#v err=%v", res, err)
 	}
 	data, ok := res.Data.(report.StandardReport)
 	if !ok {
@@ -377,12 +369,12 @@ func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 		t.Fatalf("unexpected canonical test data: %#v", res.Data)
 	}
 
-	if res, err = runTest([]string{"full", "--profile", "Release", "--json"}, time.Now()); err == nil || res.OK || !isUsageError(err) {
-		t.Fatalf("legacy positional profile must not accept --profile override: res=%#v err=%v", res, err)
+	if res, err = runTest([]string{"full", "--json"}, time.Now()); err == nil || res.OK || !isUsageError(err) {
+		t.Fatalf("removed positional profile must be a usage error: res=%#v err=%v", res, err)
 	}
 }
 
-func TestCompatibilityTestCommandsRouteDirectlyToEngine(t *testing.T) {
+func TestCanonicalTestCommandsRouteDirectlyToEngine(t *testing.T) {
 	repo := t.TempDir()
 	installPassingTestEngine(t)
 	passingEngine := runTestEngine
@@ -397,15 +389,9 @@ func TestCompatibilityTestCommandsRouteDirectlyToEngine(t *testing.T) {
 		run     func() (report.Result, error)
 		command string
 	}{
-		{"smoke", func() (report.Result, error) {
-			return runSmoke([]string{"--repo-root", repo, "--json"}, time.Now())
-		}, "smoke"},
-		{"ci", func() (report.Result, error) {
-			return runCI([]string{"--profile", "Release", "--repo-root", repo, "--json"}, time.Now())
-		}, "ci"},
-		{"full", func() (report.Result, error) {
-			return runFull([]string{"--repo-root", repo, "--json"}, time.Now())
-		}, "full"},
+		{"test Full", func() (report.Result, error) {
+			return runTest([]string{"--profile", "Full", "--repo-root", repo, "--json"}, time.Now())
+		}, "test --profile Full"},
 		{"release gate", func() (report.Result, error) {
 			return runReleaseCommand([]string{"gate", "--repo-root", repo, "--json"}, time.Now())
 		}, "release gate"},
@@ -416,7 +402,7 @@ func TestCompatibilityTestCommandsRouteDirectlyToEngine(t *testing.T) {
 		}
 	}
 
-	wantProfiles := []string{"smoke", "release", "full", "release"}
+	wantProfiles := []string{"full", "release"}
 	if len(profiles) != len(wantProfiles) {
 		t.Fatalf("engine call count = %d, want %d: %#v", len(profiles), len(wantProfiles), profiles)
 	}

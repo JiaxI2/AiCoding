@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/mcpcontrol"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/report"
@@ -13,10 +12,10 @@ import (
 
 func runMCP(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, usageErrorf("mcp requires subcommand: list, status, doctor, verify, install, update, or uninstall")
+		return report.Result{}, usageErrorf("mcp requires subcommand: list, status, doctor, or verify")
 	}
 	sub := strings.ToLower(args[0])
-	if !validChoice(sub, "list", "status", "doctor", "verify", "install", "update", "uninstall") {
+	if !validChoice(sub, "list", "status", "doctor", "verify") {
 		return report.Result{}, usageErrorf("unsupported mcp subcommand: %s", sub)
 	}
 	component := ""
@@ -32,7 +31,6 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 	profileArg := fs.String("profile", "Smoke", "Smoke, Full or Release")
 	codexConfigArg := fs.String("codex-config", "", "Codex config.toml path")
 	configuredArg := fs.Bool("configured", false, "include currently configured Codex MCP compatibility probes")
-	dryRunArg := fs.Bool("dry-run", false, "plan lifecycle changes without writing")
 	_ = fs.Bool("json", false, "JSON output")
 	if err := parseNoPositionals(fs, flagArgs); err != nil {
 		return report.Result{}, err
@@ -112,7 +110,7 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			SchemaVersion: 1,
 			Command:       "mcp verify",
 			OK:            verification.OK,
-			Message:       "MCP managed and configured compatibility verification",
+			Message:       "MCP managed and configured verification",
 			RepoRoot:      repo,
 			InputDigest:   catalog.Digest(),
 			Data:          verification,
@@ -120,29 +118,6 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			Errors:        verification.Errors,
 			ElapsedMS:     report.Elapsed(start),
 		}, mcpcontrol.VerifyErrors(verification)
-	case "install", "update", "uninstall":
-		unified := lifecyclecontrol.Run(context.Background(), repo, lifecyclecontrol.Options{
-			Action:      sub,
-			Scope:       lifecyclecontrol.ScopeMCP,
-			All:         *allArg,
-			ComponentID: *componentArg,
-			CodexConfig: *codexConfigArg,
-			DryRun:      *dryRunArg,
-		})
-		data := lifecycleAdapterData(unified, lifecyclecontrol.ScopeMCP)
-		return report.Result{
-			SchemaVersion: 1,
-			Command:       "mcp " + sub,
-			OK:            unified.OK,
-			Message:       "MCP managed lifecycle",
-			RepoRoot:      repo,
-			InputDigest:   lifecycleAdapterInputDigest(unified, lifecyclecontrol.ScopeMCP),
-			PlanDigest:    unified.PlanDigest,
-			Data:          data,
-			Warnings:      unified.Warnings,
-			Errors:        unified.Errors,
-			ElapsedMS:     report.Elapsed(start),
-		}, report.BoolErr(unified.Errors)
 	default:
 		return report.Result{}, usageErrorf("unsupported mcp subcommand: %s", sub)
 	}
@@ -182,22 +157,4 @@ func commandErrors(entries []mcpcontrol.RegistryEntry, results []mcpcontrol.Comm
 		}
 	}
 	return errorsFound
-}
-
-func lifecycleAdapterData(result lifecyclecontrol.Report, id string) interface{} {
-	for _, adapter := range result.Adapters {
-		if adapter.ID == id {
-			return adapter.Data
-		}
-	}
-	return nil
-}
-
-func lifecycleAdapterInputDigest(result lifecyclecontrol.Report, id string) string {
-	for _, adapter := range result.Adapters {
-		if adapter.ID == id {
-			return adapter.InputDigest
-		}
-	}
-	return ""
 }

@@ -181,9 +181,9 @@ bootstrap
 are the sole lifecycle, test, product-check, and report authorities. Do not add a second
 aggregator in Taskfile, CI, PowerShell, Python, hooks, or documentation.
 
-Compatibility commands may remain for one version only when they route to the formal
-implementation and emit `CLI_DEPRECATED`. Current compatibility surfaces belong only in
-the compatibility table or historical decisions.
+Expired compatibility commands must not remain routed or appear in current help. Removed
+forms belong only in the migration table or historical decisions; canonical commands own
+all current behavior.
 
 ## Prohibited Actions
 

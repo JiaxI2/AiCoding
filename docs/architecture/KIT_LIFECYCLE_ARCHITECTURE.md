@@ -59,14 +59,17 @@ Allowed command types:
 ```powershell
 bin\aicoding.exe kit verify --all --profile Smoke --json
 bin\aicoding.exe kit verify --all --profile Lifecycle --json
-bin\aicoding.exe lifecycle plan --action install --all --json
-bin\aicoding.exe lifecycle install --all --json
+bin\aicoding.exe lifecycle plan --action install --scope kit --all --json
+bin\aicoding.exe lifecycle install --scope kit --all --json
 bin\aicoding.exe export --all --zip --json
 ```
 
 Kit 内部只读 planning/verification 使用 `internal/runner` 有界并发并保持稳定结果顺序；
 lifecycle 跨 adapter 当前以单并发执行。State-writing actions 和 ZIP writing 保持串行，state
 与 rollback 仍由 Kit 领域拥有。
+
+统一 lifecycle 不推断默认领域；每次调用都必须显式选择
+`--scope kit|mcp|runtime-skill|all`。
 
 ## PowerShell Specialty
 

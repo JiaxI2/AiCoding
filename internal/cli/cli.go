@@ -17,7 +17,6 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/governance"
 	"github.com/JiaxI2/AiCoding/internal/kit"
-	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/pwshregex"
 	"github.com/JiaxI2/AiCoding/internal/releasegate"
@@ -100,9 +99,6 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 		res.ErrorKind = report.ErrorKindValidation
 	case res.ErrorKind == "" && err != nil:
 		res.ErrorKind = report.ErrorKindExecution
-	}
-	if canonical, ok := deprecatedCommand(args); ok {
-		res = addDeprecation(res, canonical)
 	}
 	if jsonRequested(commandArgs) {
 		_ = report.WriteJSONTo(stdout, res)
@@ -512,15 +508,13 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, usageErrorf("kit requires subcommand")
 	}
 	sub := args[0]
-	if !validChoice(sub, "list", "doctor", "lifecycle", "verify", "test") {
+	if !validChoice(sub, "list", "doctor", "verify", "test") {
 		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
 	}
 	fs := newFlagSet("kit " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	kitArg := fs.String("kit", "", "kit id")
 	allArg := fs.Bool("all", false, "all enabled kits")
-	actionArg := fs.String("action", "", "lifecycle action: install, update, uninstall, or status")
-	dryRunArg := fs.Bool("dry-run", false, "plan lifecycle action without executing adapters")
 	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
@@ -555,47 +549,6 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	case "doctor":
 		errs := kit.DoctorKits(repo, entries)
 		return report.Result{SchemaVersion: 1, Command: "kit doctor", OK: len(errs) == 0, Message: "kit registry doctor", RepoRoot: repo, Data: withManifests, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-	case "lifecycle":
-		action := strings.ToLower(*actionArg)
-		switch action {
-		case "install", "update", "uninstall", "status":
-			// supported planner actions
-		case "":
-			return report.Result{}, usageErrorf("kit lifecycle requires --action install|update|uninstall|status")
-		default:
-			return report.Result{}, usageErrorf("unsupported lifecycle action: %s", action)
-		}
-		if action != "status" && !*dryRunArg {
-			return report.Result{}, usageErrorf("use aicoding lifecycle %s --all for real lifecycle actions", action)
-		}
-		_, err := kit.SelectKits(entries, *kitArg, *allArg)
-		if err != nil {
-			return report.Fail("kit lifecycle", start, "kit selection failed", nil, err.Error()), err
-		}
-		unified := lifecyclecontrol.Run(context.Background(), repo, lifecyclecontrol.Options{
-			Action: action,
-			Scope:  lifecyclecontrol.ScopeKit,
-			All:    *allArg,
-			KitID:  *kitArg,
-			DryRun: *dryRunArg,
-		})
-		message := "kit lifecycle planner"
-		if *dryRunArg {
-			message = "kit lifecycle dry-run planner"
-		}
-		return report.Result{
-			SchemaVersion: 1,
-			Command:       "kit lifecycle",
-			OK:            unified.OK,
-			Message:       message,
-			RepoRoot:      repo,
-			InputDigest:   lifecycleAdapterInputDigest(unified, lifecyclecontrol.ScopeKit),
-			PlanDigest:    unified.PlanDigest,
-			Data:          lifecycleAdapterData(unified, lifecyclecontrol.ScopeKit),
-			Warnings:      unified.Warnings,
-			Errors:        unified.Errors,
-			ElapsedMS:     report.Elapsed(start),
-		}, report.BoolErr(unified.Errors)
 	case "verify", "test":
 		catalog, loadErr := kit.LoadCatalogSnapshot(repo)
 		if loadErr != nil {
@@ -663,9 +616,6 @@ func runVerify(args []string, start time.Time) (report.Result, error) {
 	}
 }
 
-func runStatus(args []string, start time.Time) (report.Result, error) {
-	return runProductDoctor(args, start, "status --all")
-}
 func runDoctor(args []string, start time.Time) (report.Result, error) {
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 		return runProductDoctor(args, start, "doctor --all")

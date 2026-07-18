@@ -294,10 +294,10 @@ func Registry(cfg Config) []TestCase {
 
 		{ID: "LIFE-001", Category: "LIFECYCLE", Title: "kit registry 结构", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "LIFE-002", Category: "LIFECYCLE", Title: "kit manifest 存在性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
-		{ID: "LIFE-003", Category: "LIFECYCLE", Title: "lifecycle install plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-004", Category: "LIFECYCLE", Title: "lifecycle update plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "update", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-005", Category: "LIFECYCLE", Title: "lifecycle uninstall plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "uninstall", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-006", Category: "LIFECYCLE", Title: "lifecycle rollback 只读契约", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "rollback", "--help"}},
+		{ID: "LIFE-003", Category: "LIFECYCLE", Title: "lifecycle install plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-004", Category: "LIFECYCLE", Title: "lifecycle update plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "update", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-005", Category: "LIFECYCLE", Title: "lifecycle uninstall plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "uninstall", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-006", Category: "LIFECYCLE", Title: "lifecycle rollback 只读契约", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "rollback", "--scope", "kit", "--help"}},
 		{ID: "LIFE-007", Category: "LIFECYCLE", Title: "kit lifecycle 结构验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "kit", "verify", "--all", "--profile", "Lifecycle", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
 		{ID: "MCP-001", Category: "MCP", Title: "MCP registry inventory", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "mcp", "list", "--json"}, ExpectJSON: true},
@@ -553,7 +553,7 @@ func runStatic(cfg Config, tc TestCase) Result {
 	case "DOCS-002":
 		err = fileContainsAll(filepath.Join(cfg.Repo, "README.md"), []string{"Go CLI", "lifecycle", "doctor --all", "verify --profile", "test --profile", "release verify|gate"})
 	case "DOCS-003":
-		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"正式产品命令", "doctor --all", "verify --profile", "test --profile", "lifecycle", "一个版本的兼容入口"})
+		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"正式产品命令", "doctor --all", "verify --profile", "test --profile", "lifecycle", "已移除的兼容入口"})
 	case "DOCS-004":
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"Go CLI", "Doctor", "Verify", "test engine", "DocSync", "PowerShell Boundary"})
 	case "DOCS-005":

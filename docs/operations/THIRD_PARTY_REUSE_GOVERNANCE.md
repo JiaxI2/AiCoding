@@ -37,6 +37,6 @@
 ```powershell
 bin\aicoding.exe governance reuse --json
 bin\aicoding.exe skill verify --all --profile Smoke --json
-bin\aicoding.exe lifecycle plan --action install --all --json
+bin\aicoding.exe lifecycle plan --action install --scope kit --all --json
 bin\aicoding.exe docsync ci --json
 ```

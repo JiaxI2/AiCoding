@@ -135,7 +135,7 @@ release verify|gate                    发布门禁
 ```
 
 领域子命令（kit/mcp/skill/governance/docsync/export/fresh-clone/powershell）服从
-同一 JSON 契约。旧命令只保留兼容路由并输出 `CLI_DEPRECATED`。
+同一 JSON 契约。兼容期已结束，旧命令不再路由；迁移映射保留在 `docs/COMMANDS.md`。
 
 ### 4.2 八个 action：动词表的设计逻辑
 

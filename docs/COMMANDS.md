@@ -21,7 +21,7 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | 目的 | 命令 |
 |---|---|
 | Bootstrap | `bin\aicoding.exe bootstrap --json` |
-| Kit 生命周期 plan/apply | `bin\aicoding.exe lifecycle plan --action install\|update\|uninstall --all --json` / `lifecycle install\|update\|uninstall --all --json` |
+| Kit 生命周期 plan/apply | `bin\aicoding.exe lifecycle plan --action install\|update\|uninstall --scope kit --all --json` / `lifecycle install\|update\|uninstall --scope kit --all --json` |
 | 全域生命周期 plan | `bin\aicoding.exe lifecycle plan --action install\|update --scope all --runtime-profile runtime\|full\|skill-development --json` |
 | 全域生命周期状态/诊断 | `bin\aicoding.exe lifecycle status\|doctor --scope all --json` |
 | 产品诊断 | `bin\aicoding.exe doctor --all --timeout-sec 180 --json` |
@@ -34,7 +34,7 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 `doctor` 只做环境和状态诊断；`verify` 只组合确定性静态/结构验证；`test` 独占
 Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`release`
 不创建 Tag 或 Release，只执行结构验证或复用 Release test profile。
-测试 profile 对 rollback 只执行 `lifecycle rollback --help` 的只读契约检查，不会应用
+测试 profile 对 rollback 只执行 `lifecycle rollback --scope kit --help` 的只读契约检查，不会应用
 本地 rollback snapshot。
 
 ## 命令契约固化
@@ -44,7 +44,9 @@ Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`
 catalog，并通过 catalog 完整性与 CLI contract 测试；不能再在 router、help 和
 namespace 判断中分别维护字符串列表。
 
-本次没有新增或删除用户命令。`kit list --json` 与 `mcp list --json` 的外层报告增加
+到期的兼容命令已从 catalog、router 和 help 删除；旧写法返回 usage error（退出码 2），
+不会再静默转发。`lifecycle` 现在要求显式 `--scope kit|mcp|runtime-skill|all`。
+`kit list --json` 与 `mcp list --json` 的外层报告包含
 `inputDigest`；MCP inventory 同时保留 `registryDigest` 并增加 `catalogDigest`。前者只标识
 规范化 registry，后者标识 registry 与全部 referenced manifests 的内容树。
 正式 `lifecycle ... --json` 在 `data` 中返回静态 adapter `catalogDigest`、本次
@@ -68,7 +70,7 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 | C99 skill templates | `bin\aicoding.exe skill c99-standard-c templates --json` |
 | C99 skill 快速/完整验证 | `bin\aicoding.exe skill c99-standard-c verify --profile fast\|full --timings --json` |
 | C99 skill fmt/check | `bin\aicoding.exe skill c99-standard-c fmt|check --scope changed|staged|paths --json` |
-| Rollback | `bin\aicoding.exe lifecycle rollback --last --json` |
+| Rollback | `bin\aicoding.exe lifecycle rollback --scope kit --last --json` |
 | Export | `bin\aicoding.exe export --all --zip --json` |
 | Fresh clone | `bin\aicoding.exe fresh-clone --profile Smoke|Full|Release --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
@@ -84,9 +86,9 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 | 解析 Codex Token JSONL | `bin\aicoding.exe codex usage parse --file <FILE> --json` |
 | 运行 Codex 并采集 Token | `bin\aicoding.exe codex usage run -- codex exec --json "<PROMPT>"` |
 
-## 一个版本的兼容入口
+## 已移除的兼容入口
 
-以下入口路由到上述正式实现，并输出 `CLI_DEPRECATED`：
+以下入口不再路由；调用会返回 usage error。迁移时使用右侧正式入口：
 
 | 兼容入口 | 正式入口 |
 |---|---|
@@ -103,8 +105,8 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 插件更新先比较 released package 与 installed cache 的 `BUILDINFO.json`；发生漂移时通过 Codex 官方 plugin CLI 重装同一 Marketplace plugin，刷新成功后才写 install state：
 
 ```powershell
-bin\aicoding.exe lifecycle plan --action update --kit aicoding-platform --json
-bin\aicoding.exe lifecycle update --kit aicoding-platform --json
+bin\aicoding.exe lifecycle plan --action update --scope kit --kit aicoding-platform --json
+bin\aicoding.exe lifecycle update --scope kit --kit aicoding-platform --json
 ```
 
 Standalone full profile 通过正式 lifecycle adapter 统一到官方 user root，并在显式迁移时
@@ -140,7 +142,7 @@ bin\aicoding.exe lifecycle update --scope mcp --component visio-mcp --json
 
 `--configured` 显式包含 Codex 当前配置的 stdio/Streamable HTTP MCP 只读 initialize/discovery。
 MCP 生命周期正式入口使用 `lifecycle --scope mcp`；旧 `mcp install|update|uninstall`
-只保留一个版本。
+已移除。
 
 Smoke 与 Full 使用 mock/benchmark 路径，不要求 Microsoft Visio；Release 会显式运行可见 Visio COM smoke 和 VSDX/PNG/SVG/PDF 导出。MCP capability 不注册工作流 prompt，画图步骤、有限 repair 和最终视觉确认由上层 `visio-diagram` Skill 负责。
 

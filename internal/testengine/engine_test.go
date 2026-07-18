@@ -58,7 +58,7 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 			continue
 		}
 		command := strings.Join(testCase.Command, " ")
-		if !strings.Contains(command, "lifecycle rollback --help") {
+		if !strings.Contains(command, "lifecycle rollback --scope kit --help") {
 			t.Fatalf("rollback contract check must be read-only, got %q", command)
 		}
 		if strings.Contains(command, "--last") {

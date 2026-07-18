@@ -31,12 +31,22 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 	writeCatalogHelp(&help)
 	for _, expected := range []string{
 		"Formal product workflow:",
-		"Compatibility commands (emit CLI_DEPRECATED):",
 		"aicoding lifecycle plan",
 		"aicoding powershell regex-lint --path PATH",
 	} {
 		if !strings.Contains(help.String(), expected) {
 			t.Fatalf("catalog help missing %q: %s", expected, help.String())
+		}
+	}
+	for _, removed := range []string{
+		"Compatibility commands",
+		"CLI_DEPRECATED",
+		"aicoding smoke",
+		"aicoding test full|release",
+		"aicoding status --all",
+	} {
+		if strings.Contains(help.String(), removed) {
+			t.Fatalf("catalog help still exposes removed compatibility form %q: %s", removed, help.String())
 		}
 	}
 }
@@ -66,9 +76,9 @@ func TestCommandCatalogRejectsIncompleteRoutes(t *testing.T) {
 
 func TestCommandCatalogRejectsGitPorcelainVerbs(t *testing.T) {
 	// docs/architecture/GIT_REUSE_BOUNDARY.md §9 reserves Git porcelain verbs.
-	// Section 8 explicitly retains status, tag, and fresh-clone because their
-	// AiCoding meanings are lifecycle reconciliation, policy audit, and a
-	// registered verification workflow rather than Git porcelain aliases.
+	// Section 8 explicitly retains tag and fresh-clone because their AiCoding
+	// meanings are policy audit and a registered verification workflow rather
+	// than Git porcelain aliases.
 	forbidden := map[string]struct{}{
 		"add": {}, "am": {}, "apply": {}, "bisect": {}, "blame": {},
 		"branch": {}, "checkout": {}, "cherry-pick": {}, "clone": {},

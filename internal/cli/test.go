@@ -20,8 +20,6 @@ func runTest(args []string, start time.Time) (report.Result, error) {
 
 	sub := strings.ToLower(args[0])
 	switch sub {
-	case "full", "release":
-		return runTestProfile(sub, args[1:], "test "+sub, start)
 	case "latest":
 		return runTestLatest(args[1:], start)
 	default:

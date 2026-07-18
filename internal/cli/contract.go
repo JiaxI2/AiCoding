@@ -12,10 +12,9 @@ import (
 )
 
 const (
-	ExitSuccess   = 0
-	ExitFailure   = 1
-	ExitUsage     = 2
-	deprecatedTag = "CLI_DEPRECATED"
+	ExitSuccess = 0
+	ExitFailure = 1
+	ExitUsage   = 2
 )
 
 type usageError struct {
@@ -119,74 +118,4 @@ func exitCodeFor(res report.Result, err error) int {
 		return ExitFailure
 	}
 	return ExitSuccess
-}
-
-func addDeprecation(res report.Result, canonical string) report.Result {
-	warning := deprecatedTag + ": use " + canonical
-	for _, existing := range res.Warnings {
-		if existing == warning {
-			return res
-		}
-	}
-	res.Warnings = append([]string{warning}, res.Warnings...)
-	return res
-}
-
-func deprecatedCommand(args []string) (string, bool) {
-	if len(args) == 0 {
-		return "", false
-	}
-	route, ok := commands.lookup(strings.ToLower(args[0]))
-	if !ok {
-		return "", false
-	}
-	switch route.descriptor.ID {
-	case CommandSmoke:
-		return "aicoding test --profile Smoke", true
-	case CommandCI:
-		return "aicoding test --profile " + flagValue(args[1:], "profile", "Smoke"), true
-	case CommandFull:
-		return "aicoding test --profile Full", true
-	case CommandTest:
-		if len(args) < 2 {
-			return "", false
-		}
-		switch strings.ToLower(args[1]) {
-		case "full":
-			return "aicoding test --profile Full", true
-		case "release":
-			return "aicoding test --profile Release", true
-		}
-	case CommandKit:
-		if len(args) >= 2 && strings.EqualFold(args[1], "lifecycle") {
-			action := strings.ToLower(flagValue(args[2:], "action", "status"))
-			if action == "status" {
-				return "aicoding lifecycle status --scope kit", true
-			}
-			return "aicoding lifecycle plan --action " + action + " --scope kit", true
-		}
-	case CommandMCP:
-		if len(args) >= 2 {
-			switch strings.ToLower(args[1]) {
-			case "install", "update", "uninstall":
-				return "aicoding lifecycle " + strings.ToLower(args[1]) + " --scope mcp", true
-			}
-		}
-	case CommandStatus:
-		return "aicoding doctor --all", true
-	}
-	return "", false
-}
-
-func flagValue(args []string, name string, fallback string) string {
-	long := "--" + name
-	for index, arg := range args {
-		if arg == long && index+1 < len(args) {
-			return args[index+1]
-		}
-		if strings.HasPrefix(arg, long+"=") {
-			return strings.TrimPrefix(arg, long+"=")
-		}
-	}
-	return fallback
 }

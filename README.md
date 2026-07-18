@@ -53,7 +53,7 @@ bin\aicoding.exe test --profile Smoke --json
 | 场景 | 命令 | 说明 |
 |---|---|---|
 | 初始化 | `go run ./cmd/aicoding bootstrap --json` | 构建 `bin/aicoding.exe` |
-| 生命周期计划 | `bin\aicoding.exe lifecycle plan --action install --all --json` | 默认保持 Kit 范围；跨域使用显式 `--scope all` |
+| 生命周期计划 | `bin\aicoding.exe lifecycle plan --action install --scope kit --all --json` | `--scope` 始终显式；跨域使用 `--scope all` |
 | 产品诊断 | `task doctor` | 路由到 `doctor --all` |
 | 产品验证 | `task verify` | 路由到 `verify --profile Smoke` |
 | Smoke / Full / Release | `task smoke` / `task full` / `task release` | 路由到唯一 `test --profile` 引擎 |

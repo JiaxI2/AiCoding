@@ -103,7 +103,7 @@ bin/aicoding.exe doctor pwsh-budget --json
 bin/aicoding.exe skill c99-standard-c status --json
 bin/aicoding.exe docsync ci --json
 bin/aicoding.exe skill verify --all --profile Smoke --json
-bin/aicoding.exe lifecycle plan --action install --all --json
+bin/aicoding.exe lifecycle plan --action install --scope kit --all --json
 bin/aicoding.exe test --profile Full --json
 bin/aicoding.exe test --profile Release --json
 git diff --check

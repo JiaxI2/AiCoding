@@ -50,7 +50,7 @@ bin\aicoding.exe lifecycle install --scope mcp --component ppt-mcp --json
 ```
 
 也可以使用 `--scope mcp --all`，处理 registry 中全部启用的 components。旧
-`mcp install|update|uninstall` 仅在一个版本的兼容期内保留并输出 `CLI_DEPRECATED`。
+`mcp install|update|uninstall` 已移除，写操作统一由 lifecycle 承载。
 
 生命周期写操作遵守以下所有权规则：
 

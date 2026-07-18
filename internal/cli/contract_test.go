@@ -122,31 +122,33 @@ func TestExecuteExecutionFailureUsesExitOne(t *testing.T) {
 	}
 }
 
-func TestDeprecationContract(t *testing.T) {
-	for _, tc := range []struct {
-		args      []string
-		canonical string
-	}{
-		{[]string{"smoke"}, "aicoding test --profile Smoke"},
-		{[]string{"ci", "--profile", "Release"}, "aicoding test --profile Release"},
-		{[]string{"full"}, "aicoding test --profile Full"},
-		{[]string{"test", "full"}, "aicoding test --profile Full"},
-		{[]string{"test", "release"}, "aicoding test --profile Release"},
-		{[]string{"kit", "lifecycle", "--action", "update"}, "aicoding lifecycle plan --action update --scope kit"},
-		{[]string{"mcp", "install", "visio-mcp"}, "aicoding lifecycle install --scope mcp"},
-		{[]string{"status", "--all"}, "aicoding doctor --all"},
+func TestRemovedCompatibilityFormsReturnUsageErrors(t *testing.T) {
+	for _, args := range [][]string{
+		{"smoke", "--json"},
+		{"ci", "--profile", "Release", "--json"},
+		{"full", "--json"},
+		{"status", "--all", "--json"},
+		{"test", "full", "--json"},
+		{"test", "release", "--json"},
+		{"kit", "lifecycle", "--action", "update", "--all", "--json"},
+		{"mcp", "install", "visio-mcp", "--dry-run", "--json"},
+		{"lifecycle", "plan", "--action", "install", "--all", "--json"},
 	} {
-		canonical, ok := deprecatedCommand(tc.args)
-		if !ok || canonical != tc.canonical {
-			t.Fatalf("deprecatedCommand(%#v) = %q, %t; want %q, true", tc.args, canonical, ok, tc.canonical)
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+		if code := Execute(args, &stdout, &stderr); code != ExitUsage {
+			t.Fatalf("Execute(%#v) exit code = %d, want %d; stdout=%q stderr=%q", args, code, ExitUsage, stdout.String(), stderr.String())
 		}
-	}
-
-	res := addDeprecation(report.Result{SchemaVersion: 1, OK: true}, "aicoding test --profile Smoke")
-	var out bytes.Buffer
-	report.WriteTextTo(&out, res)
-	if !strings.Contains(out.String(), "CLI_DEPRECATED: use aicoding test --profile Smoke") {
-		t.Fatalf("text report does not expose deprecation warning: %q", out.String())
+		var result report.Result
+		if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
+			t.Fatalf("Execute(%#v) must emit JSON usage result: %v: %q", args, err, stdout.String())
+		}
+		if result.OK || result.ErrorKind != report.ErrorKindUsage || stderr.Len() != 0 {
+			t.Fatalf("unexpected removed-form result for %#v: %#v stderr=%q", args, result, stderr.String())
+		}
+		if strings.Contains(stdout.String(), "CLI_DEPRECATED") {
+			t.Fatalf("removed form still emits compatibility routing for %#v: %q", args, stdout.String())
+		}
 	}
 }
 

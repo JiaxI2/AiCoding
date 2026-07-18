@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
 )
 
-func TestProductDoctorAndStatusCompatibilityUseSameChecks(t *testing.T) {
+func TestProductDoctorUsesStandardChecks(t *testing.T) {
 	previous := productDoctorChecks
 	t.Cleanup(func() { productDoctorChecks = previous })
 	calls := 0
@@ -40,17 +39,8 @@ func TestProductDoctorAndStatusCompatibilityUseSameChecks(t *testing.T) {
 		t.Fatalf("unexpected doctor standard report: %#v", doctor.Data)
 	}
 
-	var statusOut bytes.Buffer
-	var statusErr bytes.Buffer
-	if code := Execute([]string{"status", "--all", "--repo-root", repo, "--json"}, &statusOut, &statusErr); code != ExitSuccess {
-		t.Fatalf("status exit code = %d: stdout=%q stderr=%q", code, statusOut.String(), statusErr.String())
-	}
-	var status report.Result
-	if err := json.Unmarshal(statusOut.Bytes(), &status); err != nil {
-		t.Fatal(err)
-	}
-	if calls != 2 || !containsMessage(status.Warnings, "CLI_DEPRECATED: use aicoding doctor --all") {
-		t.Fatalf("status compatibility did not route to product doctor: calls=%d result=%#v", calls, status)
+	if calls != 1 {
+		t.Fatalf("product doctor checks called %d times, want 1", calls)
 	}
 }
 
@@ -107,13 +97,4 @@ func TestUnknownJSONCommandAndMissingProfileUseUsageErrorKind(t *testing.T) {
 			t.Fatalf("unexpected usage result for %#v: %#v stderr=%q", args, result, stderr.String())
 		}
 	}
-}
-
-func containsMessage(values []string, want string) bool {
-	for _, value := range values {
-		if strings.Contains(value, want) {
-			return true
-		}
-	}
-	return false
 }
