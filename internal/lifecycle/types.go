@@ -54,6 +54,7 @@ type AdapterResult struct {
 	InputDigest string      `json:"inputDigest,omitempty"`
 	OK          bool        `json:"ok"`
 	Status      string      `json:"status"`
+	ElapsedMS   int64       `json:"elapsedMs"`
 	Data        interface{} `json:"data,omitempty"`
 	Warnings    []string    `json:"warnings,omitempty"`
 	Errors      []string    `json:"errors,omitempty"`

@@ -119,6 +119,25 @@ Accepted。阶段 0–4 全部落地：扫描 → 生成 → commit 增量同步
 - **最小写**：`reconcile` 只写内容 digest 变化的文件，未受影响的域字节与 mtime 不动
   （`BenchmarkReconcileNoOp` 度量收敛态成本）。
 
+### 5.1 执行成本档案（Execution Cost First）
+
+成本是先分析、后记录的设计输入，不是事后优化。已测量（本仓库，10 个域、1000+ 文件）：
+
+| 操作 | 实测成本 | 说明 |
+|---|---|---|
+| `Scan`（全仓单次遍历） | **~2 ms/次** | 比 `git status` 还快；`BenchmarkScan` ~141µs/百文件 |
+| `reconcile` 收敛态（无变化） | **~0.27 ms/次** | `BenchmarkReconcileNoOp` |
+| doctor / verify / uninstall | ~0 扫描 | 只读 manifest + owned 文件 |
+
+**三层成本可观测（Observable）**：命令级 `report.Result.elapsedMs` → 领域 Primitive 级
+`lifecycle.adapters[].elapsedMs`（本轮新增，runner 已测量、adapter 现在带回）→ 热点级
+`Benchmark*`（µs 精度）。任一层都不再是黑盒。
+
+**基于证据的取舍**：`Scan` ~2ms 已足够快，`Sync`（post-commit）采用"全仓扫描 + 增量写"
+而**不引入跨调用 facts 缓存**——缓存要付出持久化状态 + 失效逻辑的复杂度，为省 2ms 得不偿失，
+违反"简单优于复杂"。增量只做在**写**这一层（`reconcile` 只写 diff、`Sync` 只涉受影响域）。
+后续贡献者若要加缓存，必须先出示 `Scan` 成为真实瓶颈的测量证据，否则视为过度设计。
+
 ## 6. owned-asset 纪律（三条铁律）
 
 `reconcile` 与 `removeOwned` 共同保证：

@@ -53,6 +53,11 @@ func run(ctx context.Context, repo string, opts Options, execute commandExecutor
 		if !ok {
 			adapter = failedAdapter(taskResult.ID, opts, "lifecycle adapter returned invalid result")
 		}
+		// Surface the per-adapter execution cost the runner already measured, so
+		// every domain primitive's cost is observable in the JSON (Execution Cost
+		// First). Timing lives in the envelope, never in the deterministic domain
+		// payload, so identical input still yields an identical Data value.
+		adapter.ElapsedMS = taskResult.ElapsedMS
 		appendAdapter(&result, adapter)
 	}
 	return result
