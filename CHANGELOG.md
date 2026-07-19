@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 记录 PowerShell 专项脚本收敛计划（todolist 0002，Planned）——识别两处可收敛结构：每 kit 的 status/test/verify 三件套（并行外围节点 → 收进 Go 单一测试引擎的 leaf gate）与 1192 行的万能 `aicoding-skill.ps1`（拆分 + helper 上移到 lib 模块去重）；分阶段、逐脚本遵守 `POWERSHELL_BOUNDARY` 第 45 条"单独计划+验证"，**明确排除 ai-debug-repair-kit（jtag/ccsdebug/DSS/XDS）安全链**。内核评估结论：已在收敛下限，进一步合并即 God Core（拒绝），故不动内核。 / Records the PowerShell specialty convergence plan (excluding the jtag/ccsdebug safety toolchain) and the assessment that the kernel is already at its convergence floor and must not be over-merged.
+
 - **feat(governance)**: 按 Graph First 补齐新领域节点的强制边——将 `internal/repocontext` 域按 `kit`/`mcpcontrol` 同构接入 `config/dependency-governance.json` 的 `goPackageBoundaries`（领域互相隔离、不向上依赖 cli/lifecycle/repohealth/testengine；原语层 registry/runner/report 与 gitx 也不得反向依赖它），并把 `internal/todolist` 纳入 gitx 零-internal-依赖枚举。此前两个新节点加入 Graph 后其边未被机器强制（可被误改成 `repocontext → lifecycle` 的环而无人拦）；现 `governance dependencies` 会明确拒绝此类越界（已用注入-验证-回滚证明）。 / Wires the repocontext domain's edges into enforced package boundaries (mirroring kit/mcpcontrol) so the new graph nodes' structure is machine-guaranteed, not accidental.
 
 - **docs(architecture)**: 新增 `docs/architecture/GRAPH_FIRST.md`——把 Graph First / 网状思维固化为设计法最上层：设计顺序（Graph→Primitive→Workflow→Implementation）、AiCoding 的真实节点/边地图（读自强制的 `goPackageBoundaries`）、中心节点冻结理由、Network Thinking 七步与收敛 Checklist，并向下交叉引用 PRIMITIVE_CONSTITUTION / 核心架构 / 扩展契约 / 依赖治理而不重复；登记进架构手册 §8。含两个 worked 例子（补齐缺失边的正例、不做过早收敛的克制例）。 / Adds the Graph First design law with AiCoding's real node/edge map read from the enforced boundaries, positioned atop the existing constitution docs.
