@@ -313,6 +313,7 @@
       "internal/platform",
       "internal/pwshregex",
       "internal/repohealth",
+      "internal/repoinit",
       "internal/tagpolicy"
     ]
   },
@@ -336,6 +337,7 @@
         "internal/repocontext",
         "internal/report",
         "internal/repohealth",
+        "internal/repoinit",
         "internal/reuse",
         "internal/runner",
         "internal/tagpolicy",

@@ -22,6 +22,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/releasegate"
 	"github.com/JiaxI2/AiCoding/internal/repocontext"
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
+	"github.com/JiaxI2/AiCoding/internal/repoinit"
 	"github.com/JiaxI2/AiCoding/internal/report"
 	"github.com/JiaxI2/AiCoding/internal/reuse"
 	"github.com/JiaxI2/AiCoding/internal/runner"
@@ -775,6 +776,29 @@ func runTodolist(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("todolist", start, "cannot read todolist", nil, err.Error()), err
 	}
 	return report.Result{SchemaVersion: 1, Command: "todolist", OK: true, Message: "pending implementation items", RepoRoot: repo, Data: list, ElapsedMS: report.Elapsed(start)}, nil
+}
+
+func runProvision(args []string, start time.Time) (report.Result, error) {
+	fs := newFlagSet("provision")
+	repoArg := fs.String("repo-root", "", "repository root (defaults to the current directory)")
+	_ = fs.Bool("json", false, "json output")
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
+	// provision may run before a git repository exists, so it cannot resolve the
+	// root via `git rev-parse` like other commands — it targets --repo-root or cwd.
+	repo := strings.TrimSpace(*repoArg)
+	if repo == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return report.Fail("provision", start, "cannot determine current directory", nil, err.Error()), err
+		}
+		repo = cwd
+	} else if abs, err := filepath.Abs(repo); err == nil {
+		repo = abs
+	}
+	result := repoinit.Init(repo)
+	return report.Result{SchemaVersion: 1, Command: "provision", OK: result.OK, Message: "local AI-coding environment", RepoRoot: repo, Data: result, Errors: result.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(result.Errors)
 }
 
 func runRelease(args []string, start time.Time) (report.Result, error) {

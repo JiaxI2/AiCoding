@@ -35,6 +35,7 @@ const (
 	CommandGovernance CommandID = "governance"
 	CommandPowerShell CommandID = "powershell"
 	CommandTodolist   CommandID = "todolist"
+	CommandProvision  CommandID = "provision"
 )
 
 type CommandDescriptor struct {
@@ -121,6 +122,7 @@ var commands = mustCommandCatalog(
 		{descriptor: CommandDescriptor{ID: CommandGovernance, Name: "governance", RequiresSubcommand: true}, handler: runGovernance},
 		{descriptor: CommandDescriptor{ID: CommandPowerShell, Name: "powershell", RequiresSubcommand: true}, handler: runPowerShell},
 		{descriptor: CommandDescriptor{ID: CommandTodolist, Name: "todolist"}, handler: runTodolist},
+		{descriptor: CommandDescriptor{ID: CommandProvision, Name: "provision"}, handler: runProvision},
 	},
 	[]HelpSection{
 		{ID: HelpUsage, Title: "Usage:"},
@@ -147,6 +149,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle rollback --scope kit --last [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpDomain, Usage: "aicoding lifecycle plan|install|update|uninstall|status|doctor|verify --scope repo-context [--repo-root PATH] [--json]"},
 		{Command: CommandTodolist, Section: HelpDomain, Usage: "aicoding todolist [--repo-root PATH] [--json]"},
+		{Command: CommandProvision, Section: HelpDomain, Usage: "aicoding provision [--repo-root PATH] [--json]"},
 		{Command: CommandDoctor, Section: HelpFormal, Usage: "aicoding doctor --all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
 		{Command: CommandVerify, Section: HelpFormal, Usage: "aicoding verify --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
 		{Command: CommandRelease, Section: HelpFormal, Usage: "aicoding release verify [--repo-root PATH] [--json]"},
