@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-19
+
 - **feat(todolist)**: 新增 `todolist` Primitive 与 `docs/todolist/` 待实现工作清单（ADR 0004）——`internal/todolist.List` 只读 `docs/todolist/*.md` 头部、汇报每项 Planned/In-Progress/Done 状态与汇总，零仓库扫描、确定性、可独立测试与 `BenchmarkList`；CLI `aicoding todolist --json` 只读暴露。首个待办 `0001` 放入"测试引擎登记新-Primitive-ADR-必含-§12-自评门禁"的完整实现计划（Status: Planned，后续实现后转 Done 绿灯）。按宪法 dogfood：本 Primitive 自带 §12 自评。 / Adds the todolist primitive and docs/todolist/ queue: a single-responsibility, zero-scan reader of planned work items with a CLI surface; seeds item 0001 with the test-engine ADR-checklist-gate plan.
 
 - **docs(architecture)**: 将 Primitive 宪法（Architecture Constitution）固化为仓库权威文档 `docs/architecture/PRIMITIVE_CONSTITUTION.md`——12 条设计约束（Primitive First / 单一职责 / Execution Cost First / Fast Path First / Do One Thing Well / 最小输入输出 / 确定性 / 接口稳定 / Composition First / 可独立测试 / 可观测 + 评审 Checklist）+ 每条挂接到仓库既有机制（`adapters[].elapsedMs`、digest 恒等、冻结面等），与既有契约文档交叉引用而不重复；约定每个新 Primitive/新领域 ADR 必须含"§12 Checklist 自评"。同步在 ADR 0003 补上 repo-context 的逐项自评作为范式，并登记进架构手册 §8 文档地图。 / Lands the Primitive Constitution as a canonical doc (12 design constraints + review checklist), wires each to a concrete repo mechanism, and adds a worked §12 self-review to ADR 0003 as the template.
@@ -142,7 +144,8 @@
 - **docs**: README、命令文档、架构文档、PowerShell 边界文档、Tag policy 和 Release policy 只描述当前 main 的可观测标准。
 - **chore(pwsh)**: Go 默认控制面之外只保留 PowerShell 专项质量、安全、Plan Mode、外部 skill、tag planning / overlay compatibility 和硬件/工具链边界脚本。
 
-[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/JiaxI2/AiCoding/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/JiaxI2/AiCoding/compare/v0.10.0...v1.0.0
 [0.10.0]: https://github.com/JiaxI2/AiCoding/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/JiaxI2/AiCoding/compare/v0.9.0...v0.9.1
