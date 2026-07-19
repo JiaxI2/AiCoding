@@ -20,6 +20,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/pwshregex"
 	"github.com/JiaxI2/AiCoding/internal/releasegate"
+	"github.com/JiaxI2/AiCoding/internal/repocontext"
 	"github.com/JiaxI2/AiCoding/internal/repohealth"
 	"github.com/JiaxI2/AiCoding/internal/report"
 	"github.com/JiaxI2/AiCoding/internal/reuse"
@@ -325,7 +326,7 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 
 func runHook(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, usageErrorf("hook requires subcommand: pre-commit or commit-msg")
+		return report.Result{}, usageErrorf("hook requires subcommand: pre-commit, commit-msg, or post-commit")
 	}
 	sub := args[0]
 	switch sub {
@@ -408,6 +409,22 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		}
 		errs := governance.Lint(repo, "commit-msg", *fileArg)
 		return report.Result{SchemaVersion: 1, Command: "hook commit-msg", OK: len(errs) == 0, Message: "commit-msg fast gate", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	case "post-commit":
+		fs := newFlagSet("hook post-commit")
+		repoArg := fs.String("repo-root", "", "repository root")
+		_ = fs.Bool("json", false, "json output")
+		if err := parseNoPositionals(fs, args[1:]); err != nil {
+			return report.Result{}, err
+		}
+		repo, err := platform.ResolveRepoRoot(*repoArg)
+		if err != nil {
+			return report.Fail("hook post-commit", start, "cannot resolve repo root", nil, err.Error()), err
+		}
+		// Best-effort: an unavailable diff (e.g. the first commit) still lets the
+		// domain fall back to a full reconcile with an empty affected set.
+		changed, _ := gitx.CommitFiles(repo, "HEAD")
+		sync := repocontext.Sync(repo, changed, false)
+		return report.Result{SchemaVersion: 1, Command: "hook post-commit", OK: sync.OK, Message: "repo-context incremental sync", RepoRoot: repo, Data: sync, Warnings: sync.Warnings, Errors: sync.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(sync.Errors)
 	default:
 		return report.Result{}, usageErrorf("unsupported hook: %s", sub)
 	}

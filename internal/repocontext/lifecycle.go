@@ -74,7 +74,29 @@ func apply(repo, action string, dryRun bool) Report {
 		return report
 	}
 
-	// Remove artifacts we previously owned that are no longer desired.
+	written, err := reconcile(repo, snapshot.Digest(), desired, existing, &report)
+	if err != nil {
+		report.Errors = []string{err.Error()}
+		return report
+	}
+	report.Files = written
+	report.OK = true
+	report.Status = "ok"
+	report.Installed = true
+	report.Fresh = true
+	return report
+}
+
+// reconcile converges the owned artifacts on disk to the desired set, writing only
+// files whose content actually changed and removing owned files no longer desired.
+// It rewrites the manifest with the new facts digest. Returns the paths whose
+// content was created or updated. Unchanged files keep their bytes and mtime, so a
+// change to one source domain never rewrites unrelated domain context.
+func reconcile(repo, factsDigest string, desired []generated, existing Manifest, report *Report) ([]string, error) {
+	existingByPath := map[string]string{}
+	for _, file := range existing.Files {
+		existingByPath[file.Path] = file.Digest
+	}
 	desiredPaths := map[string]bool{}
 	for _, file := range desired {
 		desiredPaths[file.Path] = true
@@ -88,24 +110,22 @@ func apply(repo, action string, dryRun bool) Report {
 		}
 	}
 
-	manifest := Manifest{SchemaVersion: manifestSchemaVersion, FactsDigest: snapshot.Digest()}
+	written := []string{}
+	manifest := Manifest{SchemaVersion: manifestSchemaVersion, FactsDigest: factsDigest}
 	for _, file := range desired {
-		if err := writeOwned(repo, file.Path, file.Content); err != nil {
-			report.Errors = []string{"cannot write artifact " + file.Path + ": " + err.Error()}
-			return report
+		digest := contentDigest(file.Content)
+		if existingByPath[file.Path] != digest {
+			if err := writeOwned(repo, file.Path, file.Content); err != nil {
+				return nil, errors.New("cannot write artifact " + file.Path + ": " + err.Error())
+			}
+			written = append(written, file.Path)
 		}
-		manifest.Files = append(manifest.Files, ManifestFile{Path: file.Path, Digest: contentDigest(file.Content)})
-		report.Files = append(report.Files, file.Path)
+		manifest.Files = append(manifest.Files, ManifestFile{Path: file.Path, Digest: digest})
 	}
 	if err := writeManifest(repo, manifest); err != nil {
-		report.Errors = []string{"cannot write manifest: " + err.Error()}
-		return report
+		return nil, errors.New("cannot write manifest: " + err.Error())
 	}
-	report.OK = true
-	report.Status = "ok"
-	report.Installed = true
-	report.Fresh = true
-	return report
+	return written, nil
 }
 
 // Uninstall deletes only manifest-listed artifacts whose on-disk content still

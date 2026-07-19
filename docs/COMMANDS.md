@@ -48,8 +48,10 @@ namespace 判断中分别维护字符串列表。
 不会再静默转发。`lifecycle` 现在要求显式 `--scope kit|mcp|runtime-skill|repo-context|all`。
 `--scope repo-context` 作用于整个仓库，不接受 `--kit`、`--component` 或 `--all`；它扫描仓库
 事实（目录、语言/工具链、依赖边）生成受管的小粒度上下文文件到 `.aicoding/repo-context/`，
-并用 facts digest 与生成物 digest 对账新鲜度。详见
-[ADR 0003](decisions/0003-repo-context-domain.md) 与
+并用 facts digest 与生成物 digest 对账新鲜度。`hook post-commit`（由 `.githooks/post-commit`
+触发）在每次提交后读取本次变更文件，增量重生成受影响域的上下文——只写内容真正变化的文件，
+未受影响的域字节不变；未安装 repo-context 时该 hook 静默空操作。它是 `update` 的内部增量步骤
+（`sync` 不是新动词）。详见 [ADR 0003](decisions/0003-repo-context-domain.md) 与
 [07 演进路线](architecture/07-roadmap.md) §3。
 `kit list --json` 与 `mcp list --json` 的外层报告包含
 `inputDigest`；MCP inventory 同时保留 `registryDigest` 并增加 `catalogDigest`。前者只标识
@@ -77,6 +79,7 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 | C99 skill fmt/check | `bin\aicoding.exe skill c99-standard-c fmt|check --scope changed|staged|paths --json` |
 | Rollback | `bin\aicoding.exe lifecycle rollback --scope kit --last --json` |
 | Repo-context 生成/保鲜 | `bin\aicoding.exe lifecycle install\|update\|uninstall\|status\|doctor\|verify --scope repo-context --json` |
+| Repo-context 提交后增量同步 | `bin\aicoding.exe hook post-commit --json`（由 `.githooks/post-commit` 自动触发） |
 | Export | `bin\aicoding.exe export --all --zip --json` |
 | Fresh clone | `bin\aicoding.exe fresh-clone --profile Smoke|Full|Release --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |
