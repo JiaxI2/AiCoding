@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(cli)**: `bootstrap` 输出在检测到仓库 `.githooks` 未接线时提示接线命令（fresh clone 引导）——在 workflow 层（`runBootstrap`）组合复用 `repohealth.HooksWired` Primitive（`bootstrap` 包本身不是 git 调用方，按边界不直接调 git），未接线加 warning、接线后自动静默；warning 不影响 `bootstrap` 成功。 / bootstrap now nudges a fresh clone to wire .githooks when core.hooksPath is unset, composed at the CLI layer by reusing the HooksWired primitive; self-silences once wired.
+
 - **feat(repohealth)**: `doctor --all` 增加 `doctor.hooks-wired`——用 git 自带的 `core.hooksPath` 检测仓库 `.githooks` 是否真的激活（此前仅 `verify.hooks` 检查文件存在，`core.hooksPath` 未设时 hook 静默不触发、commit 门禁被绕过而无人察觉）。属每-clone 环境状态，报 warning（CI/fresh clone 可不接线；kit 安装会接线）。利用 git 机制而非重造 hook 发现逻辑；repohealth 是 git-process-boundary 允许的 gitx 调用方。 / Adds a git-native doctor.hooks-wired check that detects whether core.hooksPath actually activates the repo .githooks (warning-level), closing the silent "hooks exist but never fire" gap.
 
 - **docs(plan)**: 记录 PowerShell 专项脚本收敛计划（todolist 0002，Planned）——识别两处可收敛结构：每 kit 的 status/test/verify 三件套（并行外围节点 → 收进 Go 单一测试引擎的 leaf gate）与 1192 行的万能 `aicoding-skill.ps1`（拆分 + helper 上移到 lib 模块去重）；分阶段、逐脚本遵守 `POWERSHELL_BOUNDARY` 第 45 条"单独计划+验证"，**明确排除 ai-debug-repair-kit（jtag/ccsdebug/DSS/XDS）安全链**。内核评估结论：已在收敛下限，进一步合并即 God Core（拒绝），故不动内核。 / Records the PowerShell specialty convergence plan (excluding the jtag/ccsdebug safety toolchain) and the assessment that the kernel is already at its convergence floor and must not be over-merged.

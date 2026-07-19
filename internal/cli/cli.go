@@ -694,7 +694,15 @@ func runBootstrap(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("bootstrap", start, "cannot resolve repo root", nil, err.Error()), err
 	}
 	status, errs := bootstrap.Bootstrap(repo, bootstrap.Options{Build: !*noBuild})
-	return report.Result{SchemaVersion: 1, Command: "bootstrap", OK: len(errs) == 0, Message: "bootstrap fast path binary", RepoRoot: repo, Data: status, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	result := report.Result{SchemaVersion: 1, Command: "bootstrap", OK: len(errs) == 0, Message: "bootstrap fast path binary", RepoRoot: repo, Data: status, Errors: errs, ElapsedMS: report.Elapsed(start)}
+	// Nudge a fresh clone to wire the repository .githooks. bootstrap is not a git
+	// caller by boundary, so the handler composes the detection here at the workflow
+	// layer by reusing the repohealth primitive; a warning never fails bootstrap and
+	// self-silences once hooks are wired (by kit install or the printed command).
+	if _, warnings := repohealth.HooksWired(repo); len(warnings) > 0 {
+		result.Warnings = append(result.Warnings, warnings...)
+	}
+	return result, report.BoolErr(errs)
 }
 
 func runCache(args []string, start time.Time) (report.Result, error) {
