@@ -6,8 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-
-	registryobject "github.com/JiaxI2/AiCoding/internal/registry"
 )
 
 const manifestSchemaVersion = 1
@@ -288,12 +286,6 @@ func Verify(repo string) Report {
 	report.OK = len(issues) == 0
 	report.Status = statusFromOK(report.OK)
 	return report
-}
-
-// Snapshot exposes the facts snapshot for callers that need the digest view.
-func Snapshot(repo string) (registryobject.Snapshot, error) {
-	_, snapshot, err := Scan(repo)
-	return snapshot, err
 }
 
 func manifestMatches(manifest Manifest, desired []generated) bool {

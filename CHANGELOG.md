@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 将 ADR 0003 从叙述式改写为具体的架构指导文档——新增"与设计哲学对齐"的 Primitive 复用/新增对照表、包与文件地图、`Facts`/`Manifest` 数据结构与 JSON 示例、动作语义表、owned-asset 三条铁律、门禁严重级矩阵、"如何扩展（加一门语言=一行）/如何删除（可删清单）"配方，使开发者与后续贡献者一目了然；并显式留下"若再出现第二个生成文本域应把 reconcile 抽为共享 Primitive"的路标。 / Rewrites ADR 0003 into a concrete engineering guide (primitive-composition table, data shapes, action-semantics and gate-severity tables, extend/delete recipes).
+
+- **refactor(repo-context)**: 移除未被任何调用方使用的投机导出 `repocontext.Snapshot`（与 `Scan`/`FactsDigest` 重复），遵循 YAGNI 收敛领域 API 表面。 / Removes the unused speculative `repocontext.Snapshot` export (duplicated Scan/FactsDigest).
+
 - **feat(repo-context)**: 把 repo-context 新鲜度与完整性挂入官方门禁（ADR 0003 阶段 4）——聚合 `doctor --all` 增加 `doctor.repo-context`、`verify --profile` 增加 `verify.repo-context`（经 lifecycle 适配器调用，与 kit/runtime-skill 同构），唯一测试 Registry 登记 `RC-001`（结构验证）与 `RC-002`（生成计划）leaf gate；对账语义：owned 文件缺失或被篡改报 error 会失败门禁，仅新鲜度漂移报 warning（由 post-commit hook 自愈），未安装时全部空操作，fresh clone/CI 不受影响。至此 repo-context 领域阶段 0–4 全部落地，内核六模块零改动。 / Wires repo-context freshness and integrity into the aggregate doctor/verify gates and the test registry (RC-001/RC-002): integrity breaks fail, drift only warns, uninstalled repos are a no-op; ADR 0003 stages 0-4 complete with zero kernel changes.
 
 - **feat(repo-context)**: 落地 repo-context 提交后增量同步（ADR 0003 阶段 3）——新增 `hook post-commit`（由 `.githooks/post-commit` 触发）读取 HEAD 变更文件、映射受影响顶层域，并把生成写入收敛为**只写内容真正变化的文件**（install/update/sync 共用 `reconcile`），未受影响的域字节不变、mtime 不动；未安装 repo-context 时静默空操作。`sync` 作为 `update` 的内部增量步骤实现，不新增动词；新增 `gitx.CommitFiles` 读取单次提交变更。 / Adds post-commit incremental sync for repo-context (ADR 0003 stage 3): a post-commit hook reconciles only the files whose content actually changed, leaving unaffected domains byte-identical, implemented as update's internal step without a new verb.
