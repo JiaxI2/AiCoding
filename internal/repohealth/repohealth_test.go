@@ -5,7 +5,29 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 )
+
+func TestHooksWiredDetectsUnwiredThenWired(t *testing.T) {
+	repo := t.TempDir()
+	if _, err := gitx.Run(repo, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	// Files existing is not enough — an unwired clone must be flagged.
+	data, warnings := HooksWired(repo)
+	if len(warnings) == 0 || data["wired"] != false {
+		t.Fatalf("expected unwired warning, got data=%v warnings=%v", data, warnings)
+	}
+	// Leverage git's own config: once core.hooksPath points to .githooks, it's wired.
+	if _, err := gitx.Run(repo, "config", "core.hooksPath", ".githooks"); err != nil {
+		t.Fatal(err)
+	}
+	data, warnings = HooksWired(repo)
+	if len(warnings) != 0 || data["wired"] != true {
+		t.Fatalf("expected wired with no warning, got data=%v warnings=%v", data, warnings)
+	}
+}
 
 func TestCategorizePwshPriority(t *testing.T) {
 	cases := []struct {

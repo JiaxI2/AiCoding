@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(repohealth)**: `doctor --all` 增加 `doctor.hooks-wired`——用 git 自带的 `core.hooksPath` 检测仓库 `.githooks` 是否真的激活（此前仅 `verify.hooks` 检查文件存在，`core.hooksPath` 未设时 hook 静默不触发、commit 门禁被绕过而无人察觉）。属每-clone 环境状态，报 warning（CI/fresh clone 可不接线；kit 安装会接线）。利用 git 机制而非重造 hook 发现逻辑；repohealth 是 git-process-boundary 允许的 gitx 调用方。 / Adds a git-native doctor.hooks-wired check that detects whether core.hooksPath actually activates the repo .githooks (warning-level), closing the silent "hooks exist but never fire" gap.
+
 - **docs(plan)**: 记录 PowerShell 专项脚本收敛计划（todolist 0002，Planned）——识别两处可收敛结构：每 kit 的 status/test/verify 三件套（并行外围节点 → 收进 Go 单一测试引擎的 leaf gate）与 1192 行的万能 `aicoding-skill.ps1`（拆分 + helper 上移到 lib 模块去重）；分阶段、逐脚本遵守 `POWERSHELL_BOUNDARY` 第 45 条"单独计划+验证"，**明确排除 ai-debug-repair-kit（jtag/ccsdebug/DSS/XDS）安全链**。内核评估结论：已在收敛下限，进一步合并即 God Core（拒绝），故不动内核。 / Records the PowerShell specialty convergence plan (excluding the jtag/ccsdebug safety toolchain) and the assessment that the kernel is already at its convergence floor and must not be over-merged.
 
 - **feat(governance)**: 按 Graph First 补齐新领域节点的强制边——将 `internal/repocontext` 域按 `kit`/`mcpcontrol` 同构接入 `config/dependency-governance.json` 的 `goPackageBoundaries`（领域互相隔离、不向上依赖 cli/lifecycle/repohealth/testengine；原语层 registry/runner/report 与 gitx 也不得反向依赖它），并把 `internal/todolist` 纳入 gitx 零-internal-依赖枚举。此前两个新节点加入 Graph 后其边未被机器强制（可被误改成 `repocontext → lifecycle` 的环而无人拦）；现 `governance dependencies` 会明确拒绝此类越界（已用注入-验证-回滚证明）。 / Wires the repocontext domain's edges into enforced package boundaries (mirroring kit/mcpcontrol) so the new graph nodes' structure is machine-guaranteed, not accidental.

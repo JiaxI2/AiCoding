@@ -167,6 +167,30 @@ func VerifyHooks(repo string) ([]HookCheck, []string) {
 	return checks, allErrs
 }
 
+// HooksWired reports whether the repository's .githooks are actually active — that
+// is, whether git's core.hooksPath resolves to .githooks. The hook files merely
+// existing (VerifyHooks) is not enough: a clone with core.hooksPath unset silently
+// bypasses every commit gate. Wiring happens at kit install (plugin runtime) or via
+// `git config core.hooksPath .githooks`. This is per-clone environment state, so it
+// is a doctor concern reported as a warning — CI and fresh clones may legitimately
+// run without commit hooks. It leverages git's own config rather than reimplementing
+// hook discovery.
+func HooksWired(repo string) (map[string]interface{}, []string) {
+	out, err := gitx.Run(repo, "config", "--get", "core.hooksPath")
+	configured := strings.TrimSpace(out)
+	data := map[string]interface{}{"expected": ".githooks", "configured": configured, "wired": false}
+	if err != nil || configured == "" {
+		return data, []string{"git core.hooksPath is not set; repository .githooks are inactive and commit gates (pre-commit, commit-msg, post-commit) will not run — run kit install or `git config core.hooksPath .githooks`"}
+	}
+	wired := configured == ".githooks" ||
+		filepath.Clean(configured) == filepath.Clean(platform.RepoPath(repo, ".githooks"))
+	data["wired"] = wired
+	if !wired {
+		return data, []string{"git core.hooksPath is '" + configured + "', not the repository .githooks; commit gates may not run — run `git config core.hooksPath .githooks`"}
+	}
+	return data, nil
+}
+
 func VerifyRepoText(repo string) ([]TextCheck, []string) {
 	files, errs := repoTextFiles(repo)
 	checks := []TextCheck{}

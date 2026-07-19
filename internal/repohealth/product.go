@@ -51,6 +51,10 @@ func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 		})
 		return result, result.Warnings, result.Errors
 	}))
+	checks = append(checks, productCheck("doctor.hooks-wired", "REPOSITORY", func() (interface{}, []string, []string) {
+		data, warnings := HooksWired(repo)
+		return data, warnings, nil
+	}))
 	checks = append(checks, productCheck("doctor.repo-context", "REPO_CONTEXT", func() (interface{}, []string, []string) {
 		result := lifecyclecontrol.Run(ctx, repo, lifecyclecontrol.Options{
 			Action: "doctor",
