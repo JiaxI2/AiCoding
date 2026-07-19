@@ -44,14 +44,17 @@ PowerShell 专项六类停止增长；已移除的兼容入口不复活（迁移
 **从代码自动生成、随提交自动更新**的受管资产。参照 `aspenkit/aspens`（MIT）的
 已验证做法，在 Go 控制面内实现——**不并入其 npm CLI**（架构禁止第二控制面）。
 
-| 阶段 | 做什么 | 产出 | 验收 | 动内核？ |
-|---|---|---|---|---|
-| 0 立项 | ADR 论证三条件：现实问题=上下文随代码演进漂移、单体指令文件腐化；稳定变化点=代码演进本身；两个真实消费者=本仓库自举 + 受管项目仓库（如 C99 kit 服务的 C 工程）。**ADR 已起草**：[ADR 0003](../decisions/0003-repo-context-domain.md)（含 descriptor 草案与六步准入应答） | ADR + 领域 descriptor 草案 | ADR 评审通过 | 否（走路径③，runtime-skill 先例：六模块零修改） |
-| 1 扫描 scan | Go 确定性扫描器（无 LLM）：目录结构、语言/工具链、import/include 依赖图（Go/C 优先——aspens 只支持 JS/TS/Python，正好互补）→ repo facts snapshot + digest（复用 `internal/registry` 快照原语）。现有 REPOSITORY_MAP 生成器是被泛化的雏形 | `repo-context` 领域的事实快照 | 同一仓库两次扫描 digest 稳定；Smoke 登记 | 否 |
-| 2 生成 generate | 从 snapshot 生成每域约 35 行的 scoped context 文件，落声明的 context 根，作为 lifecycle 受管 owned 资产：`--scope repo-context` 复用八动词 | 可被 Agent 按域加载的上下文文件集 | install/uninstall 往返后**用户手写文件字节不变**（定制铁律） | 否 |
-| 3 同步 sync | commit 驱动增量更新：hook 读本次变更文件 → 映射受影响 context → 只重新生成变了的（aspens `doc sync` 同思路）。与 docsync 分工：docsync **拦**"人写文档没跟上"，repo-context **让**"生成上下文自动跟上" | 提交后上下文自动保鲜 | 改一个文件，只有对应 context 变 | 否 |
-| 4 体检 freshness | `doctor`/`verify` 增加新鲜度检查：代码事实 digest vs 生成物记录的 digest 对账，漂移即报；唯一测试 Registry 登记 leaf gate | 上下文漂移可被机器拦截 | 人为制造漂移能被拦下 | 否 |
-| 可选后置 | LLM 辅助域发现（aspens 的做法）：默认全确定性，LLM 只作显式可选步骤，产物仍走同一生成器与 digest 对账 | 更好的域切分 | 可对账性不降级 | 否 |
+| 阶段 | 状态 | 做什么 | 产出 | 验收 | 动内核？ |
+|---|---|---|---|---|---|
+| 0 立项 | ✅ 已完成 | ADR 论证三条件：现实问题=上下文随代码演进漂移、单体指令文件腐化；稳定变化点=代码演进本身；两个真实消费者=本仓库自举 + 受管项目仓库（如 C99 kit 服务的 C 工程）。[ADR 0003](../decisions/0003-repo-context-domain.md)（含 descriptor 与六步准入应答） | ADR + 领域 descriptor | ADR 评审通过 | 否（走路径③，runtime-skill 先例：六模块零修改） |
+| 1 扫描 scan | ✅ 已落地 | Go 确定性扫描器（无 LLM）：目录结构、语言/工具链、顶层域 → repo facts snapshot + digest（复用 `internal/registry` 快照原语）。实现于 `internal/repocontext/scan.go` | `repo-context-facts` 事实快照 | 同一仓库两次扫描 digest 稳定（`TestScanIsDeterministic`） | 否 |
+| 2 生成 generate | ✅ 已落地 | 从 snapshot 生成每域小粒度 scoped context 文件到受管 owned 根 `.aicoding/repo-context/`；`lifecycle --scope repo-context` 复用 install/update/uninstall/status/doctor/verify。实现于 `internal/repocontext/` + `internal/lifecycle/repo_context.go` | 可按域加载的上下文文件集 + manifest | install/uninstall 往返后**用户手写文件字节不变**（`TestUninstallRemovesOnlyOwnedArtifacts`） | 否 |
+| 3 同步 sync | ⏳ 待实现 | commit 驱动增量更新：hook 读本次变更文件 → 映射受影响 context → 只重新生成变了的（aspens `doc sync` 同思路）。与 docsync 分工：docsync **拦**"人写文档没跟上"，repo-context **让**"生成上下文自动跟上" | 提交后上下文自动保鲜 | 改一个文件，只有对应 context 变 | 否 |
+| 4 体检 freshness | ⏳ 待实现（域内已具备 status/doctor 对账，待挂入聚合 `doctor --all`/`verify --profile` 与测试 Registry） | 代码事实 digest vs 生成物记录 digest 对账，漂移即报；唯一测试 Registry 登记 leaf gate | 上下文漂移可被机器拦截 | 人为制造漂移能被拦下（`TestStatusReportsFreshThenDriftAfterCodeChange`） | 否 |
+| 可选后置 | ⏳ 待评估 | LLM 辅助域发现（aspens 的做法）：默认全确定性，LLM 只作显式可选步骤，产物仍走同一生成器与 digest 对账 | 更好的域切分 | 可对账性不降级 | 否 |
+
+阶段 1–2 的可删除性证明已兑现：删除 `internal/repocontext` 包与 catalog 中一行 descriptor
+即可移除本领域，`internal/registry`、`internal/runner`、`internal/report` 零改动。
 
 ## 4. 未知的已知：生态吸收计划
 

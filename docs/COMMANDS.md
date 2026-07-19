@@ -45,7 +45,12 @@ catalog，并通过 catalog 完整性与 CLI contract 测试；不能再在 rout
 namespace 判断中分别维护字符串列表。
 
 到期的兼容命令已从 catalog、router 和 help 删除；旧写法返回 usage error（退出码 2），
-不会再静默转发。`lifecycle` 现在要求显式 `--scope kit|mcp|runtime-skill|all`。
+不会再静默转发。`lifecycle` 现在要求显式 `--scope kit|mcp|runtime-skill|repo-context|all`。
+`--scope repo-context` 作用于整个仓库，不接受 `--kit`、`--component` 或 `--all`；它扫描仓库
+事实（目录、语言/工具链、依赖边）生成受管的小粒度上下文文件到 `.aicoding/repo-context/`，
+并用 facts digest 与生成物 digest 对账新鲜度。详见
+[ADR 0003](decisions/0003-repo-context-domain.md) 与
+[07 演进路线](architecture/07-roadmap.md) §3。
 `kit list --json` 与 `mcp list --json` 的外层报告包含
 `inputDigest`；MCP inventory 同时保留 `registryDigest` 并增加 `catalogDigest`。前者只标识
 规范化 registry，后者标识 registry 与全部 referenced manifests 的内容树。
@@ -71,6 +76,7 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 | C99 skill 快速/完整验证 | `bin\aicoding.exe skill c99-standard-c verify --profile fast\|full --timings --json` |
 | C99 skill fmt/check | `bin\aicoding.exe skill c99-standard-c fmt|check --scope changed|staged|paths --json` |
 | Rollback | `bin\aicoding.exe lifecycle rollback --scope kit --last --json` |
+| Repo-context 生成/保鲜 | `bin\aicoding.exe lifecycle install\|update\|uninstall\|status\|doctor\|verify --scope repo-context --json` |
 | Export | `bin\aicoding.exe export --all --zip --json` |
 | Fresh clone | `bin\aicoding.exe fresh-clone --profile Smoke|Full|Release --json` |
 | Governance lint | `bin\aicoding.exe governance lint --json` |

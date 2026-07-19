@@ -95,6 +95,25 @@ var adapterDefinitions = []adapterDefinition{
 			return runRuntimeSkillAdapter(ctx, repo, opts, defaultCommandExecutor)
 		},
 	},
+	{
+		descriptor: AdapterDescriptor{
+			ID:         ScopeRepoContext,
+			InputKind:  "repo-context-facts",
+			StateOwner: "repo-context",
+			Entrypoint: "go-static",
+			Actions: []AdapterAction{
+				{Name: "install", Effect: EffectWrite},
+				{Name: "update", Effect: EffectWrite},
+				{Name: "uninstall", Effect: EffectWrite},
+				{Name: "status", Effect: EffectRead},
+				{Name: "doctor", Effect: EffectRead},
+				{Name: "verify", Effect: EffectRead},
+			},
+		},
+		run: func(_ context.Context, repo string, opts Options) AdapterResult {
+			return runRepoContextAdapter(repo, opts)
+		},
+	},
 }
 
 func LoadAdapterCatalogSnapshot() (AdapterCatalogSnapshot, error) {

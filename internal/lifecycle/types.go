@@ -5,6 +5,7 @@ const (
 	ScopeKit          = "kit"
 	ScopeMCP          = "mcp"
 	ScopeRuntimeSkill = "runtime-skill"
+	ScopeRepoContext  = "repo-context"
 )
 
 type Options struct {

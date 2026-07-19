@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(repo-context)**: 落地 repo-context 新领域 adapter（ADR 0003 阶段 1–2）——`internal/repocontext` 确定性扫描器把仓库事实（名称、语言构成、工具链、顶层域）规范化为稳定 digest 快照（复用 `internal/registry`），并生成受管的小粒度 scoped context 文件到 `.aicoding/repo-context/`；经 `lifecycle --scope repo-context` 复用 install/update/uninstall/status/doctor/verify 六动作，manifest + 内容 digest 保证只删自己生成的文件、对账新鲜度、发现篡改，用户手写内容永不被覆盖；内核六模块零修改（catalog 增一个 descriptor）。 / Lands the repo-context domain adapter (ADR 0003 stages 1-2): a deterministic Go scanner producing a stable facts snapshot and generating managed scoped-context files under lifecycle's eight verbs, with owned-asset digest discipline and zero kernel changes.
+
 - **docs(plan)**: 起草 repo-context 新领域立项 ADR 0003（descriptor 草案 + 三条件论证 + 六步准入应答 + 阶段验收），并把生态对照项目清单与"四象限×可沉淀知识资产"映射沉淀进 00/07 架构篇（含预留出口表新增 Skill 自进化与会话记忆采集两项）。 / Drafts ADR 0003 proposing the repo-context domain adapter and sediments the verified ecosystem reference list plus the quadrant knowledge-asset mapping into the architecture series.
 
 - **docs(architecture)**: 新增 00–07 编号平台架构系列——八层系统总图与层职责、Context/Skill/Workflow/Governance 体系、扩展规范与四象限演进路线；内核命令面以直白功能清单固化为地基，repo-context（参照 `aspenkit/aspens` 与 `Bollwerkio/werkstatt`，均 MIT）列为分阶段扩展主线。 / Adds the numbered platform architecture series 00-07 covering the layered system view, context/skill/workflow/governance architecture, the extension SDK, and the quadrant-based roadmap that freezes the concrete core-command baseline and stages the repo-context capability plan.

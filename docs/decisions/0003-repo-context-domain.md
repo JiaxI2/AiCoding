@@ -2,7 +2,8 @@
 
 ## Status
 
-Proposed（owner 评审通过后改为 Accepted；这即 [07 演进路线](../architecture/07-roadmap.md) §3 阶段 0 的验收条件）
+Accepted（阶段 0 立项通过；阶段 1 扫描与阶段 2 生成已实现落地——`internal/repocontext` +
+`internal/lifecycle` 的 `repo-context` adapter；阶段 3 commit 增量同步与阶段 4 聚合门禁待实现）
 
 ## Context
 

@@ -97,7 +97,7 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	}
 	fs := newFlagSet("lifecycle " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
-	scopeArg := fs.String("scope", "", "kit, mcp, runtime-skill, or all")
+	scopeArg := fs.String("scope", "", "kit, mcp, runtime-skill, repo-context, or all")
 	kitArg := fs.String("kit", "", "kit id")
 	componentArg := fs.String("component", "", "MCP component id")
 	allArg := fs.Bool("all", false, "all enabled entries in the selected adapter")
@@ -122,9 +122,9 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 
 	scope := strings.ToLower(strings.TrimSpace(*scopeArg))
 	if scope == "" {
-		return report.Result{}, usageErrorf("lifecycle requires --scope kit|mcp|runtime-skill|all")
+		return report.Result{}, usageErrorf("lifecycle requires --scope kit|mcp|runtime-skill|repo-context|all")
 	}
-	if !validChoice(scope, lifecyclecontrol.ScopeKit, lifecyclecontrol.ScopeMCP, lifecyclecontrol.ScopeRuntimeSkill, lifecyclecontrol.ScopeAll) {
+	if !validChoice(scope, lifecyclecontrol.ScopeKit, lifecyclecontrol.ScopeMCP, lifecyclecontrol.ScopeRuntimeSkill, lifecyclecontrol.ScopeRepoContext, lifecyclecontrol.ScopeAll) {
 		return report.Result{}, usageErrorf("unsupported lifecycle scope: %s", scope)
 	}
 	standaloneRoot := strings.ToLower(strings.TrimSpace(*standaloneRootArg))
@@ -143,6 +143,9 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	}
 	if scope == lifecyclecontrol.ScopeMCP && *kitArg != "" {
 		return report.Result{}, usageErrorf("lifecycle --scope mcp does not accept --kit")
+	}
+	if scope == lifecyclecontrol.ScopeRepoContext && (*kitArg != "" || *componentArg != "" || *allArg) {
+		return report.Result{}, usageErrorf("lifecycle --scope repo-context operates on the whole repository and does not accept --kit, --component, or --all")
 	}
 	hasRuntimeFlags := runtimeProfile != "" || *runtimeSkillArg != "" || *sourceRepositoryArg != "" || *migrateUnmanagedArg
 	if scope != lifecyclecontrol.ScopeRuntimeSkill && scope != lifecyclecontrol.ScopeAll && hasRuntimeFlags {

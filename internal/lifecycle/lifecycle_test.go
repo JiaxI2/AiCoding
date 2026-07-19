@@ -36,7 +36,7 @@ func TestRunAllPlanUsesStaticAdaptersWithoutWritingCodexConfig(t *testing.T) {
 		DryRun:         true,
 		RuntimeProfile: "runtime",
 	}), fakeExecutor)
-	if !result.OK || result.Mode != "plan" || len(result.Adapters) != 3 {
+	if !result.OK || result.Mode != "plan" || len(result.Adapters) != 4 {
 		t.Fatalf("unexpected lifecycle plan: %#v", result)
 	}
 	if !strings.HasPrefix(result.CatalogDigest, "sha256:") || !strings.HasPrefix(result.PlanDigest, "sha256:") {
@@ -78,8 +78,8 @@ func TestAdapterCatalogIsInspectableStableAndDetached(t *testing.T) {
 		t.Fatalf("adapter catalog digest is unstable: %q != %q", first.Digest(), second.Digest())
 	}
 	descriptors := first.Descriptors()
-	if len(descriptors) != 3 {
-		t.Fatalf("adapter descriptors = %d, want 3", len(descriptors))
+	if len(descriptors) != 4 {
+		t.Fatalf("adapter descriptors = %d, want 4", len(descriptors))
 	}
 	descriptors[0].Actions[0].Name = "mutated"
 	if first.Descriptors()[0].Actions[0].Name == "mutated" {
