@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 起草 repo-context 新领域立项 ADR 0003（descriptor 草案 + 三条件论证 + 六步准入应答 + 阶段验收），并把生态对照项目清单与"四象限×可沉淀知识资产"映射沉淀进 00/07 架构篇（含预留出口表新增 Skill 自进化与会话记忆采集两项）。 / Drafts ADR 0003 proposing the repo-context domain adapter and sediments the verified ecosystem reference list plus the quadrant knowledge-asset mapping into the architecture series.
+
 - **docs(architecture)**: 新增 00–07 编号平台架构系列——八层系统总图与层职责、Context/Skill/Workflow/Governance 体系、扩展规范与四象限演进路线；内核命令面以直白功能清单固化为地基，repo-context（参照 `aspenkit/aspens` 与 `Bollwerkio/werkstatt`，均 MIT）列为分阶段扩展主线。 / Adds the numbered platform architecture series 00-07 covering the layered system view, context/skill/workflow/governance architecture, the extension SDK, and the quadrant-based roadmap that freezes the concrete core-command baseline and stages the repo-context capability plan.
 
 - **feat(skills)**: 将经三重门禁验证（`aicoding-skill.ps1 verify`、`quick_validate`、`skill_gate`）与架构审计（八动词编排、命令真实性实测、分域 rollback、获取/激活分离）的用户 Skill `aicoding-upgrade-train`（升级列车）与 `aicoding-environment-rebuild`（环境重建）从 Draft 安装进 RepoLocal（`.agents/skills/`），进入版本管理并可被 agent 发现；adopt 进 Kit 留待真实试用反馈。 / Installs the gate-verified and architecture-audited user skills aicoding-upgrade-train and aicoding-environment-rebuild from draft into the version-controlled repo-local runtime path; Kit adoption is deferred pending real usage.

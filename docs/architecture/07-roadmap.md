@@ -35,6 +35,8 @@ PowerShell 专项六类停止增长；已移除的兼容入口不复活（迁移
 | 不可快照的事实（远程托管等） | 接入此类领域时 | 分类吸收：可快照部分归 input facts，其余归 mutable observation | 否 |
 | C/native 性能出口 | 五条件齐备（热点在纯计算内核、Go 已到预算上限、两个真实消费者、同一 golden tests、收益覆盖成本） | 语义之下的物理优化 | 否（语义冻结） |
 | 外部集成决策工作流 | 真实集成场景出现 | 按 Draft → RepoLocal 阶梯重建 Skill | 否 |
+| Skill 自进化：失败轨迹→技能提炼（`sentient-agi/EvoSkill` 类） | 测试/门禁失败样本积累成规模，且评估证明提炼有效 | Draft 阶梯的自动生成器——产物仍逐级过 Draft → RepoLocal 门禁与同名审计，不直接进运行时 | 否 |
+| 会话记忆自动采集（`thedotmack/claude-mem` 类） | 决策库（DECISIONS.md）手工维护成为真实瓶颈 | 决策日志采集器：会话证据 → 追加式条目草稿，人审后入库 | 否 |
 
 ## 3. 已知的未知：repo-context 分阶段开发计划（已立项主线）
 
@@ -44,7 +46,7 @@ PowerShell 专项六类停止增长；已移除的兼容入口不复活（迁移
 
 | 阶段 | 做什么 | 产出 | 验收 | 动内核？ |
 |---|---|---|---|---|
-| 0 立项 | ADR 论证三条件：现实问题=上下文随代码演进漂移、单体指令文件腐化；稳定变化点=代码演进本身；两个真实消费者=本仓库自举 + 受管项目仓库（如 C99 kit 服务的 C 工程） | ADR + 领域 descriptor 草案 | ADR 评审通过 | 否（走路径③，runtime-skill 先例：六模块零修改） |
+| 0 立项 | ADR 论证三条件：现实问题=上下文随代码演进漂移、单体指令文件腐化；稳定变化点=代码演进本身；两个真实消费者=本仓库自举 + 受管项目仓库（如 C99 kit 服务的 C 工程）。**ADR 已起草**：[ADR 0003](../decisions/0003-repo-context-domain.md)（含 descriptor 草案与六步准入应答） | ADR + 领域 descriptor 草案 | ADR 评审通过 | 否（走路径③，runtime-skill 先例：六模块零修改） |
 | 1 扫描 scan | Go 确定性扫描器（无 LLM）：目录结构、语言/工具链、import/include 依赖图（Go/C 优先——aspens 只支持 JS/TS/Python，正好互补）→ repo facts snapshot + digest（复用 `internal/registry` 快照原语）。现有 REPOSITORY_MAP 生成器是被泛化的雏形 | `repo-context` 领域的事实快照 | 同一仓库两次扫描 digest 稳定；Smoke 登记 | 否 |
 | 2 生成 generate | 从 snapshot 生成每域约 35 行的 scoped context 文件，落声明的 context 根，作为 lifecycle 受管 owned 资产：`--scope repo-context` 复用八动词 | 可被 Agent 按域加载的上下文文件集 | install/uninstall 往返后**用户手写文件字节不变**（定制铁律） | 否 |
 | 3 同步 sync | commit 驱动增量更新：hook 读本次变更文件 → 映射受影响 context → 只重新生成变了的（aspens `doc sync` 同思路）。与 docsync 分工：docsync **拦**"人写文档没跟上"，repo-context **让**"生成上下文自动跟上" | 提交后上下文自动保鲜 | 改一个文件，只有对应 context 变 | 否 |
@@ -59,6 +61,19 @@ PowerShell 专项六类停止增长；已移除的兼容入口不复活（迁移
 | `aspenkit/aspens`（MIT） | **概念重实现**：扫描/scoped context/增量同步的做法进 §3 的 Go 领域实现 | 不并入 npm CLI（不引入第二控制面）；语言覆盖各取所长 |
 | 其他外部 Skill | 一律走获取/激活分离四步边界（[FREEZE_AND_ACQUISITION_BOUNDARY](FREEZE_AND_ACQUISITION_BOUNDARY.md) §3.2） | 不复制源码、不带 URL 的激活 manifest |
 | 用户 Skill | Draft → RepoLocal → Kit 收编阶梯持续运行（现有实例：升级列车、环境重建） | 准入门禁 + 同名审计 |
+
+### 4.1 对照项目清单（参考学习，不并入）
+
+生态调研核实的参照项目（纯文本坐标 owner/repo；只学做法，不并入源码或 CLI）：
+
+| 类别 | 参照项目 | 学什么 | 落点 |
+|---|---|---|---|
+| Skill 组织 / AGENTS.md | `mxyhi/ok-skills`、`anthropics/skills`（官方规范事实标准）、`VoltAgent/awesome-agent-skills` | 技能粒度切分、SKILL.md 格式对齐、playbook 组织 | [03](03-skill-architecture.md) |
+| 工作流纪律 / 质量门禁 | `obra/superpowers`（上游原版）、`Bollwerkio/werkstatt`、`nizos/tdd-guard` | hook 强制 TDD 的拦截与"失败信息指路"文案、评审工作流 | [04](04-workflow-architecture.md)、[05](05-governance.md) |
+| 仓库上下文生成 | `aspenkit/aspens`、`yamadashy/repomix`（全量打包对照路线）、aider 的 PageRank repo-map 机制、`context-hub/generator` | scoped 与全量两条路线取舍、依赖图→上下文选择、增量同步 | 本篇 §3 各阶段 |
+| 记忆 / 自进化 | `sentient-agi/EvoSkill`（失败轨迹→技能）、`thedotmack/claude-mem`、`rohitg00/agentmemory` | 失败样本提炼流程、会话记忆采集与压缩注入 | [02](02-context-architecture.md) §3、本篇 §2 新增两行 |
+| Skill 安装分发 | `numman-ali/openskills`（通用加载器 + AGENTS.md 同步）、`aiskillstore/marketplace`（带安全审计的市场） | 跨运行时安装形态、市场准入审计清单 | [03](03-skill-architecture.md)、[06](06-plugin-sdk.md) |
+| 规则标准与同步 | `agentsmd/agents.md`（AGENTS.md 开放标准本体）、`intellectronica/ruler` | 一份规则源分发到多 agent 工具的 target 模型 | [02](02-context-architecture.md) §1 |
 
 ## 5. 未知的未知：兜底机制（不预测，只兜底）
 
