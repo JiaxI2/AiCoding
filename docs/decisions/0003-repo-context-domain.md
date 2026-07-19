@@ -2,9 +2,9 @@
 
 ## Status
 
-Accepted（阶段 0 立项通过；阶段 1 扫描、阶段 2 生成、阶段 3 commit 增量同步已实现落地——
-`internal/repocontext` + `internal/lifecycle` 的 `repo-context` adapter + `hook post-commit`；
-阶段 4 聚合门禁（挂入 `doctor --all`/`verify --profile` 与测试 Registry）待实现）
+Accepted（阶段 0–4 全部实现落地：扫描 + 生成 + commit 增量同步 + 聚合门禁——
+`internal/repocontext` + `internal/lifecycle` 的 `repo-context` adapter + `hook post-commit`
++ `doctor.repo-context`/`verify.repo-context` 聚合 check + 测试 Registry `RC-001/RC-002`）
 
 ## Context
 

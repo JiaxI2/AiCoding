@@ -331,6 +331,9 @@ func Registry(cfg Config) []TestCase {
 		{ID: "PWSH-003", Category: "PWSH_BOUNDARY", Title: "默认入口不经 PowerShell 编排", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "HEALTH-001", Category: "REPO_HEALTH", Title: "doctor performance probes", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "doctor", "perf", "--json"}, ExpectJSON: true},
 
+		{ID: "RC-001", Category: "REPO_CONTEXT", Title: "repo-context 扫描与结构验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "verify", "--scope", "repo-context", "--json"}, ExpectJSON: true},
+		{ID: "RC-002", Category: "REPO_CONTEXT", Title: "repo-context 生成计划", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "repo-context", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+
 		{ID: "REL-002", Category: "RELEASE_GATE", Title: "Release policy 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 	}
 }

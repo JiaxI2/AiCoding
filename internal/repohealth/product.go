@@ -51,6 +51,13 @@ func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 		})
 		return result, result.Warnings, result.Errors
 	}))
+	checks = append(checks, productCheck("doctor.repo-context", "REPO_CONTEXT", func() (interface{}, []string, []string) {
+		result := lifecyclecontrol.Run(ctx, repo, lifecyclecontrol.Options{
+			Action: "doctor",
+			Scope:  lifecyclecontrol.ScopeRepoContext,
+		})
+		return result, result.Warnings, result.Errors
+	}))
 	checks = append(checks, productCheck("doctor.pwsh-budget", "POWERSHELL", func() (interface{}, []string, []string) {
 		budget, errorsFound := ScanPwshBudget(repo)
 		return budget, nil, errorsFound
@@ -182,6 +189,13 @@ func VerifyAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 			RuntimeSkill:     opts.RuntimeSkill,
 			SourceRepository: opts.SourceRepository,
 			StandaloneRoot:   opts.StandaloneRoot,
+		})
+		return data, data.Warnings, data.Errors
+	}))
+	checks = append(checks, productCheck("verify.repo-context", "REPO_CONTEXT", func() (interface{}, []string, []string) {
+		data := lifecyclecontrol.Run(ctx, repo, lifecyclecontrol.Options{
+			Action: "verify",
+			Scope:  lifecyclecontrol.ScopeRepoContext,
 		})
 		return data, data.Warnings, data.Errors
 	}))

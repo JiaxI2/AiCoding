@@ -277,6 +277,13 @@ func Verify(repo string) Report {
 			issues = append(issues, "manifest references missing artifact: "+file.Path)
 		}
 	}
+	// Freshness is surfaced as a warning, not a structural failure: drift is
+	// transient and auto-healed by the post-commit hook, so it must not fail the
+	// aggregate verify gate. Integrity breaks above remain hard errors.
+	report.Fresh = manifest.FactsDigest == snapshot.Digest()
+	if !report.Fresh {
+		report.Warnings = append(report.Warnings, "generated context is stale; run lifecycle update --scope repo-context")
+	}
 	report.Errors = issues
 	report.OK = len(issues) == 0
 	report.Status = statusFromOK(report.OK)
