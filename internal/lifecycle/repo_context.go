@@ -7,15 +7,12 @@ import (
 // runRepoContextAdapter translates a unified lifecycle request into the
 // repo-context domain. The domain owns its own generated artifacts and state; the
 // kernel modules (snapshot/runner/report) are untouched. See ADR 0003.
+//
+// Each domain action scans the repository at most once and reports the facts
+// digest it worked against; the adapter reuses that digest as InputDigest rather
+// than scanning a second time. uninstall reads only the manifest and never scans.
 func runRepoContextAdapter(repo string, opts Options) AdapterResult {
 	result := AdapterResult{ID: ScopeRepoContext, Action: opts.Action, DryRun: opts.DryRun, OK: false, Status: "failed"}
-
-	inputDigest, err := repocontext.FactsDigest(repo)
-	if err != nil {
-		result.Errors = []string{"cannot scan repository facts: " + err.Error()}
-		return result
-	}
-	result.InputDigest = inputDigest
 
 	var domain repocontext.Report
 	switch opts.Action {
@@ -36,6 +33,7 @@ func runRepoContextAdapter(repo string, opts Options) AdapterResult {
 		return result
 	}
 
+	result.InputDigest = domain.FactsDigest
 	result.OK = domain.OK
 	result.Status = domain.Status
 	result.Data = domain

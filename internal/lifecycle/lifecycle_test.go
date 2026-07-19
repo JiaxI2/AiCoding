@@ -227,6 +227,24 @@ func TestKitLifecycleRollbackRemainsAvailableThroughAdapter(t *testing.T) {
 	}
 }
 
+func TestRepoContextUninstallReadsManifestWithoutScanning(t *testing.T) {
+	// On a not-installed repo, uninstall is a no-op that reads only the manifest
+	// (absent) and must not scan the repository for facts. A scan would populate a
+	// sha256 facts digest, so an empty InputDigest proves no scan happened — this
+	// guards the single-responsibility invariant that uninstall does one thing.
+	repo := t.TempDir()
+	result := run(context.Background(), repo, normalizeOptions(Options{
+		Action: "uninstall",
+		Scope:  ScopeRepoContext,
+	}), nil)
+	if !result.OK || len(result.Adapters) != 1 {
+		t.Fatalf("unexpected repo-context uninstall: %#v", result)
+	}
+	if digest := result.Adapters[0].InputDigest; digest != "" {
+		t.Fatalf("uninstall scanned the repo for facts (InputDigest=%q); it must read only the manifest", digest)
+	}
+}
+
 func writeLifecycleFixture(t *testing.T, repo string) {
 	t.Helper()
 	sourceRepository := filepath.Join(filepath.Dir(repo), "Codex-Skills")

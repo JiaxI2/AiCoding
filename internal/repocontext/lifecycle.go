@@ -10,16 +10,6 @@ import (
 
 const manifestSchemaVersion = 1
 
-// FactsDigest scans the repository and returns the stable facts digest. It is the
-// InputDigest the lifecycle adapter reports for every repo-context action.
-func FactsDigest(repo string) (string, error) {
-	_, snapshot, err := Scan(repo)
-	if err != nil {
-		return "", err
-	}
-	return snapshot.Digest(), nil
-}
-
 // Install generates scoped context files from the current repository facts and
 // records them in the manifest. With dryRun it only reports the planned files and
 // writes nothing.

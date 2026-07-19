@@ -93,14 +93,25 @@ Accepted。阶段 0–4 全部落地：扫描 → 生成 → commit 增量同步
 
 `plan` 沿用契约：`lifecycle plan --action X --scope repo-context` = `X + dryRun`，与 apply 同路径。
 
-| 动词 | effect | 读/写什么 | 磁盘结果 | digest 行为 |
-|---|---|---|---|---|
-| install | write | 扫描 → 生成 | 写缺失/变化的文件 + manifest | manifest.factsDigest = 当前事实 |
-| update | write | 重扫描 → 收敛 | **只写内容变化的文件**，删不再需要的 | 同上 |
-| uninstall | write | 读 manifest | 只删 digest 匹配的登记文件 + manifest | — |
-| status | read | 扫描 + manifest | 不写 | 对比 事实 digest vs manifest 记录 → fresh/drift/not-installed |
-| doctor | read | 扫描 + 逐文件校验 | 不写 | 缺失/被篡改 → error；漂移 → warning |
-| verify | read | 扫描 + manifest 结构 | 不写 | 结构破坏 → error；漂移 → warning |
+| 动词 | effect | 扫描次数 | 读/写什么 | 磁盘结果 | digest 行为 |
+|---|---|---|---|---|---|
+| install | write | 1 | 扫描 → 生成 | 写缺失/变化的文件 + manifest | manifest.factsDigest = 当前事实 |
+| update | write | 1 | 重扫描 → 收敛 | **只写内容变化的文件**，删不再需要的 | 同上 |
+| uninstall | write | **0** | 只读 manifest | 只删 digest 匹配的登记文件 + manifest | InputDigest = manifest.factsDigest |
+| status | read | 1 | 扫描 + manifest | 不写 | 事实 digest vs manifest 记录 → fresh/drift/not-installed |
+| doctor | read | 1 | 扫描 + 逐文件校验 | 不写 | 缺失/被篡改 → error；漂移 → warning |
+| verify | read | 1 | 扫描 + manifest 结构 | 不写 | 结构破坏 → error；漂移 → warning |
+
+**Primitive 性质（单一职责 / 确定性 / 高效）**：
+
+- **每个动作至多扫描一次**：动作自己扫描并在 Report 里带回 `factsDigest`，
+  lifecycle adapter 直接复用该 digest 作 InputDigest，**不再二次扫描**；`uninstall`
+  只读 manifest、**零扫描**（守卫回归测试 `TestRepoContextUninstallReadsManifestWithoutScanning`）。
+- **单次遍历**：`Scan` 只做一次 `filepath.WalkDir` 并剪掉 `.git`/`node_modules`/`.aicoding`
+  等目录，不做与"产出 `Facts`"无关的工作。
+- **确定性**：`Facts`/`Manifest`/生成文本全部排序、无时间戳、无绝对路径，同一仓库
+  多次运行 digest 恒等。
+- **最小写**：`reconcile` 只写内容 digest 变化的文件，未受影响的域字节与 mtime 不动。
 
 ## 6. owned-asset 纪律（三条铁律）
 
