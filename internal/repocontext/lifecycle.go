@@ -193,16 +193,14 @@ func Status(repo string) Report {
 	return report
 }
 
-// Doctor verifies that every manifest-listed artifact exists and its on-disk
-// content still matches the recorded digest, and reports facts drift. Read only.
+// Doctor checks the integrity of the owned artifacts: every manifest-listed file
+// exists and its on-disk content still matches the recorded digest. It reads only
+// the manifest and the owned files — it does NOT scan the repository. Freshness
+// (comparing against current repository facts) is Status's single responsibility,
+// so the aggregate doctor gate pays no full-repo scan for a transient, hook-healed
+// condition. InputDigest is the manifest's recorded facts digest. Read only.
 func Doctor(repo string) Report {
 	report := Report{Action: "doctor", Status: "failed"}
-	_, snapshot, err := Scan(repo)
-	if err != nil {
-		report.Errors = []string{"cannot scan repository: " + err.Error()}
-		return report
-	}
-	report.FactsDigest = snapshot.Digest()
 	manifest, err := loadManifest(repo)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -214,6 +212,7 @@ func Doctor(repo string) Report {
 		return report
 	}
 	report.Installed = true
+	report.FactsDigest = manifest.FactsDigest
 	issues := []string{}
 	for _, file := range manifest.Files {
 		content, err := os.ReadFile(ownedPath(repo, file.Path))
@@ -225,26 +224,18 @@ func Doctor(repo string) Report {
 			issues = append(issues, "generated artifact was modified outside the domain: "+file.Path)
 		}
 	}
-	report.Fresh = manifest.FactsDigest == snapshot.Digest()
-	if !report.Fresh {
-		report.Warnings = append(report.Warnings, "generated context is stale; run lifecycle update --scope repo-context")
-	}
 	report.Errors = issues
 	report.OK = len(issues) == 0
 	report.Status = statusFromOK(report.OK)
 	return report
 }
 
-// Verify checks the domain's structural contract: the facts snapshot builds and,
-// when a manifest exists, every listed artifact is present. Read only.
+// Verify checks the domain's structural contract: the manifest is well-formed and
+// every listed artifact is present. Like Doctor it reads only the manifest and
+// stats the owned files — it does NOT scan the repository. Freshness belongs to
+// Status. InputDigest is the manifest's recorded facts digest. Read only.
 func Verify(repo string) Report {
 	report := Report{Action: "verify", Status: "failed"}
-	_, snapshot, err := Scan(repo)
-	if err != nil {
-		report.Errors = []string{"cannot scan repository: " + err.Error()}
-		return report
-	}
-	report.FactsDigest = snapshot.Digest()
 	manifest, err := loadManifest(repo)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -256,6 +247,7 @@ func Verify(repo string) Report {
 		return report
 	}
 	report.Installed = true
+	report.FactsDigest = manifest.FactsDigest
 	issues := []string{}
 	if manifest.SchemaVersion != manifestSchemaVersion {
 		issues = append(issues, "unsupported manifest schemaVersion")
@@ -264,13 +256,6 @@ func Verify(repo string) Report {
 		if _, err := os.Stat(ownedPath(repo, file.Path)); err != nil {
 			issues = append(issues, "manifest references missing artifact: "+file.Path)
 		}
-	}
-	// Freshness is surfaced as a warning, not a structural failure: drift is
-	// transient and auto-healed by the post-commit hook, so it must not fail the
-	// aggregate verify gate. Integrity breaks above remain hard errors.
-	report.Fresh = manifest.FactsDigest == snapshot.Digest()
-	if !report.Fresh {
-		report.Warnings = append(report.Warnings, "generated context is stale; run lifecycle update --scope repo-context")
 	}
 	report.Errors = issues
 	report.OK = len(issues) == 0

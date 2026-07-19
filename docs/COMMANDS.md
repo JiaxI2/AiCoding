@@ -51,9 +51,10 @@ namespace 判断中分别维护字符串列表。
 并用 facts digest 与生成物 digest 对账新鲜度。`hook post-commit`（由 `.githooks/post-commit`
 触发）在每次提交后读取本次变更文件，增量重生成受影响域的上下文——只写内容真正变化的文件，
 未受影响的域字节不变；未安装 repo-context 时该 hook 静默空操作。它是 `update` 的内部增量步骤
-（`sync` 不是新动词）。新鲜度与完整性由聚合 `doctor --all`（`doctor.repo-context`）、
-`verify --profile`（`verify.repo-context`）与官方测试用例 `RC-001/RC-002` 对账：owned 文件缺失或
-被篡改报 error，仅新鲜度漂移报 warning（由 post-commit hook 自愈，未安装时全部空操作）。详见
+（`sync` 不是新动词）。完整性由聚合 `doctor --all`（`doctor.repo-context`，零扫描）、
+`verify --profile`（`verify.repo-context`，零扫描）与测试 `RC-001/RC-002` 对账：owned 文件缺失或
+被篡改报 error 阻断门禁；新鲜度漂移是 `lifecycle status --scope repo-context` 的单一职责、
+由 post-commit hook 自愈，不进聚合门禁的扫描路径（未安装时全部空操作）。详见
 [ADR 0003](decisions/0003-repo-context-domain.md) 与 [07 演进路线](architecture/07-roadmap.md) §3。
 `kit list --json` 与 `mcp list --json` 的外层报告包含
 `inputDigest`；MCP inventory 同时保留 `registryDigest` 并增加 `catalogDigest`。前者只标识

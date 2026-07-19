@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **perf(repo-context)**: 按架构宪法（单一职责 / Performance First / 避免全仓扫描）把 `doctor` 收敛为纯完整性检查、`verify` 收敛为纯结构检查，两者**不再扫描仓库**——新鲜度对账归 `status` 单一职责 + post-commit hook 自愈。`doctor --all`/`verify --profile` 是高频门禁，此前为一个由 hook 自愈的瞬时 drift 各付一次全仓 `WalkDir`；现聚合门禁对 repo-context 零扫描，只在真实完整性破坏（owned 文件缺失/被篡改）时 error。新增 `BenchmarkScan`/`BenchmarkReconcileNoOp` 使核心 Primitive 成本可独立度量，及守卫 `TestRepoContextDoctorAndVerifyDoNotScanWhenNotInstalled`。 / Narrows doctor to integrity-only and verify to structure-only so neither scans the repository (freshness is Status's sole responsibility, auto-healed by the post-commit hook); adds benchmarks and a no-scan regression guard.
+
 - **perf(repo-context)**: 消除 repo-context 每个 lifecycle 动作的重复全仓扫描——adapter 不再先 `FactsDigest`（扫一次）再调动作（又扫一次），改为动作自身扫描并在 Report 带回 `factsDigest`、adapter 复用其作 InputDigest；`uninstall` 从"多扫一次无关事实"降为**只读 manifest、零扫描**。每个动作至多扫描一次，遵循「Do One Thing Well」单一职责与确定性。移除因此不再使用的投机导出 `repocontext.FactsDigest`；新增回归守卫 `TestRepoContextUninstallReadsManifestWithoutScanning`。 / Removes the redundant per-action repo scan (double-scan in the adapter) so each action scans at most once and uninstall scans zero, honoring single-responsibility and determinism; drops the now-unused FactsDigest export.
 
 - **docs(architecture)**: 将 ADR 0003 从叙述式改写为具体的架构指导文档——新增"与设计哲学对齐"的 Primitive 复用/新增对照表、包与文件地图、`Facts`/`Manifest` 数据结构与 JSON 示例、动作语义表、owned-asset 三条铁律、门禁严重级矩阵、"如何扩展（加一门语言=一行）/如何删除（可删清单）"配方，使开发者与后续贡献者一目了然；并显式留下"若再出现第二个生成文本域应把 reconcile 抽为共享 Primitive"的路标。 / Rewrites ADR 0003 into a concrete engineering guide (primitive-composition table, data shapes, action-semantics and gate-severity tables, extend/delete recipes).

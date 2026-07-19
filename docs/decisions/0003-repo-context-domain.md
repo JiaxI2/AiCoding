@@ -93,25 +93,31 @@ Accepted。阶段 0–4 全部落地：扫描 → 生成 → commit 增量同步
 
 `plan` 沿用契约：`lifecycle plan --action X --scope repo-context` = `X + dryRun`，与 apply 同路径。
 
-| 动词 | effect | 扫描次数 | 读/写什么 | 磁盘结果 | digest 行为 |
+每个动作**只做一件事**，因此只有真正需要"当前仓库事实"的动作才扫描：
+
+| 动词 | 单一职责 | effect | 扫描次数 | 读/写什么 | 磁盘结果 |
 |---|---|---|---|---|---|
-| install | write | 1 | 扫描 → 生成 | 写缺失/变化的文件 + manifest | manifest.factsDigest = 当前事实 |
-| update | write | 1 | 重扫描 → 收敛 | **只写内容变化的文件**，删不再需要的 | 同上 |
-| uninstall | write | **0** | 只读 manifest | 只删 digest 匹配的登记文件 + manifest | InputDigest = manifest.factsDigest |
-| status | read | 1 | 扫描 + manifest | 不写 | 事实 digest vs manifest 记录 → fresh/drift/not-installed |
-| doctor | read | 1 | 扫描 + 逐文件校验 | 不写 | 缺失/被篡改 → error；漂移 → warning |
-| verify | read | 1 | 扫描 + manifest 结构 | 不写 | 结构破坏 → error；漂移 → warning |
+| install | 生成 | write | 1 | 扫描 → 生成 | 写缺失/变化的文件 + manifest |
+| update | 收敛 | write | 1 | 重扫描 → 收敛 | **只写内容变化的文件**，删不再需要的 |
+| status | **新鲜度** | read | 1 | 扫描 + manifest | 不写；事实 digest vs manifest → fresh/drift/not-installed |
+| uninstall | 移除 | write | **0** | 只读 manifest | 只删 digest 匹配的登记文件 + manifest |
+| doctor | **完整性** | read | **0** | 读 manifest + owned 文件比对 | 不写；缺失/被篡改 → error |
+| verify | **结构** | read | **0** | 读 manifest + stat owned 文件 | 不写；schema/文件缺失 → error |
 
-**Primitive 性质（单一职责 / 确定性 / 高效）**：
+**Primitive 性质（Do One Thing Well）**：
 
-- **每个动作至多扫描一次**：动作自己扫描并在 Report 里带回 `factsDigest`，
-  lifecycle adapter 直接复用该 digest 作 InputDigest，**不再二次扫描**；`uninstall`
-  只读 manifest、**零扫描**（守卫回归测试 `TestRepoContextUninstallReadsManifestWithoutScanning`）。
+- **职责不重叠**：新鲜度是 `status` 唯一的职责；`doctor` 只查完整性、`verify` 只查结构，
+  两者**不扫描仓库**——`doctor --all`/`verify --profile` 是高频门禁，不为一个由 post-commit
+  hook 自愈的瞬时 drift 付全仓扫描代价（守卫 `TestRepoContextDoctorAndVerifyDoNotScanWhenNotInstalled`）。
+- **每个动作至多扫描一次**：需要事实的动作（install/update/status）各扫一次并在 Report
+  带回 `factsDigest`，adapter 复用它作 InputDigest；uninstall/doctor/verify **零扫描**，
+  InputDigest 取自 manifest 记录（守卫 `TestRepoContextUninstallReadsManifestWithoutScanning`）。
 - **单次遍历**：`Scan` 只做一次 `filepath.WalkDir` 并剪掉 `.git`/`node_modules`/`.aicoding`
-  等目录，不做与"产出 `Facts`"无关的工作。
-- **确定性**：`Facts`/`Manifest`/生成文本全部排序、无时间戳、无绝对路径，同一仓库
-  多次运行 digest 恒等。
-- **最小写**：`reconcile` 只写内容 digest 变化的文件，未受影响的域字节与 mtime 不动。
+  等目录；成本由 `BenchmarkScan` 独立度量。
+- **确定性**：`Facts`/`Manifest`/生成文本全部排序、无时间戳、无绝对路径，同一仓库多次
+  运行 digest 恒等。
+- **最小写**：`reconcile` 只写内容 digest 变化的文件，未受影响的域字节与 mtime 不动
+  （`BenchmarkReconcileNoOp` 度量收敛态成本）。
 
 ## 6. owned-asset 纪律（三条铁律）
 
@@ -142,15 +148,19 @@ repo-context **让**"生成上下文自动跟上代码"。
 
 ## 8. 门禁接入与严重级（阶段 4）
 
-| 门禁 | 未安装 | 新鲜 | 漂移 | 缺失/被篡改 |
-|---|---|---|---|---|
-| `doctor --all` → `doctor.repo-context` | 空操作 pass | pass | warning | **error** |
-| `verify --profile` → `verify.repo-context` | 空操作 pass | pass | warning | **error** |
-| 测试 `RC-001`（结构）/ `RC-002`（计划） | pass | pass | pass | 结构破坏才 fail |
+聚合门禁只组合**零扫描**的完整性/结构检查，不为漂移付全仓扫描；漂移交给
+`status`（显式）与 post-commit hook（自愈）。
 
-设计取舍：**漂移是瞬时的、由 post-commit hook 自愈，故只 warning 不阻断**；只有 owned
-文件缺失或被外部篡改这种真实完整性破坏才 error。生成物已 gitignore，fresh clone / CI 中
-一律"未安装 → 空操作"，绝不误伤。
+| 门禁 | 职责 | 扫描 | 未安装 | 缺失/被篡改 | 漂移 |
+|---|---|---|---|---|---|
+| `doctor --all` → `doctor.repo-context` | 完整性 | 0 | 空操作 pass | **error** | 不检测（属 `status`） |
+| `verify --profile` → `verify.repo-context` | 结构 | 0 | 空操作 pass | **error** | 不检测（属 `status`） |
+| 测试 `RC-001`（结构）/ `RC-002`（计划） | 结构/计划 | 0/1 | pass | 结构破坏才 fail | — |
+| `lifecycle status --scope repo-context` | 新鲜度 | 1 | not-installed | — | 报告 drift |
+
+设计取舍：只有 owned 文件缺失或被外部篡改这种真实完整性破坏才 error（阻断）；漂移是
+瞬时的、由 post-commit hook 自愈，不进聚合门禁的扫描路径。生成物已 gitignore，
+fresh clone / CI 中一律"未安装 → 空操作"，绝不误伤。
 
 ## 9. 如何扩展（Convention over Configuration）
 

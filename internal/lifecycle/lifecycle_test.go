@@ -245,6 +245,27 @@ func TestRepoContextUninstallReadsManifestWithoutScanning(t *testing.T) {
 	}
 }
 
+func TestRepoContextDoctorAndVerifyDoNotScanWhenNotInstalled(t *testing.T) {
+	// doctor = integrity, verify = structure. Neither owns freshness, so neither
+	// scans the repository. On a not-installed repo the read-only actions must
+	// return a no-op pass with an empty InputDigest (a scan would produce a
+	// sha256). Guards the single-responsibility + Performance-First invariant that
+	// the aggregate doctor/verify gates never pay a full-repo scan.
+	repo := t.TempDir()
+	for _, action := range []string{"doctor", "verify"} {
+		result := run(context.Background(), repo, normalizeOptions(Options{
+			Action: action,
+			Scope:  ScopeRepoContext,
+		}), nil)
+		if !result.OK || len(result.Adapters) != 1 {
+			t.Fatalf("unexpected repo-context %s: %#v", action, result)
+		}
+		if digest := result.Adapters[0].InputDigest; digest != "" {
+			t.Fatalf("%s scanned the repo (InputDigest=%q); freshness is Status's job, not %s's", action, digest, action)
+		}
+	}
+}
+
 func writeLifecycleFixture(t *testing.T, repo string) {
 	t.Helper()
 	sourceRepository := filepath.Join(filepath.Dir(repo), "Codex-Skills")
