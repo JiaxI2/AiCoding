@@ -333,12 +333,14 @@
         "internal/pwshregex",
         "internal/registry",
         "internal/releasegate",
+        "internal/repocontext",
         "internal/report",
         "internal/repohealth",
         "internal/reuse",
         "internal/runner",
         "internal/tagpolicy",
-        "internal/testengine"
+        "internal/testengine",
+        "internal/todolist"
       ]
     },
     {
@@ -348,6 +350,7 @@
         "internal/kit",
         "internal/lifecycle",
         "internal/mcpcontrol",
+        "internal/repocontext",
         "internal/repohealth",
         "internal/report",
         "internal/runner",
@@ -361,6 +364,7 @@
         "internal/kit",
         "internal/lifecycle",
         "internal/mcpcontrol",
+        "internal/repocontext",
         "internal/repohealth",
         "internal/report",
         "internal/testengine"
@@ -373,6 +377,7 @@
         "internal/kit",
         "internal/lifecycle",
         "internal/mcpcontrol",
+        "internal/repocontext",
         "internal/repohealth",
         "internal/runner",
         "internal/testengine"
@@ -384,6 +389,7 @@
         "internal/cli",
         "internal/lifecycle",
         "internal/mcpcontrol",
+        "internal/repocontext",
         "internal/repohealth",
         "internal/testengine"
       ]
@@ -394,6 +400,18 @@
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
+        "internal/repocontext",
+        "internal/repohealth",
+        "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/repocontext",
+      "forbiddenImports": [
+        "internal/cli",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
         "internal/repohealth",
         "internal/testengine"
       ]

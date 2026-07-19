@@ -338,6 +338,7 @@ RepoLocal（`.agents/skills/`）。早期草稿 `aicoding-external-integration`
 
 | 文档 | 管什么 | 什么时候读 |
 |---|---|---|
+| [GRAPH_FIRST](GRAPH_FIRST.md) | 网络形状、设计顺序（Graph→Primitive→Workflow→Implementation）、真实节点/边地图与收敛 Checklist | 任何设计开始前——先理解网络 |
 | [PRIMITIVE_CONSTITUTION](PRIMITIVE_CONSTITUTION.md) | 任何 Primitive 必须满足的 12 条设计约束 + 评审 Checklist | 新增/重构/优化任何 Primitive 前后 |
 | [AICODING_CORE_ARCHITECTURE](AICODING_CORE_ARCHITECTURE.md) | 六模块契约、冻结条件、拒绝清单 | 评审任何架构提案前 |
 | [CLI_MCP_CONTROL_PLANE](CLI_MCP_CONTROL_PLANE.md) | 唯一控制面、Agent API、JSON 证据契约 | 写 Agent/Skill 集成时 |
