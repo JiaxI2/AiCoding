@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 将 Primitive 宪法（Architecture Constitution）固化为仓库权威文档 `docs/architecture/PRIMITIVE_CONSTITUTION.md`——12 条设计约束（Primitive First / 单一职责 / Execution Cost First / Fast Path First / Do One Thing Well / 最小输入输出 / 确定性 / 接口稳定 / Composition First / 可独立测试 / 可观测 + 评审 Checklist）+ 每条挂接到仓库既有机制（`adapters[].elapsedMs`、digest 恒等、冻结面等），与既有契约文档交叉引用而不重复；约定每个新 Primitive/新领域 ADR 必须含"§12 Checklist 自评"。同步在 ADR 0003 补上 repo-context 的逐项自评作为范式，并登记进架构手册 §8 文档地图。 / Lands the Primitive Constitution as a canonical doc (12 design constraints + review checklist), wires each to a concrete repo mechanism, and adds a worked §12 self-review to ADR 0003 as the template.
+
 - **feat(lifecycle)**: 让每个领域 Primitive 的执行成本可观测（Execution Cost First / Observable）——`lifecycle ... --json` 的每个 `adapters[]` 现在带回 `elapsedMs`（runner 早已测量、此前被丢弃）。至此成本三层可见：命令级 `report.elapsedMs` → 领域 Primitive 级 `adapters[].elapsedMs` → 热点级 `Benchmark*`；`kit`/`mcp`/`runtime-skill`/`repo-context` 一致受益。耗时只进非确定性信封、不进 deterministic 领域 payload，相同输入的 `data` 仍完全一致。 / Makes each domain primitive's execution cost observable: lifecycle adapter results now carry the per-adapter elapsedMs the runner already measured, without touching the deterministic payload.
 
 - **docs(architecture)**: 在 ADR 0003 记录 repo-context 的执行成本档案（实测 `Scan` ~2ms/全仓、`reconcile` 收敛态 ~0.27ms）与"先测量后决定"的取舍——`Scan` 已足够快，故 `Sync` 采用"全仓扫描 + 增量写"而不引入 facts 缓存（省 2ms 不值持久化+失效复杂度），增量只做在写层；后续加缓存须先出示瓶颈证据。 / Records the measured execution-cost profile and the evidence-based decision to keep a simple full scan (no facts cache) since it is already cheaper than git status.
