@@ -26,6 +26,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/reuse"
 	"github.com/JiaxI2/AiCoding/internal/runner"
 	"github.com/JiaxI2/AiCoding/internal/tagpolicy"
+	"github.com/JiaxI2/AiCoding/internal/todolist"
 )
 
 var buildVersion string
@@ -748,6 +749,24 @@ func runTag(args []string, start time.Time) (report.Result, error) {
 	}
 	audit, errs := tagpolicy.AuditRepo(repo)
 	return report.Result{SchemaVersion: 1, Command: "tag audit", OK: len(errs) == 0, Message: "tag namespace structural audit", RepoRoot: repo, Data: audit, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+}
+
+func runTodolist(args []string, start time.Time) (report.Result, error) {
+	fs := newFlagSet("todolist")
+	repoArg := fs.String("repo-root", "", "repository root")
+	_ = fs.Bool("json", false, "json output")
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("todolist", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	list, err := todolist.List(repo)
+	if err != nil {
+		return report.Fail("todolist", start, "cannot read todolist", nil, err.Error()), err
+	}
+	return report.Result{SchemaVersion: 1, Command: "todolist", OK: true, Message: "pending implementation items", RepoRoot: repo, Data: list, ElapsedMS: report.Elapsed(start)}, nil
 }
 
 func runRelease(args []string, start time.Time) (report.Result, error) {

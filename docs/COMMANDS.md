@@ -95,6 +95,7 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 | PowerShell inventory | `bin\aicoding.exe doctor pwsh --json` |
 | PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` |
 | Tag audit | `bin\aicoding.exe tag audit --json` |
+| Todolist（待实现工作清单） | `bin\aicoding.exe todolist --json` |
 | 解析 Codex Token JSONL | `bin\aicoding.exe codex usage parse --file <FILE> --json` |
 | 运行 Codex 并采集 Token | `bin\aicoding.exe codex usage run -- codex exec --json "<PROMPT>"` |
 
