@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "example-repository-maintenance",
+  "domain": "repository-maintenance",
+  "control": {
+    "trigger": "explicit",
+    "stop": {
+      "maxAttempts": 3,
+      "maxElapsedSeconds": 5400,
+      "maxTotalTokens": 500000,
+      "stallThreshold": 2,
+      "contextPressureThreshold": 80
+    },
+    "authority": {
+      "writeScope": {
+        "allow": ["cmd/**", "internal/**", "config/**", "docs/**", ".github/**", ".githooks/**"],
+        "deny": ["CodingKit/agents/skills/**"]
+      },
+      "requiredGates": ["governance-dependencies", "governance-layout", "verify-smoke"],
+      "checkpoints": ["architecture-unfreeze", "submodule-pin-change", "merge", "release"]
+    }
+  },
+  "goal": "Restore repository health with the minimum sufficient change.",
+  "acceptance": [
+    "Dependency governance passes",
+    "Layout governance passes",
+    "The required verification profile passes"
+  ]
+}

@@ -1,17 +1,41 @@
 package workspec
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/JiaxI2/AiCoding/internal/loopkit/controlmode"
+)
 
 func validSpec() Spec {
-	return Spec{SchemaVersion: 1, ID: "w1", Domain: "project-development", Control: Control{Mode: "goal", Trigger: map[string]interface{}{"type": "manual"}, StoppingRule: map[string]interface{}{"success": "verified"}}, Goal: "implement", Acceptance: []string{"tests pass"}, Policy: Policy{Workspace: "worktree", WriteScope: WriteScope{}, Verification: map[string]interface{}{}, Budget: Budget{MaxAttempts: 3, MaxElapsedSeconds: 60}}}
+	return Spec{
+		SchemaVersion: 1,
+		ID:            "w1",
+		Domain:        DomainProjectDevelopment,
+		Goal:          "implement",
+		Acceptance:    []string{"tests pass"},
+		Control: controlmode.Control{
+			Trigger: controlmode.TriggerExplicit,
+			Stop: controlmode.Stop{
+				MaxAttempts:       3,
+				MaxElapsedSeconds: 60,
+				MaxTotalTokens:    1000,
+				StallThreshold:    2,
+			},
+			Authority: controlmode.Authority{
+				WriteScope:    controlmode.WriteScope{Allow: []string{"internal/**"}},
+				RequiredGates: []string{"full"},
+			},
+		},
+	}
 }
 
-func TestDigestIsStable(t *testing.T) {
+func TestDigestIsStableAndNormalizesDefaults(t *testing.T) {
 	s := validSpec()
 	a, err := s.Digest()
 	if err != nil {
 		t.Fatal(err)
 	}
+	s.Control.Stop.ContextPressureThreshold = controlmode.DefaultContextPressureThreshold
 	b, err := s.Digest()
 	if err != nil {
 		t.Fatal(err)
@@ -21,9 +45,17 @@ func TestDigestIsStable(t *testing.T) {
 	}
 }
 
-func TestRejectsUnknownMode(t *testing.T) {
+func TestRejectsUnsupportedTrigger(t *testing.T) {
 	s := validSpec()
-	s.Control.Mode = "forever"
+	s.Control.Trigger = "forever"
+	if err := s.Validate(); err == nil {
+		t.Fatal("expected validation error")
+	}
+}
+
+func TestRejectsMissingRequiredGates(t *testing.T) {
+	s := validSpec()
+	s.Control.Authority.RequiredGates = nil
 	if err := s.Validate(); err == nil {
 		t.Fatal("expected validation error")
 	}

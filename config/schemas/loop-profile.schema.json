@@ -1,27 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://aicoding.local/schemas/loop-profile.schema.json",
-  "title": "AiCoding Loop Work Profile",
+  "$id": "https://loop-engineering.local/schemas/loop-profile.schema.json",
+  "title": "Loop Engineering Profile",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "id", "domain", "allowedControlModes", "gatePolicy"],
+  "required": ["id", "domain", "allowedTriggers", "requiredGates", "advisoryGates", "defaultCheckpoints"],
   "properties": {
-    "schemaVersion": {"const": 1},
-    "id": {"type": "string"},
-    "domain": {"type": "string"},
-    "allowedControlModes": {
-      "type": "array",
-      "uniqueItems": true,
-      "items": {"enum": ["turn", "goal", "time", "proactive"]}
-    },
-    "gatePolicy": {
-      "type": "object",
-      "required": ["required", "advisory"],
-      "properties": {
-        "required": {"type": "array", "items": {"type": "string"}},
-        "advisory": {"type": "array", "items": {"type": "string"}}
-      }
-    },
-    "defaultHumanCheckpoints": {"type": "array", "items": {"type": "string"}}
+    "id": {"type": "string", "minLength": 1},
+    "domain": {"enum": ["project-development", "repository-maintenance", "ci-repair", "performance-experiment", "documentation-maintenance", "architecture-evolution"]},
+    "allowedTriggers": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["explicit", "scheduled", "agent-proposed"]}},
+    "requiredGates": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "advisoryGates": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "defaultCheckpoints": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
   }
 }

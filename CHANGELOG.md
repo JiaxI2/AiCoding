@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **refactor(loopkit)**: 将 Loop Engineering 合同重切为正交的 trigger/stop/authority 三轴，删除第二 Receipt 模型，改为仅持 validationevidence 字符串引用，并以纯函数 `Decide` 实现五个具名终止态、预算、失速与上下文压力裁决。 / Recasts Loop Engineering around orthogonal trigger, stop, and authority axes, removes the duplicate Receipt model in favor of validationevidence references, and implements deterministic bounded-work decisions.
+
 - **chore(loopkit)**: 导入 Loop Engineering Kit 来源骨架、模板与初始契约，排除只读 Skill 子模块和打包元数据，并将 TODO 0003 转为进行中。 / Imports the initial Loop Engineering Kit skeleton, templates, and contracts while excluding read-only Skill and packaging metadata, and marks TODO 0003 in progress.
 
 - **docs(todolist)**: 登记 TODO 0003–0008：Loop Engineering Kit 落地（裁决者契约）、Plan Mode 重构三部曲（触发机器化/产物标准化/批准绑定内容）、架构文档治理与 Kit 架构文档还债；同时提交 `docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md`（Status: Proposed）。 / Registers TODO 0003-0008 covering the loop-engineering kit landing plan, the three-stage Plan Mode rework, architecture-doc governance, and kit architecture debt, plus the proposed loop-engineering architecture document.
