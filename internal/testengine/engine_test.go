@@ -32,12 +32,12 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 		}
 		seen[testCase.ID] = true
 	}
-	for _, id := range []string{"ENV-001", "GO-001", "GIT-009", "FRESH-001", "FRESH-002", "REL-002"} {
+	for _, id := range []string{"ENV-001", "GO-001", "GIT-009", "EXP-002", "FRESH-001", "FRESH-003", "REL-002"} {
 		if !seen[id] {
 			t.Fatalf("registry is missing %s", id)
 		}
 	}
-	for _, removed := range []string{"FULL-001", "REL-001"} {
+	for _, removed := range []string{"FULL-001", "REL-001", "FRESH-002"} {
 		if seen[removed] {
 			t.Fatalf("registry still contains recursive aggregate case %s", removed)
 		}
@@ -70,6 +70,42 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 
 	if _, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: "nightly"}); err == nil {
 		t.Fatal("invalid profile must fail")
+	}
+}
+
+func TestRegistryKeepsHermeticAndZipChecksInRelease(t *testing.T) {
+	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileFull})
+	if err != nil {
+		t.Fatal(err)
+	}
+	full := map[string]TestCase{}
+	release := map[string]TestCase{}
+	for _, testCase := range Registry(cfg) {
+		if profileEnabled(testCase, ProfileFull) {
+			full[testCase.ID] = testCase
+		}
+		if profileEnabled(testCase, ProfileRelease) {
+			release[testCase.ID] = testCase
+		}
+	}
+	for _, id := range []string{"EXP-001", "FRESH-001"} {
+		if _, exists := full[id]; exists {
+			t.Fatalf("Full still contains expensive command case %s", id)
+		}
+		if testCase, exists := release[id]; !exists || testCase.Kind != "command" {
+			t.Fatalf("Release lost expensive command case %s: %#v", id, testCase)
+		}
+	}
+	for _, id := range []string{"EXP-002", "FRESH-003"} {
+		if testCase, exists := full[id]; !exists || testCase.Kind != "static" {
+			t.Fatalf("Full lost static replacement %s: %#v", id, testCase)
+		}
+	}
+	if !containsString(release["EXP-001"].Command, "--zip") {
+		t.Fatalf("Release export is not a real ZIP command: %#v", release["EXP-001"])
+	}
+	if !containsString(release["FRESH-001"].Command, "Release") {
+		t.Fatalf("Release fresh clone uses the wrong profile: %#v", release["FRESH-001"])
 	}
 }
 

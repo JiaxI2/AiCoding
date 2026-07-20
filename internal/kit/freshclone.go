@@ -61,11 +61,11 @@ func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
 	} else {
 		add("git.clone", true, "cloned local repository", out)
 	}
-	if out, err := runFresh(cloneRoot, "git", "submodule", "update", "--init", "--recursive"); err != nil {
+	if out, err := verifyFreshCloneSubmodules(cloneRoot); err != nil {
 		add("git.submodule", false, err.Error(), out)
 		return report
 	} else {
-		add("git.submodule", true, "submodules initialized", out)
+		add("git.submodule", true, "submodules verified", out)
 	}
 	if out, err := overlayWorkingTree(repo, cloneRoot); err != nil {
 		add("worktree.overlay", false, err.Error(), out)
@@ -99,6 +99,56 @@ func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
 		add(name, true, "passed", out)
 	}
 	return report
+}
+
+func CheckFreshCloneContract(repo string) error {
+	for _, path := range []string{".gitmodules", "CodingKit/agents/skills"} {
+		info, err := os.Stat(filepath.Join(repo, filepath.FromSlash(path)))
+		if err != nil {
+			return fmt.Errorf("fresh-clone prerequisite %s: %w", path, err)
+		}
+		if path == "CodingKit/agents/skills" && !info.IsDir() {
+			return fmt.Errorf("fresh-clone prerequisite is not a directory: %s", path)
+		}
+	}
+	entries, err := os.ReadDir(filepath.Join(repo, "CodingKit", "agents", "skills"))
+	if err != nil || len(entries) == 0 {
+		return errorsf("fresh-clone skills submodule is empty")
+	}
+	for _, profile := range []string{"Smoke", "Full", "Release"} {
+		checks, err := freshCloneChecks("aicoding", profile)
+		if err != nil || len(checks) == 0 {
+			return fmt.Errorf("fresh-clone %s checks are undefined", profile)
+		}
+	}
+	return nil
+}
+
+func verifyFreshCloneSubmodules(cloneRoot string) (string, error) {
+	args := freshCloneSubmoduleArgs()
+	out, err := runFresh(cloneRoot, args[0], args[1:]...)
+	if err != nil {
+		return out, err
+	}
+	lines := 0
+	for _, line := range strings.Split(out, "\n") {
+		line = strings.TrimRight(line, "\r")
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		lines++
+		if strings.ContainsRune("-+U", rune(line[0])) {
+			return out, fmt.Errorf("submodule is not at the recursively cloned commit: %s", strings.TrimSpace(line))
+		}
+	}
+	if lines == 0 {
+		return out, errorsf("recursive clone reported no submodules")
+	}
+	return out, nil
+}
+
+func freshCloneSubmoduleArgs() []string {
+	return []string{"git", "submodule", "status", "--recursive"}
 }
 
 func runFresh(dir, name string, args ...string) (string, error) {

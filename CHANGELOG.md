@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **refactor(testengine)**: Full 将真实 ZIP 与 hermetic fresh clone 移交 Release，并以 EXP-002/FRESH-003 低成本静态门禁保留 manifest include/outputName、gitmodules、skills gitlink 和三个 profile 分支覆盖；实测 Full 热中位数由 90.715s 降至 17.924s（80.2%），Release 74.867s 且 58/58 PASS，刻意承担更高发布成本。 / Moves real ZIP and hermetic clone evidence to Release while preserving static Full coverage; measured hot Full improves by 80.2% while Release retains all hermetic evidence.
+
+- **fix(kit)**: fresh clone 保留 `git.submodule` 步骤名，但在 `clone --recurse-submodules` 后只执行递归 submodule status 校验，不再重复 `submodule update --init --recursive`。 / Removes redundant submodule initialization after a recursive clone while retaining a read-only recursive status verification step.
+
 - **perf(taskfile,testengine)**: `ensure-bin` 改为 Task checksum 驱动的单次 `go build`，并将 `.task/` 明确登记为忽略的 runtime-state；删除重复构建的 BOOT-001，BOOT-002 改为 `bootstrap --no-build`，并以进程内 BOOT-003 保留 repo/Go/Git/go.mod/bin 前置条件覆盖。 / Makes CLI construction checksum-incremental, governs Task metadata as runtime state, and removes duplicate bootstrap builds while preserving CLI and prerequisite coverage.
 
 - **docs(perf)**: 建立 `task full` 权威性能基线，记录冷/热各三次墙钟与引擎耗时、最慢 15 用例、环境和 cache 口径；六次实测中 FRESH/BOOT 占比为 66.3%–81.8%，满足继续优化的 40% 硬门禁。 / Establishes the authoritative Full performance baseline with six measured runs, environment and cache methodology, slowest-case evidence, and the measured cost-model gate.

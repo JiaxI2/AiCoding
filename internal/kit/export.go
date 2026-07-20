@@ -95,6 +95,21 @@ func ExportKit(repo string, entry RegistryKit, manifest Manifest, command Comman
 	return result, nil
 }
 
+// ValidateExportCommand reuses the real dry-run collector without creating a ZIP.
+func ValidateExportCommand(repo string, entry RegistryKit, manifest Manifest, command CommandDef) error {
+	if _, err := ExportKit(repo, entry, manifest, command, ExportOptions{DryRun: true}); err != nil {
+		return err
+	}
+	output := resolveTokens(command.OutputName, entry.ID, manifest.Version)
+	if output == "" {
+		output = entry.ID + "-" + manifest.Version + ".zip"
+	}
+	if strings.Contains(output, "${") {
+		return errorsf("%s export outputName has an unresolved token: %s", entry.ID, output)
+	}
+	return nil
+}
+
 func ExportBundle(repo string, version string) (PackageResult, error) {
 	if version == "" {
 		version = readConfigVersion(repo)

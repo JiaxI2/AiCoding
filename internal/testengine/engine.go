@@ -21,6 +21,7 @@ import (
 
 	"github.com/JiaxI2/AiCoding/internal/adrreview"
 	"github.com/JiaxI2/AiCoding/internal/bootstrap"
+	"github.com/JiaxI2/AiCoding/internal/kit"
 )
 
 type Severity string
@@ -309,9 +310,10 @@ func Registry(cfg Config) []TestCase {
 
 		{ID: "MCP-001", Category: "MCP", Title: "MCP registry inventory", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "mcp", "list", "--json"}, ExpectJSON: true},
 
-		{ID: "EXP-001", Category: "EXPORT", Title: "export zip", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "export", "--all", "--zip", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "FRESH-001", Category: "FRESH_CLONE", Title: "fresh-clone Full", Severity: WarnOnly, Profiles: []string{"full"}, Kind: "command", Command: []string{bin, "fresh-clone", "--profile", "Full", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "FRESH-002", Category: "FRESH_CLONE", Title: "fresh-clone Release", Severity: WarnOnly, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "fresh-clone", "--profile", "Release", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "EXP-001", Category: "EXPORT", Title: "export zip", Severity: Required, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "export", "--all", "--zip", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "EXP-002", Category: "EXPORT", Title: "export manifest 静态验证", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
+		{ID: "FRESH-001", Category: "FRESH_CLONE", Title: "fresh-clone Release", Severity: WarnOnly, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "fresh-clone", "--profile", "Release", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "FRESH-003", Category: "FRESH_CLONE", Title: "fresh-clone 契约静态验证", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
 
 		{ID: "DOCS-001", Category: "README_DOCS", Title: "README 三件套", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-002", Category: "README_DOCS", Title: "README 架构声明", Severity: Required, Profiles: allProfiles(), Kind: "static"},
@@ -568,6 +570,10 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = checkC99ExcludedDirs(cfg.Repo)
 	case "C99-008":
 		err = checkCStyleKitAssets(cfg.Repo)
+	case "EXP-002":
+		err = checkExportDefinitions(cfg.Repo)
+	case "FRESH-003":
+		err = kit.CheckFreshCloneContract(cfg.Repo)
 	case "DOC-004":
 		err = checkDocIndex(cfg.Repo)
 	case "LIFE-001":
@@ -746,6 +752,37 @@ func checkBootstrapPrerequisites(repo string) error {
 	if len(missing) > 0 {
 		sort.Strings(missing)
 		return fmt.Errorf("bootstrap checks missing or failed: %s", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+func checkExportDefinitions(repo string) error {
+	catalog, err := kit.LoadCatalogSnapshot(repo)
+	if err != nil {
+		return err
+	}
+	errs := []string{}
+	found := 0
+	for _, snapshot := range catalog.Kits() {
+		manifest, err := snapshot.Manifest()
+		if err != nil {
+			errs = append(errs, snapshot.Entry().ID+": "+err.Error())
+			continue
+		}
+		command, ok := manifest.Commands["export"]
+		if !ok {
+			continue
+		}
+		found++
+		if err := kit.ValidateExportCommand(repo, snapshot.Entry(), manifest, command); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+	if found == 0 {
+		errs = append(errs, "kit catalog has no export definitions")
+	}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "; "))
 	}
 	return nil
 }

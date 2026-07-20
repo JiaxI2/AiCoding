@@ -32,9 +32,9 @@
 |---|---|---|
 | L0 静态治理 | 不执行仓库命令，只检查文件、配置、文档、registry | README、typed command catalog、registry digest、C99 skill config |
 | L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap no-build、doctor、verify、`test --profile Smoke` |
-| L2 功能门禁 | 执行唯一 Registry 中的功能域 gate | docsync、governance、export、lifecycle plan |
+| L2 功能门禁 | 执行唯一 Registry 中的功能域 gate | docsync、governance、export manifest、lifecycle plan |
 | L3 并发/一致性 | 验证 ExecutionPlan 稳定摘要、并发执行只读命令或 race 检查 | runner/catalog unit tests、`go test -race`、并发 C99 status/templates |
-| L4 发布门禁 | Release profile 与 fresh-clone leaf probe | Release profile、fresh-clone Full/Release |
+| L4 发布门禁 | Release profile 的真实打包与 hermetic leaf probe | Release ZIP、fresh-clone Release |
 
 ## 4. 测试数据
 
@@ -75,7 +75,8 @@
 - `go test ./...` 成功。
 - DocSync `ci` 成功。
 - lifecycle install/update/uninstall plan 成功。
-- export 成功。
+- EXP-002 export manifest 静态验证成功，且 Full 不创建 ZIP。
+- FRESH-003 fresh-clone 契约静态验证成功，且 Full 不复制仓库。
 - governance lint/tag audit 成功。
 - PowerShell budget 检查通过或输出可解释 WARN。
 - Go 并发只读测试通过。

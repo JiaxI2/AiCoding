@@ -70,9 +70,10 @@
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
-| EXP-001 | export zip | `bin/aicoding.exe export --all --zip --json` | 退出码 0，JSON 合法，生成 zip/manifest | REQUIRED |
-| FRESH-001 | fresh-clone Full | `bin/aicoding.exe fresh-clone --profile Full --json` | clone 内执行 `go test ./...`，不回调 Full profile | WARN |
-| FRESH-002 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | clone 内执行 `release verify`，不回调 Release profile | WARN |
+| EXP-001 | Release export zip | `bin/aicoding.exe export --all --zip --json` | 仅 Release 执行；生成 zip/manifest | REQUIRED |
+| EXP-002 | Full export manifest | 进程内 dry-run manifest 校验 | include 均匹配，outputName token 可解析，不生成 ZIP | REQUIRED |
+| FRESH-001 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | 仅 Release 执行；clone 内执行 `release verify` | WARN |
+| FRESH-003 | Full fresh-clone 契约 | 静态检查 `.gitmodules`、skills gitlink 与三个 profile 分支 | 不 clone，契约完整 | REQUIRED |
 
 ## 8. README_DOCS：README 和命令文档治理
 

@@ -45,6 +45,11 @@ Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`
 catalog，并通过 catalog 完整性与 CLI contract 测试；不能再在 router、help 和
 namespace 判断中分别维护字符串列表。
 
+Full 保留 Go/race/vet、CLI/JSON、治理和领域结构验证，但不创建发布 ZIP、也不执行 hermetic
+fresh clone；对应覆盖由 EXP-002 export manifest 静态验证和 FRESH-003 clone 契约静态验证承担。
+Release 仍执行真实 `export --zip` 与一次 `fresh-clone --profile Release`，因此 Release 比 Full
+更慢是刻意的发布边界，而不是性能回退。
+
 到期的兼容命令已从 catalog、router 和 help 删除；旧写法返回 usage error（退出码 2），
 不会再静默转发。`lifecycle` 现在要求显式 `--scope kit|mcp|runtime-skill|repo-context|all`。
 `--scope repo-context` 作用于整个仓库，不接受 `--kit`、`--component` 或 `--all`；它扫描仓库
