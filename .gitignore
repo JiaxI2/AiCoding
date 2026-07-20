@@ -22,6 +22,7 @@ test-results/
 # Go Fast Path CLI build output
 /bin/
 /dist/
+/.task/
 
 # OS/editor
 .DS_Store

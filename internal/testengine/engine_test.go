@@ -95,6 +95,78 @@ func TestRegistryHasPrimitiveChecklistGate(t *testing.T) {
 	t.Fatal("registry is missing the ADR-001 primitive-checklist gate")
 }
 
+func TestRegistryBuildCommandsAreBoundedAndBootstrapCoverageRemains(t *testing.T) {
+	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileFull})
+	if err != nil {
+		t.Fatal(err)
+	}
+	buildCommands := 0
+	found := map[string]TestCase{}
+	for _, testCase := range Registry(cfg) {
+		found[testCase.ID] = testCase
+		if len(testCase.Command) == 0 || testCase.Command[0] != "go" {
+			continue
+		}
+		for _, arg := range testCase.Command[1:] {
+			if arg == "build" || arg == "run" {
+				buildCommands++
+				break
+			}
+		}
+	}
+	if buildCommands > 1 {
+		t.Fatalf("registry contains %d direct go build/run commands, want at most 1", buildCommands)
+	}
+	if _, exists := found["BOOT-001"]; exists {
+		t.Fatal("BOOT-001 duplicate build case is still registered")
+	}
+	if boot := found["BOOT-002"]; len(boot.Command) == 0 || !containsString(boot.Command, "--no-build") {
+		t.Fatalf("BOOT-002 does not preserve the no-build CLI contract: %#v", boot)
+	}
+	if boot := found["BOOT-003"]; boot.Kind != "static" || boot.Severity != Required {
+		t.Fatalf("BOOT-003 static prerequisite coverage is missing: %#v", boot)
+	}
+}
+
+func TestTaskfileEnsureBinUsesChecksumIncrementalBuild(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", "Taskfile.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(data)
+	start := strings.Index(text, "  ensure-bin:")
+	if start < 0 {
+		t.Fatal("Taskfile is missing ensure-bin")
+	}
+	ensureBin := text[start:]
+	for _, required := range []string{
+		"internal: true",
+		"method: checksum",
+		"'cmd/**/*.go'",
+		"'internal/**/*.go'",
+		"go.mod",
+		"go.sum",
+		"bin/aicoding.exe",
+		"go build -o bin/aicoding.exe ./cmd/aicoding",
+	} {
+		if !strings.Contains(ensureBin, required) {
+			t.Fatalf("ensure-bin is missing %q", required)
+		}
+	}
+	if strings.Contains(ensureBin, "go run ./cmd/aicoding bootstrap") {
+		t.Fatal("ensure-bin still compiles the CLI through go run")
+	}
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
 func TestRegistryTitlesPreserveReadableUTF8InJSON(t *testing.T) {
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {

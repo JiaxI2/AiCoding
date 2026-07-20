@@ -31,7 +31,7 @@
 | 层级 | 说明 | 代表用例 |
 |---|---|---|
 | L0 静态治理 | 不执行仓库命令，只检查文件、配置、文档、registry | README、typed command catalog、registry digest、C99 skill config |
-| L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap、doctor、verify、`test --profile Smoke` |
+| L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap no-build、doctor、verify、`test --profile Smoke` |
 | L2 功能门禁 | 执行唯一 Registry 中的功能域 gate | docsync、governance、export、lifecycle plan |
 | L3 并发/一致性 | 验证 ExecutionPlan 稳定摘要、并发执行只读命令或 race 检查 | runner/catalog unit tests、`go test -race`、并发 C99 status/templates |
 | L4 发布门禁 | Release profile 与 fresh-clone leaf probe | Release profile、fresh-clone Full/Release |
@@ -62,7 +62,7 @@
 ### 5.1 Smoke 通过标准
 
 - ENV required 全部通过。
-- bootstrap 成功生成 `bin/aicoding.exe`。
+- Task `ensure-bin` 通过 checksum 在输入变化时生成 `bin/aicoding.exe`；BOOT-002/003 验证 CLI 与静态前置条件且不重复构建。
 - `doctor --all --json` 和 `verify --profile Smoke --json` 成功或仅产生可解释 warning。
 - `test --profile Smoke --json` 成功。
 - C99 status/templates 与 C UserStyle Kit fast verify 成功。

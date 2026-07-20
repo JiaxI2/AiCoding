@@ -20,6 +20,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/JiaxI2/AiCoding/internal/adrreview"
+	"github.com/JiaxI2/AiCoding/internal/bootstrap"
 )
 
 type Severity string
@@ -275,8 +276,8 @@ func Registry(cfg Config) []TestCase {
 		{ID: "ENV-004", Category: "ENV", Title: "Task 可用性", Severity: WarnOnly, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"task", "--version"}},
 		{ID: "ENV-005", Category: "ENV", Title: "go.mod 模块路径", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
-		{ID: "BOOT-001", Category: "BOOTSTRAP", Title: "bootstrap 构建 Go CLI", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "run", "./cmd/aicoding", "bootstrap", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "BOOT-002", Category: "BOOTSTRAP", Title: "CLI bootstrap 基础可用", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "bootstrap", "--json"}, ExpectJSON: true},
+		{ID: "BOOT-002", Category: "BOOTSTRAP", Title: "CLI bootstrap 基础可用", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "bootstrap", "--no-build", "--json"}, ExpectJSON: true},
+		{ID: "BOOT-003", Category: "BOOTSTRAP", Title: "bootstrap 前置条件完整", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
 		{ID: "GO-001", Category: "GO", Title: "全仓 Go 单元测试", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "test", "./..."}, TimeoutKind: "long"},
 		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "test", "-race", "./..."}, TimeoutKind: "long"},
@@ -543,6 +544,8 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = requirePaths(cfg.Repo, ".git", "go.mod", "README.md")
 	case "ENV-005":
 		err = checkGoMod(cfg.Repo)
+	case "BOOT-003":
+		err = checkBootstrapPrerequisites(cfg.Repo)
 	case "C99-005":
 		err = requirePaths(cfg.Repo,
 			"config/skills/c99-standard-c/skill.json",
@@ -713,6 +716,36 @@ func checkGoMod(repo string) error {
 	}
 	if !strings.Contains(text, "go 1.22") {
 		return errors.New("go.mod does not declare go 1.22")
+	}
+	return nil
+}
+
+func checkBootstrapPrerequisites(repo string) error {
+	status, errs := bootstrap.Check(repo)
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "; "))
+	}
+	want := map[string]bool{
+		"repo-root": false,
+		"go.mod":    false,
+		"git":       false,
+		"go":        false,
+		"bin-dir":   false,
+	}
+	for _, check := range status.Checks {
+		if _, expected := want[check.Name]; expected {
+			want[check.Name] = check.OK
+		}
+	}
+	missing := []string{}
+	for name, ok := range want {
+		if !ok {
+			missing = append(missing, name)
+		}
+	}
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return fmt.Errorf("bootstrap checks missing or failed: %s", strings.Join(missing, ", "))
 	}
 	return nil
 }

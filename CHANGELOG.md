@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **perf(taskfile,testengine)**: `ensure-bin` 改为 Task checksum 驱动的单次 `go build`，并将 `.task/` 明确登记为忽略的 runtime-state；删除重复构建的 BOOT-001，BOOT-002 改为 `bootstrap --no-build`，并以进程内 BOOT-003 保留 repo/Go/Git/go.mod/bin 前置条件覆盖。 / Makes CLI construction checksum-incremental, governs Task metadata as runtime state, and removes duplicate bootstrap builds while preserving CLI and prerequisite coverage.
+
 - **docs(perf)**: 建立 `task full` 权威性能基线，记录冷/热各三次墙钟与引擎耗时、最慢 15 用例、环境和 cache 口径；六次实测中 FRESH/BOOT 占比为 66.3%–81.8%，满足继续优化的 40% 硬门禁。 / Establishes the authoritative Full performance baseline with six measured runs, environment and cache methodology, slowest-case evidence, and the measured cost-model gate.
 
 - **feat(kit)**: 新增消费者侧只读 `kit describe --kit <id>|--all [--with-state] --json` Plugin View——复用 detached Kit catalog、`CatalogKitViews`、manifest Skill 解析、Typed Command Catalog、Static Adapter Catalog 与 `report.Result`，区分 per-kit operations 和 scope 级 lifecycle actions；默认不读 state，显式 state 摘要剔除时间戳且不进入 inputDigest。Lifecycle 结构门禁新增 `plugin view projection`，Smoke 降级 warning，并修复 `aicoding-platform` manifest 已移除的 `status --all` 路由。 / Adds the read-only Kit Plugin View with deterministic catalog/adapter-derived identity, operations, workflows, optional timestamp-free state, and projection governance; also repairs the removed status route advertised by the platform manifest.

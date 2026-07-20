@@ -7,6 +7,7 @@
       ".codex",
       ".github",
       ".githooks",
+      ".task",
       "CodingKit",
       "cmd",
       "config",
@@ -25,6 +26,7 @@
       "tests"
     ],
     "transientDirectories": [
+      ".task",
       "bin",
       "dist",
       "test-results"
@@ -46,7 +48,8 @@
     "runtime-state": [
       ".aicoding",
       ".agents",
-      ".codex"
+      ".codex",
+      ".task"
     ],
     "build-artifact": [
       "bin",

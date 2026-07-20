@@ -198,6 +198,12 @@ App Server 报告使用 `tokenUsage.total` 作为会话累计值，并使用
 | `task fmt-check:c` | `bin/aicoding.exe skill c99-standard-c check --scope changed --json` |
 | `task fmt-check-staged:c` | `bin/aicoding.exe skill c99-standard-c check --scope staged --json` |
 
+所有依赖 `ensure-bin` 的公开 Task 使用 Task checksum 比较 `cmd/**/*.go`、`internal/**/*.go`、
+`go.mod` 与 `go.sum`；仅输入变化或 `bin/aicoding.exe` 缺失时直接执行一次 `go build`。
+Task 的 `.task/` checksum 元数据属于已登记且被 Git 忽略的本地 runtime-state。
+测试 Registry 的 BOOT-002 只运行 `bootstrap --no-build` 验证 CLI/JSON 契约，BOOT-003
+在进程内验证 repo、Go、Git、go.mod 与 bin 前置条件，不重复构建 CLI。
+
 外部候选可追加 `--target path/to/verify-target.json`；项目差异配置可用可重复的
 `--overlay path/to/project-overlay.json`。完整 target/schema 说明见
 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。

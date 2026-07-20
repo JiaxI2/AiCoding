@@ -94,5 +94,13 @@ tasks:
 
   ensure-bin:
     internal: true
+    sources:
+      - 'cmd/**/*.go'
+      - 'internal/**/*.go'
+      - go.mod
+      - go.sum
+    generates:
+      - bin/aicoding.exe
+    method: checksum
     cmds:
-      - go run ./cmd/aicoding bootstrap --json
+      - go build -o bin/aicoding.exe ./cmd/aicoding

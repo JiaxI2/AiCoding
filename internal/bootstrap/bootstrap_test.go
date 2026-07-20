@@ -45,6 +45,12 @@ func TestBootstrapWithoutBuildCreatesBinDir(t *testing.T) {
 	if status.BuildAttempted {
 		t.Fatalf("BuildAttempted = true for Build=false")
 	}
+	if status.BinaryExists {
+		t.Fatalf("Build=false unexpectedly created a binary: %#v", status)
+	}
+	if _, err := os.Stat(filepath.Join(repo, "bin", "aicoding.exe")); !os.IsNotExist(err) {
+		t.Fatalf("Build=false invoked the Go build path: %v", err)
+	}
 }
 
 func mustWrite(t *testing.T, path, content string) {

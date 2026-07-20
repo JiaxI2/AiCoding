@@ -13,12 +13,12 @@
 | ENV-004 | Task 可用性 | `task --version` | 可执行；未安装记 WARN | WARN |
 | ENV-005 | 模块路径 | 读取 `go.mod` | module 为 `github.com/JiaxI2/AiCoding` | REQUIRED |
 
-## 2. BOOTSTRAP：Go CLI 构建
+## 2. BOOTSTRAP：Go CLI 前置条件
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
-| BOOT-001 | bootstrap 构建 | `go run ./cmd/aicoding bootstrap --json` | 退出码 0，输出 JSON，生成 `bin/aicoding.exe` 或 `bin/aicoding` | REQUIRED |
-| BOOT-002 | CLI 基础可用 | `bin/aicoding.exe bootstrap --json` | 退出码 0，JSON 合法 | REQUIRED |
+| BOOT-002 | CLI 基础可用 | `bin/aicoding.exe bootstrap --no-build --json` | 退出码 0，JSON 合法，不重复构建 | REQUIRED |
+| BOOT-003 | bootstrap 前置条件 | 进程内 `bootstrap.Check` | repo、Go、Git、go.mod 与 bin 检查齐全 | REQUIRED |
 
 ## 3. GO：Go 单元、并发、race
 
