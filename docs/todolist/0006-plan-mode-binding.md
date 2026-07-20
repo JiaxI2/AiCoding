@@ -1,6 +1,6 @@
 # TODO 0006: Plan Mode 重构 III —— 批准绑定内容（approve + 漂移检测 + ADR 0009）
 
-Status: Planned
+Status: Done
 Verify: approve 后 amend-only 提交不产生漂移告警、scope 内实改一文件即产生漂移告警（两条端到端用例）
 
 > 依赖 0004 + 0005。回答"文档和实际代码会不会同步"：**批准的不再是一段文字，是一棵树。**
