@@ -26,13 +26,14 @@ type executableFingerprint struct {
 }
 
 type toolchainCache struct {
-	SchemaVersion int                   `json:"schemaVersion"`
-	Go            executableFingerprint `json:"go"`
-	Git           executableFingerprint `json:"git"`
-	GoVersion     string                `json:"goVersion"`
-	GitVersion    string                `json:"gitVersion"`
-	Digest        string                `json:"digest"`
-	Integrity     string                `json:"integrity"`
+	SchemaVersion    int                   `json:"schemaVersion"`
+	SearchPathDigest string                `json:"searchPathDigest"`
+	Go               executableFingerprint `json:"go"`
+	Git              executableFingerprint `json:"git"`
+	GoVersion        string                `json:"goVersion"`
+	GitVersion       string                `json:"gitVersion"`
+	Digest           string                `json:"digest"`
+	Integrity        string                `json:"integrity"`
 }
 
 // Fingerprint computes one validation identity without hashing repository files
@@ -131,6 +132,15 @@ func (r Repository) resolveConfigPath(configured string) (string, string, error)
 }
 
 func (r Repository) toolchainDigest() (string, error) {
+	cachePath := filepath.Join(r.root, "toolchain.json")
+	searchPathDigest := digestBytes([]byte(os.Getenv("PATH")))
+	if cached, err := readToolchainCache(cachePath); err == nil && cached.SearchPathDigest == searchPathDigest {
+		goFingerprint, goErr := fingerprintExecutablePath(cached.Go.Path)
+		gitFingerprint, gitErr := fingerprintExecutablePath(cached.Git.Path)
+		if goErr == nil && gitErr == nil && cached.Go == goFingerprint && cached.Git == gitFingerprint {
+			return cached.Digest, nil
+		}
+	}
 	goFingerprint, err := fingerprintExecutable("go")
 	if err != nil {
 		return "", fingerprintError(err.Error())
@@ -138,10 +148,6 @@ func (r Repository) toolchainDigest() (string, error) {
 	gitFingerprint, err := fingerprintExecutable("git")
 	if err != nil {
 		return "", fingerprintError(err.Error())
-	}
-	cachePath := filepath.Join(r.root, "toolchain.json")
-	if cached, err := readToolchainCache(cachePath); err == nil && cached.Go == goFingerprint && cached.Git == gitFingerprint {
-		return cached.Digest, nil
 	}
 	goOutput, err := exec.Command(goFingerprint.Path, "version").CombinedOutput()
 	if err != nil {
@@ -152,11 +158,12 @@ func (r Repository) toolchainDigest() (string, error) {
 		return "", fingerprintError(err.Error())
 	}
 	cache := toolchainCache{
-		SchemaVersion: schemaVersion,
-		Go:            goFingerprint,
-		Git:           gitFingerprint,
-		GoVersion:     strings.TrimSpace(string(goOutput)),
-		GitVersion:    strings.TrimSpace(gitOutput),
+		SchemaVersion:    schemaVersion,
+		SearchPathDigest: searchPathDigest,
+		Go:               goFingerprint,
+		Git:              gitFingerprint,
+		GoVersion:        strings.TrimSpace(string(goOutput)),
+		GitVersion:       strings.TrimSpace(gitOutput),
 	}
 	cache.Digest = toolchainDigest(cache)
 	cache.Integrity = toolchainIntegrity(cache)
@@ -179,13 +186,17 @@ func fingerprintExecutable(name string) (executableFingerprint, error) {
 	if err != nil {
 		return executableFingerprint{}, fmt.Errorf("locate %s: %w", name, err)
 	}
-	path, err = filepath.Abs(path)
+	return fingerprintExecutablePath(path)
+}
+
+func fingerprintExecutablePath(path string) (executableFingerprint, error) {
+	path, err := filepath.Abs(path)
 	if err != nil {
-		return executableFingerprint{}, fmt.Errorf("resolve %s: %w", name, err)
+		return executableFingerprint{}, fmt.Errorf("resolve executable: %w", err)
 	}
 	info, err := os.Stat(path)
 	if err != nil {
-		return executableFingerprint{}, fmt.Errorf("stat %s: %w", name, err)
+		return executableFingerprint{}, fmt.Errorf("stat executable: %w", err)
 	}
 	return executableFingerprint{Path: filepath.Clean(path), Size: info.Size(), ModTimeUnixNano: info.ModTime().UnixNano()}, nil
 }
@@ -199,7 +210,7 @@ func readToolchainCache(path string) (toolchainCache, error) {
 	if err := json.Unmarshal(raw, &cache); err != nil {
 		return cache, err
 	}
-	if cache.SchemaVersion != schemaVersion || !validDigest(cache.Digest) || cache.Integrity != toolchainIntegrity(cache) || cache.Digest != toolchainDigest(cache) {
+	if cache.SchemaVersion != schemaVersion || !validDigest(cache.SearchPathDigest) || !validDigest(cache.Digest) || cache.Integrity != toolchainIntegrity(cache) || cache.Digest != toolchainDigest(cache) {
 		return toolchainCache{}, fmt.Errorf("invalid toolchain cache")
 	}
 	return cache, nil
@@ -217,13 +228,14 @@ func toolchainDigest(cache toolchainCache) string {
 
 func toolchainIntegrity(cache toolchainCache) string {
 	payload, _ := json.Marshal(struct {
-		SchemaVersion int                   `json:"schemaVersion"`
-		Go            executableFingerprint `json:"go"`
-		Git           executableFingerprint `json:"git"`
-		GoVersion     string                `json:"goVersion"`
-		GitVersion    string                `json:"gitVersion"`
-		Digest        string                `json:"digest"`
-	}{cache.SchemaVersion, cache.Go, cache.Git, cache.GoVersion, cache.GitVersion, cache.Digest})
+		SchemaVersion    int                   `json:"schemaVersion"`
+		SearchPathDigest string                `json:"searchPathDigest"`
+		Go               executableFingerprint `json:"go"`
+		Git              executableFingerprint `json:"git"`
+		GoVersion        string                `json:"goVersion"`
+		GitVersion       string                `json:"gitVersion"`
+		Digest           string                `json:"digest"`
+	}{cache.SchemaVersion, cache.SearchPathDigest, cache.Go, cache.Git, cache.GoVersion, cache.GitVersion, cache.Digest})
 	return digestBytes(payload)
 }
 

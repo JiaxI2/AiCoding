@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **perf(validationevidence)**: `validation check` 的常规 worktree/linked-worktree 热路径直接解析 `.git`/`commondir`，异常布局仍回退 `git rev-parse --git-common-dir`；toolchain cache 在 PATH 未变时直接校验已缓存可执行文件的 size/mtime，移除 SLA 之外的第三个 Git 进程与重复 PATH 搜索。 / Removes the extra common-dir Git process and repeated executable lookup from warm evidence checks while retaining fail-safe fallbacks.
+
 - **feat(cli)**: 新增 `validation status|check|list|clean` 四个内容证据子命令，并把 `test --reuse auto|off`（默认 `off`）、`--force`、`--allow-dirty`、`--verify-reuse` 接入唯一 test engine；CLI fingerprint 绑定 typed command catalog，报告外壳同步暴露 execution/Receipt/identity/reusable 字段。 / Adds the four Validation Evidence commands and explicit test reuse controls without changing the default execution path.
 
 - **feat(testengine)**: 唯一 Test Registry 现以 start/end Git 内容主体、规范化 plan、Catalog/Registry/实现版本语义、相关 config、缓存化 toolchain 与 options 生成 Validation Identity；默认 `--reuse off`，显式 `auto` 可短路，`--force` 强制执行，`--verify-reuse` 用完整执行抓取 PASS Receipt 与实际 FAIL 的污染，FAIL/漂移/意外 SKIP 均不生成 Receipt。 / Integrates opt-in, audited content-based reuse into the single test engine while preserving the existing execution path by default.

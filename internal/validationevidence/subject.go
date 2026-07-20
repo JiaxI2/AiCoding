@@ -3,6 +3,7 @@ package validationevidence
 import (
 	"crypto/sha256"
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -16,7 +17,10 @@ func Open(repo string) (Repository, error) {
 	if err != nil {
 		return Repository{}, fmt.Errorf("resolve repository: %w", err)
 	}
-	commonDir, err := gitx.CommonDir(absRepo)
+	commonDir, err := commonDirFromDotGit(absRepo)
+	if err != nil {
+		commonDir, err = gitx.CommonDir(absRepo)
+	}
 	if err != nil {
 		return Repository{}, &Error{Code: CodeTargetNotFound, Message: err.Error(), RequiredAction: "run inside a Git repository"}
 	}
@@ -31,6 +35,54 @@ func Open(repo string) (Repository, error) {
 		root:         filepath.Join(commonDir, "aicoding", "validation"),
 		repositoryID: fmt.Sprintf("sha256:%x", sum),
 	}, nil
+}
+
+// commonDirFromDotGit avoids a third Git process on the validation hot path.
+// Git remains the fallback for bare repositories, subdirectories and unusual
+// repository layouts that do not expose a conventional worktree .git entry.
+func commonDirFromDotGit(repo string) (string, error) {
+	dotGit := filepath.Join(repo, ".git")
+	info, err := os.Stat(dotGit)
+	if err != nil {
+		return "", err
+	}
+	if info.IsDir() {
+		return filepath.Abs(dotGit)
+	}
+	raw, err := os.ReadFile(dotGit)
+	if err != nil {
+		return "", err
+	}
+	const prefix = "gitdir:"
+	line := strings.TrimSpace(string(raw))
+	if !strings.HasPrefix(strings.ToLower(line), prefix) {
+		return "", fmt.Errorf("invalid .git file")
+	}
+	gitDir := strings.TrimSpace(line[len(prefix):])
+	if !filepath.IsAbs(gitDir) {
+		gitDir = filepath.Join(repo, gitDir)
+	}
+	gitDir, err = filepath.Abs(gitDir)
+	if err != nil {
+		return "", err
+	}
+	commonDir := gitDir
+	if rawCommonDir, readErr := os.ReadFile(filepath.Join(gitDir, "commondir")); readErr == nil {
+		commonDir = strings.TrimSpace(string(rawCommonDir))
+		if !filepath.IsAbs(commonDir) {
+			commonDir = filepath.Join(gitDir, commonDir)
+		}
+	} else if !os.IsNotExist(readErr) {
+		return "", readErr
+	}
+	commonDir, err = filepath.Abs(commonDir)
+	if err != nil {
+		return "", err
+	}
+	if info, err = os.Stat(commonDir); err != nil || !info.IsDir() {
+		return "", fmt.Errorf("invalid Git common directory")
+	}
+	return filepath.Clean(commonDir), nil
 }
 
 // Capture reads status exactly once and resolves the requested Git tree.
