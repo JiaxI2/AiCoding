@@ -4,9 +4,11 @@ import (
 	"context"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/report"
 	"github.com/JiaxI2/AiCoding/internal/testengine"
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
@@ -86,7 +88,71 @@ func TestValidationIndexReceiptSurvivesCommitAndMessageAmend(t *testing.T) {
 	}
 }
 
-func TestTestCommandWiresExplicitEvidenceFlagsAndDefaultsAuto(t *testing.T) {
+func TestValidationHeadCheckExplicitlyRepairsOnlyMetadataOnlyTipAlias(t *testing.T) {
+	repo := newValidationCLIRepo(t)
+	store, fingerprint := putValidationCLIReceipt(t, repo, validationevidence.TargetHead)
+	mustValidationCLIGit(t, repo, "commit", "--allow-empty", "-m", "metadata-only replacement one")
+	parent, err := gitx.HeadCommit(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustValidationCLIGit(t, repo, "commit", "--allow-empty", "-m", "metadata-only replacement two")
+	head, err := gitx.HeadCommit(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zero := strings.Repeat("0", len(head))
+	policy := validationevidence.Policy{SchemaVersion: 1, UnmatchedAction: "allow", Contexts: []validationevidence.PushContext{{
+		ID: "stable-main", RemoteRef: "refs/heads/main", RequiredProfile: testengine.ProfileSmoke,
+	}}}
+	update := gitx.PushUpdate{LocalRef: "refs/heads/topic", LocalOID: head, RemoteRef: "refs/heads/main", RemoteOID: zero}
+	if gate := store.GatePush(policy, []gitx.PushUpdate{update}); gate.OK || gate.Updates[0].Code != validationevidence.CodeReceiptMiss {
+		t.Fatalf("metadata-only commit unexpectedly had an alias: %#v", gate)
+	}
+
+	result, err := runValidation([]string{"check", "--profile", "Smoke", "--target", "HEAD", "--bind-alias", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !result.OK || result.InputDigest != fingerprint.Identity {
+		t.Fatalf("alias repair check = %#v, %v", result, err)
+	}
+	data := result.Data.(validationCheckData)
+	if !data.CommitAliasBound {
+		t.Fatalf("alias repair was not reported: %#v", data)
+	}
+	if gate := store.GatePush(policy, []gitx.PushUpdate{update}); !gate.OK || gate.Updates[0].Code != validationevidence.CodeReceiptHit {
+		t.Fatalf("repaired metadata-only commit did not pass Context Gate: %#v", gate)
+	}
+	parentUpdate := update
+	parentUpdate.LocalOID = parent
+	if gate := store.GatePush(policy, []gitx.PushUpdate{parentUpdate}); gate.OK || gate.Updates[0].Code != validationevidence.CodeReceiptMiss {
+		t.Fatalf("alias repair bound a non-tip commit: %#v", gate)
+	}
+}
+
+func TestValidationHeadCheckDoesNotBindAliasOnMiss(t *testing.T) {
+	repo := newValidationCLIRepo(t)
+	store, err := validationevidence.Open(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, checkErr := runValidation([]string{"check", "--profile", "Smoke", "--target", "HEAD", "--bind-alias", "--repo-root", repo, "--json"}, time.Now())
+	if checkErr == nil || result.OK {
+		t.Fatalf("missing Receipt unexpectedly repaired an alias: %#v, %v", result, checkErr)
+	}
+	head, err := gitx.HeadCommit(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zero := strings.Repeat("0", len(head))
+	policy := validationevidence.Policy{SchemaVersion: 1, UnmatchedAction: "allow", Contexts: []validationevidence.PushContext{{
+		ID: "stable-main", RemoteRef: "refs/heads/main", RequiredProfile: testengine.ProfileSmoke,
+	}}}
+	gate := store.GatePush(policy, []gitx.PushUpdate{{LocalRef: "refs/heads/topic", LocalOID: head, RemoteRef: "refs/heads/main", RemoteOID: zero}})
+	if gate.OK || gate.Updates[0].Code != validationevidence.CodeReceiptMiss {
+		t.Fatalf("Receipt miss manufactured an alias: %#v", gate)
+	}
+}
+
+func TestTestCommandWiresExplicitEvidenceFlagsAndDefaultsOff(t *testing.T) {
 	repo := newValidationCLIRepo(t)
 	previous := runTestEngine
 	t.Cleanup(func() { runTestEngine = previous })
@@ -115,7 +181,7 @@ func TestTestCommandWiresExplicitEvidenceFlagsAndDefaultsAuto(t *testing.T) {
 	if configs[1].Reuse != testengine.ReuseAuto || configs[1].Force || !configs[1].VerifyReuse {
 		t.Fatalf("audit config = %#v", configs[1])
 	}
-	if configs[2].Reuse != testengine.ReuseAuto || configs[2].Force || configs[2].AllowDirty || configs[2].VerifyReuse {
+	if configs[2].Reuse != testengine.ReuseOff || configs[2].Force || configs[2].AllowDirty || configs[2].VerifyReuse {
 		t.Fatalf("default config = %#v", configs[2])
 	}
 	for _, cfg := range configs {
@@ -130,6 +196,7 @@ func TestValidationCommandRejectsRemovedAndInvalidForms(t *testing.T) {
 		{},
 		{"show"},
 		{"check", "--profile", "Smoke", "--target", "AUTO"},
+		{"check", "--profile", "Smoke", "--target", "INDEX", "--bind-alias"},
 		{"check", "--profile", "Manual", "--target", "HEAD"},
 		{"list", "--profile", "Manual"},
 	} {

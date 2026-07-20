@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- **docs(perf)**: 回填第二期实测：已有 main 的单 ref 快进 pre-push 端到端中位数 `213.784 ms`（5/5 允许），默认 Release 自动复用中位数 `397.799 ms`；两条路径均使用预构建 CLI，Hook 不运行构建或测试。 / Records Phase 2 measurements for the exact-object pre-push gate and default Release reuse, both through the prebuilt CLI with no build or test in hooks.
+- **fix(validationevidence)**: 在没有远端 CI 连续绿灯证据时把默认复用退回 `--reuse off`，规定 main 的 Release seed/audit 连续 3 次成功后方可独立晋级；新增显式 `validation check --target HEAD --bind-alias`，只为同 Tree 的 metadata-only 重写 tip 修复 alias，Tree 变化仍必须重跑。 / Restores reuse-off by default until three consecutive remote Release audits pass, and adds an explicit same-tree tip-alias recovery path without weakening tree-change misses.
+
+- **docs(perf)**: 回填第二期实测：已有 main 的单 ref 快进 pre-push 端到端中位数 `213.784 ms`（5/5 允许），显式 Release 自动复用中位数 `397.799 ms`；两条路径均使用预构建 CLI，Hook 不运行构建或测试。 / Records Phase 2 measurements for the exact-object pre-push gate and explicit Release reuse, both through the prebuilt CLI with no build or test in hooks.
 
 - **feat(hooks)**: 接入预构建 Go CLI 的 `.githooks/pre-push`，按 policy 对 Git stdin 的 exact `local_oid` 执行 Context Gate；post-commit 同步补 profile/commit alias，hook registry、repohealth、governance 与 Agent 规则一并登记。所有仓库 hook 移除 `go run` 构建回退，禁止在 hook 内测试、构建或改写工作区。 / Wires the exact-object pre-push gate and post-commit aliases into governed, prebuilt-CLI-only hooks with no in-hook build or test fallback.
 

@@ -8,7 +8,7 @@ bin\aicoding.exe verify --profile Smoke|Full|Release --json
 bin\aicoding.exe test --profile Smoke|Full|Release --json
 bin\aicoding.exe test latest
 bin\aicoding.exe validation status --json
-bin\aicoding.exe validation check --profile Smoke|Full|Release --target HEAD|INDEX --json
+bin\aicoding.exe validation check --profile Smoke|Full|Release --target HEAD|INDEX [--bind-alias] --json
 bin\aicoding.exe validation list|clean [--profile Smoke|Full|Release] --json
 ```
 

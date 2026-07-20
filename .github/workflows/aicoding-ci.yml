@@ -32,6 +32,8 @@ jobs:
         shell: cmd
         run: .\bin\aicoding.exe test --profile Smoke --json
 
+  # Keep default reuse off until reviewers cite three consecutive successful release-gate runs on main.
+  # Promotion to auto must be a separate reviewed commit.
   release-gate:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: windows-latest

@@ -170,9 +170,13 @@ For an actual release, also test real Marketplace registration, real plugin inst
 - Before pushing `refs/heads/main` or any `refs/tags/*`, require a Release Receipt for the exact
   `local_oid` tree supplied by Git; never substitute the current HEAD or infer profile inheritance.
 - Treat a missing/invalid alias, non-fast-forward main update, main deletion, or tag deletion as a
-  blocking Context Gate result. Run validation outside the hook on the exact commit, then retry.
+  blocking Context Gate result. For a checked-out metadata-only rewritten tip whose Tree is unchanged,
+  run `bin\aicoding.exe validation check --profile Release --target HEAD --bind-alias --json`, then
+  retry. Only the ref tip needs an alias. If the Tree changed (the usual rebase onto an updated main),
+  the check must miss and Release must be rerun with `--reuse off`.
 - Do not edit Receipt or alias files manually and do not bypass `.githooks/pre-push` to manufacture
-  a green result. `--reuse off` remains the explicit full-execution rollback path.
+  a green result. Keep `--reuse off` as the default until three consecutive remote main
+  `release-gate` seed/audit runs pass and the separate promotion change cites all three run URLs.
 - Repository hooks may only call the prebuilt Go CLI. They must not run tests/builds, modify the
   worktree, stash/reset/checkout, or invoke a recursive push.
 - These rules do not authorize Profile inheritance or Plan Mode integration; both remain outside

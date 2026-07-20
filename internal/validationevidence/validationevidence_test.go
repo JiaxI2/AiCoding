@@ -133,7 +133,7 @@ func TestContextGateUsesPushedCommitTreeAndProfileAlias(t *testing.T) {
 	missing := store.GatePush(policy, []gitx.PushUpdate{{
 		LocalRef: "refs/heads/main", LocalOID: secondCommit, RemoteRef: "refs/heads/main", RemoteOID: zero,
 	}})
-	if missing.OK || missing.Updates[0].Code != CodeReceiptMiss {
+	if missing.OK || missing.Updates[0].Code != CodeReceiptMiss || !strings.Contains(missing.Updates[0].RequiredAction, "--bind-alias") {
 		t.Fatalf("protected ref without an alias passed: %#v", missing)
 	}
 

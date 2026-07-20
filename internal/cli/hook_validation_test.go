@@ -58,6 +58,22 @@ func TestPrePushHookChecksActualLocalObject(t *testing.T) {
 	if err == nil || !report.IsValidationError(err) || result.OK {
 		t.Fatalf("pre-push missing Receipt = %#v, %v", result, err)
 	}
+	missingData := result.Data.(prePushData)
+	action := missingData.Gate.Updates[0].RequiredAction
+	start := strings.Index(action, "`")
+	end := strings.LastIndex(action, "`")
+	if start < 0 || end <= start {
+		t.Fatalf("pre-push requiredAction has no executable command: %q", action)
+	}
+	fields := strings.Fields(action[start+1 : end])
+	if len(fields) < 4 || fields[0] != "aicoding" || fields[1] != "validation" || fields[2] != "check" {
+		t.Fatalf("pre-push recovery command = %q", action)
+	}
+	validationArgs := append(fields[2:], "--repo-root", repo)
+	parsed, parseErr := runValidation(validationArgs, time.Now())
+	if parseErr == nil || !report.IsValidationError(parseErr) || parsed.ErrorKind == report.ErrorKindUsage {
+		t.Fatalf("pre-push recovery command did not reach validation semantics: %#v, %v", parsed, parseErr)
+	}
 }
 
 func TestPostCommitRefreshBindsStagedReceiptToNewCommit(t *testing.T) {

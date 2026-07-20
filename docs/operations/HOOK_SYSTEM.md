@@ -31,6 +31,14 @@ are explicitly outside the gate. Main must be fast-forward and cannot be deleted
 cannot be deleted. A missing Receipt reports the exact ref and required profile. The remedy runs
 validation outside the hook, then retries the push.
 
+Rebase and cherry-pick do not reliably run `post-commit`. If they produce a new tip commit with the
+same tree, check out that tip and run
+`bin\aicoding.exe validation check --profile Release --target HEAD --bind-alias --json`. A successful
+check binds only the tip because Git's pre-push protocol supplies one `local_oid` per ref. This is a
+narrow metadata-only recovery path: message/reorder-only interactive rebase, a hook-skipping
+message-only amend, same-tree cherry-pick, or rebase onto the same base. Rebasing onto an updated
+main normally changes the tree, so the Receipt must miss and Release must be rerun with reuse off.
+
 ## Rules
 
 - Hooks must declare their owner Kit and trigger.

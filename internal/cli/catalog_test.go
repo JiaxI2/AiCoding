@@ -32,7 +32,7 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 	for _, expected := range []string{
 		"Formal product workflow:",
 		"aicoding lifecycle plan",
-		"aicoding validation check --profile Smoke|Full|Release --target HEAD|INDEX",
+		"aicoding validation check --profile Smoke|Full|Release --target HEAD|INDEX [--bind-alias]",
 		"aicoding powershell regex-lint --path PATH",
 	} {
 		if !strings.Contains(help.String(), expected) {

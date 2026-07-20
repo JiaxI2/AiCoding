@@ -166,7 +166,7 @@ func ParseConfig(args []string, stderr io.Writer) (Config, error) {
 	fs.BoolVar(&cfg.Strict, "strict", false, "treat WARN severity command failures as FAIL")
 	fs.BoolVar(&cfg.IncludeMutate, "include-mutating", false, "reserved: include isolated mutating lifecycle tests")
 	fs.BoolVar(&cfg.NoJSONCheck, "no-json-check", false, "disable JSON output validation")
-	fs.StringVar(&reuse, "reuse", string(ReuseAuto), "auto|off")
+	fs.StringVar(&reuse, "reuse", string(ReuseOff), "auto|off")
 	fs.BoolVar(&cfg.Force, "force", false, "ignore a matching Receipt and execute all selected cases")
 	fs.BoolVar(&cfg.AllowDirty, "allow-dirty", false, "allow execution for a dirty subject; never reusable")
 	fs.BoolVar(&cfg.VerifyReuse, "verify-reuse", false, "execute and audit the conclusion against a matching Receipt")
@@ -208,7 +208,7 @@ func NormalizeConfig(cfg Config) (Config, error) {
 		cfg.Concurrency = 1
 	}
 	if cfg.Reuse == "" {
-		cfg.Reuse = ReuseAuto
+		cfg.Reuse = ReuseOff
 	}
 	if cfg.Reuse != ReuseOff && cfg.Reuse != ReuseAuto {
 		return cfg, fmt.Errorf("invalid reuse mode %q", cfg.Reuse)

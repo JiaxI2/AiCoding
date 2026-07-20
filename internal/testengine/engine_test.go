@@ -212,6 +212,24 @@ func TestScheduledCIKeepsCleanCloneFullCoverage(t *testing.T) {
 	}
 }
 
+func TestScheduledCISeedsAndAuditsReleaseBeforeDefaultPromotion(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "aicoding-ci.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow := string(data)
+	for _, required := range []string{
+		"release-gate:",
+		"test --profile Release --reuse off --json",
+		"test --profile Release --verify-reuse --json",
+		"three consecutive successful release-gate runs on main",
+	} {
+		if !strings.Contains(workflow, required) {
+			t.Fatalf("scheduled CI is missing Release reuse promotion contract %q", required)
+		}
+	}
+}
+
 func containsString(values []string, want string) bool {
 	for _, value := range values {
 		if value == want {

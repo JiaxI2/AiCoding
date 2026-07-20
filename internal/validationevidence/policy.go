@@ -46,6 +46,7 @@ type PushGateResult struct {
 	Allowed            bool      `json:"allowed"`
 	Code               ErrorCode `json:"code,omitempty"`
 	Reason             string    `json:"reason"`
+	RequiredAction     string    `json:"requiredAction,omitempty"`
 }
 
 // PushGateReport keeps deterministic decisions plus an observable duration.
@@ -223,6 +224,7 @@ func (r Repository) gatePushUpdate(policy Policy, update gitx.PushUpdate) PushGa
 	decision := r.checkCommitAlias(context.RequiredProfile, update.LocalOID, treeOID)
 	result.Code = decision.Code
 	result.Reason = decision.Reason
+	result.RequiredAction = decision.RequiredAction
 	result.Allowed = decision.Hit
 	if decision.Receipt != nil {
 		result.ValidationIdentity = decision.Receipt.ValidationIdentity
@@ -233,7 +235,10 @@ func (r Repository) gatePushUpdate(policy Policy, update gitx.PushUpdate) PushGa
 
 func (r Repository) checkCommitAlias(profile, commitOID, treeOID string) (decision ReuseDecision) {
 	start := time.Now()
-	decision = ReuseDecision{Code: CodeReceiptMiss, Reason: "no commit alias exists for the required profile", RequiredAction: "run the required validation profile on the exact commit"}
+	decision = ReuseDecision{
+		Code: CodeReceiptMiss, Reason: "no commit alias exists for the required profile",
+		RequiredAction: "run `aicoding validation check --profile " + profile + " --target HEAD --bind-alias --json` on the checked-out tip",
+	}
 	defer func() { decision.CheckDurationMS = time.Since(start).Milliseconds() }()
 	raw, err := os.ReadFile(r.aliasPath(profile, commitOID))
 	if err != nil {

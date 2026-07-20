@@ -161,7 +161,7 @@ var commands = mustCommandCatalog(
 
 		{Command: CommandTest, Section: HelpDomain, Usage: "aicoding test latest [--repo-root PATH] [--json]"},
 		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation status [--repo-root PATH] [--json]"},
-		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation check --profile Smoke|Full|Release --target HEAD|INDEX [--repo-root PATH] [--json]"},
+		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation check --profile Smoke|Full|Release --target HEAD|INDEX [--bind-alias] [--repo-root PATH] [--json]"},
 		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation list [--profile Smoke|Full|Release] [--repo-root PATH] [--json]"},
 		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation clean [--profile Smoke|Full|Release] [--repo-root PATH] [--json]"},
 		{Command: CommandDocSync, Section: HelpDomain, Usage: "aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]"},

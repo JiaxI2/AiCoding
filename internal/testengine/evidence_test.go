@@ -277,12 +277,12 @@ func TestReceiptEligibilityUsesSeverityAndUnexpectedSkipPolicy(t *testing.T) {
 	}
 }
 
-func TestNormalizeConfigDefaultsReuseAutoAndRejectsAuditForce(t *testing.T) {
+func TestNormalizeConfigDefaultsReuseOffAndRejectsAuditForce(t *testing.T) {
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Reuse != ReuseAuto {
+	if cfg.Reuse != ReuseOff {
 		t.Fatalf("default reuse = %q", cfg.Reuse)
 	}
 	if _, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke, Reuse: "always"}); err == nil {

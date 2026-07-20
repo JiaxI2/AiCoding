@@ -17,11 +17,12 @@ type validationStatusData struct {
 }
 
 type validationCheckData struct {
-	Profile     string                           `json:"profile"`
-	Target      validationevidence.Target        `json:"target"`
-	Subject     validationevidence.Subject       `json:"subject"`
-	Fingerprint validationevidence.Fingerprint   `json:"fingerprint"`
-	Decision    validationevidence.ReuseDecision `json:"decision"`
+	Profile          string                           `json:"profile"`
+	Target           validationevidence.Target        `json:"target"`
+	Subject          validationevidence.Subject       `json:"subject"`
+	Fingerprint      validationevidence.Fingerprint   `json:"fingerprint"`
+	Decision         validationevidence.ReuseDecision `json:"decision"`
+	CommitAliasBound bool                             `json:"commitAliasBound,omitempty"`
 }
 
 type validationListData struct {
@@ -95,6 +96,7 @@ func runValidationCheck(args []string, start time.Time) (report.Result, error) {
 	repoArg := fs.String("repo-root", "", "repository root")
 	profileArg := fs.String("profile", "", "Smoke, Full or Release")
 	targetArg := fs.String("target", "", "HEAD or INDEX")
+	bindAliasArg := fs.Bool("bind-alias", false, "bind a matching HEAD Receipt to the current commit")
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args); err != nil {
 		return report.Result{}, err
@@ -106,6 +108,9 @@ func runValidationCheck(args []string, start time.Time) (report.Result, error) {
 	target, err := normalizeValidationTarget(*targetArg)
 	if err != nil {
 		return report.Result{}, err
+	}
+	if *bindAliasArg && target != validationevidence.TargetHead {
+		return report.Result{}, usageErrorf("--bind-alias requires --target HEAD")
 	}
 	repo, store, err := openValidationRepository(*repoArg)
 	if err != nil {
@@ -124,9 +129,19 @@ func runValidationCheck(args []string, start time.Time) (report.Result, error) {
 		return validationFailure("validation check", repo, start, "cannot compute validation identity", err)
 	}
 	decision := store.Check(subject, fingerprint)
+	aliasBound := false
+	if decision.Hit && *bindAliasArg {
+		if decision.Receipt == nil {
+			return validationFailure("validation check", repo, start, "cannot bind validation alias", errors.New("matching Receipt is unavailable"))
+		}
+		if err := store.BindCommit("HEAD", *decision.Receipt); err != nil {
+			return validationFailure("validation check", repo, start, "cannot bind validation alias", err)
+		}
+		aliasBound = true
+	}
 	data := validationCheckData{
 		Profile: profile, Target: target, Subject: subject,
-		Fingerprint: fingerprint, Decision: decision,
+		Fingerprint: fingerprint, Decision: decision, CommitAliasBound: aliasBound,
 	}
 	errs := []string{}
 	if !decision.Hit {
