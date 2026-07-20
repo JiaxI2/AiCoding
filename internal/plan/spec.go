@@ -1,6 +1,7 @@
 package plan
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"os"
@@ -248,8 +249,10 @@ func verifySpec(repo string, spec Spec) ([]string, []string) {
 			errs = append(errs, prefix+"decision file is missing: "+spec.Decision)
 		}
 	}
-	if spec.Status == StatusApproved && spec.ApprovedTree == "" {
-		warnings = append(warnings, prefix+"approvedTree is empty until TODO 0006 approval binding lands")
+	if spec.Status == StatusApproved || spec.Status == StatusImplemented {
+		if !validTreeOID(spec.ApprovedTree) {
+			errs = append(errs, prefix+"approvedTree must be a Git tree object id for approved or implemented plans")
+		}
 	}
 	return errs, warnings
 }
@@ -278,6 +281,14 @@ func validPlanID(id string) bool {
 		}
 	}
 	return true
+}
+
+func validTreeOID(value string) bool {
+	if len(value) != 40 && len(value) != 64 {
+		return false
+	}
+	_, err := hex.DecodeString(value)
+	return err == nil
 }
 
 func displayPath(repo, file string) string {

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(plan)**: 新增 clean-tree `plan approve`、Git Tree 内容绑定、scope 漂移/越界裁决与 approved plan 敏感路径覆盖检查；验证证据仍只引用既有 Receipt，不复制证据模型。 / Adds clean-tree plan approval, Git-tree binding, scope drift adjudication, and approved-plan coverage for sensitive paths while retaining validation evidence as the sole Receipt authority.
+
 - **docs(plan)**: 为 Plan Mode 内容绑定阶段登记独立的 per-plan scope 与 Full gate，作为后续 clean-tree `plan approve` 的自举契约。 / Registers the bounded per-plan scope and Full gate used to bootstrap clean-tree approval for the Plan Mode content-binding stage.
 
 - **feat(plan)**: 将 Plan Mode 产物收敛到 `docs/spec/<id>/`，新增严格 frontmatter schema、确定性 `plan verify/status`，迁移并归档两套历史会话，同时把 registry 与兼容脚本改到 per-plan 路径。 / Standardizes Plan Mode artifacts under per-plan directories, adds strict deterministic verification/status views, archives both historical sessions, and updates registry and compatibility scripts.

@@ -11,14 +11,14 @@ import (
 func TestVerifySpecsAcceptsValidSpecsAndListIsDeterministic(t *testing.T) {
 	repo := t.TempDir()
 	writePlanTestFile(t, repo, "docs/spec/z-plan/PLAN.md", validPlanFrontmatter("z-plan", StatusArchived, ""))
-	writePlanTestFile(t, repo, "docs/spec/a-plan/PLAN.md", validPlanFrontmatter("a-plan", StatusApproved, ""))
+	writePlanTestFile(t, repo, "docs/spec/a-plan/PLAN.md", validBoundPlanFrontmatter("a-plan", StatusApproved, strings.Repeat("a", 40)))
 
 	verification, err := VerifySpecs(repo)
 	if err != nil || !verification.OK || len(verification.Specs) != 2 {
 		t.Fatalf("VerifySpecs() = %#v, %v", verification, err)
 	}
-	if len(verification.Warnings) != 1 || !strings.Contains(verification.Warnings[0], "approvedTree is empty") {
-		t.Fatalf("approved compatibility warning missing: %#v", verification.Warnings)
+	if len(verification.Warnings) != 0 {
+		t.Fatalf("unexpected verification warnings: %#v", verification.Warnings)
 	}
 	first, err := ListSpecs(repo)
 	if err != nil {
@@ -99,12 +99,16 @@ func writePlanTestFile(t *testing.T, repo, relative, content string) {
 }
 
 func validPlanFrontmatter(id, status, decision string) string {
+	return validBoundPlanFrontmatter(id, status, "")
+}
+
+func validBoundPlanFrontmatter(id, status, approvedTree string) string {
 	return "---\n" +
 		"id: " + id + "\n" +
 		"status: " + status + "\n" +
 		"scope:\n  - internal/plan/**\n" +
-		"approvedTree: \"\"\n" +
-		"decision: \"" + decision + "\"\n" +
+		"approvedTree: \"" + approvedTree + "\"\n" +
+		"decision: \"\"\n" +
 		"gates:\n  - profile: full\n" +
 		"---\n\n# Test plan\n"
 }

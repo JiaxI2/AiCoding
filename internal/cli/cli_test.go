@@ -203,6 +203,7 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		"aicoding plan check (--staged | --paths PATH ...)",
 		"aicoding plan verify",
 		"aicoding plan status [--id ID | --all]",
+		"aicoding plan approve --id ID",
 	} {
 		if !strings.Contains(help.String(), usage) {
 			t.Fatalf("catalog help is missing %q", usage)

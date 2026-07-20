@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -107,6 +108,24 @@ func StagedFiles(repo string) ([]string, error) {
 		return nil, err
 	}
 	return splitFileList(out), nil
+}
+
+// DiffTreeFiles returns the repository-relative paths changed between two Git
+// trees. The result includes additions, modifications, renames, and deletions
+// in deterministic order.
+func DiffTreeFiles(repo, fromTree, toTree string) ([]string, error) {
+	fromTree = strings.TrimSpace(fromTree)
+	toTree = strings.TrimSpace(toTree)
+	if fromTree == "" || toTree == "" {
+		return nil, fmt.Errorf("git tree diff requires two tree object ids")
+	}
+	out, err := Run(repo, "diff", "--name-only", fromTree, toTree, "--")
+	if err != nil {
+		return nil, err
+	}
+	files := splitFileList(out)
+	sort.Strings(files)
+	return files, nil
 }
 
 // HeadCommit returns the commit object currently named by HEAD.

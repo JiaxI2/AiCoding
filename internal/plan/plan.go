@@ -38,6 +38,8 @@ type Check struct {
 	Paths          []string         `json:"paths"`
 	Sensitive      []SensitiveMatch `json:"sensitive"`
 	Exempt         []string         `json:"exempt"`
+	ApprovedPlans  []string         `json:"approvedPlans"`
+	Uncovered      []SensitiveMatch `json:"uncovered"`
 	RequiredAction string           `json:"requiredAction,omitempty"`
 }
 
@@ -76,10 +78,12 @@ func CheckPaths(policy Policy, paths []string) (Check, error) {
 		return Check{}, err
 	}
 	check := Check{
-		PolicyPath: PolicyPath,
-		Paths:      normalizedPaths,
-		Sensitive:  []SensitiveMatch{},
-		Exempt:     []string{},
+		PolicyPath:    PolicyPath,
+		Paths:         normalizedPaths,
+		Sensitive:     []SensitiveMatch{},
+		Exempt:        []string{},
+		ApprovedPlans: []string{},
+		Uncovered:     []SensitiveMatch{},
 	}
 	for _, path := range normalizedPaths {
 		exempt, err := matchesAny(policy.ExemptPaths, path)

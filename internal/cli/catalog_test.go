@@ -34,6 +34,7 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 		"aicoding lifecycle plan",
 		"aicoding validation check --profile Smoke|Full|Release --target HEAD|INDEX [--bind-alias]",
 		"aicoding plan check (--staged | --paths PATH ...)",
+		"aicoding plan approve --id ID",
 		"aicoding powershell regex-lint --path PATH",
 	} {
 		if !strings.Contains(help.String(), expected) {
@@ -71,8 +72,8 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 	if workForms != 4 {
 		t.Fatalf("work help form count = %d, want 4", workForms)
 	}
-	if planForms != 3 {
-		t.Fatalf("plan help form count = %d, want 3", planForms)
+	if planForms != 4 {
+		t.Fatalf("plan help form count = %d, want 4", planForms)
 	}
 }
 

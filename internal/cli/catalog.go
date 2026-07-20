@@ -164,6 +164,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandPlan, Section: HelpDomain, Usage: "aicoding plan check (--staged | --paths PATH ...) [--repo-root PATH] [--json]"},
 		{Command: CommandPlan, Section: HelpDomain, Usage: "aicoding plan verify [--repo-root PATH] [--json]"},
 		{Command: CommandPlan, Section: HelpDomain, Usage: "aicoding plan status [--id ID | --all] [--repo-root PATH] [--json]"},
+		{Command: CommandPlan, Section: HelpDomain, Usage: "aicoding plan approve --id ID [--repo-root PATH] [--json]"},
 		{Command: CommandProvision, Section: HelpDomain, Usage: "aicoding provision [--repo-root PATH] [--json]"},
 		{Command: CommandDoctor, Section: HelpFormal, Usage: "aicoding doctor --all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
 		{Command: CommandVerify, Section: HelpFormal, Usage: "aicoding verify --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
