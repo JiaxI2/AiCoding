@@ -22,11 +22,13 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/adrreview"
 	"github.com/JiaxI2/AiCoding/internal/bootstrap"
 	"github.com/JiaxI2/AiCoding/internal/kit"
+	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
 
 type Severity string
 type Status string
 type Profile = string
+type ReuseMode string
 
 const (
 	Required Severity = "REQUIRED"
@@ -42,18 +44,26 @@ const (
 	ProfileFull    Profile = "full"
 	ProfileRelease Profile = "release"
 	ProfileManual  Profile = "manual"
+
+	ReuseOff  ReuseMode = "off"
+	ReuseAuto ReuseMode = "auto"
 )
 
 type Config struct {
-	Repo          string
-	Out           string
-	Profile       Profile
-	Timeout       time.Duration
-	LongTimeout   time.Duration
-	Concurrency   int
-	Strict        bool
-	IncludeMutate bool
-	NoJSONCheck   bool
+	Repo                 string
+	Out                  string
+	Profile              Profile
+	Timeout              time.Duration
+	LongTimeout          time.Duration
+	Concurrency          int
+	Strict               bool
+	IncludeMutate        bool
+	NoJSONCheck          bool
+	Reuse                ReuseMode
+	Force                bool
+	AllowDirty           bool
+	VerifyReuse          bool
+	CommandCatalogDigest string
 }
 
 type TestCase struct {
@@ -103,8 +113,17 @@ type Summary struct {
 }
 
 type Report struct {
-	Summary Summary  `json:"summary"`
-	Results []Result `json:"results"`
+	ExecutionMode      string                         `json:"executionMode,omitempty"`
+	ReceiptID          string                         `json:"receiptID,omitempty"`
+	ValidationIdentity string                         `json:"validationIdentity,omitempty"`
+	SubjectTreeOID     string                         `json:"subjectTreeOID,omitempty"`
+	SubjectMode        validationevidence.SubjectMode `json:"subjectMode,omitempty"`
+	Reusable           bool                           `json:"reusable"`
+	ReusableReason     string                         `json:"reusableReason,omitempty"`
+	ValidationCode     validationevidence.ErrorCode   `json:"validationCode,omitempty"`
+	CheckDurationMS    int64                          `json:"checkDurationMs"`
+	Summary            Summary                        `json:"summary"`
+	Results            []Result                       `json:"results"`
 }
 
 func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
@@ -133,6 +152,7 @@ func ParseConfig(args []string, stderr io.Writer) (Config, error) {
 	var cfg Config
 	var timeoutSec int
 	var longTimeoutSec int
+	var reuse string
 
 	fs := flag.NewFlagSet("aicoding-global-tester", flag.ContinueOnError)
 	fs.SetOutput(stderr)
@@ -145,6 +165,10 @@ func ParseConfig(args []string, stderr io.Writer) (Config, error) {
 	fs.BoolVar(&cfg.Strict, "strict", false, "treat WARN severity command failures as FAIL")
 	fs.BoolVar(&cfg.IncludeMutate, "include-mutating", false, "reserved: include isolated mutating lifecycle tests")
 	fs.BoolVar(&cfg.NoJSONCheck, "no-json-check", false, "disable JSON output validation")
+	fs.StringVar(&reuse, "reuse", string(ReuseOff), "auto|off")
+	fs.BoolVar(&cfg.Force, "force", false, "ignore a matching Receipt and execute all selected cases")
+	fs.BoolVar(&cfg.AllowDirty, "allow-dirty", false, "allow execution for a dirty subject; never reusable")
+	fs.BoolVar(&cfg.VerifyReuse, "verify-reuse", false, "execute and audit the conclusion against a matching Receipt")
 	if err := fs.Parse(args); err != nil {
 		return cfg, err
 	}
@@ -153,6 +177,7 @@ func ParseConfig(args []string, stderr io.Writer) (Config, error) {
 	}
 	cfg.Timeout = time.Duration(timeoutSec) * time.Second
 	cfg.LongTimeout = time.Duration(longTimeoutSec) * time.Second
+	cfg.Reuse = ReuseMode(strings.ToLower(strings.TrimSpace(reuse)))
 	return NormalizeConfig(cfg)
 }
 
@@ -181,6 +206,15 @@ func NormalizeConfig(cfg Config) (Config, error) {
 	if cfg.Concurrency < 1 {
 		cfg.Concurrency = 1
 	}
+	if cfg.Reuse == "" {
+		cfg.Reuse = ReuseOff
+	}
+	if cfg.Reuse != ReuseOff && cfg.Reuse != ReuseAuto {
+		return cfg, fmt.Errorf("invalid reuse mode %q", cfg.Reuse)
+	}
+	if cfg.Force && cfg.VerifyReuse {
+		return cfg, fmt.Errorf("--force and --verify-reuse cannot be combined")
+	}
 	if cfg.Out == "" {
 		stamp := time.Now().Format("20060102-150405")
 		cfg.Out = filepath.Join(cfg.Repo, "test-results", "aicoding-global-test-"+stamp)
@@ -202,13 +236,82 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 	if err := validateRegistryTitles(testCases); err != nil {
 		return Report{}, err
 	}
+	if ctx.Err() != nil {
+		start := time.Now()
+		if err := os.MkdirAll(filepath.Join(cfg.Out, "logs"), 0o755); err != nil {
+			return Report{}, fmt.Errorf("create output directory: %w", err)
+		}
+		results := executeTestCases(ctx, cfg, testCases)
+		testReport := Report{
+			ExecutionMode: "executed", ReusableReason: ctx.Err().Error(),
+			Summary: summarize(cfg, start, time.Now(), results), Results: results,
+		}
+		if err := Write(cfg.Out, testReport); err != nil {
+			return testReport, err
+		}
+		return testReport, ctx.Err()
+	}
+	evidenceStore, err := validationevidence.Open(cfg.Repo)
+	if err != nil {
+		return Report{}, err
+	}
+	startSubject, err := captureValidationSubject(evidenceStore)
+	if err != nil {
+		return Report{}, err
+	}
+	if !startSubject.Reusable && cfg.AllowDirty {
+		startSubject.ReusableReason = "dirty execution explicitly allowed; " + startSubject.ReusableReason
+	}
+	evidenceSpec, err := EvidenceSpec(cfg)
+	if err != nil {
+		return Report{}, err
+	}
+	startFingerprint, err := evidenceStore.Fingerprint(startSubject, evidenceSpec)
+	if err != nil {
+		return Report{}, err
+	}
+	var reuseDecision validationevidence.ReuseDecision
+	shouldCheck := cfg.VerifyReuse || cfg.Reuse == ReuseAuto && !cfg.Force
+	if shouldCheck {
+		reuseDecision = evidenceStore.Check(startSubject, startFingerprint)
+	}
+	if reuseDecision.Hit && cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force {
+		reused, reuseErr := reusedReport(cfg, startSubject, startFingerprint, reuseDecision)
+		if reuseErr == nil {
+			if ctx.Err() != nil {
+				return reused, ctx.Err()
+			}
+			return reused, nil
+		}
+		reuseDecision.Hit = false
+		reuseDecision.Code = validationevidence.CodeReceiptInvalid
+		reuseDecision.Reason = reuseErr.Error()
+	}
 	start := time.Now()
 	if err := os.MkdirAll(filepath.Join(cfg.Out, "logs"), 0o755); err != nil {
 		return Report{}, fmt.Errorf("create output directory: %w", err)
 	}
-	results := runAll(ctx, cfg, testCases)
+	results := executeTestCases(ctx, cfg, testCases)
 	summary := summarize(cfg, start, time.Now(), results)
-	testReport := Report{Summary: summary, Results: results}
+	testReport := Report{
+		ExecutionMode:      "executed",
+		ValidationIdentity: startFingerprint.Identity,
+		SubjectTreeOID:     startSubject.TreeOID,
+		SubjectMode:        startSubject.Mode,
+		CheckDurationMS:    reuseDecision.CheckDurationMS,
+		Summary:            summary,
+		Results:            results,
+	}
+	if cfg.VerifyReuse && reuseDecision.Hit && evidenceConclusion(testReport) != reuseDecision.Receipt.Conclusion {
+		testReport.Results = append(testReport.Results, Result{
+			ID: "EVIDENCE-001", Category: "VALIDATION_EVIDENCE", Title: "Receipt 复用审计",
+			Severity: Required, Status: Fail, ExitCode: 1,
+			Reason: "executed conclusion does not match the reusable Receipt", Profile: cfg.Profile,
+		})
+		testReport.Summary = summarize(cfg, start, time.Now(), testReport.Results)
+		testReport.ValidationCode = validationevidence.CodeReuseAuditMismatch
+	}
+	finalizeEvidence(ctx, cfg, testCases, evidenceStore, startSubject, startFingerprint, reuseDecision, &testReport)
 	if err := Write(cfg.Out, testReport); err != nil {
 		return testReport, err
 	}

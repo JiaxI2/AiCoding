@@ -8,6 +8,7 @@ const schemaVersion = 1
 type Target string
 
 const (
+	TargetAuto  Target = "AUTO"
 	TargetHead  Target = "HEAD"
 	TargetIndex Target = "INDEX"
 )
@@ -33,6 +34,7 @@ const (
 	CodeFingerprintInvalid      ErrorCode = "VALIDATION_FINGERPRINT_INVALID"
 	CodeStoreError              ErrorCode = "VALIDATION_STORE_ERROR"
 	CodeContentChangedDuringRun ErrorCode = "VALIDATION_CONTENT_CHANGED_DURING_RUN"
+	CodeReuseAuditMismatch      ErrorCode = "VALIDATION_REUSE_AUDIT_MISMATCH"
 )
 
 // Error carries a stable code and the action an Agent should take next.
@@ -110,12 +112,13 @@ type Receipt struct {
 
 // ReuseDecision is the fail-closed result of checking one exact identity.
 type ReuseDecision struct {
-	Hit             bool      `json:"hit"`
-	Code            ErrorCode `json:"code"`
-	Reason          string    `json:"reason"`
-	RequiredAction  string    `json:"requiredAction,omitempty"`
-	CheckDurationMS int64     `json:"checkDurationMs"`
-	Receipt         *Receipt  `json:"receipt,omitempty"`
+	Hit             bool          `json:"hit"`
+	Code            ErrorCode     `json:"code"`
+	Reason          string        `json:"reason"`
+	RequiredAction  string        `json:"requiredAction,omitempty"`
+	CheckDurationMS int64         `json:"checkDurationMs"`
+	Receipt         *Receipt      `json:"receipt,omitempty"`
+	ReportBundle    *ReportBundle `json:"-"`
 }
 
 // Repository owns validation evidence under one Git common directory.

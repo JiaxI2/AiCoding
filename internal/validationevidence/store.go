@@ -25,7 +25,7 @@ func (r Repository) Put(receipt Receipt, reports ReportBundle) (Receipt, error) 
 	if !receipt.Scope.IgnoredFilesOutOfScope {
 		return Receipt{}, &Error{Code: CodeReceiptInvalid, Message: "Receipt scope must declare ignored files out of scope", RequiredAction: "capture the Git-tree evidence boundary explicitly"}
 	}
-	if existing, err := r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity); err == nil {
+	if existing, _, err := r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity); err == nil {
 		return existing, nil
 	}
 	artifacts, err := r.writeReportDir(receipt.ValidationIdentity, reports)
@@ -44,7 +44,8 @@ func (r Repository) Put(receipt Receipt, reports ReportBundle) (Receipt, error) 
 	if err := atomicWriteFile(r.receiptPath(receipt.Fingerprint.Profile, receipt.ValidationIdentity), encoded); err != nil {
 		return Receipt{}, &Error{Code: CodeStoreError, Message: fmt.Sprintf("write Receipt: %v", err), RequiredAction: "check Git common-dir permissions and rerun validation"}
 	}
-	return r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity)
+	stored, _, err := r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity)
+	return stored, err
 }
 
 // List returns integrity-checked Receipts in stable identity order.
@@ -71,7 +72,7 @@ func (r Repository) List(profile string) ([]Receipt, error) {
 			if !validHexDigest(hexID) {
 				return nil, invalidReceipt("invalid Receipt filename")
 			}
-			receipt, err := r.readReceipt(selected, "sha256:"+hexID)
+			receipt, _, err := r.readReceipt(selected, "sha256:"+hexID)
 			if err != nil {
 				return nil, err
 			}
@@ -118,42 +119,43 @@ func (r Repository) Clean(profile string) (int, error) {
 	return removed, nil
 }
 
-func (r Repository) readReceipt(profile, identity string) (Receipt, error) {
+func (r Repository) readReceipt(profile, identity string) (Receipt, ReportBundle, error) {
 	var receipt Receipt
 	if !validProfile(profile) || !validDigest(identity) {
-		return receipt, invalidReceipt("validation identity is invalid")
+		return receipt, ReportBundle{}, invalidReceipt("validation identity is invalid")
 	}
 	raw, err := os.ReadFile(r.receiptPath(profile, identity))
 	if err != nil {
-		return receipt, err
+		return receipt, ReportBundle{}, err
 	}
 	if err := json.Unmarshal(raw, &receipt); err != nil {
-		return Receipt{}, invalidReceipt("Receipt JSON is invalid")
+		return Receipt{}, ReportBundle{}, invalidReceipt("Receipt JSON is invalid")
 	}
-	if err := r.validateReceipt(receipt, identity, profile); err != nil {
-		return Receipt{}, err
+	bundle, err := r.validateReceipt(receipt, identity, profile)
+	if err != nil {
+		return Receipt{}, ReportBundle{}, err
 	}
-	return receipt, nil
+	return receipt, bundle, nil
 }
 
-func (r Repository) validateReceipt(receipt Receipt, identity, profile string) error {
+func (r Repository) validateReceipt(receipt Receipt, identity, profile string) (ReportBundle, error) {
 	if receipt.SchemaVersion != schemaVersion || receipt.ValidationIdentity != identity || receipt.Fingerprint.Profile != profile || receipt.Fingerprint.RepositoryID != r.repositoryID || !validFingerprint(receipt.Fingerprint) {
-		return invalidReceipt("Receipt identity or schema is invalid")
+		return ReportBundle{}, invalidReceipt("Receipt identity or schema is invalid")
 	}
 	if receipt.ReceiptID != receiptDigest(receipt) {
-		return invalidReceipt("Receipt integrity check failed")
+		return ReportBundle{}, invalidReceipt("Receipt integrity check failed")
 	}
 	if receipt.Conclusion != "PASS" || !receipt.Reusable || !receipt.Scope.IgnoredFilesOutOfScope {
-		return invalidReceipt("Receipt is not reusable PASS evidence")
+		return ReportBundle{}, invalidReceipt("Receipt is not reusable PASS evidence")
 	}
-	actual, err := r.readReportArtifacts(identity)
+	bundle, actual, err := r.readReportBundle(identity)
 	if err != nil {
-		return invalidReceipt(err.Error())
+		return ReportBundle{}, invalidReceipt(err.Error())
 	}
 	if !sameArtifacts(actual, receipt.Reports) {
-		return invalidReceipt("retained report integrity check failed")
+		return ReportBundle{}, invalidReceipt("retained report integrity check failed")
 	}
-	return nil
+	return bundle, nil
 }
 
 func (r Repository) writeReportDir(identity string, reports ReportBundle) ([]ReportArtifact, error) {
@@ -196,16 +198,30 @@ func (r Repository) writeReportDir(identity string, reports ReportBundle) ([]Rep
 }
 
 func (r Repository) readReportArtifacts(identity string) ([]ReportArtifact, error) {
+	_, artifacts, err := r.readReportBundle(identity)
+	return artifacts, err
+}
+
+func (r Repository) readReportBundle(identity string) (ReportBundle, []ReportArtifact, error) {
 	dir := r.reportDir(identity)
+	bundle := ReportBundle{}
 	artifacts := make([]ReportArtifact, 0, len(reportNames))
 	for _, name := range reportNames {
 		content, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
-			return nil, err
+			return ReportBundle{}, nil, err
+		}
+		switch name {
+		case "results.json":
+			bundle.ResultsJSON = content
+		case "summary.json":
+			bundle.SummaryJSON = content
+		case "report.md":
+			bundle.ReportMarkdown = content
 		}
 		artifacts = append(artifacts, ReportArtifact{Name: name, Digest: digestBytes(content)})
 	}
-	return artifacts, nil
+	return bundle, artifacts, nil
 }
 
 func (r Repository) removeReportDir(identity string) {
@@ -321,7 +337,7 @@ func digestHex(identity string) string {
 }
 
 func invalidReceipt(message string) *Error {
-	return &Error{Code: CodeReceiptInvalid, Message: message, RequiredAction: "rerun the selected validation profile without reuse"}
+	return &Error{Code: CodeReceiptInvalid, Message: message, RequiredAction: "clean the affected profile evidence, then rerun without reuse"}
 }
 
 func atomicWriteFile(path string, content []byte) error {

@@ -87,6 +87,14 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 
 ```json
 {
+	"executionMode": "executed",
+	"receiptID": "sha256:<receipt>",
+	"validationIdentity": "sha256:<content-and-semantics>",
+	"subjectTreeOID": "<git-tree-oid>",
+	"subjectMode": "head",
+	"reusable": true,
+	"reusableReason": "",
+	"checkDurationMs": 0,
   "summary": {},
   "results": [
     {
@@ -107,6 +115,15 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
   ]
 }
 ```
+
+`executionMode` 只使用 `executed` 或 `reused`；复用不引入新的测试结论，`conclusion` 仍使用
+既有 `PASS`、`PASS_WITH_WARNINGS`、`FAIL`。`receiptID` 仅在存在完整可复用 PASS Receipt 时
+出现。`subjectMode` 使用 `head`、`index`、`dirty`；`dirty` 永远不能生成 Receipt。
+
+可复用的充要条件按 Severity 判定：没有 `FAIL`，所有 profile 内 `REQUIRED` 用例均为
+`PASS`，不存在未声明 optional-path 的 profile 内 `SKIP`，且 start/end validation identity
+一致。`WARN` 默认不阻断 Receipt；`--strict` 导致的失败仍会阻断。Receipt 的 scope 明确声明
+ignored files 不在证明范围，因此它证明 Git 追踪内容，不证明本机 ignored local state。
 
 ## 3. 测试 `report.md`
 

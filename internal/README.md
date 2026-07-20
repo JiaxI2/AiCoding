@@ -23,5 +23,6 @@ Do not create a parallel source of truth outside this domain. Add new items only
 | `lifecycle` | static Kit, MCP and runtime Skill adapter composition |
 | `repohealth` | product doctor and deterministic verify checks |
 | `testengine` | Smoke, Full and Release test registry, execution, timeout and reports |
+| `validationevidence` | Git Tree validation identity, immutable PASS Receipts and fail-closed reuse checks |
 | `report` | `Result`, `StandardReport`, shared checks, `errorKind` and schema contract |
 <!-- AICODING:REPOSITORY_MAP:END -->

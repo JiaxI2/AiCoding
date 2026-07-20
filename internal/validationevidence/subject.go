@@ -41,6 +41,24 @@ func (r Repository) Capture(target Target) (Subject, error) {
 	}
 	subject := Subject{Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}
 	switch target {
+	case TargetAuto:
+		switch {
+		case !dirtyForHead(status):
+			subject.Mode = SubjectHead
+			subject.TreeOID, err = gitx.TreeOID(r.repo, "HEAD")
+		case status.Staged && !dirtyForIndex(status):
+			subject.Mode = SubjectIndex
+			subject.TreeOID, err = gitx.WriteTree(r.repo)
+		default:
+			subject.Mode = SubjectDirty
+			subject.Reusable = false
+			subject.ReusableReason = statusReason(status, true)
+			if status.Staged && !status.Unmerged {
+				subject.TreeOID, err = gitx.WriteTree(r.repo)
+			} else {
+				subject.TreeOID, err = gitx.TreeOID(r.repo, "HEAD")
+			}
+		}
 	case TargetHead:
 		subject.Mode = SubjectHead
 		subject.TreeOID, err = gitx.TreeOID(r.repo, "HEAD")

@@ -34,7 +34,7 @@ func (r Repository) Check(subject Subject, fingerprint Fingerprint) (decision Re
 		}
 		return decision
 	}
-	receipt, err := r.readReceipt(fingerprint.Profile, fingerprint.Identity)
+	receipt, bundle, err := r.readReceipt(fingerprint.Profile, fingerprint.Identity)
 	if err != nil {
 		decision.Code = CodeReceiptInvalid
 		decision.Reason = fmt.Sprintf("Receipt integrity validation failed: %v", err)
@@ -50,5 +50,6 @@ func (r Repository) Check(subject Subject, fingerprint Fingerprint) (decision Re
 	decision.Reason = "reusable PASS Receipt matches the validation identity"
 	decision.RequiredAction = ""
 	decision.Receipt = &receipt
+	decision.ReportBundle = &bundle
 	return decision
 }
