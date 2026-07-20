@@ -93,6 +93,7 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
 | Release notes verification | `bin\aicoding.exe verify release-notes --json` |
 | Git hook 接线检测 | `bin\aicoding.exe doctor --all --json`（含 `doctor.hooks-wired`：用 `git config core.hooksPath` 检测 `.githooks` 是否已激活，未接线只 warning） |
+| Provision 状态检测 | `bin\aicoding.exe doctor --all --json`（含 `doctor.provisioned`：读 `.git/config` 的 `aicoding.*` 标记零扫描判断是否已初始化，未初始化只 warning 并提示 `aicoding provision`） |
 | PowerShell inventory | `bin\aicoding.exe doctor pwsh --json` |
 | PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` |
 | Tag audit | `bin\aicoding.exe tag audit --json` |

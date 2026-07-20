@@ -9,6 +9,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	lifecyclecontrol "github.com/JiaxI2/AiCoding/internal/lifecycle"
 	"github.com/JiaxI2/AiCoding/internal/mcpcontrol"
+	"github.com/JiaxI2/AiCoding/internal/repoinit"
 	"github.com/JiaxI2/AiCoding/internal/report"
 	"github.com/JiaxI2/AiCoding/internal/reuse"
 )
@@ -54,6 +55,17 @@ func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 	checks = append(checks, productCheck("doctor.hooks-wired", "REPOSITORY", func() (interface{}, []string, []string) {
 		data, warnings := HooksWired(repo)
 		return data, warnings, nil
+	}))
+	checks = append(checks, productCheck("doctor.provisioned", "REPOSITORY", func() (interface{}, []string, []string) {
+		// Reads the aicoding.* markers provision wrote into .git/config — an
+		// instant, zero-scan state check. Per-clone environment state, so absence
+		// is a warning with the fix command, never a doctor failure.
+		markers, initialized := repoinit.Status(repo)
+		data := map[string]interface{}{"initialized": initialized, "markers": markers}
+		if !initialized {
+			return data, []string{"repository has not been provisioned; run `aicoding provision` to wire hooks and write local aicoding.* markers"}, nil
+		}
+		return data, nil, nil
 	}))
 	checks = append(checks, productCheck("doctor.repo-context", "REPO_CONTEXT", func() (interface{}, []string, []string) {
 		result := lifecyclecontrol.Run(ctx, repo, lifecyclecontrol.Options{

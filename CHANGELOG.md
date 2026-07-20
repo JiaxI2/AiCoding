@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(repohealth)**: `doctor --all` 增加 `doctor.provisioned`——复用 `repoinit.Status` 读 `.git/config` 的 `aicoding.*` 标记，零扫描判断仓库是否已 `provision`；未初始化报 warning 并给出修复命令，属每-clone 环境状态不失败 doctor。这是"provision 写标记、后续命令用标记快速判断"闭环的第一个消费者。 / doctor --all gains doctor.provisioned: an instant zero-scan check of the aicoding.* git-config markers, warning with the fix command when the clone was never provisioned.
+
 - **feat(provision)**: 新增 `aicoding provision` 与 `internal/repoinit`（ADR 0005）——对标 `git init`：确保 git 仓库、接线 `core.hooksPath=.githooks`、把 AI-coding 标记写进 **git 自己的 `.git/config`（`aicoding.*` 命名空间，本地/per-clone/不提交）**、确保 `.aicoding` 根；幂等。后续命令可用 `git config --get aicoding.*`（`repoinit.Status`）瞬时判断是否已初始化、零工作树扫描。命令名用 `provision` 而非 `init`（`init` 是 git porcelain 保留动词，被 Git-reuse-boundary 禁止；内部仍经 gitx 跑 `git init`，如 `fresh-clone` 内部跑 `git clone`）；`repoinit` 加入 `gitProcessBoundary.allowedImporters`；组合 gitx+platform，不建二进制（`bootstrap` 的职责），内核零改动。 / Adds `aicoding provision` and internal/repoinit: a git-native local environment setup that stores AI-coding markers in .git/config's aicoding.* namespace for fast later state checks, composed from existing primitives with zero kernel change.
 
 - **feat(cli)**: `bootstrap` 输出在检测到仓库 `.githooks` 未接线时提示接线命令（fresh clone 引导）——在 workflow 层（`runBootstrap`）组合复用 `repohealth.HooksWired` Primitive（`bootstrap` 包本身不是 git 调用方，按边界不直接调 git），未接线加 warning、接线后自动静默；warning 不影响 `bootstrap` 成功。 / bootstrap now nudges a fresh clone to wire .githooks when core.hooksPath is unset, composed at the CLI layer by reusing the HooksWired primitive; self-silences once wired.
