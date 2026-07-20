@@ -1,8 +1,12 @@
 package gitx
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,6 +23,14 @@ type Status struct {
 	Unmerged        bool
 }
 
+// PushUpdate is one record from Git's pre-push stdin protocol.
+type PushUpdate struct {
+	LocalRef  string `json:"localRef"`
+	LocalOID  string `json:"localOID"`
+	RemoteRef string `json:"remoteRef"`
+	RemoteOID string `json:"remoteOID"`
+}
+
 func Run(repo string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	if repo != "" {
@@ -31,6 +43,62 @@ func Run(repo string, args ...string) (string, error) {
 		return stdout.String(), fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(stderr.String()))
 	}
 	return stdout.String(), nil
+}
+
+// ParsePushUpdates parses Git's four-field pre-push stdin protocol without
+// assigning repository policy to the refs.
+func ParsePushUpdates(reader io.Reader) ([]PushUpdate, error) {
+	if reader == nil {
+		return nil, fmt.Errorf("pre-push input is required")
+	}
+	updates := make([]PushUpdate, 0)
+	scanner := bufio.NewScanner(reader)
+	for lineNumber := 1; scanner.Scan(); lineNumber++ {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		fields := strings.Fields(line)
+		if len(fields) != 4 {
+			return nil, fmt.Errorf("parse pre-push line %d: expected 4 fields", lineNumber)
+		}
+		if !validObjectID(fields[1]) || !validObjectID(fields[3]) {
+			return nil, fmt.Errorf("parse pre-push line %d: invalid object id", lineNumber)
+		}
+		updates = append(updates, PushUpdate{
+			LocalRef: fields[0], LocalOID: fields[1], RemoteRef: fields[2], RemoteOID: fields[3],
+		})
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("read pre-push input: %w", err)
+	}
+	return updates, nil
+}
+
+// IsAncestor reports whether ancestor is reachable from descendant. Exit code
+// 1 is a normal negative answer; other Git failures remain errors.
+func IsAncestor(repo, ancestor, descendant string) (bool, error) {
+	ancestor = strings.TrimSpace(ancestor)
+	descendant = strings.TrimSpace(descendant)
+	if ancestor == "" || descendant == "" {
+		return false, fmt.Errorf("git ancestry requires two revisions")
+	}
+	cmd := exec.Command("git", "merge-base", "--is-ancestor", ancestor, descendant)
+	if repo != "" {
+		cmd.Dir = repo
+	}
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err == nil {
+		return true, nil
+	}
+	var exitErr *exec.ExitError
+	if errors.As(err, &exitErr) && exitErr.ExitCode() == 1 {
+		return false, nil
+	}
+	return false, fmt.Errorf("git merge-base --is-ancestor: %w: %s", err, strings.TrimSpace(stderr.String()))
 }
 
 func StagedFiles(repo string) ([]string, error) {
@@ -210,4 +278,12 @@ func runOID(repo string, args ...string) (string, error) {
 		return "", fmt.Errorf("git %s returned an empty object id", strings.Join(args, " "))
 	}
 	return oid, nil
+}
+
+func validObjectID(value string) bool {
+	if len(value) != 40 && len(value) != 64 {
+		return false
+	}
+	_, err := hex.DecodeString(value)
+	return err == nil
 }

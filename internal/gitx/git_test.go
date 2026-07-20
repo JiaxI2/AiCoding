@@ -91,6 +91,51 @@ func TestTreeOIDRejectsEmptyRevision(t *testing.T) {
 	}
 }
 
+func TestParsePushUpdates(t *testing.T) {
+	zero := strings.Repeat("0", 40)
+	local := strings.Repeat("a", 40)
+	remote := strings.Repeat("b", 40)
+	updates, err := ParsePushUpdates(strings.NewReader(
+		"refs/heads/feature " + local + " refs/heads/feature " + remote + "\n" +
+			"(delete) " + zero + " refs/tags/v1.0.0 " + remote + "\n",
+	))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updates) != 2 || updates[0].LocalOID != local || updates[1].LocalRef != "(delete)" || updates[1].LocalOID != zero {
+		t.Fatalf("updates = %#v", updates)
+	}
+	if _, err := ParsePushUpdates(strings.NewReader("refs/heads/main bad refs/heads/main " + zero)); err == nil {
+		t.Fatal("ParsePushUpdates accepted an invalid object id")
+	}
+	if _, err := ParsePushUpdates(strings.NewReader("only three fields")); err == nil {
+		t.Fatal("ParsePushUpdates accepted a malformed record")
+	}
+}
+
+func TestIsAncestorDistinguishesNegativeAnswerFromFailure(t *testing.T) {
+	repo := newGitRepo(t)
+	writeGitFile(t, repo, "tracked.txt", "one\n")
+	mustGit(t, repo, "add", "tracked.txt")
+	mustGit(t, repo, "commit", "-m", "first")
+	first := mustGit(t, repo, "rev-parse", "HEAD")
+	writeGitFile(t, repo, "tracked.txt", "two\n")
+	mustGit(t, repo, "commit", "-am", "second")
+	second := mustGit(t, repo, "rev-parse", "HEAD")
+
+	ancestor, err := IsAncestor(repo, first, second)
+	if err != nil || !ancestor {
+		t.Fatalf("first ancestor of second = %v, %v", ancestor, err)
+	}
+	ancestor, err = IsAncestor(repo, second, first)
+	if err != nil || ancestor {
+		t.Fatalf("second ancestor of first = %v, %v", ancestor, err)
+	}
+	if _, err := IsAncestor(repo, "missing", second); err == nil {
+		t.Fatal("IsAncestor treated an invalid revision as a negative answer")
+	}
+}
+
 func TestCommonDirFastPathOwnsLinkedWorktreeLayout(t *testing.T) {
 	repo := newGitRepo(t)
 	writeGitFile(t, repo, "tracked.txt", "one\n")

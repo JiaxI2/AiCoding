@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(gitx)**: 新增 Git pre-push 四字段协议解析与祖先关系查询；实际推送对象的 Tree 继续复用既有通用 `TreeOID(repo, rev)`，不再为 `RefTreeOID` 复制一份相同实现。 / Adds pre-push protocol parsing and ancestry queries while reusing the existing general TreeOID primitive for pushed refs.
+
 - **docs(perf)**: 将 Release 复用收益改按既有可比基线 `74.867 s → 392.763 ms`（下降 99.5%）表述，并明确 `171.026 s` 是新 worktree 冷缓存/负载验收样本，不是 Validation Evidence 回归。 / Uses the comparable pre-feature Release baseline for the reuse headline and labels the slower acceptance seed as a cold-worktree/load sample rather than a regression.
 
 - **fix(validationevidence)**: Receipt schema v2 新增当前 profile 逐用例 `(id,status)` 的确定性 `resultsDigest`；留存报告复用与 `--verify-reuse` 均重新计算核对，整体同为 PASS 时的单用例 `PASS → WARN` 也会 fail-closed。 / Adds a deterministic per-case status digest to Receipt schema v2 so reuse and audits detect status drift even when the normalized conclusion remains PASS.
