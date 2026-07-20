@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(loopkit)**: 以 schema v2 manifest 将 Loop Engineering Kit 登记为默认禁用的 Go capability，补齐反向依赖禁令、接受 ADR 0008 与唯一架构权威，并移除来源包中已失效的重复架构/ADR/命令指南。 / Registers the disabled-by-default Loop Engineering capability with a valid schema-v2 manifest, dependency guards, ADR 0008, and one architecture authority while retiring obsolete duplicate source-package documents.
+
 - **refactor(loopkit)**: 将 Loop Engineering 合同重切为正交的 trigger/stop/authority 三轴，删除第二 Receipt 模型，改为仅持 validationevidence 字符串引用，并以纯函数 `Decide` 实现五个具名终止态、预算、失速与上下文压力裁决。 / Recasts Loop Engineering around orthogonal trigger, stop, and authority axes, removes the duplicate Receipt model in favor of validationevidence references, and implements deterministic bounded-work decisions.
 
 - **chore(loopkit)**: 导入 Loop Engineering Kit 来源骨架、模板与初始契约，排除只读 Skill 子模块和打包元数据，并将 TODO 0003 转为进行中。 / Imports the initial Loop Engineering Kit skeleton, templates, and contracts while excluding read-only Skill and packaging metadata, and marks TODO 0003 in progress.

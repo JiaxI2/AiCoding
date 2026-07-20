@@ -218,6 +218,13 @@
         "platformAgnostic": false,
         "roots": [],
         "dependsOn": []
+      },
+      {
+        "id": "loop-engineering-kit",
+        "layer": "platform",
+        "platformAgnostic": false,
+        "roots": [],
+        "dependsOn": []
       }
     ]
   },
@@ -330,6 +337,7 @@
         "internal/governance",
         "internal/kit",
         "internal/lifecycle",
+        "internal/loopkit",
         "internal/mcpcontrol",
         "internal/platform",
         "internal/pwshregex",
@@ -353,6 +361,7 @@
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
+        "internal/loopkit",
         "internal/mcpcontrol",
         "internal/repocontext",
         "internal/repohealth",
@@ -367,6 +376,7 @@
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
+        "internal/loopkit",
         "internal/mcpcontrol",
         "internal/repocontext",
         "internal/repohealth",
@@ -380,6 +390,7 @@
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
+        "internal/loopkit",
         "internal/mcpcontrol",
         "internal/repocontext",
         "internal/repohealth",

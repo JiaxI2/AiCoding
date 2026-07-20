@@ -38,6 +38,12 @@
       "enabled": true,
       "order": 80,
       "manifest": "config/kits/release-governance-overlay-kit.json"
+    },
+    {
+      "id": "loop-engineering-kit",
+      "enabled": false,
+      "order": 90,
+      "manifest": "config/kits/loop-engineering-kit.json"
     }
   ]
 }

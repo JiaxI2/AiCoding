@@ -1,6 +1,6 @@
 # Loop Engineering 架构（有界迭代工作的裁决面）
 
-Status: Proposed（待 [ADR 0008](../decisions/0008-loop-engineering-kit.md) 接受后转 Accepted）
+Status: Accepted
 
 > 本文定义 Loop Engineering 的职责边界、状态机与数据契约。它**不定义新的控制面**：
 > 执行仍归 [核心架构](AICODING_CORE_ARCHITECTURE.md) 的六模块，验证证据归
