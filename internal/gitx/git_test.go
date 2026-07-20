@@ -32,7 +32,7 @@ func TestContentIdentityPrimitives(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !filepath.IsAbs(commonDir) || filepath.Clean(commonDir) != filepath.Join(repo, ".git") {
+	if !filepath.IsAbs(commonDir) || filepath.Clean(commonDir) != canonicalGitTestPath(t, filepath.Join(repo, ".git")) {
 		t.Fatalf("CommonDir() = %q", commonDir)
 	}
 	status, err := StatusSnapshot(repo)
