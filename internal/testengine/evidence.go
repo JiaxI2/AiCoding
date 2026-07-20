@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,7 +15,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
 
-const evidenceImplVersion = 1
+const evidenceImplVersion = 2
 
 var executeTestCases = runAll
 
@@ -163,7 +164,7 @@ func finalizeEvidence(
 	report *Report,
 ) {
 	if report.ValidationCode == validationevidence.CodeReuseAuditMismatch {
-		report.ReusableReason = "executed conclusion does not match the reusable Receipt"
+		report.ReusableReason = "executed per-case statuses do not match the reusable Receipt"
 		return
 	}
 	if ctx.Err() != nil {
@@ -220,12 +221,18 @@ func finalizeEvidence(
 		ValidationIdentity: startFingerprint.Identity,
 		Fingerprint:        startFingerprint,
 		Conclusion:         "PASS",
+		ResultsDigest:      report.ResultsDigest,
 		Reusable:           true,
 		Scope:              startSubject.Scope,
 	}, bundle)
 	if err != nil {
 		report.Reusable = false
-		report.ValidationCode = validationevidence.CodeStoreError
+		var evidenceError *validationevidence.Error
+		if errors.As(err, &evidenceError) {
+			report.ValidationCode = evidenceError.Code
+		} else {
+			report.ValidationCode = validationevidence.CodeStoreError
+		}
 		report.ReusableReason = err.Error()
 		return
 	}
@@ -261,13 +268,20 @@ func receiptEligible(cfg Config, testCases []TestCase, results []Result, subject
 	return true, "", ""
 }
 
-func reusedReport(cfg Config, subject validationevidence.Subject, fingerprint validationevidence.Fingerprint, decision validationevidence.ReuseDecision) (Report, error) {
+func reusedReport(cfg Config, testCases []TestCase, subject validationevidence.Subject, fingerprint validationevidence.Fingerprint, decision validationevidence.ReuseDecision) (Report, error) {
 	if decision.Receipt == nil || decision.ReportBundle == nil {
 		return Report{}, fmt.Errorf("matching Receipt has no retained report")
 	}
 	var report Report
 	if err := json.Unmarshal(decision.ReportBundle.ResultsJSON, &report); err != nil {
 		return Report{}, fmt.Errorf("decode retained report: %w", err)
+	}
+	actualResultsDigest, err := resultStatusDigest(cfg, testCases, report.Results)
+	if err != nil {
+		return Report{}, fmt.Errorf("digest retained result statuses: %w", err)
+	}
+	if report.ResultsDigest != actualResultsDigest || decision.Receipt.ResultsDigest != actualResultsDigest {
+		return Report{}, fmt.Errorf("retained per-case statuses do not match Receipt")
 	}
 	for index := range report.Results {
 		report.Results[index].StdoutFile = ""
@@ -290,6 +304,39 @@ func reusedReport(cfg Config, subject validationevidence.Subject, fingerprint va
 		return Report{}, err
 	}
 	return report, nil
+}
+
+func resultStatusDigest(cfg Config, testCases []TestCase, results []Result) (string, error) {
+	selected := make(map[string]struct{})
+	for _, testCase := range testCases {
+		if profileEnabled(testCase, cfg.Profile) {
+			selected[testCase.ID] = struct{}{}
+		}
+	}
+	type resultStatus struct {
+		ID     string `json:"id"`
+		Status Status `json:"status"`
+	}
+	statuses := make([]resultStatus, 0, len(selected))
+	for _, result := range results {
+		if _, ok := selected[result.ID]; ok {
+			statuses = append(statuses, resultStatus{ID: result.ID, Status: result.Status})
+		}
+	}
+	sort.Slice(statuses, func(i, j int) bool {
+		if statuses[i].ID == statuses[j].ID {
+			return statuses[i].Status < statuses[j].Status
+		}
+		return statuses[i].ID < statuses[j].ID
+	})
+	snapshot, err := registry.NewSnapshot("validation-result-statuses", struct {
+		Profile  Profile        `json:"profile"`
+		Statuses []resultStatus `json:"statuses"`
+	}{Profile: cfg.Profile, Statuses: statuses})
+	if err != nil {
+		return "", err
+	}
+	return snapshot.Digest(), nil
 }
 
 func loadEvidenceBundle(outDir string) (validationevidence.ReportBundle, error) {

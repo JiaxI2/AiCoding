@@ -19,10 +19,20 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	originalExecute := executeTestCases
 	defer func() { executeTestCases = originalExecute }()
 	executions := 0
-	failExecution := false
+	warnExecution := false
 	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
 		executions++
-		return syntheticResults(cfg, tests, failExecution)
+		results := syntheticResults(cfg, tests, false)
+		if warnExecution {
+			for index, testCase := range tests {
+				if profileEnabled(testCase, cfg.Profile) && testCase.Severity == WarnOnly {
+					results[index].Status = Warn
+					results[index].Reason = "injected warning"
+					break
+				}
+			}
+		}
+		return results
 	}
 
 	base := evidenceRunConfig(t, repo)
@@ -61,7 +71,7 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 		t.Fatalf("--force did not execute: %#v executions=%d", forcedReport, executions)
 	}
 
-	failExecution = true
+	warnExecution = true
 	audit := base
 	audit.Out = filepath.Join(t.TempDir(), "audit")
 	audit.VerifyReuse = true
@@ -69,8 +79,45 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if audited.ExecutionMode != "executed" || audited.Summary.Conclusion != "FAIL" || audited.ValidationCode != validationevidence.CodeReuseAuditMismatch || audited.Reusable || executions != 3 {
+	if audited.ExecutionMode != "executed" || audited.Summary.Conclusion != "FAIL" || audited.Summary.Warn != 1 || audited.ResultsDigest == first.ResultsDigest || audited.ValidationCode != validationevidence.CodeReuseAuditMismatch || audited.Reusable || executions != 3 {
 		t.Fatalf("--verify-reuse missed polluted evidence: %#v executions=%d", audited, executions)
+	}
+
+	plain := base
+	plain.Out = filepath.Join(t.TempDir(), "plain-status-drift")
+	drifted, err := Run(context.Background(), plain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if drifted.Summary.Conclusion != "PASS_WITH_WARNINGS" || drifted.ReceiptID != "" || drifted.Reusable || drifted.ValidationCode != validationevidence.CodeReuseAuditMismatch || executions != 4 {
+		t.Fatalf("status drift replaced or claimed the existing Receipt: %#v executions=%d", drifted, executions)
+	}
+}
+
+func TestResultStatusDigestIsOrderedProfileScopedAndStatusSensitive(t *testing.T) {
+	cfg := Config{Profile: ProfileSmoke}
+	tests := []TestCase{
+		{ID: "A", Profiles: []Profile{ProfileSmoke}},
+		{ID: "B", Profiles: []Profile{ProfileSmoke}},
+		{ID: "OTHER", Profiles: []Profile{ProfileFull}},
+	}
+	first, err := resultStatusDigest(cfg, tests, []Result{{ID: "B", Status: Pass}, {ID: "OTHER", Status: Skip}, {ID: "A", Status: Pass}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	reordered, err := resultStatusDigest(cfg, tests, []Result{{ID: "A", Status: Pass}, {ID: "OTHER", Status: Fail}, {ID: "B", Status: Pass}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reordered != first {
+		t.Fatal("result order or an unselected profile changed the status digest")
+	}
+	changed, err := resultStatusDigest(cfg, tests, []Result{{ID: "A", Status: Pass}, {ID: "B", Status: Warn}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed == first {
+		t.Fatal("PASS to WARN did not change the per-case status digest")
 	}
 }
 

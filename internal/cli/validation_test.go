@@ -181,6 +181,7 @@ func putValidationCLIReceipt(t *testing.T, repo string, target validationevidenc
 		ValidationIdentity: fingerprint.Identity,
 		Fingerprint:        fingerprint,
 		Conclusion:         "PASS",
+		ResultsDigest:      "sha256:0000000000000000000000000000000000000000000000000000000000000000",
 		Reusable:           true,
 		Scope:              subject.Scope,
 	}, validationevidence.ReportBundle{

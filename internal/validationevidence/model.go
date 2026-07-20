@@ -2,7 +2,10 @@ package validationevidence
 
 import "fmt"
 
-const schemaVersion = 1
+const (
+	toolchainSchemaVersion = 1
+	receiptSchemaVersion   = 2
+)
 
 // Target selects the Git candidate whose tree identifies validated content.
 type Target string
@@ -104,6 +107,7 @@ type Receipt struct {
 	ValidationIdentity string           `json:"validationIdentity"`
 	Fingerprint        Fingerprint      `json:"fingerprint"`
 	Conclusion         string           `json:"conclusion"`
+	ResultsDigest      string           `json:"resultsDigest"`
 	Reusable           bool             `json:"reusable"`
 	ReusableReason     string           `json:"reusableReason,omitempty"`
 	Scope              Scope            `json:"scope"`

@@ -355,7 +355,7 @@ func TestConcurrentPutIsIdempotentOnWindowsRenameSemantics(t *testing.T) {
 		wait.Add(1)
 		go func() {
 			defer wait.Done()
-			receipt := Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "PASS", Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}
+			receipt := Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "PASS", ResultsDigest: fixtureDigest("results"), Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}
 			_, err := store.Put(receipt, fixtureReports())
 			errs <- err
 		}()
@@ -443,7 +443,11 @@ func TestPutRejectsFailAndPathsCannotEscapeStore(t *testing.T) {
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
 	mustEvidenceGit(t, repo, "commit", "-m", "initial")
 	store, _, fingerprint := evidenceFixture(t, repo, TargetHead)
-	bad := Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "FAIL", Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}
+	missingDigest := Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "PASS", Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}
+	if _, err := store.Put(missingDigest, fixtureReports()); err == nil {
+		t.Fatal("Receipt without a results digest was accepted")
+	}
+	bad := Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "FAIL", ResultsDigest: fixtureDigest("results"), Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}
 	if _, err := store.Put(bad, fixtureReports()); err == nil {
 		t.Fatal("FAIL produced a Receipt")
 	}
@@ -486,7 +490,7 @@ func fixtureReports() ReportBundle {
 
 func putFixture(t *testing.T, store Repository, fingerprint Fingerprint) Receipt {
 	t.Helper()
-	receipt, err := store.Put(Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "PASS", Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}, fixtureReports())
+	receipt, err := store.Put(Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "PASS", ResultsDigest: fixtureDigest("results"), Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}, fixtureReports())
 	if err != nil {
 		t.Fatal(err)
 	}

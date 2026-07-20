@@ -22,17 +22,23 @@ func (r Repository) Put(receipt Receipt, reports ReportBundle) (Receipt, error) 
 	if receipt.Conclusion != "PASS" || !receipt.Reusable {
 		return Receipt{}, &Error{Code: CodeReceiptInvalid, Message: "only reusable PASS conclusions may produce a Receipt", RequiredAction: "run the complete selected profile successfully"}
 	}
+	if !validDigest(receipt.ResultsDigest) {
+		return Receipt{}, &Error{Code: CodeReceiptInvalid, Message: "Receipt results digest is invalid", RequiredAction: "rerun the complete selected profile successfully"}
+	}
 	if !receipt.Scope.IgnoredFilesOutOfScope {
 		return Receipt{}, &Error{Code: CodeReceiptInvalid, Message: "Receipt scope must declare ignored files out of scope", RequiredAction: "capture the Git-tree evidence boundary explicitly"}
 	}
 	if existing, _, err := r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity); err == nil {
+		if existing.ResultsDigest != receipt.ResultsDigest {
+			return Receipt{}, &Error{Code: CodeReuseAuditMismatch, Message: "executed per-case statuses do not match the existing Receipt", RequiredAction: "run with --verify-reuse and investigate the changed case statuses"}
+		}
 		return existing, nil
 	}
 	artifacts, err := r.writeReportDir(receipt.ValidationIdentity, reports)
 	if err != nil {
 		return Receipt{}, err
 	}
-	receipt.SchemaVersion = schemaVersion
+	receipt.SchemaVersion = receiptSchemaVersion
 	receipt.ReceiptID = ""
 	receipt.Reports = artifacts
 	receipt.ReceiptID = receiptDigest(receipt)
@@ -139,7 +145,7 @@ func (r Repository) readReceipt(profile, identity string) (Receipt, ReportBundle
 }
 
 func (r Repository) validateReceipt(receipt Receipt, identity, profile string) (ReportBundle, error) {
-	if receipt.SchemaVersion != schemaVersion || receipt.ValidationIdentity != identity || receipt.Fingerprint.Profile != profile || receipt.Fingerprint.RepositoryID != r.repositoryID || !validFingerprint(receipt.Fingerprint) {
+	if receipt.SchemaVersion != receiptSchemaVersion || receipt.ValidationIdentity != identity || receipt.Fingerprint.Profile != profile || receipt.Fingerprint.RepositoryID != r.repositoryID || !validFingerprint(receipt.Fingerprint) || !validDigest(receipt.ResultsDigest) {
 		return ReportBundle{}, invalidReceipt("Receipt identity or schema is invalid")
 	}
 	if receipt.ReceiptID != receiptDigest(receipt) {

@@ -116,6 +116,7 @@ type Report struct {
 	ExecutionMode      string                         `json:"executionMode,omitempty"`
 	ReceiptID          string                         `json:"receiptID,omitempty"`
 	ValidationIdentity string                         `json:"validationIdentity,omitempty"`
+	ResultsDigest      string                         `json:"resultsDigest,omitempty"`
 	SubjectTreeOID     string                         `json:"subjectTreeOID,omitempty"`
 	SubjectMode        validationevidence.SubjectMode `json:"subjectMode,omitempty"`
 	Reusable           bool                           `json:"reusable"`
@@ -276,7 +277,7 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 		reuseDecision = evidenceStore.Check(startSubject, startFingerprint)
 	}
 	if reuseDecision.Hit && cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force {
-		reused, reuseErr := reusedReport(cfg, startSubject, startFingerprint, reuseDecision)
+		reused, reuseErr := reusedReport(cfg, testCases, startSubject, startFingerprint, reuseDecision)
 		if reuseErr == nil {
 			if ctx.Err() != nil {
 				return reused, ctx.Err()
@@ -292,21 +293,26 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 		return Report{}, fmt.Errorf("create output directory: %w", err)
 	}
 	results := executeTestCases(ctx, cfg, testCases)
+	statusDigest, err := resultStatusDigest(cfg, testCases, results)
+	if err != nil {
+		return Report{}, fmt.Errorf("digest validation result statuses: %w", err)
+	}
 	summary := summarize(cfg, start, time.Now(), results)
 	testReport := Report{
 		ExecutionMode:      "executed",
 		ValidationIdentity: startFingerprint.Identity,
+		ResultsDigest:      statusDigest,
 		SubjectTreeOID:     startSubject.TreeOID,
 		SubjectMode:        startSubject.Mode,
 		CheckDurationMS:    reuseDecision.CheckDurationMS,
 		Summary:            summary,
 		Results:            results,
 	}
-	if cfg.VerifyReuse && reuseDecision.Hit && evidenceConclusion(testReport) != reuseDecision.Receipt.Conclusion {
+	if cfg.VerifyReuse && reuseDecision.Hit && (evidenceConclusion(testReport) != reuseDecision.Receipt.Conclusion || testReport.ResultsDigest != reuseDecision.Receipt.ResultsDigest) {
 		testReport.Results = append(testReport.Results, Result{
 			ID: "EVIDENCE-001", Category: "VALIDATION_EVIDENCE", Title: "Receipt 复用审计",
 			Severity: Required, Status: Fail, ExitCode: 1,
-			Reason: "executed conclusion does not match the reusable Receipt", Profile: cfg.Profile,
+			Reason: "executed per-case statuses do not match the reusable Receipt", Profile: cfg.Profile,
 		})
 		testReport.Summary = summarize(cfg, start, time.Now(), testReport.Results)
 		testReport.ValidationCode = validationevidence.CodeReuseAuditMismatch

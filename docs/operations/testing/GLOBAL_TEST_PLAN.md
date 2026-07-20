@@ -23,7 +23,7 @@
 - **rollback 只读验证**：测试 profile 只运行 `lifecycle rollback --scope kit --help`，不读取或应用本地 rollback snapshot。
 - **结果可追溯**：每个用例保留原始 stdout/stderr、耗时、退出码、判定依据。
 - **验证绑定内容**：成功运行可把 PASS 结论绑定到 Git Tree 与验证语义；commit message amend 不失效，tracked/untracked/submodule 脏状态 fail-closed。
-- **复用显式启用**：第一期 `--reuse off` 为默认；`--reuse auto` 才允许短路，`--verify-reuse` 忽略命中完整执行并审计结论。
+- **复用显式启用**：第一期 `--reuse off` 为默认；`--reuse auto` 才允许短路，`--verify-reuse` 忽略命中完整执行并审计结论及逐用例状态摘要。
 - **数据化输出**：统计总用例、通过、失败、告警、跳过、总耗时、各命令耗时。
 - **标准 Markdown 文档**：测试计划、测试用例、报告均使用 `.md`。
 - **全局分功能框架**：用例按照 ENV/BOOTSTRAP/GO/C99_SKILL/DOCSYNC/LIFECYCLE/EXPORT/FRESH_CLONE/README_DOCS/GIT_GOVERNANCE/PWSH_BOUNDARY/RELEASE_GATE 分类。
@@ -60,6 +60,7 @@
 | `profile` | smoke/full/release/manual |
 | `executionMode` | `executed` 或 `reused`；不是新的结论状态 |
 | `validationIdentity` | Tree、profile、plan、engine、config、toolchain、options 的内容身份 |
+| `resultsDigest` | 当前 profile 选中用例的排序 `(id,status)` 摘要；Receipt 与审计逐用例核对 |
 | `reusable` | 本次报告能否生成或继续引用 PASS Receipt |
 | `reusableReason` | 不可复用的稳定原因，例如 dirty 或执行期间内容漂移 |
 

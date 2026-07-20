@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **fix(validationevidence)**: Receipt schema v2 新增当前 profile 逐用例 `(id,status)` 的确定性 `resultsDigest`；留存报告复用与 `--verify-reuse` 均重新计算核对，整体同为 PASS 时的单用例 `PASS → WARN` 也会 fail-closed。 / Adds a deterministic per-case status digest to Receipt schema v2 so reuse and audits detect status drift even when the normalized conclusion remains PASS.
+
 - **refactor(gitx)**: 将 `.git` 文件、`gitdir:` 与 `commondir` 的快速解析全部收回 `gitx.CommonDir`，保留异常布局的 Git 进程回退；`validationevidence` 只消费公共 Primitive，不再复制 Git 磁盘布局知识，性能收益不变。 / Makes gitx the sole owner of both Git process calls and common-dir layout knowledge without losing the fast path.
 
 - **perf(validationevidence)**: `validation check --target HEAD` 并发执行唯一一次 status 与 TreeOID；常规 worktree/linked-worktree 热路径直接解析 `.git`/`commondir`，异常布局仍回退 `git rev-parse --git-common-dir`；toolchain cache 在 PATH 未变时直接校验已缓存可执行文件的 size/mtime，移除 SLA 之外的第三个 Git 进程与重复 PATH 搜索。 / Runs the two required HEAD probes concurrently and removes the extra common-dir Git process and repeated executable lookup while retaining fail-safe fallbacks.

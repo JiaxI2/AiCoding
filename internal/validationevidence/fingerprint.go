@@ -158,7 +158,7 @@ func (r Repository) toolchainDigest() (string, error) {
 		return "", fingerprintError(err.Error())
 	}
 	cache := toolchainCache{
-		SchemaVersion:    schemaVersion,
+		SchemaVersion:    toolchainSchemaVersion,
 		SearchPathDigest: searchPathDigest,
 		Go:               goFingerprint,
 		Git:              gitFingerprint,
@@ -210,7 +210,7 @@ func readToolchainCache(path string) (toolchainCache, error) {
 	if err := json.Unmarshal(raw, &cache); err != nil {
 		return cache, err
 	}
-	if cache.SchemaVersion != schemaVersion || !validDigest(cache.SearchPathDigest) || !validDigest(cache.Digest) || cache.Integrity != toolchainIntegrity(cache) || cache.Digest != toolchainDigest(cache) {
+	if cache.SchemaVersion != toolchainSchemaVersion || !validDigest(cache.SearchPathDigest) || !validDigest(cache.Digest) || cache.Integrity != toolchainIntegrity(cache) || cache.Digest != toolchainDigest(cache) {
 		return toolchainCache{}, fmt.Errorf("invalid toolchain cache")
 	}
 	return cache, nil

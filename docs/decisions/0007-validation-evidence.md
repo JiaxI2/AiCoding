@@ -22,9 +22,10 @@ Git subject + semantic digests
 
 Receipt 位于 `<git-common-dir>/aicoding/validation/receipts/<profile>/<identity>.json`；查询先按
 identity 对唯一文件执行 `os.Stat`，不建 index、不扫描目录。报告位于
-`reports/<identity>/`，Receipt 保存三个报告文件的 SHA-256。写入采用同目录临时文件、
-`fsync`、`os.Rename`；相同 identity 的并发写入保留第一份完整报告，后续写入复用它，
-Receipt 保持不可变。
+`reports/<identity>/`，Receipt schema v2 保存三个报告文件的 SHA-256，以及当前 profile 选中
+TestCase 排序 `(id,status)` 的 `resultsDigest`。写入采用同目录临时文件、
+`fsync`、`os.Rename`；相同 identity 且 `resultsDigest` 相同的并发写入保留第一份完整报告，
+状态摘要不同则拒绝冒用既有 Receipt，Receipt 保持不可变。
 
 ## 2. Identity boundary
 
@@ -61,6 +62,8 @@ Receipt 不泄露真实路径。engine semantic digest 由上层绑定 Catalog/R
 - 两个 linked worktree 通过 common-dir 共享同一 Receipt；
 - 不同仓库即使 Tree 相同也因 repositoryID 隔离；
 - untracked、tracked 变化和 report/Receipt 篡改均 fail-closed；
+- 留存报告复用与 `--verify-reuse` 均重新计算逐用例状态摘要，`PASS → WARN` 即使整体仍归一为
+  PASS 也会 fail-closed；
 - FAIL 无法调用 `Put` 生成 Receipt；
 - 并发 `Put` 在 Windows `os.Rename` 语义下保持可读取；
 - dependency governance 强制本包不 import 业务领域包，Git 只经 gitx。

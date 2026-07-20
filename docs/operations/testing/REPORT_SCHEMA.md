@@ -93,6 +93,7 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 	"executionMode": "executed",
 	"receiptID": "sha256:<receipt>",
 	"validationIdentity": "sha256:<content-and-semantics>",
+	"resultsDigest": "sha256:<profile-selected-id-statuses>",
 	"subjectTreeOID": "<git-tree-oid>",
 	"subjectMode": "head",
 	"reusable": true,
@@ -125,6 +126,11 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 出现。`subjectMode` 使用 `head`、`index`、`dirty`；`dirty` 永远不能生成 Receipt。
 `validationCode` 是可选的稳定机器码，用于表达命中、主体不可复用、执行期内容漂移、存储错误
 或复用审计不一致；调用者不能靠解析 `reusableReason` 文本做分支。
+
+`resultsDigest` 对当前 profile 选中的 TestCase `(id,status)` 排序后生成，不包含耗时、日志路径或
+其他 profile 的未选用例。Receipt schema v2 固定保存该摘要；复用读取会从留存报告重新计算，
+`--verify-reuse` 则把新鲜执行摘要与 Receipt 比对，因此即使整体仍归一为 `PASS`，单用例
+`PASS` 变为 `WARN` 也会以 `VALIDATION_REUSE_AUDIT_MISMATCH` fail-closed。
 
 可复用的充要条件按 Severity 判定：没有 `FAIL`，所有 profile 内 `REQUIRED` 用例均为
 `PASS`，不存在未声明 optional-path 的 profile 内 `SKIP`，且 start/end validation identity
