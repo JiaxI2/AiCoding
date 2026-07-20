@@ -73,6 +73,28 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 	}
 }
 
+func TestRegistryHasPrimitiveChecklistGate(t *testing.T) {
+	// todolist 0001: the registry must own the "new-primitive ADR carries a §12
+	// self-review" gate as a static case so it runs in every profile.
+	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, testCase := range Registry(cfg) {
+		if testCase.ID != "ADR-001" {
+			continue
+		}
+		if testCase.Kind != "static" || testCase.Severity != Required {
+			t.Fatalf("ADR-001 must be a required static gate: %#v", testCase)
+		}
+		if len(testCase.Profiles) != len(allProfiles()) {
+			t.Fatalf("ADR-001 must run in all profiles: %#v", testCase.Profiles)
+		}
+		return
+	}
+	t.Fatal("registry is missing the ADR-001 primitive-checklist gate")
+}
+
 func TestRegistryTitlesPreserveReadableUTF8InJSON(t *testing.T) {
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {

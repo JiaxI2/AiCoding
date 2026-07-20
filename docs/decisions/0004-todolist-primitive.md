@@ -1,5 +1,7 @@
 # ADR 0004: todolist Primitive（待实现工作清单）
 
+PrimitiveReview: required
+
 ## Status
 
 Accepted。实现于 `internal/todolist` + CLI `aicoding todolist` + `docs/todolist/`。

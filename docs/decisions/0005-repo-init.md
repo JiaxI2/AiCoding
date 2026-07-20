@@ -1,5 +1,7 @@
 # ADR 0005: repoinit —— `aicoding provision`（本地 AI-coding 环境初始化）
 
+PrimitiveReview: required
+
 ## Status
 
 Accepted。实现于 `internal/repoinit` + CLI `aicoding provision`。

@@ -1,7 +1,11 @@
 # TODO 0001: 测试引擎登记"新 Primitive ADR 必含 §12 自评"门禁
 
-Status: Planned
+Status: Done
 Verify: go test ./internal/testengine/... -run TestRegistryHasPrimitiveChecklistGate
+
+> 已实现（ADR 0006）：`internal/adrreview` Primitive + 测试 Registry 静态用例 `ADR-001`
+> （三档全跑）；0003/0004/0005/0006 已标 `PrimitiveReview: required` 且门禁绿；负面
+> 用例（移除 §12 节）已验证会精确报缺口。Verify 命令通过后本项转绿。
 
 ## 背景
 

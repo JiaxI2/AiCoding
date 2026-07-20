@@ -107,7 +107,20 @@
 | PWSH-003 | 默认入口不经 PS 编排 | 检查 Taskfile 是否存在 Go-native 默认路由 | doctor/verify/Smoke/Full/Release 均直达正式 Go CLI；允许变量和 Windows/Unix 路径分隔符 | REQUIRED |
 | HEALTH-001 | doctor performance probes | `bin/aicoding.exe doctor perf --json` | 核心本地探针可执行且输出 JSON | REQUIRED |
 
-## 11. RELEASE_GATE：Release policy
+## 11. REPO_CONTEXT：仓库上下文领域
+
+| ID | 用例 | 方法 | 期望结果 | 严重级别 |
+|---|---|---|---|---|
+| RC-001 | repo-context 扫描与结构验证 | `bin/aicoding.exe lifecycle verify --scope repo-context --json` | 事实快照可构建；已安装时 manifest 结构完整（未安装为空操作通过） | REQUIRED |
+| RC-002 | repo-context 生成计划 | `bin/aicoding.exe lifecycle plan --action install --scope repo-context --json`（Full/Release） | 生成计划可计算且不写盘 | REQUIRED |
+
+## 12. ADR_REVIEW：Primitive 宪法自评门禁
+
+| ID | 用例 | 方法 | 期望结果 | 严重级别 |
+|---|---|---|---|---|
+| ADR-001 | 新 Primitive ADR 含 §12 自评 | 静态检查 `docs/decisions/*.md`：声明 `PrimitiveReview: required` 的 ADR 必含 `## §12 Checklist 自评` 节（`internal/adrreview`） | 无缺口；缺失时报出具体 ADR 文件与修复指引 | REQUIRED |
+
+## 13. RELEASE_GATE：Release policy
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|

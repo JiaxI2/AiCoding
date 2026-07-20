@@ -18,6 +18,8 @@ import (
 	"sync"
 	"time"
 	"unicode/utf8"
+
+	"github.com/JiaxI2/AiCoding/internal/adrreview"
 )
 
 type Severity string
@@ -334,6 +336,8 @@ func Registry(cfg Config) []TestCase {
 		{ID: "RC-001", Category: "REPO_CONTEXT", Title: "repo-context 扫描与结构验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "verify", "--scope", "repo-context", "--json"}, ExpectJSON: true},
 		{ID: "RC-002", Category: "REPO_CONTEXT", Title: "repo-context 生成计划", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "repo-context", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
+		{ID: "ADR-001", Category: "ADR_REVIEW", Title: "新 Primitive ADR 含 §12 自评", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+
 		{ID: "REL-002", Category: "RELEASE_GATE", Title: "Release policy 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 	}
 }
@@ -583,6 +587,8 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = checkTaskfileGoRoutes(cfg.Repo)
 	case "REL-002":
 		err = requirePaths(cfg.Repo, "docs/governance/TAGGING_POLICY.md", "docs/governance/RELEASE_POLICY.md")
+	case "ADR-001":
+		err = checkADRPrimitiveReviews(cfg.Repo)
 	default:
 		err = errors.New("static check not implemented")
 	}
@@ -766,6 +772,20 @@ func checkC99ExcludedDirs(repo string) error {
 	}
 	if len(missing) > 0 {
 		return fmt.Errorf("missing excludedDirectories: %s", strings.Join(missing, ", "))
+	}
+	return nil
+}
+
+// checkADRPrimitiveReviews delegates to the adrreview primitive: every ADR that
+// declares `PrimitiveReview: required` must contain the §12 self-review section
+// (existence only; quality stays with human review).
+func checkADRPrimitiveReviews(repo string) error {
+	report, err := adrreview.Check(repo)
+	if err != nil {
+		return err
+	}
+	if len(report.Gaps) > 0 {
+		return errors.New(strings.Join(report.Gaps, "; "))
 	}
 	return nil
 }

@@ -1,5 +1,7 @@
 # ADR 0003: repo-context 领域（仓库上下文自动生成与保鲜）
 
+PrimitiveReview: required
+
 ## Status
 
 Accepted。阶段 0–4 全部落地：扫描 → 生成 → commit 增量同步 → 聚合门禁。
