@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 )
@@ -50,6 +51,28 @@ func TestBootstrapWithoutBuildCreatesBinDir(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(repo, "bin", "aicoding.exe")); !os.IsNotExist(err) {
 		t.Fatalf("Build=false invoked the Go build path: %v", err)
+	}
+}
+
+func TestBootstrapWithBuildCreatesBinary(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "go.mod"), "module example.com/bootstrap-test\n\ngo 1.22\n")
+	mustWrite(t, filepath.Join(repo, "cmd", "aicoding", "main.go"), "package main\n\nfunc main() {}\n")
+	cmd := exec.Command("git", "init")
+	cmd.Dir = repo
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, out)
+	}
+
+	status, errs := Bootstrap(repo, Options{Build: true})
+	if len(errs) != 0 {
+		t.Fatalf("Bootstrap errs = %v", errs)
+	}
+	if !status.BuildAttempted || !status.BuildOK || !status.BinaryExists {
+		t.Fatalf("Build=true did not complete the build path: %#v", status)
+	}
+	if _, err := os.Stat(filepath.Join(repo, "bin", "aicoding.exe")); err != nil {
+		t.Fatalf("Build=true did not create bin/aicoding.exe: %v", err)
 	}
 }
 

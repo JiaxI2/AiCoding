@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **test(bootstrap)**: 为新用户 `task setup` 所走的默认 `bootstrap` 构建路径增加临时 Go module 回归，真实执行 `Options{Build:true}` 并断言二进制落盘；不把真实构建重新加入 Smoke/Full/Release profile。 / Covers the default bootstrap build path with an isolated temporary module without restoring a real build to any test profile.
+
 - **refactor(testengine)**: Full 将真实 ZIP 与 hermetic fresh clone 移交 Release，并以 EXP-002/FRESH-003 低成本静态门禁保留 manifest include/outputName、gitmodules、skills gitlink 和三个 profile 分支覆盖；实测 Full 热中位数由 90.715s 降至 17.924s（80.2%），Release 74.867s 且 58/58 PASS，刻意承担更高发布成本。 / Moves real ZIP and hermetic clone evidence to Release while preserving static Full coverage; measured hot Full improves by 80.2% while Release retains all hermetic evidence.
 
 - **fix(kit)**: fresh clone 保留 `git.submodule` 步骤名，但在 `clone --recurse-submodules` 后只执行递归 submodule status 校验，不再重复 `submodule update --init --recursive`。 / Removes redundant submodule initialization after a recursive clone while retaining a read-only recursive status verification step.
