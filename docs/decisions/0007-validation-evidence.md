@@ -45,7 +45,8 @@ Receipt 不泄露真实路径。engine semantic digest 由上层绑定 Catalog/R
 
 ## 3. Composition and ownership
 
-- `gitx` 是唯一 Git 进程边界；本包不直接启动 Git。
+- `gitx` 是唯一 Git 进程与磁盘布局知识边界；本包既不直接启动 Git，也不解析 `.git`、
+  `gitdir:` 或 `commondir` 格式。
 - `validationevidence` 不执行 TestCase、不产生第二套 runner。
 - `testengine` 决定 PASS/FAIL、Required/Warning/Skip policy，并决定是否生成 Receipt。
 - JSON report 仍由现有 `testengine` 产生；Receipt 只保留完整性绑定的最小视图。

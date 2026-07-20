@@ -57,6 +57,15 @@ func TestPackageBoundaryAndPublicAPIRemainSmall(t *testing.T) {
 			t.Fatalf("validationevidence public API is missing %s: %v", required, exported)
 		}
 	}
+	subjectSource, err := os.ReadFile("subject.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, leakedGitLayout := range []string{"gitdir:", `".git"`, `"commondir"`} {
+		if strings.Contains(string(subjectSource), leakedGitLayout) {
+			t.Fatalf("subject.go owns Git layout knowledge %q instead of gitx", leakedGitLayout)
+		}
+	}
 }
 
 func TestExactCheckPathDoesNotWalkRepositoryFiles(t *testing.T) {

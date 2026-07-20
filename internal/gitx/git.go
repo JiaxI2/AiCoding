@@ -3,6 +3,7 @@ package gitx
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -61,9 +62,17 @@ func WriteTree(repo string) (string, error) {
 }
 
 // CommonDir returns the absolute Git common directory shared by linked
-// worktrees.
+// worktrees. Conventional worktree metadata is resolved without spawning Git;
+// bare repositories, subdirectories and unusual layouts fall back to Git.
 func CommonDir(repo string) (string, error) {
-	out, err := Run(repo, "rev-parse", "--path-format=absolute", "--git-common-dir")
+	absRepo, err := filepath.Abs(repo)
+	if err != nil {
+		return "", fmt.Errorf("resolve repository: %w", err)
+	}
+	if dir, fastErr := commonDirFromDotGit(absRepo); fastErr == nil {
+		return dir, nil
+	}
+	out, err := Run(absRepo, "rev-parse", "--path-format=absolute", "--git-common-dir")
 	if err != nil {
 		return "", err
 	}
@@ -72,13 +81,58 @@ func CommonDir(repo string) (string, error) {
 		return "", fmt.Errorf("git common directory is empty")
 	}
 	if !filepath.IsAbs(dir) {
-		dir = filepath.Join(repo, dir)
+		dir = filepath.Join(absRepo, dir)
 	}
 	dir, err = filepath.Abs(dir)
 	if err != nil {
 		return "", fmt.Errorf("resolve git common directory: %w", err)
 	}
 	return filepath.Clean(dir), nil
+}
+
+func commonDirFromDotGit(repo string) (string, error) {
+	dotGit := filepath.Join(repo, ".git")
+	info, err := os.Stat(dotGit)
+	if err != nil {
+		return "", err
+	}
+	if info.IsDir() {
+		return filepath.Abs(dotGit)
+	}
+	raw, err := os.ReadFile(dotGit)
+	if err != nil {
+		return "", err
+	}
+	const prefix = "gitdir:"
+	line := strings.TrimSpace(string(raw))
+	if !strings.HasPrefix(strings.ToLower(line), prefix) {
+		return "", fmt.Errorf("invalid .git file")
+	}
+	gitDir := strings.TrimSpace(line[len(prefix):])
+	if !filepath.IsAbs(gitDir) {
+		gitDir = filepath.Join(repo, gitDir)
+	}
+	gitDir, err = filepath.Abs(gitDir)
+	if err != nil {
+		return "", err
+	}
+	commonDir := gitDir
+	if rawCommonDir, readErr := os.ReadFile(filepath.Join(gitDir, "commondir")); readErr == nil {
+		commonDir = strings.TrimSpace(string(rawCommonDir))
+		if !filepath.IsAbs(commonDir) {
+			commonDir = filepath.Join(gitDir, commonDir)
+		}
+	} else if !os.IsNotExist(readErr) {
+		return "", readErr
+	}
+	commonDir, err = filepath.Abs(commonDir)
+	if err != nil {
+		return "", err
+	}
+	if info, err = os.Stat(commonDir); err != nil || !info.IsDir() {
+		return "", fmt.Errorf("invalid Git common directory")
+	}
+	return filepath.Clean(commonDir), nil
 }
 
 // StatusSnapshot parses tracked, staged, untracked, unmerged, and submodule

@@ -91,6 +91,41 @@ func TestTreeOIDRejectsEmptyRevision(t *testing.T) {
 	}
 }
 
+func TestCommonDirFastPathOwnsLinkedWorktreeLayout(t *testing.T) {
+	repo := newGitRepo(t)
+	writeGitFile(t, repo, "tracked.txt", "one\n")
+	mustGit(t, repo, "add", "tracked.txt")
+	mustGit(t, repo, "commit", "-m", "initial")
+	linked := filepath.Join(t.TempDir(), "linked")
+	mustGit(t, repo, "worktree", "add", "--detach", linked, "HEAD")
+
+	t.Setenv("PATH", "")
+	for _, worktree := range []string{repo, linked} {
+		commonDir, err := CommonDir(worktree)
+		if err != nil {
+			t.Fatalf("CommonDir(%s): %v", worktree, err)
+		}
+		if filepath.Clean(commonDir) != filepath.Join(repo, ".git") {
+			t.Fatalf("CommonDir(%s) = %q", worktree, commonDir)
+		}
+	}
+}
+
+func TestCommonDirFallsBackToGitForRepositorySubdirectory(t *testing.T) {
+	repo := newGitRepo(t)
+	nested := filepath.Join(repo, "nested")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	commonDir, err := CommonDir(nested)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filepath.Clean(commonDir) != filepath.Join(repo, ".git") {
+		t.Fatalf("CommonDir(nested) = %q", commonDir)
+	}
+}
+
 func newGitRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
