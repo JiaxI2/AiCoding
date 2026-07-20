@@ -11,6 +11,16 @@
       "machineReadable": true
     },
     {
+      "id": "validation-pre-push",
+      "owner": "aicoding-platform",
+      "type": "repo-hook",
+      "trigger": "pre-push",
+      "path": "bin/aicoding.exe hook pre-push --json",
+      "enabledByDefault": true,
+      "machineReadable": true,
+      "description": "按实际 local_oid tree 检查受治理 ref 的 Validation Receipt，不在 hook 内运行测试或构建。"
+    },
+    {
       "id": "plan-mode-gate",
       "owner": "aicoding-agent-dev-kit",
       "type": "agent-hook",

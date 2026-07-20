@@ -328,7 +328,7 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 
 func runHook(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, usageErrorf("hook requires subcommand: pre-commit, commit-msg, or post-commit")
+		return report.Result{}, usageErrorf("hook requires subcommand: pre-commit, commit-msg, pre-push, or post-commit")
 	}
 	sub := args[0]
 	switch sub {
@@ -411,6 +411,8 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		}
 		errs := governance.Lint(repo, "commit-msg", *fileArg)
 		return report.Result{SchemaVersion: 1, Command: "hook commit-msg", OK: len(errs) == 0, Message: "commit-msg fast gate", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+	case "pre-push":
+		return runHookPrePush(args[1:], start)
 	case "post-commit":
 		fs := newFlagSet("hook post-commit")
 		repoArg := fs.String("repo-root", "", "repository root")
@@ -426,7 +428,13 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		// domain fall back to a full reconcile with an empty affected set.
 		changed, _ := gitx.CommitFiles(repo, "HEAD")
 		sync := repocontext.Sync(repo, changed, false)
-		return report.Result{SchemaVersion: 1, Command: "hook post-commit", OK: sync.OK, Message: "repo-context incremental sync", RepoRoot: repo, Data: sync, Warnings: sync.Warnings, Errors: sync.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(sync.Errors)
+		aliases := refreshHeadValidationAliases(repo)
+		errs := append([]string{}, sync.Errors...)
+		for _, aliasErr := range aliases.Errors {
+			errs = append(errs, "validation alias: "+aliasErr)
+		}
+		data := postCommitData{RepoContext: sync, ValidationAlias: aliases}
+		return report.Result{SchemaVersion: 1, Command: "hook post-commit", OK: len(errs) == 0, Message: "post-commit context and validation alias refresh", RepoRoot: repo, Data: data, Warnings: sync.Warnings, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	default:
 		return report.Result{}, usageErrorf("unsupported hook: %s", sub)
 	}

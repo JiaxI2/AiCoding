@@ -137,6 +137,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandVersion, Section: HelpUsage, Usage: "aicoding version"},
 		{Command: CommandHook, Section: HelpUsage, Usage: "aicoding hook pre-commit [--repo-root PATH] [--json]"},
 		{Command: CommandHook, Section: HelpUsage, Usage: "aicoding hook commit-msg --file COMMIT_MSG [--repo-root PATH] [--json]"},
+		{Command: CommandHook, Section: HelpUsage, Usage: "aicoding hook pre-push [--repo-root PATH] [--json]"},
 		{Command: CommandHook, Section: HelpUsage, Usage: "aicoding hook post-commit [--repo-root PATH] [--json]"},
 		{Command: CommandBootstrap, Section: HelpUsage, Usage: "aicoding bootstrap [--repo-root PATH] [--json]"},
 

@@ -86,7 +86,7 @@ func TestValidationIndexReceiptSurvivesCommitAndMessageAmend(t *testing.T) {
 	}
 }
 
-func TestTestCommandWiresExplicitEvidenceFlagsAndDefaultsOff(t *testing.T) {
+func TestTestCommandWiresExplicitEvidenceFlagsAndDefaultsAuto(t *testing.T) {
 	repo := newValidationCLIRepo(t)
 	previous := runTestEngine
 	t.Cleanup(func() { runTestEngine = previous })
@@ -115,7 +115,7 @@ func TestTestCommandWiresExplicitEvidenceFlagsAndDefaultsOff(t *testing.T) {
 	if configs[1].Reuse != testengine.ReuseAuto || configs[1].Force || !configs[1].VerifyReuse {
 		t.Fatalf("audit config = %#v", configs[1])
 	}
-	if configs[2].Reuse != testengine.ReuseOff || configs[2].Force || configs[2].AllowDirty || configs[2].VerifyReuse {
+	if configs[2].Reuse != testengine.ReuseAuto || configs[2].Force || configs[2].AllowDirty || configs[2].VerifyReuse {
 		t.Fatalf("default config = %#v", configs[2])
 	}
 	for _, cfg := range configs {

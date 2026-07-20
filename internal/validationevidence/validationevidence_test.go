@@ -154,6 +154,15 @@ func TestContextGateUsesPushedCommitTreeAndProfileAlias(t *testing.T) {
 	if err := store.BindCommit(secondCommit, receipt); err == nil {
 		t.Fatal("BindCommit accepted a Receipt for a different tree")
 	}
+	if removed, err := store.Clean("smoke"); err != nil || removed != 1 {
+		t.Fatalf("Clean(smoke) = %d, %v", removed, err)
+	}
+	cleaned := store.GatePush(policy, []gitx.PushUpdate{{
+		LocalRef: "refs/heads/old", LocalOID: firstCommit, RemoteRef: "refs/heads/main", RemoteOID: zero,
+	}})
+	if cleaned.OK || cleaned.Updates[0].Code != CodeReceiptMiss {
+		t.Fatalf("profile clean left a usable commit alias: %#v", cleaned)
+	}
 }
 
 func TestExactCheckPathDoesNotWalkRepositoryFiles(t *testing.T) {

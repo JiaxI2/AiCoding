@@ -109,6 +109,8 @@ auto_close_stale = false
 	mustWrite(t, filepath.Join(repo, ".github", "workflows", "issue-governance.yml"), "name: Issue governance\nopened\nreopened\nlabeled\nclosed\npermissions:\n  issues: write\nmanifest: .github/issue-labels.json\nuses: actions/github-script@v9\n")
 	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "#!/bin/sh\n")
 	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "#!/bin/sh\n")
+	mustWrite(t, filepath.Join(repo, ".githooks", "pre-push"), "#!/bin/sh\n")
+	mustWrite(t, filepath.Join(repo, "config", "validation-policy.json"), "{}\n")
 }
 
 func hasErrorContaining(errs []string, needle string) bool {

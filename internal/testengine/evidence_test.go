@@ -44,6 +44,21 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	if first.ExecutionMode != "executed" || !first.Reusable || first.ReceiptID == "" || first.ValidationIdentity == "" || executions != 1 {
 		t.Fatalf("first execution did not create evidence: %#v executions=%d", first, executions)
 	}
+	store, err := validationevidence.Open(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	head, err := gitx.HeadCommit(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	zero := strings.Repeat("0", len(head))
+	gate := store.GatePush(validationevidence.Policy{SchemaVersion: 1, UnmatchedAction: "allow", Contexts: []validationevidence.PushContext{{
+		ID: "stable", RemoteRef: "refs/heads/main", RequiredProfile: ProfileSmoke,
+	}}}, []gitx.PushUpdate{{LocalRef: "refs/heads/main", LocalOID: head, RemoteRef: "refs/heads/main", RemoteOID: zero}})
+	if !gate.OK || gate.Updates[0].Code != validationevidence.CodeReceiptHit {
+		t.Fatalf("executed HEAD Receipt did not bind its commit alias: %#v", gate)
+	}
 
 	auto := base
 	auto.Out = filepath.Join(t.TempDir(), "reused")
@@ -262,12 +277,12 @@ func TestReceiptEligibilityUsesSeverityAndUnexpectedSkipPolicy(t *testing.T) {
 	}
 }
 
-func TestNormalizeConfigDefaultsReuseOffAndRejectsAuditForce(t *testing.T) {
+func TestNormalizeConfigDefaultsReuseAutoAndRejectsAuditForce(t *testing.T) {
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Reuse != ReuseOff {
+	if cfg.Reuse != ReuseAuto {
 		t.Fatalf("default reuse = %q", cfg.Reuse)
 	}
 	if _, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke, Reuse: "always"}); err == nil {

@@ -82,8 +82,16 @@ func LoadPolicy(repo string) (Policy, error) {
 }
 
 // BindCommit stores a profile-specific, mutable commit alias to an immutable
-// Receipt. The commit tree must exactly match the Receipt subject tree.
+// Receipt. The commit tree must exactly match the Receipt subject tree. HEAD is
+// accepted as the sole symbolic input so upper layers need no gitx dependency.
 func (r Repository) BindCommit(commitOID string, receipt Receipt) error {
+	if strings.EqualFold(strings.TrimSpace(commitOID), "HEAD") {
+		resolved, err := gitx.HeadCommit(r.repo)
+		if err != nil {
+			return &Error{Code: CodeTargetNotFound, Message: err.Error(), RequiredAction: "verify that HEAD exists locally"}
+		}
+		commitOID = resolved
+	}
 	commitOID = strings.ToLower(strings.TrimSpace(commitOID))
 	if !validTreeOID(commitOID) || !validFingerprint(receipt.Fingerprint) || receipt.ValidationIdentity != receipt.Fingerprint.Identity || receipt.Fingerprint.RepositoryID != r.repositoryID {
 		return fingerprintError("commit alias identity is invalid")

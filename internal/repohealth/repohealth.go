@@ -128,7 +128,7 @@ func isPwshInvocationLine(lower string) bool {
 }
 
 func VerifyHooks(repo string) ([]HookCheck, []string) {
-	hooks := []string{".githooks/pre-commit", ".githooks/commit-msg"}
+	hooks := []string{".githooks/pre-commit", ".githooks/commit-msg", ".githooks/pre-push"}
 	checks := []HookCheck{}
 	allErrs := []string{}
 	for _, rel := range hooks {
@@ -148,7 +148,7 @@ func VerifyHooks(repo string) ([]HookCheck, []string) {
 			checks = append(checks, check)
 			continue
 		}
-		fastTokens := []string{"bin/aicoding", "bin/aicoding.exe", "go run ./cmd/aicoding"}
+		fastTokens := []string{"bin/aicoding", "bin/aicoding.exe"}
 		slowTokens := []string{"pwsh", "powershell.exe"}
 		fastAt := firstIndex(content, fastTokens)
 		slowAt := firstIndex(content, slowTokens)
@@ -159,8 +159,8 @@ func VerifyHooks(repo string) ([]HookCheck, []string) {
 		}
 		check.FastFirst = fastAt >= 0 && (slowAt < 0 || fastAt < slowAt)
 		if !check.FastFirst {
-			check.Errors = append(check.Errors, "hook does not prefer bin/aicoding or Go fast path before PowerShell fallback")
-			allErrs = append(allErrs, rel+": hook does not prefer Go fast path")
+			check.Errors = append(check.Errors, "hook does not use the prebuilt bin/aicoding fast path before PowerShell fallback")
+			allErrs = append(allErrs, rel+": hook does not prefer the prebuilt Go CLI")
 		}
 		checks = append(checks, check)
 	}
@@ -180,7 +180,7 @@ func HooksWired(repo string) (map[string]interface{}, []string) {
 	configured := strings.TrimSpace(out)
 	data := map[string]interface{}{"expected": ".githooks", "configured": configured, "wired": false}
 	if err != nil || configured == "" {
-		return data, []string{"git core.hooksPath is not set; repository .githooks are inactive and commit gates (pre-commit, commit-msg, post-commit) will not run — run kit install or `git config core.hooksPath .githooks`"}
+		return data, []string{"git core.hooksPath is not set; repository .githooks are inactive and local gates (pre-commit, commit-msg, post-commit, pre-push) will not run — run kit install or `git config core.hooksPath .githooks`"}
 	}
 	wired := configured == ".githooks" ||
 		filepath.Clean(configured) == filepath.Clean(platform.RepoPath(repo, ".githooks"))

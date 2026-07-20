@@ -66,7 +66,7 @@ func ParsePushUpdates(reader io.Reader) ([]PushUpdate, error) {
 			return nil, fmt.Errorf("parse pre-push line %d: invalid object id", lineNumber)
 		}
 		updates = append(updates, PushUpdate{
-			LocalRef: fields[0], LocalOID: fields[1], RemoteRef: fields[2], RemoteOID: fields[3],
+			LocalRef: fields[0], LocalOID: strings.ToLower(fields[1]), RemoteRef: fields[2], RemoteOID: strings.ToLower(fields[3]),
 		})
 	}
 	if err := scanner.Err(); err != nil {

@@ -13,7 +13,7 @@ import (
 func Lint(repo, mode, commitMsgPath string) []string {
 	errs := []string{}
 	fail := func(msg string) { errs = append(errs, msg) }
-	requiredFiles := []string{"README.md", "README_EN.md", "CHANGELOG.md", ".github/RELEASE_TEMPLATE.md", ".github/repository-governance.toml", ".githooks/pre-commit", ".githooks/commit-msg", "config/dependency-governance.json", "config/schemas/dependency-governance.schema.json"}
+	requiredFiles := []string{"README.md", "README_EN.md", "CHANGELOG.md", ".github/RELEASE_TEMPLATE.md", ".github/repository-governance.toml", ".githooks/pre-commit", ".githooks/commit-msg", ".githooks/pre-push", "config/dependency-governance.json", "config/schemas/dependency-governance.schema.json", "config/validation-policy.json"}
 	for _, f := range requiredFiles {
 		if !platform.IsFile(platform.RepoPath(repo, f)) {
 			fail("required governance file missing: " + f)

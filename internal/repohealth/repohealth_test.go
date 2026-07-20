@@ -69,13 +69,14 @@ func TestIsPwshInvocationLine(t *testing.T) {
 func TestVerifyHooksFastFirst(t *testing.T) {
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "bin/aicoding.exe hook pre-commit\npwsh -File tools/specialty/lint.ps1\n")
-	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "go run ./cmd/aicoding hook commit-msg --file $1\npwsh -File tools/specialty/lint.ps1\n")
+	mustWrite(t, filepath.Join(repo, ".githooks", "commit-msg"), "bin/aicoding.exe hook commit-msg --file $1\npwsh -File tools/specialty/lint.ps1\n")
+	mustWrite(t, filepath.Join(repo, ".githooks", "pre-push"), "bin/aicoding.exe hook pre-push\n")
 	checks, errs := VerifyHooks(repo)
 	if len(errs) != 0 {
 		t.Fatalf("VerifyHooks errs = %v", errs)
 	}
-	if len(checks) != 2 {
-		t.Fatalf("VerifyHooks checks = %d, want 2", len(checks))
+	if len(checks) != 3 {
+		t.Fatalf("VerifyHooks checks = %d, want 3", len(checks))
 	}
 	for _, c := range checks {
 		if !c.FastFirst {

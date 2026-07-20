@@ -237,6 +237,12 @@ func finalizeEvidence(
 		return
 	}
 	report.ReceiptID = receipt.ReceiptID
+	if startSubject.Mode == validationevidence.SubjectHead {
+		if bindErr := store.BindCommit("HEAD", receipt); bindErr != nil {
+			report.ValidationCode = validationevidence.CodeStoreError
+			report.ReusableReason = "Receipt created but HEAD alias is unavailable: " + bindErr.Error()
+		}
+	}
 }
 
 func receiptEligible(cfg Config, testCases []TestCase, results []Result, subject validationevidence.Subject) (bool, string, validationevidence.ErrorCode) {

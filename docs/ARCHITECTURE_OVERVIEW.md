@@ -77,9 +77,10 @@ clean-clone 构建回归一直推迟到发布；该 job 不改变交互式 Full 
 Validation Evidence 由唯一 test engine 生产，不是第二套测试执行器。它以 Git common-dir
 隔离仓库，以 Tree OID 绑定 HEAD 或 INDEX 内容，再组合 profile、规范化 Test Registry、typed
 command catalog、实现语义版本、相关配置、toolchain 和选项摘要形成 validation identity。
-Receipt 只保存完整且可复用的 PASS；读取时同时校验 Receipt 与保留报告 digest，任何缺失、
-篡改、脏主体或 start/end identity 漂移都 fail-closed。第一期 `--reuse off` 仍为默认，
-`validation check` 只做内容寻址精确查找；Hook 门禁与跨 profile 继承不属于当前边界。
+Receipt 只保存完整且可复用的 PASS；读取时同时校验 Receipt、保留报告 digest 与逐用例
+`resultsDigest`，任何缺失、篡改、脏主体或 start/end identity 漂移都 fail-closed。第二期在
+定期 seed/audit CI 就绪后默认 `--reuse auto`，显式 `--reuse off` 保留完整执行回退；pre-push
+只检查受 policy 治理 ref 的 exact local_oid Receipt。跨 profile 继承仍不属于当前边界。
 
 目标架构不增加动态 Go plugin 或第二控制面。稳定基础由 snapshot（事实）、plan（意图）、
 runner（调度）、adapter（翻译）、report（证据）和 domain-owned state 六个正交职责组合；

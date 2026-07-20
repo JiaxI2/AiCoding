@@ -18,7 +18,18 @@ Hooks are declared in `config/hooks-registry.json` and may also be referenced fr
 bin\aicoding.exe verify hooks --json
 ```
 
-The default smoke gate checks that repository hooks exist and prefer the Go fast path. Use the PowerShell verifier only as an explicit specialty check.
+The default smoke gate checks that repository hooks exist and use the prebuilt Go CLI fast path. Hooks never use `go run`; run `bootstrap` before enabling them. Use the PowerShell verifier only as an explicit specialty check.
+
+## Validation Context Gate
+
+`.githooks/pre-push` forwards Git's stdin protocol to `aicoding hook pre-push`. The Go gate reads
+`local_ref local_oid remote_ref remote_oid`, loads `config/validation-policy.json`, and checks the
+tree of each actual `local_oid`. It never substitutes current HEAD.
+
+The default policy requires a Release Receipt for `refs/heads/main` and `refs/tags/*`; other refs
+are explicitly outside the gate. Main must be fast-forward and cannot be deleted; release tags
+cannot be deleted. A missing Receipt reports the exact ref and required profile. The remedy runs
+validation outside the hook, then retries the push.
 
 ## Rules
 
@@ -27,4 +38,5 @@ The default smoke gate checks that repository hooks exist and prefer the Go fast
 - Hook output should be machine-readable, preferably JSON.
 - Hook failures must identify the Kit, hook id, and command path.
 - Multiple Kits must not silently overwrite the same hook.
+- Hooks must not run tests or builds, write the worktree, stash/reset/checkout, or push recursively.
 - State-based hook install and uninstall are reserved for a later phase; v2.0 freezes declaration and verification.

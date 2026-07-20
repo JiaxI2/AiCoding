@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+cd "$repo_root"
+
+# This gate only reads Git objects and existing validation evidence. It must
+# never build the CLI inside a push or run any validation test case.
+if [ -x "bin/aicoding" ]; then
+  exec bin/aicoding hook pre-push
+fi
+
+if [ -x "bin/aicoding.exe" ]; then
+  exec bin/aicoding.exe hook pre-push
+fi
+
+echo "AiCoding CLI is required for the pre-push Receipt gate; run bootstrap before pushing" >&2
+exit 1

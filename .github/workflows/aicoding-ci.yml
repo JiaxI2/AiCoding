@@ -52,7 +52,11 @@ jobs:
 
       - name: Release test profile
         shell: cmd
-        run: .\bin\aicoding.exe test --profile Release --json
+        run: .\bin\aicoding.exe test --profile Release --reuse off --json
+
+      - name: Audit Release Receipt reuse
+        shell: cmd
+        run: .\bin\aicoding.exe test --profile Release --verify-reuse --json
 
   clean-clone-full:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'

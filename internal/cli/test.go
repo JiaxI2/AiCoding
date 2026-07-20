@@ -48,7 +48,7 @@ func runTestProfile(profile string, args []string, command string, start time.Ti
 	runnerTimeoutSec := fs.Int("runner-timeout-sec", 3600, "overall tester process timeout seconds")
 	strictArg := fs.Bool("strict", false, "treat WARN severity command failures as FAIL")
 	noJSONCheckArg := fs.Bool("no-json-check", false, "disable JSON output validation")
-	reuseArg := fs.String("reuse", string(testengine.ReuseOff), "auto|off")
+	reuseArg := fs.String("reuse", string(testengine.ReuseAuto), "auto|off")
 	forceArg := fs.Bool("force", false, "ignore a matching Receipt and execute all selected cases")
 	allowDirtyArg := fs.Bool("allow-dirty", false, "allow execution for a dirty subject; never reusable")
 	verifyReuseArg := fs.Bool("verify-reuse", false, "execute and audit the conclusion against a matching Receipt")

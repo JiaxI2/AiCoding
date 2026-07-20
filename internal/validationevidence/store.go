@@ -89,8 +89,8 @@ func (r Repository) List(profile string) ([]Receipt, error) {
 	return receipts, nil
 }
 
-// Clean removes finalized Receipt files first, then their now-unreferenced
-// report files. It never removes temporary writer directories.
+// Clean removes commit aliases first, then finalized Receipts and their
+// now-unreferenced reports. It never removes temporary writer directories.
 func (r Repository) Clean(profile string) (int, error) {
 	profiles, err := r.profileDirs(profile)
 	if err != nil {
@@ -98,6 +98,9 @@ func (r Repository) Clean(profile string) (int, error) {
 	}
 	removed := 0
 	for _, selected := range profiles {
+		if err := r.cleanAliasDir(selected); err != nil {
+			return removed, err
+		}
 		dir := filepath.Join(r.root, "receipts", selected)
 		entries, err := os.ReadDir(dir)
 		if os.IsNotExist(err) {
@@ -123,6 +126,27 @@ func (r Repository) Clean(profile string) (int, error) {
 		_ = os.Remove(dir)
 	}
 	return removed, nil
+}
+
+func (r Repository) cleanAliasDir(profile string) error {
+	dir := filepath.Join(r.root, "aliases", profile)
+	entries, err := os.ReadDir(dir)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return &Error{Code: CodeStoreError, Message: err.Error(), RequiredAction: "check validation store permissions"}
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !validTreeOID(entry.Name()) {
+			continue
+		}
+		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil && !os.IsNotExist(err) {
+			return &Error{Code: CodeStoreError, Message: err.Error(), RequiredAction: "retry validation clean"}
+		}
+	}
+	_ = os.Remove(dir)
+	return nil
 }
 
 func (r Repository) readReceipt(profile, identity string) (Receipt, ReportBundle, error) {

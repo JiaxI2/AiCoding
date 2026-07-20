@@ -4,8 +4,8 @@ set -eu
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 cd "$repo_root"
 
-# Incrementally refresh the generated repo-context after each commit. This is a
-# no-op unless repo-context has been installed, and never blocks the commit.
+# Incrementally refresh repo-context and validation aliases after each commit.
+# This is best-effort, never builds the CLI, and never blocks the commit.
 if [ -x "bin/aicoding" ]; then
   bin/aicoding hook post-commit || true
   exit 0
@@ -13,11 +13,6 @@ fi
 
 if [ -x "bin/aicoding.exe" ]; then
   bin/aicoding.exe hook post-commit || true
-  exit 0
-fi
-
-if command -v go >/dev/null 2>&1 && [ -d "cmd/aicoding" ]; then
-  go run ./cmd/aicoding hook post-commit || true
   exit 0
 fi
 

@@ -12,9 +12,5 @@ if [ -x "bin/aicoding.exe" ]; then
   exec bin/aicoding.exe hook pre-commit
 fi
 
-if command -v go >/dev/null 2>&1 && [ -d "cmd/aicoding" ]; then
-  exec go run ./cmd/aicoding hook pre-commit
-fi
-
-echo "AiCoding fast CLI or Go is required for pre-commit checks" >&2
+echo "AiCoding CLI is required for pre-commit checks; run bootstrap first" >&2
 exit 1

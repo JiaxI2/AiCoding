@@ -66,7 +66,8 @@ User / Agent
   -> Go CLI
      -> lifecycle -> Kit / MCP / runtime Skill
      -> doctor / verify -> shared report schema
-     -> test profiles -> one test engine
+     -> test profiles -> one test engine / content evidence
+     -> hooks -> governed commit / push gates
      -> release -> verify / gate
   -> Taskfile / CI -> short routes to Go CLI
   -> specialty tools -> quality / safety / Plan Mode / toolchain

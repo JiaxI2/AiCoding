@@ -165,6 +165,19 @@ Before considering AiCoding work complete, run the repository-provided equivalen
 
 For an actual release, also test real Marketplace registration, real plugin installation, plugin refresh, Hook review, rollback, and uninstall ownership behavior.
 
+## Validation Evidence Push Rules
+
+- Before pushing `refs/heads/main` or any `refs/tags/*`, require a Release Receipt for the exact
+  `local_oid` tree supplied by Git; never substitute the current HEAD or infer profile inheritance.
+- Treat a missing/invalid alias, non-fast-forward main update, main deletion, or tag deletion as a
+  blocking Context Gate result. Run validation outside the hook on the exact commit, then retry.
+- Do not edit Receipt or alias files manually and do not bypass `.githooks/pre-push` to manufacture
+  a green result. `--reuse off` remains the explicit full-execution rollback path.
+- Repository hooks may only call the prebuilt Go CLI. They must not run tests/builds, modify the
+  worktree, stash/reset/checkout, or invoke a recursive push.
+- These rules do not authorize Profile inheritance or Plan Mode integration; both remain outside
+  ADR 0007 phase 2.
+
 ## Canonical Product Control Plane
 
 The formal product workflow is:
