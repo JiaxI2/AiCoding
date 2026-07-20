@@ -61,3 +61,42 @@ validation check --target HEAD --json 的 5 次墙钟中位数 <= 300 ms
 第一期完成后必须在同一环境重建 `bin/aicoding.exe`，分别对 Receipt miss/hit 执行五次
 `validation check`，把真实样本和中位数回填本文件。若 HEAD hit 中位数超过 `300 ms`，
 先用调用计数与 profile 定位超额来源；在新证据获得评审前，不提高 SLA，也不启用默认复用。
+
+## 6. 第一期实现回填
+
+- 实现测量 Git SHA：`c03076f`；
+- 二进制：按该 SHA 重新执行 `go build -o bin\aicoding.exe ./cmd/aicoding`；
+- 目标：干净 linked worktree 的 Release profile，warm toolchain cache；
+- 计时边界：PowerShell 从启动 `aicoding.exe` 到进程退出的外部墙钟，命令输出重定向为空；
+- HEAD 路径只执行一次 porcelain-v2 status 和一次 `HEAD^{tree}`，两者并发；常规 `.git`/
+  `commondir` 直接解析，异常布局才回退 `git rev-parse --git-common-dir`。
+
+| 场景 | Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | 中位数 | 结论 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| HEAD Receipt miss | 262.284 ms | 362.701 ms | 228.590 ms | 266.570 ms | 249.938 ms | **262.284 ms** | PASS |
+| HEAD Receipt hit | 304.146 ms | 250.578 ms | 333.665 ms | 229.967 ms | 285.355 ms | **285.355 ms** | PASS |
+| INDEX Receipt hit | 293.992 ms | 300.286 ms | 385.933 ms | 268.734 ms | 300.930 ms | **300.286 ms** | 参考值 |
+
+首版串行实现的 warm miss 中位数为 `386.390 ms`，超额主要来自额外的 common-dir Git
+进程（独立中位数 `72.890 ms`）以及 status/TreeOID 串行等待。移除额外进程并并发两个必需
+只读 probe 后，HEAD miss/hit 均通过原定 `300 ms` SLA；没有提高 SLA，也没有删除
+untracked 或 submodule dirty 检查。INDEX 会执行 `git write-tree`，本期只记录参考值，不建立
+HEAD SLA 的错误等价关系。
+
+## 7. 第一期功能验收
+
+2026-07-20 在同一干净 SHA 上执行：
+
+| 验收路径 | 结果 | 墙钟/报告耗时 |
+|---|---|---:|
+| `test --profile Release --reuse off` | executed，58/58 PASS，生成可复用 Receipt | 171.026 s |
+| `validation check --profile Release --target HEAD` | `VALIDATION_RECEIPT_HIT` | 报告 225 ms |
+| `test --profile Release --reuse auto` | reused，58/58 PASS，同一 Receipt | 外部 392.763 ms |
+| Smoke seed | executed，40/40 PASS，可复用 | 24.162 s |
+| Smoke `--reuse auto --force` | executed，40/40 PASS，同一 Receipt | 23.089 s |
+| Smoke `--reuse auto --verify-reuse` | executed，40/40 PASS，`VALIDATION_RECEIPT_HIT` | 22.893 s |
+
+Release Receipt ID 为
+`sha256:3e978d3eea94bcd083dfde8800f6505f03d3684a193be56ff28a90fd195c009b`；Smoke Receipt
+ID 为 `sha256:10849976d0e6940fca527fa57fe51a54384bce5b49e28d36bab0c3323e9b603b`。
+默认值仍是 `--reuse off`。本次验收不启用 Hook、不切换默认复用，也不进入 profile 继承。

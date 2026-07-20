@@ -12,7 +12,7 @@
 
 - **feat(gitx)**: 新增 5 个 Git 内容身份 Primitive：HEAD commit、任意 ref tree、index write-tree、worktree 共用 common-dir，以及单次 porcelain-v2 status 解析；子模块 gitlink 继续由 Tree OID 覆盖，子模块工作区脏状态不再触发递归查询。 / Adds the five Git content-identity primitives with one status process and no recursive submodule probe.
 
-- **docs(perf)**: 实测 Validation Evidence 的 Windows Git 性能地板：带子模块脏检测的 `git status` 中位数为 186.153ms，`HEAD^{tree}` 为 69.480ms；通过 400ms 停止门禁，并据此把 warm-cache `validation check --target HEAD` 中位数 SLA 定为 300ms。 / Records the measured Windows Git floor and sets the evidence-check SLA from observed medians before implementation.
+- **docs(perf)**: 实测 Validation Evidence 的 Windows Git 性能地板并回填最终外部墙钟：带子模块脏检测的 `git status` 中位数为 186.153ms，`HEAD^{tree}` 为 69.480ms；warm-cache HEAD miss/hit 中位数分别为 262.284ms/285.355ms，均通过原定 300ms SLA，INDEX hit 300.286ms 仅作独立参考。 / Records both the pre-implementation Git floor and final miss/hit wall-clock evidence without raising the original HEAD SLA.
 
 - **test(bootstrap)**: 为新用户 `task setup` 所走的默认 `bootstrap` 构建路径增加临时 Go module 回归，真实执行 `Options{Build:true}` 并断言二进制落盘；不把真实构建重新加入 Smoke/Full/Release profile。 / Covers the default bootstrap build path with an isolated temporary module without restoring a real build to any test profile.
 
