@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- **perf(validationevidence)**: `validation check` 的常规 worktree/linked-worktree 热路径直接解析 `.git`/`commondir`，异常布局仍回退 `git rev-parse --git-common-dir`；toolchain cache 在 PATH 未变时直接校验已缓存可执行文件的 size/mtime，移除 SLA 之外的第三个 Git 进程与重复 PATH 搜索。 / Removes the extra common-dir Git process and repeated executable lookup from warm evidence checks while retaining fail-safe fallbacks.
+- **perf(validationevidence)**: `validation check --target HEAD` 并发执行唯一一次 status 与 TreeOID；常规 worktree/linked-worktree 热路径直接解析 `.git`/`commondir`，异常布局仍回退 `git rev-parse --git-common-dir`；toolchain cache 在 PATH 未变时直接校验已缓存可执行文件的 size/mtime，移除 SLA 之外的第三个 Git 进程与重复 PATH 搜索。 / Runs the two required HEAD probes concurrently and removes the extra common-dir Git process and repeated executable lookup while retaining fail-safe fallbacks.
 
 - **feat(cli)**: 新增 `validation status|check|list|clean` 四个内容证据子命令，并把 `test --reuse auto|off`（默认 `off`）、`--force`、`--allow-dirty`、`--verify-reuse` 接入唯一 test engine；CLI fingerprint 绑定 typed command catalog，报告外壳同步暴露 execution/Receipt/identity/reusable 字段。 / Adds the four Validation Evidence commands and explicit test reuse controls without changing the default execution path.
 

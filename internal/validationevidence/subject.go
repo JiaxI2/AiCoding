@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 )
@@ -87,6 +88,9 @@ func commonDirFromDotGit(repo string) (string, error) {
 
 // Capture reads status exactly once and resolves the requested Git tree.
 func (r Repository) Capture(target Target) (Subject, error) {
+	if target == TargetHead {
+		return r.captureHead()
+	}
 	status, err := gitx.StatusSnapshot(r.repo)
 	if err != nil {
 		return Subject{}, &Error{Code: CodeTargetNotFound, Message: err.Error(), RequiredAction: "verify the repository and Git index"}
@@ -111,14 +115,6 @@ func (r Repository) Capture(target Target) (Subject, error) {
 				subject.TreeOID, err = gitx.TreeOID(r.repo, "HEAD")
 			}
 		}
-	case TargetHead:
-		subject.Mode = SubjectHead
-		subject.TreeOID, err = gitx.TreeOID(r.repo, "HEAD")
-		if dirtyForHead(status) {
-			subject.Mode = SubjectDirty
-			subject.Reusable = false
-			subject.ReusableReason = statusReason(status, false)
-		}
 	case TargetIndex:
 		if status.Unmerged {
 			return Subject{}, &Error{Code: CodeTargetNotFound, Message: "the Git index contains unmerged entries", RequiredAction: "resolve conflicts and stage the intended content"}
@@ -135,6 +131,40 @@ func (r Repository) Capture(target Target) (Subject, error) {
 	}
 	if err != nil {
 		return Subject{}, &Error{Code: CodeTargetNotFound, Message: err.Error(), RequiredAction: "verify that the requested Git tree exists"}
+	}
+	return subject, nil
+}
+
+func (r Repository) captureHead() (Subject, error) {
+	var status gitx.Status
+	var treeOID string
+	var statusErr error
+	var treeErr error
+	var wait sync.WaitGroup
+	wait.Add(2)
+	go func() {
+		defer wait.Done()
+		status, statusErr = gitx.StatusSnapshot(r.repo)
+	}()
+	go func() {
+		defer wait.Done()
+		treeOID, treeErr = gitx.TreeOID(r.repo, "HEAD")
+	}()
+	wait.Wait()
+	if statusErr != nil {
+		return Subject{}, &Error{Code: CodeTargetNotFound, Message: statusErr.Error(), RequiredAction: "verify the repository and Git index"}
+	}
+	if treeErr != nil {
+		return Subject{}, &Error{Code: CodeTargetNotFound, Message: treeErr.Error(), RequiredAction: "verify that the requested Git tree exists"}
+	}
+	subject := Subject{
+		TreeOID: treeOID, Mode: SubjectHead, Reusable: true,
+		Scope: Scope{IgnoredFilesOutOfScope: true},
+	}
+	if dirtyForHead(status) {
+		subject.Mode = SubjectDirty
+		subject.Reusable = false
+		subject.ReusableReason = statusReason(status, false)
 	}
 	return subject, nil
 }
