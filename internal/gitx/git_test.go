@@ -143,6 +143,7 @@ func TestCommonDirFastPathOwnsLinkedWorktreeLayout(t *testing.T) {
 	mustGit(t, repo, "commit", "-m", "initial")
 	linked := filepath.Join(t.TempDir(), "linked")
 	mustGit(t, repo, "worktree", "add", "--detach", linked, "HEAD")
+	want := canonicalGitTestPath(t, filepath.Join(repo, ".git"))
 
 	t.Setenv("PATH", "")
 	for _, worktree := range []string{repo, linked} {
@@ -150,7 +151,7 @@ func TestCommonDirFastPathOwnsLinkedWorktreeLayout(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CommonDir(%s): %v", worktree, err)
 		}
-		if filepath.Clean(commonDir) != filepath.Join(repo, ".git") {
+		if filepath.Clean(commonDir) != want {
 			t.Fatalf("CommonDir(%s) = %q", worktree, commonDir)
 		}
 	}
@@ -166,9 +167,18 @@ func TestCommonDirFallsBackToGitForRepositorySubdirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if filepath.Clean(commonDir) != filepath.Join(repo, ".git") {
+	if filepath.Clean(commonDir) != canonicalGitTestPath(t, filepath.Join(repo, ".git")) {
 		t.Fatalf("CommonDir(nested) = %q", commonDir)
 	}
+}
+
+func canonicalGitTestPath(t *testing.T, path string) string {
+	t.Helper()
+	canonical, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return filepath.Clean(canonical)
 }
 
 func newGitRepo(t *testing.T) string {

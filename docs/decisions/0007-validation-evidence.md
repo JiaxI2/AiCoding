@@ -53,7 +53,8 @@ bin\aicoding.exe validation check --profile Release --target HEAD --bind-alias -
 ## 2. Identity boundary
 
 Identity 由 repositoryID、Tree OID、profile、validation plan、engine semantics、相关配置、
-toolchain 和 options 的 digest 组成。repositoryID 是 Git common-dir 规范绝对路径的 digest，
+toolchain 和 options 的 digest 组成。repositoryID 是经 `filepath.EvalSymlinks` 规范化的 Git
+common-dir 实际绝对路径 digest；Windows 8.3/长路径别名与符号链接路径必须收敛到同一身份，
 Receipt 不泄露真实路径。engine semantic digest 由上层绑定 Catalog/Registry/实现版本，明确
 不哈希带 buildvcs 的 CLI 二进制。
 
@@ -83,7 +84,7 @@ push tree 继续复用既有通用 `gitx.TreeOID(repo, rev)`，不复制 `RefTre
 ## 4. Correctness gates
 
 - commit message amend 后 Tree 不变，identity 与 Receipt 继续命中；
-- 两个 linked worktree 通过 common-dir 共享同一 Receipt；
+- 两个 linked worktree 通过 common-dir 共享同一 Receipt，Windows runner 的 8.3/长路径别名不得改变 repositoryID；
 - 不同仓库即使 Tree 相同也因 repositoryID 隔离；
 - untracked、tracked 变化和 report/Receipt 篡改均 fail-closed；
 - 留存报告复用与 `--verify-reuse` 均重新计算逐用例状态摘要，`PASS → WARN` 即使整体仍归一为

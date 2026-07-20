@@ -138,7 +138,9 @@ func CommonDir(repo string) (string, error) {
 		return "", fmt.Errorf("resolve repository: %w", err)
 	}
 	if dir, fastErr := commonDirFromDotGit(absRepo); fastErr == nil {
-		return dir, nil
+		if canonical, canonicalErr := canonicalExistingDir(dir); canonicalErr == nil {
+			return canonical, nil
+		}
 	}
 	out, err := Run(absRepo, "rev-parse", "--path-format=absolute", "--git-common-dir")
 	if err != nil {
@@ -151,9 +153,21 @@ func CommonDir(repo string) (string, error) {
 	if !filepath.IsAbs(dir) {
 		dir = filepath.Join(absRepo, dir)
 	}
-	dir, err = filepath.Abs(dir)
+	return canonicalExistingDir(dir)
+}
+
+func canonicalExistingDir(dir string) (string, error) {
+	dir, err := filepath.Abs(dir)
 	if err != nil {
 		return "", fmt.Errorf("resolve git common directory: %w", err)
+	}
+	dir, err = filepath.EvalSymlinks(dir)
+	if err != nil {
+		return "", fmt.Errorf("canonicalize git common directory: %w", err)
+	}
+	info, err := os.Stat(dir)
+	if err != nil || !info.IsDir() {
+		return "", fmt.Errorf("invalid Git common directory")
 	}
 	return filepath.Clean(dir), nil
 }
