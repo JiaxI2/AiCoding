@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "workDigest": "sha256:example",
+  "attempt": 1,
+  "sourceState": {"head": "0123456789abcdef", "dirty": false},
+  "checks": [
+    {"id": "scope", "status": "PASS"},
+    {"id": "project-build", "status": "PASS"},
+    {"id": "project-test", "status": "PASS"}
+  ],
+  "conclusion": "VERIFIED"
+}

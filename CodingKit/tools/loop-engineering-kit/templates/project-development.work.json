@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "example-project-feature",
+  "domain": "project-development",
+  "control": {
+    "mode": "goal",
+    "trigger": {"type": "manual"},
+    "stoppingRule": {"success": "all-required-gates-pass", "failure": ["budget-exhausted", "needs-human"]}
+  },
+  "goal": "Implement the requested feature without changing unrelated modules.",
+  "acceptance": [
+    "Project build passes",
+    "Relevant tests pass",
+    "No out-of-scope files are modified"
+  ],
+  "policy": {
+    "workspace": "worktree",
+    "writeScope": {"allow": ["src/**", "tests/**", "docs/**"], "deny": [".git/**", "vendor/**"]},
+    "verification": {"profile": "project-default"},
+    "budget": {"maxAttempts": 3, "maxElapsedSeconds": 3600},
+    "humanCheckpoints": ["architecture-change", "merge"]
+  }
+}

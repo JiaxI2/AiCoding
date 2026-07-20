@@ -1,6 +1,6 @@
 # TODO 0003: Loop Engineering Kit 落地（阶段 0–3）
 
-Status: Planned
+Status: In-Progress
 Verify: go test ./internal/loopkit/... ./internal/cli/... 且 bin/aicoding.exe kit verify --all --profile Lifecycle --json 通过
 
 > 架构权威：[LOOP_ENGINEERING_ARCHITECTURE.md](../architecture/LOOP_ENGINEERING_ARCHITECTURE.md)（已随本项提交，Status: Proposed）。

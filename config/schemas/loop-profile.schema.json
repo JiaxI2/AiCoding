@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/loop-profile.schema.json",
+  "title": "AiCoding Loop Work Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "domain", "allowedControlModes", "gatePolicy"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"type": "string"},
+    "domain": {"type": "string"},
+    "allowedControlModes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["turn", "goal", "time", "proactive"]}
+    },
+    "gatePolicy": {
+      "type": "object",
+      "required": ["required", "advisory"],
+      "properties": {
+        "required": {"type": "array", "items": {"type": "string"}},
+        "advisory": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "defaultHumanCheckpoints": {"type": "array", "items": {"type": "string"}}
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "loop-engineering-kit",
+  "name": "Loop Engineering Kit",
+  "description": "Composable loop contracts for project development and repository maintenance without introducing a second AiCoding control plane.",
+  "mode": "go-builtin",
+  "type": "go-composed",
+  "layer": "platform",
+  "platformAgnostic": false,
+  "enabled": false,
+  "entrypoints": {
+    "skill": "CodingKit/agents/skills/plugins/AiCoding/skills/aicoding-loop-engineering/SKILL.md",
+    "architecture": "docs/architecture/LOOP_ENGINEERING_KIT_ARCHITECTURE.md"
+  },
+  "schemas": [
+    "config/schemas/loop-work-spec.schema.json",
+    "config/schemas/loop-profile.schema.json",
+    "config/schemas/loop-evidence.schema.json"
+  ],
+  "implementationRoots": [
+    "internal/loopkit"
+  ],
+  "status": "proposed",
+  "activation": {
+    "requiresADR": true,
+    "requiresCatalogRegistration": true,
+    "requiresFullProfile": true
+  }
+}

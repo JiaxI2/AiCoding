@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/loop-work-spec.schema.json",
+  "title": "AiCoding Loop WorkSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "domain", "control", "goal", "acceptance", "policy"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "domain": {
+      "type": "string",
+      "enum": ["project-development", "repository-maintenance", "ci-repair", "performance-experiment", "documentation-maintenance", "architecture-evolution"]
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "trigger", "stoppingRule"],
+      "properties": {
+        "mode": {"enum": ["turn", "goal", "time", "proactive"]},
+        "trigger": {"type": "object"},
+        "stoppingRule": {"type": "object"}
+      }
+    },
+    "goal": {"type": "string", "minLength": 1},
+    "acceptance": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["workspace", "writeScope", "verification", "budget", "humanCheckpoints"],
+      "properties": {
+        "workspace": {"enum": ["current", "worktree", "ephemeral-clone"]},
+        "writeScope": {
+          "type": "object",
+          "required": ["allow", "deny"],
+          "properties": {
+            "allow": {"type": "array", "items": {"type": "string"}},
+            "deny": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "verification": {"type": "object"},
+        "budget": {
+          "type": "object",
+          "required": ["maxAttempts", "maxElapsedSeconds"],
+          "properties": {
+            "maxAttempts": {"type": "integer", "minimum": 1, "maximum": 50},
+            "maxElapsedSeconds": {"type": "integer", "minimum": 1}
+          }
+        },
+        "humanCheckpoints": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}
