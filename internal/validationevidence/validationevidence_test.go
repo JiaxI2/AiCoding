@@ -21,7 +21,7 @@ func TestPackageBoundaryAndPublicAPIRemainSmall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	exported := make([]string, 0, 8)
+	exported := make([]string, 0, 11)
 	for _, path := range files {
 		if strings.HasSuffix(path, "_test.go") {
 			continue
@@ -48,10 +48,10 @@ func TestPackageBoundaryAndPublicAPIRemainSmall(t *testing.T) {
 		}
 	}
 	sort.Strings(exported)
-	if len(exported) > 8 {
-		t.Fatalf("validationevidence public API grew beyond 8 operations: %v", exported)
+	if len(exported) > 11 {
+		t.Fatalf("validationevidence public API grew beyond 10 operations plus Error(): %v", exported)
 	}
-	for _, required := range []string{"Capture", "Check", "Clean", "Fingerprint", "List", "Open", "Put"} {
+	for _, required := range []string{"BindCommit", "Capture", "Check", "Clean", "Fingerprint", "GatePush", "List", "LoadPolicy", "Open", "Put"} {
 		index := sort.SearchStrings(exported, required)
 		if index == len(exported) || exported[index] != required {
 			t.Fatalf("validationevidence public API is missing %s: %v", required, exported)
@@ -65,6 +65,94 @@ func TestPackageBoundaryAndPublicAPIRemainSmall(t *testing.T) {
 		if strings.Contains(string(subjectSource), leakedGitLayout) {
 			t.Fatalf("subject.go owns Git layout knowledge %q instead of gitx", leakedGitLayout)
 		}
+	}
+}
+
+func TestPolicyLoadIsStrict(t *testing.T) {
+	repo := t.TempDir()
+	valid := `{
+  "schemaVersion": 1,
+  "unmatchedAction": "allow",
+  "contexts": [{
+    "id": "stable",
+    "remoteRef": "refs/heads/main",
+    "requiredProfile": "release",
+    "requireFastForward": true,
+    "allowDelete": false
+  }]
+}`
+	writeEvidenceFile(t, repo, validationPolicyPath, valid)
+	policy, err := LoadPolicy(repo)
+	if err != nil || len(policy.Contexts) != 1 || policy.Contexts[0].RequiredProfile != "release" {
+		t.Fatalf("LoadPolicy(valid) = %#v, %v", policy, err)
+	}
+	writeEvidenceFile(t, repo, validationPolicyPath, strings.Replace(valid, `"allowDelete": false`, `"allowDelete": false, "unknown": true`, 1))
+	if _, err := LoadPolicy(repo); err == nil {
+		t.Fatal("LoadPolicy accepted an unknown field")
+	}
+	writeEvidenceFile(t, repo, validationPolicyPath, strings.Replace(valid, `"release"`, `"manual"`, 1))
+	if _, err := LoadPolicy(repo); err == nil {
+		t.Fatal("LoadPolicy accepted an unsupported profile")
+	}
+}
+
+func TestContextGateUsesPushedCommitTreeAndProfileAlias(t *testing.T) {
+	repo := newEvidenceRepo(t)
+	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
+	mustEvidenceGit(t, repo, "add", "tracked.txt")
+	mustEvidenceGit(t, repo, "commit", "-m", "first")
+	firstCommit := mustEvidenceGit(t, repo, "rev-parse", "HEAD")
+	store, _, fingerprint := evidenceFixture(t, repo, TargetHead)
+	receipt := putFixture(t, store, fingerprint)
+	if err := store.BindCommit(firstCommit, receipt); err != nil {
+		t.Fatal(err)
+	}
+
+	writeEvidenceFile(t, repo, "tracked.txt", "two\n")
+	mustEvidenceGit(t, repo, "commit", "-am", "second")
+	secondCommit := mustEvidenceGit(t, repo, "rev-parse", "HEAD")
+	zero := strings.Repeat("0", len(firstCommit))
+	policy := Policy{SchemaVersion: 1, UnmatchedAction: "allow", Contexts: []PushContext{{
+		ID: "stable-main", RemoteRef: "refs/heads/main", RequiredProfile: "smoke", RequireFastForward: true,
+	}}}
+
+	gate := store.GatePush(policy, []gitx.PushUpdate{{
+		LocalRef: "refs/heads/old", LocalOID: firstCommit, RemoteRef: "refs/heads/main", RemoteOID: zero,
+	}})
+	if !gate.OK || gate.Required != 1 || len(gate.Updates) != 1 || gate.Updates[0].Code != CodeReceiptHit || gate.Updates[0].SubjectTreeOID != fingerprint.SubjectTreeOID {
+		t.Fatalf("exact pushed commit did not hit its alias: %#v", gate)
+	}
+
+	bypassed := store.GatePush(policy, []gitx.PushUpdate{{
+		LocalRef: "refs/heads/feature", LocalOID: secondCommit, RemoteRef: "refs/heads/feature", RemoteOID: zero,
+	}})
+	if !bypassed.OK || bypassed.Bypassed != 1 || !bypassed.Updates[0].Allowed || bypassed.Updates[0].ContextID != "" {
+		t.Fatalf("unmatched feature ref was not bypassed: %#v", bypassed)
+	}
+
+	missing := store.GatePush(policy, []gitx.PushUpdate{{
+		LocalRef: "refs/heads/main", LocalOID: secondCommit, RemoteRef: "refs/heads/main", RemoteOID: zero,
+	}})
+	if missing.OK || missing.Updates[0].Code != CodeReceiptMiss {
+		t.Fatalf("protected ref without an alias passed: %#v", missing)
+	}
+
+	nonFastForward := store.GatePush(policy, []gitx.PushUpdate{{
+		LocalRef: "refs/heads/old", LocalOID: firstCommit, RemoteRef: "refs/heads/main", RemoteOID: secondCommit,
+	}})
+	if nonFastForward.OK || nonFastForward.Updates[0].Code != CodePushContextRejected || !strings.Contains(nonFastForward.Updates[0].Reason, "fast-forward") {
+		t.Fatalf("non-fast-forward update passed: %#v", nonFastForward)
+	}
+
+	deletion := store.GatePush(policy, []gitx.PushUpdate{{
+		LocalRef: "(delete)", LocalOID: zero, RemoteRef: "refs/heads/main", RemoteOID: secondCommit,
+	}})
+	if deletion.OK || deletion.Updates[0].Code != CodePushContextRejected || !strings.Contains(deletion.Updates[0].Reason, "deletion") {
+		t.Fatalf("protected ref deletion passed: %#v", deletion)
+	}
+
+	if err := store.BindCommit(secondCommit, receipt); err == nil {
+		t.Fatal("BindCommit accepted a Receipt for a different tree")
 	}
 }
 

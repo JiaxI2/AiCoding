@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(validationevidence)**: 新增严格解析的 `validation-policy.json`、profile 分区 commit alias 与 Context Gate；受治理 ref 只接受 stdin 实际 `local_oid` tree 对应的完整 Release Receipt，main 非快进/删除、tag 删除与 alias/report 篡改均 fail-closed，未匹配 feature ref 明确旁路。 / Adds strict push policy, profile-scoped commit aliases, and an exact-local-object Context Gate with fail-closed protected-ref rules.
+
 - **feat(gitx)**: 新增 Git pre-push 四字段协议解析与祖先关系查询；实际推送对象的 Tree 继续复用既有通用 `TreeOID(repo, rev)`，不再为 `RefTreeOID` 复制一份相同实现。 / Adds pre-push protocol parsing and ancestry queries while reusing the existing general TreeOID primitive for pushed refs.
 
 - **docs(perf)**: 将 Release 复用收益改按既有可比基线 `74.867 s → 392.763 ms`（下降 99.5%）表述，并明确 `171.026 s` 是新 worktree 冷缓存/负载验收样本，不是 Validation Evidence 回归。 / Uses the comparable pre-feature Release baseline for the reuse headline and labels the slower acceptance seed as a cold-worktree/load sample rather than a regression.

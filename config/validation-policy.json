@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "unmatchedAction": "allow",
+  "contexts": [
+    {
+      "id": "stable-main",
+      "remoteRef": "refs/heads/main",
+      "requiredProfile": "release",
+      "requireFastForward": true,
+      "allowDelete": false
+    },
+    {
+      "id": "release-tags",
+      "remoteRefPrefix": "refs/tags/",
+      "requiredProfile": "release",
+      "requireFastForward": false,
+      "allowDelete": false
+    }
+  ]
+}

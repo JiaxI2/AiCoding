@@ -38,6 +38,8 @@ const (
 	CodeStoreError              ErrorCode = "VALIDATION_STORE_ERROR"
 	CodeContentChangedDuringRun ErrorCode = "VALIDATION_CONTENT_CHANGED_DURING_RUN"
 	CodeReuseAuditMismatch      ErrorCode = "VALIDATION_REUSE_AUDIT_MISMATCH"
+	CodePolicyInvalid           ErrorCode = "VALIDATION_POLICY_INVALID"
+	CodePushContextRejected     ErrorCode = "VALIDATION_PUSH_CONTEXT_REJECTED"
 )
 
 // Error carries a stable code and the action an Agent should take next.
