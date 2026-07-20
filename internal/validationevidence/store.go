@@ -28,6 +28,8 @@ func (r Repository) Put(receipt Receipt, reports ReportBundle) (Receipt, error) 
 	if !receipt.Scope.IgnoredFilesOutOfScope {
 		return Receipt{}, &Error{Code: CodeReceiptInvalid, Message: "Receipt scope must declare ignored files out of scope", RequiredAction: "capture the Git-tree evidence boundary explicitly"}
 	}
+	r.putMu.Lock()
+	defer r.putMu.Unlock()
 	if existing, _, err := r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity); err == nil {
 		if existing.ResultsDigest != receipt.ResultsDigest {
 			return Receipt{}, &Error{Code: CodeReuseAuditMismatch, Message: "executed per-case statuses do not match the existing Receipt", RequiredAction: "run with --verify-reuse and investigate the changed case statuses"}

@@ -446,9 +446,10 @@ func TestConcurrentPutIsIdempotentOnWindowsRenameSemantics(t *testing.T) {
 	mustEvidenceGit(t, repo, "commit", "-m", "initial")
 	store, subject, fingerprint := evidenceFixture(t, repo, TargetHead)
 
+	const writers = 8
 	var wait sync.WaitGroup
-	errs := make(chan error, 2)
-	for index := 0; index < 2; index++ {
+	errs := make(chan error, writers)
+	for index := 0; index < writers; index++ {
 		wait.Add(1)
 		go func() {
 			defer wait.Done()

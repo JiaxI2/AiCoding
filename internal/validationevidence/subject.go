@@ -31,6 +31,7 @@ func Open(repo string) (Repository, error) {
 		commonDir:    commonDir,
 		root:         filepath.Join(commonDir, "aicoding", "validation"),
 		repositoryID: fmt.Sprintf("sha256:%x", sum),
+		putMu:        &sync.Mutex{},
 	}, nil
 }
 

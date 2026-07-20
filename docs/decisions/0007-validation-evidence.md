@@ -87,6 +87,8 @@ push tree 继续复用既有通用 `gitx.TreeOID(repo, rev)`，不复制 `RefTre
 - 两个 linked worktree 通过 common-dir 共享同一 Receipt，Windows runner 的 8.3/长路径别名不得改变 repositoryID；
 - 不同仓库即使 Tree 相同也因 repositoryID 隔离；
 - untracked、tracked 变化和 report/Receipt 篡改均 fail-closed；
+- 同一 Repository 的 concurrent `Put` 先在进程内串行，再以临时文件和 rename 原子发布；
+  进程间同内容碰撞继续读取既有文件收敛；
 - 留存报告复用与 `--verify-reuse` 均重新计算逐用例状态摘要，`PASS → WARN` 即使整体仍归一为
   PASS 也会 fail-closed；
 - FAIL 无法调用 `Put` 生成 Receipt；

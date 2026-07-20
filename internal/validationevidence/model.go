@@ -1,6 +1,9 @@
 package validationevidence
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 const (
 	toolchainSchemaVersion = 1
@@ -133,4 +136,5 @@ type Repository struct {
 	commonDir    string
 	root         string
 	repositoryID string
+	putMu        *sync.Mutex
 }
