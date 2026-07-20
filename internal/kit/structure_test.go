@@ -145,6 +145,48 @@ func TestVerifyStructureAllValidManifestsOK(t *testing.T) {
 	}
 }
 
+func TestPluginProjectionCheckWarnsInSmokeAndFailsInBlockingProfiles(t *testing.T) {
+	repo := t.TempDir()
+	writeLifecycleRegistry(t, repo, []string{"bad-plugin-view"})
+	mustWriteLifecycle(t, filepath.Join(repo, "config", "kits", "bad-plugin-view.json"), `{
+  "schemaVersion":2,
+  "id":"bad-plugin-view",
+  "name":"Bad Plugin View",
+  "version":"0.1.0",
+  "kind":["test"],
+  "mode":"go-builtin",
+  "description":"",
+  "commands":{"status":{"type":"external-command","executable":"bin/aicoding.exe","args":["status","--all","--json"]}}
+}`)
+	catalog, err := LoadCatalogSnapshot(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	policy := PluginProjectionPolicy{
+		Adapter: PluginAdapter{
+			Scope:      "kit",
+			StateOwner: "kit",
+			Entrypoint: "go-static",
+			Actions:    []PluginAdapterAction{{Name: "status", Effect: "read"}},
+		},
+		TypedCommands: []string{"kit", "lifecycle"},
+	}
+
+	smoke := PluginProjectionCheck(repo, catalog.Kits(), policy, false)
+	if !smoke.OK || len(smoke.Warnings) != 2 || len(smoke.Errors) != 0 {
+		t.Fatalf("Smoke projection severity mismatch: %#v", smoke)
+	}
+	blocking := PluginProjectionCheck(repo, catalog.Kits(), policy, true)
+	t.Logf("Smoke warnings: %v", smoke.Warnings)
+	t.Logf("blocking errors: %v", blocking.Errors)
+	if blocking.OK || len(blocking.Errors) != 2 || len(blocking.Warnings) != 0 {
+		t.Fatalf("blocking projection severity mismatch: %#v", blocking)
+	}
+	if !containsError(blocking.Errors, "manifest description is empty") || !containsError(blocking.Errors, "unknown typed command: status") {
+		t.Fatalf("projection issues were not precise: %#v", blocking.Errors)
+	}
+}
+
 func structureRepo(t *testing.T, withPluginPackage bool) string {
 	t.Helper()
 	repo := t.TempDir()

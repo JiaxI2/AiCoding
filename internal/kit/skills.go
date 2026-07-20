@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/JiaxI2/AiCoding/internal/platform"
@@ -155,7 +156,8 @@ func verifyKitSkills(repo string, input lifecycleInput, profile string) SkillKit
 			continue
 		}
 		full := platform.RepoPath(repo, skill.Path)
-		front, ferrs := readSkillFrontmatter(full)
+		document, ferrs := readSkillDocument(full)
+		front := document.Frontmatter
 		for _, e := range ferrs {
 			result.Errors = append(result.Errors, skill.ID+": "+e)
 		}
@@ -166,8 +168,7 @@ func verifyKitSkills(repo string, input lifecycleInput, profile string) SkillKit
 			result.Errors = append(result.Errors, skill.ID+": missing frontmatter.description")
 		}
 		if profile == "Full" || profile == "Release" {
-			content, err := os.ReadFile(full)
-			if err == nil && !strings.Contains(string(content), "##") {
+			if len(document.Sections) == 0 {
 				result.Warnings = append(result.Warnings, skill.ID+": SKILL.md has no section heading")
 			}
 			dir := filepath.Dir(full)
@@ -202,6 +203,7 @@ func parseSkillEntries(manifest Manifest) ([]SkillEntry, []string) {
 	for _, member := range raw.Members {
 		entries = append(entries, skillEntry(member, "member"))
 	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].ID < entries[j].ID })
 	return entries, nil
 }
 
@@ -209,39 +211,53 @@ func skillEntry(raw rawSkill, kind string) SkillEntry {
 	return SkillEntry{ID: raw.ID, Role: raw.Role, Kind: kind, Path: filepath.ToSlash(raw.Path), Description: raw.Description, Tags: raw.Tags}
 }
 
-func readSkillFrontmatter(path string) (map[string]string, []string) {
+type skillDocument struct {
+	Frontmatter map[string]string
+	Sections    []string
+}
+
+func readSkillDocument(path string) (skillDocument, []string) {
 	file, err := os.Open(path)
 	if err != nil {
-		return map[string]string{}, []string{"missing SKILL.md"}
+		return skillDocument{Frontmatter: map[string]string{}}, []string{"missing SKILL.md"}
 	}
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	if !scanner.Scan() || strings.TrimSpace(scanner.Text()) != "---" {
-		return map[string]string{}, []string{"missing frontmatter"}
+		return skillDocument{Frontmatter: map[string]string{}}, []string{"missing frontmatter"}
 	}
-	data := map[string]string{}
+	document := skillDocument{Frontmatter: map[string]string{}, Sections: []string{}}
 	closed := false
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.TrimSpace(line) == "---" {
-			closed = true
-			break
-		}
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
+		if !closed {
+			if strings.TrimSpace(line) == "---" {
+				closed = true
+				continue
+			}
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			key := strings.TrimSpace(parts[0])
+			value := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
+			if key != "" {
+				document.Frontmatter[key] = value
+			}
 			continue
 		}
-		key := strings.TrimSpace(parts[0])
-		value := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
-		if key != "" {
-			data[key] = value
+		if strings.HasPrefix(line, "## ") {
+			section := strings.TrimSpace(strings.TrimPrefix(line, "## "))
+			if section != "" {
+				document.Sections = append(document.Sections, section)
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return data, []string{err.Error()}
+		return document, []string{err.Error()}
 	}
 	if !closed {
-		return data, []string{"unterminated frontmatter"}
+		return document, []string{"unterminated frontmatter"}
 	}
-	return data, nil
+	return document, nil
 }

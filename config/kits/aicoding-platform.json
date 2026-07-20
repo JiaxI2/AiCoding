@@ -32,7 +32,10 @@
       "type": "external-command",
       "executable": "bin/aicoding.exe",
       "args": [
+        "lifecycle",
         "status",
+        "--scope",
+        "kit",
         "--all",
         "--json"
       ],

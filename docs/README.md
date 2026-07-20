@@ -15,6 +15,7 @@
 - [`ARCHITECTURE_OVERVIEW.md`](./ARCHITECTURE_OVERVIEW.md)
 - [`architecture/AICODING_CORE_ARCHITECTURE.md`](./architecture/AICODING_CORE_ARCHITECTURE.md)
 - [`COMMANDS.md`](./COMMANDS.md)
+- [`reference/KIT_PLUGIN_VIEW.md`](./reference/KIT_PLUGIN_VIEW.md)
 - [`architecture/KIT_LIFECYCLE_ARCHITECTURE.md`](./architecture/KIT_LIFECYCLE_ARCHITECTURE.md)
 - [`operations/testing/REPORT_SCHEMA.md`](./operations/testing/REPORT_SCHEMA.md)
 

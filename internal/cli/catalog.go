@@ -178,6 +178,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandGovernance, Section: HelpDomain, Usage: "aicoding governance layout [--repo-root PATH] [--json]"},
 		{Command: CommandGovernance, Section: HelpDomain, Usage: "aicoding governance reuse [--repo-root PATH] [--json]"},
 		{Command: CommandKit, Section: HelpDomain, Usage: "aicoding kit list [--repo-root PATH] [--json]"},
+		{Command: CommandKit, Section: HelpDomain, Usage: "aicoding kit describe --kit ID|--all [--with-state] [--repo-root PATH] [--json]"},
 		{Command: CommandKit, Section: HelpDomain, Usage: "aicoding kit verify --all --profile Smoke|Lifecycle [--repo-root PATH] [--json]"},
 		{Command: CommandKit, Section: HelpDomain, Usage: "aicoding kit doctor [--repo-root PATH] [--json]"},
 		{Command: CommandDoctor, Section: HelpDomain, Usage: "aicoding doctor perf [--repo-root PATH] [--json]"},

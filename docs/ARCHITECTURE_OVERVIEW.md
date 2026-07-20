@@ -90,6 +90,10 @@ Lifecycle、Kit list/verify 和 MCP list/status/doctor/verify 消费 detached sn
 全局 help form 的权威源。Lifecycle 的 adapter catalog 则是 domain/input/state owner/
 entrypoint/action effect 的独立权威；两种 catalog 职责正交，不合并为全能目录。
 
+[Kit Plugin View](reference/KIT_PLUGIN_VIEW.md) 是消费者侧的派生只读视图，不是控制面或新的
+Plugin domain。它只组合 detached Kit catalog、manifest、Skill 定位与 static adapter catalog；
+Kit manifest、typed command catalog 和 adapter catalog 仍分别拥有各自事实，View 不反向写入。
+
 写状态、写 ZIP、安装/卸载等有副作用路径保持在对应领域 Go 包中串行执行。Doctor/Verify
 以及 MCP 子进程使用显式总超时或 context，避免外部工具无限等待。模块内部优化先运行模块
 contract tests；跨模块公开契约变化才扩大 consumer/Full/Release 验证，详见权威架构。

@@ -527,7 +527,7 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, usageErrorf("kit requires subcommand")
 	}
 	sub := args[0]
-	if !validChoice(sub, "list", "doctor", "verify", "test") {
+	if !validChoice(sub, "list", "describe", "doctor", "verify", "test") {
 		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
 	}
 	fs := newFlagSet("kit " + sub)
@@ -535,9 +535,13 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	kitArg := fs.String("kit", "", "kit id")
 	allArg := fs.Bool("all", false, "all enabled kits")
 	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
+	withState := fs.Bool("with-state", false, "include stable install state summary")
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
 		return report.Result{}, err
+	}
+	if sub != "describe" && *withState {
+		return report.Result{}, usageErrorf("--with-state is only valid for kit describe")
 	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
@@ -556,6 +560,42 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			RepoRoot:      repo,
 			InputDigest:   catalog.Digest(),
 			Data:          kit.CatalogKitViews(catalog.Kits()),
+			ElapsedMS:     report.Elapsed(start),
+		}, nil
+	}
+	if sub == "describe" {
+		if *allArg && *kitArg != "" {
+			return report.Result{}, usageErrorf("use either --all or --kit, not both")
+		}
+		if !*allArg && *kitArg == "" {
+			return report.Result{}, usageErrorf("kit describe requires --all or --kit")
+		}
+		catalog, loadErr := kit.LoadCatalogSnapshot(repo)
+		if loadErr != nil {
+			return report.Fail("kit describe", start, "cannot load kit catalog", nil, loadErr.Error()), loadErr
+		}
+		selected, selectErr := catalog.Select(*kitArg, *allArg)
+		if selectErr != nil {
+			res := report.Fail("kit describe", start, "kit selection failed", nil, selectErr.Error())
+			res.ErrorKind = report.ErrorKindValidation
+			return res, report.BoolErr([]string{selectErr.Error()})
+		}
+		projection, inputDigest, projectionErr := loadKitPluginProjection(catalog.Digest())
+		if projectionErr != nil {
+			return report.Fail("kit describe", start, "cannot load plugin projection inputs", nil, projectionErr.Error()), projectionErr
+		}
+		views, projectionErr := kit.ProjectCatalogPluginViews(repo, selected, projection.Adapter, *withState)
+		if projectionErr != nil {
+			return report.Fail("kit describe", start, "cannot project kit plugin view", nil, projectionErr.Error()), projectionErr
+		}
+		return report.Result{
+			SchemaVersion: report.SchemaVersion,
+			Command:       "kit describe",
+			OK:            true,
+			Message:       "kit plugin view",
+			RepoRoot:      repo,
+			InputDigest:   inputDigest,
+			Data:          views,
 			ElapsedMS:     report.Elapsed(start),
 		}, nil
 	}
@@ -581,7 +621,11 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			if sub != "verify" {
 				return report.Result{}, usageErrorf("Lifecycle profile only supports kit verify")
 			}
-			structure := kit.VerifyCatalogStructure(repo, selected)
+			projection, _, projectionErr := loadKitPluginProjection(catalog.Digest())
+			if projectionErr != nil {
+				return report.Fail("kit verify", start, "cannot load plugin projection inputs", nil, projectionErr.Error()), projectionErr
+			}
+			structure := kit.VerifyCatalogStructure(repo, selected, projection)
 			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, InputDigest: catalog.Digest(), Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
 		}
 		if !strings.EqualFold(*profile, "Smoke") {
@@ -596,7 +640,16 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 				}
 			}
 		}
-		return report.Result{SchemaVersion: 1, Command: "kit " + sub, OK: len(errs) == 0, Message: "kit smoke " + sub, RepoRoot: repo, InputDigest: catalog.Digest(), Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+		warnings := []string{}
+		if sub == "verify" {
+			projection, _, projectionErr := loadKitPluginProjection(catalog.Digest())
+			if projectionErr != nil {
+				return report.Fail("kit verify", start, "cannot load plugin projection inputs", nil, projectionErr.Error()), projectionErr
+			}
+			projectionCheck := kit.PluginProjectionCheck(repo, selected, projection, false)
+			warnings = append(warnings, projectionCheck.Warnings...)
+		}
+		return report.Result{SchemaVersion: 1, Command: "kit " + sub, OK: len(errs) == 0, Message: "kit smoke " + sub, RepoRoot: repo, InputDigest: catalog.Digest(), Data: results, Warnings: warnings, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	default:
 		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
 	}

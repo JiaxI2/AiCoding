@@ -100,3 +100,6 @@ capability graph、全域事务、远程控制 API、跨领域 SystemManager。
 4. **可纠错**：门禁失败信息指明规则与正确路径。
 
 四项均不满足的功能对 Agent 不存在；部分满足的功能会以支持成本持续收税。
+
+消费者查看已登记 Kit 的边界与 JSON 契约见
+[Kit Plugin View（消费者侧只读投影）](../reference/KIT_PLUGIN_VIEW.md)；该 View 不定义扩展接入规则。

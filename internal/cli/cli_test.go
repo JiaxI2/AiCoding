@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/cstyle"
+	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/report"
 	"github.com/JiaxI2/AiCoding/internal/testengine"
 )
@@ -207,6 +208,63 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 			t.Fatalf("catalog still exposes removed command %q", forbidden)
 		}
 	}
+}
+
+func TestKitDescribeProjectsSelectedAndAllKitsWithoutWrites(t *testing.T) {
+	repo, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	statusBefore := gitStatusPorcelain(t, repo)
+
+	selected, err := runKit([]string{"describe", "--kit", "aicoding-platform", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !selected.OK || selected.Command != "kit describe" {
+		t.Fatalf("selected describe failed: res=%#v err=%v", selected, err)
+	}
+	selectedViews, ok := selected.Data.([]kit.PluginView)
+	if !ok || len(selectedViews) != 1 || selectedViews[0].ID != "aicoding-platform" {
+		t.Fatalf("unexpected selected plugin view: %#v", selected.Data)
+	}
+	all, err := runKit([]string{"describe", "--all", "--repo-root", repo, "--json"}, time.Now())
+	allViews, ok := all.Data.([]kit.PluginView)
+	if err != nil || !all.OK || !ok || len(allViews) < 2 {
+		t.Fatalf("all describe failed: res=%#v err=%v", all, err)
+	}
+	if statusAfter := gitStatusPorcelain(t, repo); statusAfter != statusBefore {
+		t.Fatalf("kit describe changed the worktree:\nbefore=%q\nafter=%q", statusBefore, statusAfter)
+	}
+}
+
+func TestKitDescribeRejectsInvalidSelectionAndScopesWithState(t *testing.T) {
+	repo, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{
+		{"describe", "--kit", "aicoding-platform", "--all", "--repo-root", repo, "--json"},
+		{"list", "--with-state", "--repo-root", repo, "--json"},
+	} {
+		res, runErr := runKit(args, time.Now())
+		if runErr == nil || res.OK {
+			t.Fatalf("invalid describe arguments passed: args=%v res=%#v err=%v", args, res, runErr)
+		}
+		if args[0] == "describe" && !isUsageError(runErr) {
+			t.Fatalf("conflicting selectors must be a usage error: %v", runErr)
+		}
+	}
+	missing, runErr := runKit([]string{"describe", "--kit", "does-not-exist", "--repo-root", repo, "--json"}, time.Now())
+	if runErr == nil || missing.OK || missing.ErrorKind != report.ErrorKindValidation || !strings.Contains(runErr.Error(), "no kit matched") {
+		t.Fatalf("unknown kit did not return a validation error: res=%#v err=%v", missing, runErr)
+	}
+}
+
+func gitStatusPorcelain(t *testing.T, repo string) string {
+	t.Helper()
+	out, err := exec.Command("git", "-C", repo, "status", "--porcelain").CombinedOutput()
+	if err != nil {
+		t.Fatalf("git status --porcelain: %v: %s", err, out)
+	}
+	return string(out)
 }
 
 func TestGoControlPlaneCommandsUseRealGoImplementations(t *testing.T) {

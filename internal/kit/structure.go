@@ -103,6 +103,7 @@ type structureVerifier struct {
 	report           *StructureReport
 	manifests        map[string]Manifest
 	catalog          []ManifestSnapshot
+	projection       *PluginProjectionPolicy
 	registryResolved bool
 }
 
@@ -130,19 +131,24 @@ var allowedManifestCommandTypes = map[string]bool{
 }
 
 func VerifyStructure(repo string, entries []RegistryKit) StructureReport {
-	return verifyStructure(repo, entries, nil)
+	return verifyStructure(repo, entries, nil, nil)
 }
 
-func VerifyCatalogStructure(repo string, snapshots []ManifestSnapshot) StructureReport {
+func VerifyCatalogStructure(repo string, snapshots []ManifestSnapshot, policies ...PluginProjectionPolicy) StructureReport {
 	entries := make([]RegistryKit, 0, len(snapshots))
 	for _, snapshot := range snapshots {
 		entry := snapshot.Entry()
 		entries = append(entries, entry)
 	}
-	return verifyStructure(repo, entries, snapshots)
+	var policy *PluginProjectionPolicy
+	if len(policies) > 0 {
+		selected := policies[0]
+		policy = &selected
+	}
+	return verifyStructure(repo, entries, snapshots, policy)
 }
 
-func verifyStructure(repo string, entries []RegistryKit, catalog []ManifestSnapshot) StructureReport {
+func verifyStructure(repo string, entries []RegistryKit, catalog []ManifestSnapshot, projection *PluginProjectionPolicy) StructureReport {
 	start := time.Now()
 	report := StructureReport{
 		SchemaVersion:  1,
@@ -165,13 +171,108 @@ func verifyStructure(repo string, entries []RegistryKit, catalog []ManifestSnaps
 		report:           &report,
 		manifests:        manifests,
 		catalog:          cloneManifestSnapshots(catalog),
+		projection:       projection,
 		registryResolved: catalog != nil,
 	}
 	verifier.checkCodexKitConfig()
 	verifier.checkRegistry(entries)
+	verifier.checkPluginProjection()
 	verifier.checkLifecyclePlans(entries)
 	verifier.finish(start)
 	return report
+}
+
+func PluginProjectionCheck(repo string, snapshots []ManifestSnapshot, policy PluginProjectionPolicy, blocking bool) StructureCheck {
+	issues := pluginProjectionIssues(repo, snapshots, policy)
+	check := StructureCheck{Name: "plugin view projection", OK: len(issues) == 0, Status: "ok", Message: "kit manifests can be projected as plugin views"}
+	if len(issues) == 0 {
+		return check
+	}
+	if blocking {
+		check.Status = "failed"
+		check.Errors = issues
+		return check
+	}
+	check.OK = true
+	check.Status = "warning"
+	check.Warnings = issues
+	return check
+}
+
+func (v structureVerifier) checkPluginProjection() {
+	if v.projection == nil {
+		return
+	}
+	check := PluginProjectionCheck(v.repo, v.catalog, *v.projection, true)
+	v.addCheck(check.Name, check.OK, check.Status, check.Message, check.Errors, check.Warnings)
+}
+
+func pluginProjectionIssues(repo string, snapshots []ManifestSnapshot, policy PluginProjectionPolicy) []string {
+	issues := []string{}
+	if err := validatePluginAdapter(policy.Adapter); err != nil {
+		return []string{err.Error()}
+	}
+	typedCommands := map[string]bool{}
+	for _, command := range policy.TypedCommands {
+		typedCommands[command] = true
+	}
+	for _, snapshot := range snapshots {
+		entry := snapshot.Entry()
+		manifest, err := snapshot.Manifest()
+		if err != nil {
+			issues = append(issues, entry.ID+": cannot decode manifest: "+err.Error())
+			continue
+		}
+		if strings.TrimSpace(manifest.Description) == "" {
+			issues = append(issues, entry.ID+": manifest description is empty")
+		}
+		skills, parseErrors := Skills(manifest)
+		for _, parseError := range parseErrors {
+			issues = append(issues, entry.ID+": cannot parse skills: "+parseError)
+		}
+		for _, skill := range skills {
+			if strings.TrimSpace(skill.Description) == "" {
+				issues = append(issues, entry.ID+": skill "+skill.ID+" description is empty")
+			}
+			if strings.TrimSpace(skill.Path) == "" {
+				issues = append(issues, entry.ID+": skill "+skill.ID+" path is empty")
+			} else if !platform.IsFile(platform.RepoPath(repo, skill.Path)) {
+				issues = append(issues, entry.ID+": skill "+skill.ID+" path is missing: "+skill.Path)
+			}
+		}
+
+		names := make([]string, 0, len(manifest.Commands))
+		for name := range manifest.Commands {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			command := manifest.Commands[name]
+			effect, ok := pluginOperationEffect(name, policy.Adapter.Actions)
+			if !allowedManifestCommandNames[name] || !ok {
+				issues = append(issues, entry.ID+": command "+name+" has no registered read/write effect")
+				continue
+			}
+			if effect == "write" && strings.TrimSpace(policy.Adapter.StateOwner) == "" {
+				issues = append(issues, entry.ID+": write command "+name+" has no state owner")
+			}
+			if command.Type == "external-command" && isAiCodingExecutable(command.Executable) && len(typedCommands) > 0 {
+				if len(command.Args) == 0 || !typedCommands[command.Args[0]] {
+					advertised := "<missing>"
+					if len(command.Args) > 0 {
+						advertised = command.Args[0]
+					}
+					issues = append(issues, entry.ID+": command "+name+" advertises unknown typed command: "+advertised)
+				}
+			}
+		}
+	}
+	return issues
+}
+
+func isAiCodingExecutable(executable string) bool {
+	name := strings.ToLower(filepath.Base(filepath.FromSlash(strings.TrimSpace(executable))))
+	return name == "aicoding" || name == "aicoding.exe"
 }
 
 func (v structureVerifier) checkCodexKitConfig() {
