@@ -106,4 +106,41 @@ HEAD SLA 的错误等价关系。
 Release Receipt ID 为
 `sha256:3e978d3eea94bcd083dfde8800f6505f03d3684a193be56ff28a90fd195c009b`；Smoke Receipt
 ID 为 `sha256:10849976d0e6940fca527fa57fe51a54384bce5b49e28d36bab0c3323e9b603b`。
-默认值仍是 `--reuse off`。本次验收不启用 Hook、不切换默认复用，也不进入 profile 继承。
+第一期验收时默认值仍是 `--reuse off`；该期不启用 Hook、不切换默认复用，也不进入 profile
+继承。
+
+## 8. 第二期 Context Gate 与默认复用回填
+
+- 实现测量 Git SHA：`0de65d7d01e31c94cb4095ed055cc6a3ba89fe8b`；
+- 场景：已有 `main` 的快进推送，pre-push stdin 中 `local_oid=HEAD`、`remote_oid=HEAD^`；
+- 门禁：`refs/heads/main` 要求 Release Receipt，按输入的 `local_oid` 查 commit alias，并校验
+  alias、Receipt、tree 和逐用例 `resultsDigest`；
+- 计时边界：`gateMs` 是 Go 门禁核心，`commandMs` 是 CLI 报告耗时，`outerMs` 是 PowerShell
+  从启动预编译 `bin/aicoding.exe` 到退出的墙钟；Hook 不运行构建或测试。
+
+| pre-push 样本 | Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | 中位数 | 最大值 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Context Gate | 149 ms | 81 ms | 69 ms | 106 ms | 86 ms | **86 ms** | 149 ms |
+| CLI 报告 | 217 ms | 173 ms | 131 ms | 213 ms | 158 ms | **173 ms** | 217 ms |
+| 端到端墙钟 | 263.742 ms | 213.784 ms | 166.064 ms | 244.867 ms | 195.634 ms | **213.784 ms** | 263.742 ms |
+
+第二期采用以下 warm-cache 预算：
+
+```text
+已有 main 的单 ref 快进 pre-push，5 次端到端墙钟中位数 <= 300 ms
+```
+
+该路径 5/5 允许推送，实测中位数通过预算。策略还会拒绝受保护 ref 的删除、非快进、缺失
+commit alias 或 Receipt；未匹配的 feature ref 明确旁路。门禁以 stdin 中实际 `local_oid` 为
+事实源，不用当前 `HEAD` 代替待推送对象。
+
+默认 `test --profile Release` 已在逐用例审计加固后切换为 `--reuse auto`。同一 Receipt 的五次
+端到端样本为 `376.042/406.937/397.799/404.775/370.312 ms`，中位数 **397.799 ms**，与
+第一期可比命中样本 `392.763 ms` 同量级。第二期冷种子为 58/58 PASS、`172.911 s`；其中
+FRESH-001/GO-002/GO-001 分别为 `98.295 s`、`44.541 s`、`18.931 s`，仍属于冷缓存与主机
+负载样本，不替代第 7 节的 `74.867 s` 历史可比基线。
+
+第二期测量 Receipt ID 为
+`sha256:8b394dfe1fba048f01853550d6644776ca0620d7bd22e0500290e246d1413400`，逐用例摘要为
+`sha256:4adcd702591e337e6d21c25ff9f3d056ca5e863805e18f5e0b79b6b2aa0528f0`。Profile 继承和
+Plan Mode 继续保持在范围外。
