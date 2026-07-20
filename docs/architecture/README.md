@@ -23,6 +23,8 @@ Status: Accepted
 - [LOOP_ENGINEERING_ARCHITECTURE.md](LOOP_ENGINEERING_ARCHITECTURE.md)：有界迭代的下一步裁决。
 - [PLAN_MODE_ARCHITECTURE.md](PLAN_MODE_ARCHITECTURE.md)：批准 Tree、scope 漂移和 pre-commit 门禁。
 - [CODEX_KIT_ARCHITECTURE.md](CODEX_KIT_ARCHITECTURE.md)：Codex Kit 平台集成边界。
+- [C_USERSTYLE_KIT_ARCHITECTURE.md](C_USERSTYLE_KIT_ARCHITECTURE.md)：C99 风格裁决面、执行链与冻结边界。
+- [AI_DEBUG_KIT_BOUNDARY.md](AI_DEBUG_KIT_BOUNDARY.md)：AI Debug Kit 在进入平台控制面前的准入边界。
 
 ## 派生视图（不定义契约，可不读）
 

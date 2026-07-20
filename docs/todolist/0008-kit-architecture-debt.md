@@ -1,6 +1,6 @@
 # TODO 0008: Kit 架构文档还债（c-userstyle-kit 全量 + ai-debug-kit 边界卡）
 
-Status: Planned
+Status: Done
 Verify: docs/architecture/C_USERSTYLE_KIT_ARCHITECTURE.md 与 docs/architecture/AI_DEBUG_KIT_BOUNDARY.md 存在、含 Status 头、过 docsync all
 
 > 依赖 0007（模板骨架已入 docs/architecture/README.md）。

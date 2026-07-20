@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 补齐 C UserStyle Kit 1.2.0 的平台侧架构权威与 AI Debug Kit 准入边界卡，登记现有命令/门禁/数据合同、外部工具链指纹缺口及上游 gitlink 同步纪律。 / Adds the platform architecture authority for C UserStyle Kit 1.2.0 and an admission boundary card for AI Debug Kit, documenting existing commands, gates, data contracts, the external-toolchain fingerprint gap, and upstream gitlink discipline.
+
 - **feat(docsync)**: 新增架构文档分层阅读入口与 `Status:` 强制检查，明确 MCP 单一权威，并把冻结 schema、唯一 Result、唯一 Receipt 三项声明登记为 `FREEZE-001..003` 静态门禁。 / Adds a layered architecture reading path, enforced status headers, explicit MCP authority, and three executable freeze assertions for schemas, Result, and Receipt.
 
 - **docs(plan)**: 为架构文档治理阶段登记独立 approved scope 与 Full gate。 / Registers the approved scope and Full gate for the architecture-document governance stage.
