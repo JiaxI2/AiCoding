@@ -32,6 +32,14 @@ jobs:
         shell: cmd
         run: .\bin\aicoding.exe test --profile Smoke --json
 
+      - name: Upload Smoke test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-evidence
+          path: test-results/
+          if-no-files-found: error
+
   # Keep default reuse off until reviewers cite three consecutive successful release-gate runs on main.
   # Promotion to auto must be a separate reviewed commit.
   release-gate:
@@ -59,6 +67,14 @@ jobs:
       - name: Audit Release Receipt reuse
         shell: cmd
         run: .\bin\aicoding.exe test --profile Release --verify-reuse --json
+
+      - name: Upload Release gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-gate-evidence
+          path: test-results/
+          if-no-files-found: error
 
   clean-clone-full:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'

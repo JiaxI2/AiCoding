@@ -22,6 +22,7 @@
 - **优先非破坏性测试**：默认只跑 plan/check/gate/export，不直接修改用户全局状态。
 - **rollback 只读验证**：测试 profile 只运行 `lifecycle rollback --scope kit --help`，不读取或应用本地 rollback snapshot。
 - **结果可追溯**：每个用例保留原始 stdout/stderr、耗时、退出码、判定依据。
+- **CI 失败可诊断**：GitHub Actions 的 Smoke 与 `release-gate` 无论结论如何均上传本次 `test-results/` artifact，保留逐用例原始输出。
 - **验证绑定内容**：成功运行可把 PASS 结论绑定到 Git Tree 与验证语义；commit message amend 不失效，tracked/untracked/submodule 脏状态 fail-closed。
 - **复用可审计**：默认保持 `--reuse off`；`--reuse auto` 只显式启用。main 远端 `release-gate` 连续 3 次完成 off seed + `--verify-reuse` audit，并在独立切换提交引用三次 run URL 后，才允许晋级默认值。workflow 已接线不等于已跑绿。
 - **数据化输出**：统计总用例、通过、失败、告警、跳过、总耗时、各命令耗时。

@@ -8,7 +8,7 @@
 
 - **feat(hooks)**: 接入预构建 Go CLI 的 `.githooks/pre-push`，按 policy 对 Git stdin 的 exact `local_oid` 执行 Context Gate；post-commit 同步补 profile/commit alias，hook registry、repohealth、governance 与 Agent 规则一并登记。所有仓库 hook 移除 `go run` 构建回退，禁止在 hook 内测试、构建或改写工作区。 / Wires the exact-object pre-push gate and post-commit aliases into governed, prebuilt-CLI-only hooks with no in-hook build or test fallback.
 
-- **feat(testengine)**: 在 Receipt schema v2 逐用例审计加固后，将 `test --profile` 默认切换为 `--reuse auto`，保留显式 `--reuse off` 完整执行回退；每周/手动 Release CI 固定先以 off 生成种子，再以 `--verify-reuse` 完整重跑审计。 / Makes audited reuse the default while preserving an explicit full-execution fallback and adding scheduled seed-then-audit CI coverage.
+- **feat(testengine)**: Receipt schema v2 逐用例审计加固后仍保持 `test --profile` 默认 `--reuse off`；每周/手动 Release CI 固定先以 off 生成种子，再以 `--verify-reuse` 完整重跑审计，只有 main 连续三次绿灯并由独立评审提交引用运行 URL 后才允许晋级默认值。Smoke 与 `release-gate` 始终上传 `test-results/` artifact，确保远端失败可诊断。 / Keeps fresh execution as the default, gates any future auto-reuse promotion on three cited green main runs, and preserves CI test evidence artifacts for diagnostics.
 
 - **feat(validationevidence)**: 新增严格解析的 `validation-policy.json`、profile 分区 commit alias 与 Context Gate；受治理 ref 只接受 stdin 实际 `local_oid` tree 对应的完整 Release Receipt，main 非快进/删除、tag 删除与 alias/report 篡改均 fail-closed，未匹配 feature ref 明确旁路。 / Adds strict push policy, profile-scoped commit aliases, and an exact-local-object Context Gate with fail-closed protected-ref rules.
 
