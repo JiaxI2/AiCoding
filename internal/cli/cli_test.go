@@ -178,7 +178,7 @@ func TestMainSwitchRoutesNewCommands(t *testing.T) {
 func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 	for _, name := range []string{
 		"test", "docsync", "skill", "lifecycle", "export",
-		"fresh-clone", "release", "codex", "work",
+		"fresh-clone", "release", "codex", "work", "plan",
 	} {
 		route, ok := commands.lookup(name)
 		if !ok || route.handler == nil {
@@ -200,6 +200,7 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		"aicoding skill c99-standard-c verify",
 		"aicoding work validate --file SPEC.json",
 		"aicoding work record --file SPEC.json --attempt ATTEMPT.json",
+		"aicoding plan check (--staged | --paths PATH ...)",
 	} {
 		if !strings.Contains(help.String(), usage) {
 			t.Fatalf("catalog help is missing %q", usage)

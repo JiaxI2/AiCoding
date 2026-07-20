@@ -15,7 +15,7 @@ Status: Derived View（派生视图）
 
 | 机制 | 触发点 | 它具体拦什么 |
 |---|---|---|
-| `.githooks/pre-commit` → `aicoding hook pre-commit` | 每次 `git commit` 前 | 五项并行只读检查：提交规范 lint、docsync（代码改了文档没改）、复用证据、PowerShell 正则、C 风格 staged 检查。任一失败提交被拦。 |
+| `.githooks/pre-commit` → `aicoding hook pre-commit` + `plan check --staged` | 每次 `git commit` 前 | 五项并行只读强制检查；另按 `plan-policy.json` 做毫秒级 Plan Mode 触发判断。TODO 0004 阶段后者只告警，待批准绑定完成后升为强制。 |
 | `.githooks/commit-msg` → `aicoding hook commit-msg` | 提交信息写完后 | 提交信息格式（type taxonomy：`feat/fix/docs/style/refactor/perf/test/build/ci/chore`）。 |
 | `governance lint` | hook / 手动 / verify 聚合 | 仓库治理规范快检。 |
 | `governance dependencies` | 同上 | 依赖方向与稳定身份（下层不得观察上层、身份不得编码版本、激活 manifest 不得带 URL）。 |
@@ -28,9 +28,10 @@ Status: Derived View（派生视图）
 
 ## 2. Hook 设计原则
 
-1. **hook 是薄壳**：`.githooks/` 脚本只做一件事——转调 `aicoding hook <名字>`。
-   检查逻辑全部在 Go（`internal/*`），脚本里不写业务。
-2. **快且并行**：pre-commit 的五项检查并行执行（有界并发），秒级完成；
+1. **hook 是薄壳**：`.githooks/` 脚本只转调预构建 Go CLI。检查逻辑全部在 Go
+   （`internal/*`），脚本里不写 pattern 或批准判断业务。
+2. **快且并行**：pre-commit 的五项强制检查并行执行（有界并发），Plan Mode 路径判定
+   单独保持在 200 ms 内；
    慢检查不进 hook，进 `verify`/`test`。
 3. **只读**：hook 只判定不修复；修复权留给显式的写命令（如 `skill c99-standard-c fmt`）。
 4. **失败信息可纠错**：门禁文案必须指明违反的规则与正确路径，而非仅报告失败——

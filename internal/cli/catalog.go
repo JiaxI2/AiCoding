@@ -37,6 +37,7 @@ const (
 	CommandPowerShell CommandID = "powershell"
 	CommandTodolist   CommandID = "todolist"
 	CommandWork       CommandID = "work"
+	CommandPlan       CommandID = "plan"
 	CommandProvision  CommandID = "provision"
 )
 
@@ -127,6 +128,7 @@ var commands = mustCommandCatalog(
 		{descriptor: CommandDescriptor{ID: CommandPowerShell, Name: "powershell", RequiresSubcommand: true}, handler: runPowerShell},
 		{descriptor: CommandDescriptor{ID: CommandTodolist, Name: "todolist"}, handler: runTodolist},
 		{descriptor: CommandDescriptor{ID: CommandWork, Name: "work", RequiresSubcommand: true}, handler: runWork},
+		{descriptor: CommandDescriptor{ID: CommandPlan, Name: "plan", RequiresSubcommand: true}, handler: runPlan},
 		{descriptor: CommandDescriptor{ID: CommandProvision, Name: "provision"}, handler: runProvision},
 	},
 	[]HelpSection{
@@ -159,6 +161,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandWork, Section: HelpDomain, Usage: "aicoding work next --file SPEC.json [--repo-root PATH] [--json]"},
 		{Command: CommandWork, Section: HelpDomain, Usage: "aicoding work status --file SPEC.json [--repo-root PATH] [--json]"},
 		{Command: CommandWork, Section: HelpDomain, Usage: "aicoding work record --file SPEC.json --attempt ATTEMPT.json [--repo-root PATH] [--json]"},
+		{Command: CommandPlan, Section: HelpDomain, Usage: "aicoding plan check (--staged | --paths PATH ...) [--repo-root PATH] [--json]"},
 		{Command: CommandProvision, Section: HelpDomain, Usage: "aicoding provision [--repo-root PATH] [--json]"},
 		{Command: CommandDoctor, Section: HelpFormal, Usage: "aicoding doctor --all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
 		{Command: CommandVerify, Section: HelpFormal, Usage: "aicoding verify --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},

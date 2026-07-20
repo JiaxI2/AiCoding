@@ -1,6 +1,6 @@
 # TODO 0004: Plan Mode 重构 I —— 触发机器化（plan-policy + plan check）
 
-Status: Planned
+Status: Done
 Verify: go test ./internal/plan/... 且 bin/aicoding.exe plan check --staged --json 在敏感/非敏感两组 staged 变更上给出正确判定
 
 > Plan Mode 重构三部曲之一（0004 触发 → 0005 产物 → 0006 绑定），合并为 ADR 0009。

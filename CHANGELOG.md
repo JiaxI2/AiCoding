@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(plan)**: 新增严格 `plan-policy.json`、纯路径裁决包与 `plan check --staged|--paths`，将架构敏感触发接入 pre-commit 告警；旧 Plan Mode PowerShell 门禁降为 Go CLI 兼容薄壳。 / Adds a strict plan trigger policy, pure path adjudication, and the `plan check` CLI, with warning-only pre-commit integration and a compatibility-only PowerShell shell.
+
 - **feat(cli)**: 新增 `work validate/next/status/record` 四条 Loop Engineering 命令；前三条只读并复用 validationevidence check，`record` 仅追加不可变尝试日志并刷新 worktree-local 状态投影，权限越界以检测式 `stop-violation` 裁决。 / Adds four Loop Engineering commands with read-only validation/status/decision paths, validationevidence-backed gates, append-only attempt records, and detection-based scope violations.
 
 - **feat(loopkit)**: 以 schema v2 manifest 将 Loop Engineering Kit 登记为默认禁用的 Go capability，补齐反向依赖禁令、接受 ADR 0008 与唯一架构权威，并移除来源包中已失效的重复架构/ADR/命令指南。 / Registers the disabled-by-default Loop Engineering capability with a valid schema-v2 manifest, dependency guards, ADR 0008, and one architecture authority while retiring obsolete duplicate source-package documents.

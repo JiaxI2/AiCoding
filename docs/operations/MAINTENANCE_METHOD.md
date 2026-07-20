@@ -113,6 +113,10 @@ Run `bin/aicoding.exe docsync all --json` or `bin/aicoding.exe docsync release -
 
 PowerShell checks are explicit specialty gates. Keep them for tag planning, release overlay compatibility, PowerShell quality, Plan Mode, external skill workflows, safety, hardware/toolchain diagnostics, and Codex-Skills source/plugin work.
 
+Plan Mode 的路径触发权威是 Go CLI `plan check --staged` 与 `config/plan-policy.json`。
+TODO 0004 阶段 pre-commit 仅告警；PowerShell `plan-mode-gate.ps1` 是兼容薄壳，不再拥有
+敏感路径 pattern 或启动第二个验证流程。
+
 For Codex-Skills changes, run the source repository gates in the Codex-Skills repository:
 
 ```powershell

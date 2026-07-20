@@ -32,6 +32,8 @@ function Has-AnyMarker([string]$Text, [string[]]$Markers) {
   return $false
 }
 
+# DEPRECATED(TODO-0004): compatibility-only sensitive-path detection. Remove
+# after one release cycle; the authority is `aicoding plan check`.
 function Get-GitChangedFiles([string]$Root) {
   $result = @()
   try {
@@ -48,6 +50,7 @@ function Get-GitChangedFiles([string]$Root) {
   return @($result)
 }
 
+# DEPRECATED(TODO-0004): compatibility-only matcher; do not add new patterns.
 function Match-AnyPath([string]$Path, [string[]]$Patterns) {
   $p = $Path -replace '\\','/'
   foreach ($raw in $Patterns) {
