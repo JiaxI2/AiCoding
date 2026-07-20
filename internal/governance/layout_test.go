@@ -1,6 +1,7 @@
 package governance
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -44,5 +45,41 @@ func TestCheckLayoutRejectsDuplicateSkillSources(t *testing.T) {
 	report := CheckLayout(repo)
 	if !hasErrorContaining(report.Errors, "skill has multiple source-of-truth paths: same-skill") {
 		t.Fatalf("expected duplicate skill source error, got %#v", report.Errors)
+	}
+}
+
+func TestTaskRuntimeDirectoryIsDeclaredByLayoutAndNavigation(t *testing.T) {
+	repo, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var layout struct {
+		Root struct {
+			AllowDirectories []string `json:"allowDirectories"`
+		} `json:"root"`
+	}
+	readJSONFile(t, filepath.Join(repo, "config", "repository-layout.json"), &layout)
+
+	var navigation struct {
+		Root struct {
+			AllowedDirectories []string `json:"allowedDirectories"`
+		} `json:"root"`
+	}
+	readJSONFile(t, filepath.Join(repo, "config", "repository-navigation.json"), &navigation)
+
+	if !contains(layout.Root.AllowDirectories, ".task") || !contains(navigation.Root.AllowedDirectories, ".task") {
+		t.Fatalf(".task must be declared by layout and navigation: layout=%v navigation=%v", layout.Root.AllowDirectories, navigation.Root.AllowedDirectories)
+	}
+}
+
+func readJSONFile(t *testing.T, path string, target any) {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(data, target); err != nil {
+		t.Fatalf("decode %s: %v", path, err)
 	}
 }

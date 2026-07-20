@@ -53,3 +53,25 @@ jobs:
       - name: Release test profile
         shell: cmd
         run: .\bin\aicoding.exe test --profile Release --json
+
+  clean-clone-full:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Build Go CLI
+        shell: cmd
+        run: go build -o bin/aicoding.exe ./cmd/aicoding
+
+      - name: Clean-clone Full Go tests
+        shell: cmd
+        run: .\bin\aicoding.exe fresh-clone --profile Full --json

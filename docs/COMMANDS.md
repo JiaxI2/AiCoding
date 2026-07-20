@@ -207,7 +207,9 @@ App Server 报告使用 `tokenUsage.total` 作为会话累计值，并使用
 `go.mod` 与 `go.sum`；仅输入变化或 `bin/aicoding.exe` 缺失时直接执行一次 `go build`。
 Task 的 `.task/` checksum 元数据属于已登记且被 Git 忽略的本地 runtime-state。
 测试 Registry 的 BOOT-002 只运行 `bootstrap --no-build` 验证 CLI/JSON 契约，BOOT-003
-在进程内验证 repo、Go、Git、go.mod 与 bin 前置条件，不重复构建 CLI。
+在进程内验证 repo、Go、Git、go.mod 与 bin 前置条件，不重复构建 CLI。默认 `task setup`
+仍执行带 build 的 `bootstrap`；`internal/bootstrap` 使用隔离的临时 Go module 单测真实覆盖
+`Options{Build:true}` 和二进制落盘，不把真实构建重新加入任何测试 profile。
 
 外部候选可追加 `--target path/to/verify-target.json`；项目差异配置可用可重复的
 `--overlay path/to/project-overlay.json`。完整 target/schema 说明见
@@ -227,6 +229,15 @@ go build -o bin/aicoding.exe ./cmd/aicoding
 ```text
 bin\aicoding.exe test --profile Release --json
 ```
+
+同一个每周 schedule（也可手动触发）另设 clean-clone Full job：
+
+```text
+bin\aicoding.exe fresh-clone --profile Full --json
+```
+
+该 job 在临时递归 clone 中重新构建 CLI 并执行 `go test ./...`，专门发现子模块、gitignore、
+干净检出或 Go 构建漂移；它不回填到日常 `test --profile Full` 的成本边界。
 
 CI 不额外调用 `doctor` 或 `verify` 聚合器；唯一 test Registry 已直接登记相应 leaf gate，
 避免同一检查在一个 job 中重复执行。

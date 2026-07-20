@@ -75,6 +75,9 @@
 | FRESH-001 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | 仅 Release 执行；clone 内执行 `release verify` | WARN |
 | FRESH-003 | Full fresh-clone 契约 | 静态检查 `.gitmodules`、skills gitlink 与三个 profile 分支 | 不 clone，契约完整 | REQUIRED |
 
+定期 CI 不新增 Registry ID：每周/手动 `clean-clone-full` job 直接运行正式 leaf command
+`bin/aicoding.exe fresh-clone --profile Full --json`，在临时 clone 中执行 `go test ./...`。
+
 ## 8. README_DOCS：README 和命令文档治理
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |

@@ -24,7 +24,7 @@ Status: Derived View（派生视图）
 | `docsync staged\|all\|ci\|release` | hook / CI / 发布 | 风险文件（代码、脚本、配置、hook、CI）变更必须携带文档更新，或带最短 20 字符实义理由的 no-doc-change 标记。 |
 | Style | pre-commit / 手动 | `.clang-format` + C99 kit 的 `fmt`/`check`（[01](01-system-architecture.md) §6.7）。 |
 | Template | GitHub 侧 | `.github/` Issue 表单、PR 模板、`RELEASE_TEMPLATE.md` + `verify release-notes` 机器校验。 |
-| CI | push / PR | `.github/workflows/aicoding-ci.yml`：build + `test --profile Smoke`；发布 job 跑 Release。 |
+| CI | push / PR / 每周 / 手动 | `.github/workflows/aicoding-ci.yml`：push/PR 跑 Smoke；每周/手动跑 Release，并以独立 clean-clone Full leaf command 执行临时 clone 中的 `go test ./...`。 |
 
 ## 2. Hook 设计原则
 

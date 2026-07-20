@@ -194,6 +194,24 @@ func TestTaskfileEnsureBinUsesChecksumIncrementalBuild(t *testing.T) {
 	}
 }
 
+func TestScheduledCIKeepsCleanCloneFullCoverage(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "aicoding-ci.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow := string(data)
+	for _, required := range []string{
+		"schedule:",
+		"clean-clone-full:",
+		"github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'",
+		"fresh-clone --profile Full --json",
+	} {
+		if !strings.Contains(workflow, required) {
+			t.Fatalf("scheduled CI is missing clean-clone Full contract %q", required)
+		}
+	}
+}
+
 func containsString(values []string, want string) bool {
 	for _, value := range values {
 		if value == want {

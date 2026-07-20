@@ -34,7 +34,7 @@
 | L1 快速命令 | 执行基础 CLI 命令，验证 JSON 和退出码 | bootstrap no-build、doctor、verify、`test --profile Smoke` |
 | L2 功能门禁 | 执行唯一 Registry 中的功能域 gate | docsync、governance、export manifest、lifecycle plan |
 | L3 并发/一致性 | 验证 ExecutionPlan 稳定摘要、并发执行只读命令或 race 检查 | runner/catalog unit tests、`go test -race`、并发 C99 status/templates |
-| L4 发布门禁 | Release profile 的真实打包与 hermetic leaf probe | Release ZIP、fresh-clone Release |
+| L4 发布/定期 hermetic 门禁 | Release profile 的真实打包与 hermetic leaf probe；定期 CI 的 clean-clone Full | Release ZIP、fresh-clone Release、每周 fresh-clone Full |
 
 ## 4. 测试数据
 
@@ -88,6 +88,14 @@
 - `test --profile Release --json` 成功，且 Release gate 不递归回调 test CLI。
 - fresh-clone Release 路径成功，或因网络/远程访问失败产生可解释 WARN。
 - release notes/tag policy/release policy 对齐检查通过。
+
+### 5.4 定期 clean-clone Full 标准
+
+- `.github/workflows/aicoding-ci.yml` 的每周 schedule 和手动触发必须运行
+  `fresh-clone --profile Full --json`。
+- 该命令必须在临时递归 clone 中重新构建 CLI 并执行 `go test ./...`，用于提前发现子模块、
+  gitignore、干净检出和 Go 构建漂移。
+- 这是一条独立的正式 leaf command，不新增 test Registry 聚合器，也不回到日常 Full profile。
 
 ## 6. 风险与边界
 
