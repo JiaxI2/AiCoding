@@ -89,12 +89,19 @@ HEAD SLA 的错误等价关系。
 
 | 验收路径 | 结果 | 墙钟/报告耗时 |
 |---|---|---:|
-| `test --profile Release --reuse off` | executed，58/58 PASS，生成可复用 Receipt | 171.026 s |
+| `test --profile Release --reuse off` | executed，58/58 PASS，生成可复用 Receipt（新 worktree 冷样本） | 171.026 s |
 | `validation check --profile Release --target HEAD` | `VALIDATION_RECEIPT_HIT` | 报告 225 ms |
 | `test --profile Release --reuse auto` | reused，58/58 PASS，同一 Receipt | 外部 392.763 ms |
 | Smoke seed | executed，40/40 PASS，可复用 | 24.162 s |
 | Smoke `--reuse auto --force` | executed，40/40 PASS，同一 Receipt | 23.089 s |
 | Smoke `--reuse auto --verify-reuse` | executed，40/40 PASS，`VALIDATION_RECEIPT_HIT` | 22.893 s |
+
+`171.026 s` 是新 worktree 冷构建缓存与当时主机负载下的验收种子，不是可比性能基线，也不
+表示 Validation Evidence 导致 Release 回归；该次报告中 FRESH-001/GO-002/GO-001 分别为
+`101.860 s`、`41.259 s`、`38.380 s`，均体现冷缓存/负载放大。诚实的可比头条应使用功能加入
+前已记录的 Release 墙钟 `74.867 s`（约 76s）与复用墙钟 `392.763 ms`，即 **74.867 s →
+392.763 ms，下降 99.5%**；`171.026 s → 392.763 ms` 只描述这次冷种子与命中的同批验收，
+不得作为长期加速口径。
 
 Release Receipt ID 为
 `sha256:3e978d3eea94bcd083dfde8800f6505f03d3684a193be56ff28a90fd195c009b`；Smoke Receipt

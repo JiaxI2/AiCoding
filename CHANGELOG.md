@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(perf)**: 将 Release 复用收益改按既有可比基线 `74.867 s → 392.763 ms`（下降 99.5%）表述，并明确 `171.026 s` 是新 worktree 冷缓存/负载验收样本，不是 Validation Evidence 回归。 / Uses the comparable pre-feature Release baseline for the reuse headline and labels the slower acceptance seed as a cold-worktree/load sample rather than a regression.
+
 - **fix(validationevidence)**: Receipt schema v2 新增当前 profile 逐用例 `(id,status)` 的确定性 `resultsDigest`；留存报告复用与 `--verify-reuse` 均重新计算核对，整体同为 PASS 时的单用例 `PASS → WARN` 也会 fail-closed。 / Adds a deterministic per-case status digest to Receipt schema v2 so reuse and audits detect status drift even when the normalized conclusion remains PASS.
 
 - **refactor(gitx)**: 将 `.git` 文件、`gitdir:` 与 `commondir` 的快速解析全部收回 `gitx.CommonDir`，保留异常布局的 Git 进程回退；`validationevidence` 只消费公共 Primitive，不再复制 Git 磁盘布局知识，性能收益不变。 / Makes gitx the sole owner of both Git process calls and common-dir layout knowledge without losing the fast path.
