@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 为 Plan Mode 内容绑定阶段登记独立的 per-plan scope 与 Full gate，作为后续 clean-tree `plan approve` 的自举契约。 / Registers the bounded per-plan scope and Full gate used to bootstrap clean-tree approval for the Plan Mode content-binding stage.
+
 - **feat(plan)**: 将 Plan Mode 产物收敛到 `docs/spec/<id>/`，新增严格 frontmatter schema、确定性 `plan verify/status`，迁移并归档两套历史会话，同时把 registry 与兼容脚本改到 per-plan 路径。 / Standardizes Plan Mode artifacts under per-plan directories, adds strict deterministic verification/status views, archives both historical sessions, and updates registry and compatibility scripts.
 
 - **feat(plan)**: 新增严格 `plan-policy.json`、纯路径裁决包与 `plan check --staged|--paths`，将架构敏感触发接入 pre-commit 告警；旧 Plan Mode PowerShell 门禁降为 Go CLI 兼容薄壳。 / Adds a strict plan trigger policy, pure path adjudication, and the `plan check` CLI, with warning-only pre-commit integration and a compatibility-only PowerShell shell.
