@@ -14,16 +14,29 @@ import (
 const planRequiredAction = `pwsh tools/specialty/new-agent-plan-mode-session.ps1 -Feature "<功能名>" -Description "<需求描述>" -NeedsDecision -Json`
 
 func runPlan(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 || strings.ToLower(args[0]) != "check" {
-		return report.Result{}, usageErrorf("plan requires subcommand: check")
+	if len(args) < 1 {
+		return report.Result{}, usageErrorf("plan requires subcommand: check, verify, or status")
 	}
+	switch strings.ToLower(args[0]) {
+	case "check":
+		return runPlanCheck(args[1:], start)
+	case "verify":
+		return runPlanVerify(args[1:], start)
+	case "status":
+		return runPlanStatus(args[1:], start)
+	default:
+		return report.Result{}, usageErrorf("unsupported plan subcommand: %s", args[0])
+	}
+}
+
+func runPlanCheck(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("plan check")
 	repoArg := fs.String("repo-root", "", "repository root")
 	stagedArg := fs.Bool("staged", false, "check staged paths")
 	_ = fs.Bool("json", false, "json output")
 	var pathArgs multiFlag
 	fs.Var(&pathArgs, "paths", "repository-relative path; can be repeated")
-	if err := parseNoPositionals(fs, args[1:]); err != nil {
+	if err := parseNoPositionals(fs, args); err != nil {
 		return report.Result{}, err
 	}
 	if *stagedArg == (len(pathArgs) > 0) {
@@ -76,8 +89,88 @@ func runPlan(args []string, start time.Time) (report.Result, error) {
 	}, nil
 }
 
+func runPlanVerify(args []string, start time.Time) (report.Result, error) {
+	fs := newFlagSet("plan verify")
+	repoArg := fs.String("repo-root", "", "repository root")
+	_ = fs.Bool("json", false, "json output")
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("plan verify", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	verification, err := plancheck.VerifySpecs(repo)
+	if err != nil {
+		return planFailureFor("plan verify", repo, start, "cannot verify plan specs", err)
+	}
+	result := report.Result{
+		SchemaVersion: report.SchemaVersion,
+		Command:       "plan verify",
+		OK:            verification.OK,
+		Message:       "Plan Mode artifact verification",
+		RepoRoot:      repo,
+		Data:          verification,
+		Warnings:      verification.Warnings,
+		Errors:        verification.Errors,
+		ElapsedMS:     report.Elapsed(start),
+	}
+	if !verification.OK {
+		result.ErrorKind = report.ErrorKindValidation
+	}
+	return result, report.BoolErr(verification.Errors)
+}
+
+func runPlanStatus(args []string, start time.Time) (report.Result, error) {
+	fs := newFlagSet("plan status")
+	repoArg := fs.String("repo-root", "", "repository root")
+	idArg := fs.String("id", "", "plan id")
+	allArg := fs.Bool("all", false, "list all plans")
+	_ = fs.Bool("json", false, "json output")
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
+	if *allArg && strings.TrimSpace(*idArg) != "" {
+		return report.Result{}, usageErrorf("plan status accepts either --id or --all")
+	}
+	repo, err := platform.ResolveRepoRoot(*repoArg)
+	if err != nil {
+		return report.Fail("plan status", start, "cannot resolve repo root", nil, err.Error()), err
+	}
+	specs, err := plancheck.ListSpecs(repo)
+	if err != nil {
+		return planFailureFor("plan status", repo, start, "cannot list plan specs", err)
+	}
+	selected := specs
+	if id := strings.TrimSpace(*idArg); id != "" {
+		selected = []plancheck.Spec{}
+		for _, spec := range specs {
+			if spec.ID == id {
+				selected = append(selected, spec)
+				break
+			}
+		}
+		if len(selected) == 0 {
+			return planFailureFor("plan status", repo, start, "plan id was not found", fmt.Errorf("unknown plan id: %s", id))
+		}
+	}
+	return report.Result{
+		SchemaVersion: report.SchemaVersion,
+		Command:       "plan status",
+		OK:            true,
+		Message:       "Plan Mode artifact status",
+		RepoRoot:      repo,
+		Data:          selected,
+		ElapsedMS:     report.Elapsed(start),
+	}, nil
+}
+
 func planFailure(repo string, start time.Time, message string, err error) (report.Result, error) {
-	result := report.Fail("plan check", start, message, nil, err.Error())
+	return planFailureFor("plan check", repo, start, message, err)
+}
+
+func planFailureFor(command, repo string, start time.Time, message string, err error) (report.Result, error) {
+	result := report.Fail(command, start, message, nil, err.Error())
 	result.RepoRoot = repo
 	result.ErrorKind = report.ErrorKindValidation
 	return result, report.BoolErr(result.Errors)

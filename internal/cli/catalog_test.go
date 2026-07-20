@@ -71,8 +71,8 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 	if workForms != 4 {
 		t.Fatalf("work help form count = %d, want 4", workForms)
 	}
-	if planForms != 1 {
-		t.Fatalf("plan help form count = %d, want 1", planForms)
+	if planForms != 3 {
+		t.Fatalf("plan help form count = %d, want 3", planForms)
 	}
 }
 

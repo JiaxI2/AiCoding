@@ -27,11 +27,11 @@ Clarify -> Specify -> Plan -> User Decision -> Tasks -> Implement -> Verify -> H
 
 | Mode | Agent may do | Agent must not do |
 |---|---|---|
-| Clarify | ask questions, inspect repo read-only, create `docs/decisions/plan-mode-overlay/PRD_OPTIONS.md` | edit implementation files |
+| Clarify | ask questions, inspect repo read-only, create `docs/spec/<id>/OPTIONS.md` | edit implementation files |
 | Specify | write user intent, acceptance criteria, constraints | choose architecture silently |
-| Plan | write `docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md`, risks, validation, rollback | implement code |
+| Plan | write `docs/spec/<id>/PLAN.md`, risks, validation, rollback | implement code |
 | User Decision | show 2-5 options and wait | continue implementation |
-| Tasks | write `docs/decisions/plan-mode-overlay/TASKS.md` and `docs/decisions/plan-mode-overlay/TRACEABILITY.md` | skip test/verify tasks |
+| Tasks | write `docs/spec/<id>/TASKS.md` and update traceability in `PLAN.md` | skip test/verify tasks |
 | Implement | change files according to selected plan | change plan silently |
 | Verify | run Smoke/golden/schema/lint checks | hide failures |
 | Handoff | summarize evidence and rollback path | claim unverified success |
@@ -41,23 +41,22 @@ Clarify -> Specify -> Plan -> User Decision -> Tasks -> Implement -> Verify -> H
 For fuzzy architecture:
 
 ```text
-docs/decisions/plan-mode-overlay/PRD_OPTIONS.md
-docs/decisions/plan-mode-overlay/NEEDS_USER_DECISION.md
+docs/spec/<id>/PLAN.md        # status: needs-decision
+docs/spec/<id>/OPTIONS.md
 ```
 
 For selected architecture:
 
 ```text
-docs/decisions/plan-mode-overlay/SELECTED_SOLUTION.md
+docs/spec/<id>/DECISION.md
 .aicoding/memory/DECISIONS.md
 ```
 
 For implementation:
 
 ```text
-docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md
-docs/decisions/plan-mode-overlay/TASKS.md
-docs/decisions/plan-mode-overlay/TRACEABILITY.md
+docs/spec/<id>/PLAN.md
+docs/spec/<id>/TASKS.md
 ```
 
 ## Fuzzy architecture rule
@@ -74,7 +73,8 @@ The Agent must show 2-5 options with:
 - risk;
 - recommendation.
 
-No implementation may continue while `docs/decisions/plan-mode-overlay/NEEDS_USER_DECISION.md` exists.
+No implementation may continue while the selected `docs/spec/<id>/PLAN.md` has
+`status: needs-decision`.
 
 ## Codex Plan Mode adaptation
 

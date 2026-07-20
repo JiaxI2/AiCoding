@@ -1,3 +1,14 @@
+---
+id: product-convergence
+status: archived
+scope:
+  - "**"
+approvedTree: ""
+decision: docs/spec/product-convergence/DECISION.md
+gates:
+  - profile: full
+---
+
 # 计划模式会话（Plan Mode Session）：product-convergence
 
 Mode: Plan -> Implement

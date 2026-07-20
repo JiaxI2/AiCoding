@@ -54,3 +54,37 @@ func TestRunPlanCheckRequiresOnePathSource(t *testing.T) {
 		}
 	}
 }
+
+func TestRunPlanVerifyAndStatusProjectFrontmatter(t *testing.T) {
+	repo := t.TempDir()
+	planFile := filepath.Join(repo, "docs", "spec", "sample-plan", "PLAN.md")
+	mustWrite(t, planFile, `---
+id: sample-plan
+status: archived
+scope:
+  - internal/plan/**
+approvedTree: ""
+decision: ""
+gates:
+  - profile: full
+---
+
+# Sample
+`)
+	verified, err := runPlan([]string{"verify", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !verified.OK {
+		t.Fatalf("plan verify failed: result=%#v err=%v", verified, err)
+	}
+	status, err := runPlan([]string{"status", "--all", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !status.OK {
+		t.Fatalf("plan status failed: result=%#v err=%v", status, err)
+	}
+	specs, ok := status.Data.([]plancheck.Spec)
+	if !ok || len(specs) != 1 || specs[0].ID != "sample-plan" || specs[0].Status != plancheck.StatusArchived {
+		t.Fatalf("unexpected status data: %#v", status.Data)
+	}
+	selected, err := runPlan([]string{"status", "--id", "sample-plan", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !selected.OK || len(selected.Data.([]plancheck.Spec)) != 1 {
+		t.Fatalf("plan status --id failed: result=%#v err=%v", selected, err)
+	}
+}

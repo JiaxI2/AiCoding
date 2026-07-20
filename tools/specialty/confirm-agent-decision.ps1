@@ -1,6 +1,7 @@
-[CmdletBinding(SupportsShouldProcess=$true)]
+[CmdletBinding()]
 param(
   [string]$RepoRoot = "",
+  [string]$Id = "",
   [Parameter(Mandatory=$true)][string]$Title,
   [Parameter(Mandatory=$true)][string]$SelectedOption,
   [string]$Rationale = "",
@@ -9,27 +10,32 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Out-Result([bool]$Ok, [string]$Code, [string]$Message, $Data = @{}) {
-  $obj = [ordered]@{ schema_version="1.0"; ok=$Ok; code=$Code; message=$Message; data=$Data }
-  if ($Json) { $obj | ConvertTo-Json -Depth 30 } else { Write-Host ("[{0}] {1}" -f $Code, $Message); $Data | ConvertTo-Json -Depth 20 }
-  if (-not $Ok) { exit 1 }
+function Out-Result($ok, $code, $message, $data = @{}) {
+  $obj = [ordered]@{ schema_version="1.0"; ok=[bool]$ok; code=$code; message=$message; data=$data }
+  if ($Json) { $obj | ConvertTo-Json -Depth 30 } else { Write-Host "[$code] $message"; $data | ConvertTo-Json -Depth 20 }
+  if (-not $ok) { exit 1 }
+}
+
+function Safe-Slug([string]$Text) {
+  return (($Text.ToLowerInvariant() -replace '[^a-z0-9]+','-').Trim('-'))
 }
 
 try {
   if (-not $RepoRoot) { $RepoRoot = (Get-Location).Path }
   $RepoRoot = (Resolve-Path -LiteralPath $RepoRoot).Path
-  $specDir = Join-Path $RepoRoot "docs/spec"
+  if (-not $Id) { $Id = Safe-Slug $Title }
+  if (-not $Id) { Out-Result $false "INVALID_ID" "无法从标题生成 plan id；请显式传入 -Id。" }
+  $planDir = Join-Path $RepoRoot "docs/spec/$Id"
+  $planFile = Join-Path $planDir "PLAN.md"
+  if (-not (Test-Path -LiteralPath $planFile -PathType Leaf)) {
+    Out-Result $false "PLAN_NOT_FOUND" "未找到对应 PLAN.md，拒绝写入全局单槽决策。" @{ id=$Id; path=$planFile }
+  }
+  $decisionFile = Join-Path $planDir "DECISION.md"
   $memoryDir = Join-Path $RepoRoot ".aicoding/memory"
-  if (-not (Test-Path -LiteralPath $specDir)) { New-Item -ItemType Directory -Path $specDir -Force | Out-Null }
-  if (-not (Test-Path -LiteralPath $memoryDir)) { New-Item -ItemType Directory -Path $memoryDir -Force | Out-Null }
-
+  $memoryFile = Join-Path $memoryDir "DECISIONS.md"
   $now = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss zzz")
-  $selectedPath = Join-Path $specDir "SELECTED_SOLUTION.md"
-  $needsPath = Join-Path $specDir "NEEDS_USER_DECISION.md"
-  $memoryPath = Join-Path $memoryDir "DECISIONS.md"
-
-  $selectedText = @"
-# 已选择方案（Selected Solution）：$Title
+  $decisionText = @"
+# 已选择方案（Decision）：$Title
 
 Decision Status: Selected
 
@@ -43,40 +49,19 @@ $Rationale
 
 $now
 "@
-  Set-Content -LiteralPath $selectedPath -Value $selectedText -Encoding UTF8
-
-  $decisionEntry = @"
-
-## $Title
-
-Decision Status: Selected
-
-Selected option: $SelectedOption
-
-Rationale: $Rationale
-
-Recorded: $now
-"@
-  if (Test-Path -LiteralPath $memoryPath -PathType Leaf) {
-    Add-Content -LiteralPath $memoryPath -Value $decisionEntry -Encoding UTF8
+  Set-Content -LiteralPath $decisionFile -Value $decisionText -Encoding UTF8
+  New-Item -ItemType Directory -Force -Path $memoryDir | Out-Null
+  $entry = "`n## $Title`n`nDecision Status: Selected`n`nSelected option: $SelectedOption`n`nRationale: $Rationale`n`nRecorded: $now`n"
+  if (Test-Path -LiteralPath $memoryFile -PathType Leaf) {
+    Add-Content -LiteralPath $memoryFile -Value $entry -Encoding UTF8
   } else {
-    Set-Content -LiteralPath $memoryPath -Value ("# Agent Decisions`r`n" + $decisionEntry) -Encoding UTF8
+    Set-Content -LiteralPath $memoryFile -Value ("# Agent Decisions`n" + $entry) -Encoding UTF8
   }
-
-  $removedNeedsDecision = $false
-  if (Test-Path -LiteralPath $needsPath -PathType Leaf) {
-    if ($PSCmdlet.ShouldProcess($needsPath, "移除 Plan Mode 待用户决策阻塞文件")) {
-      Remove-Item -LiteralPath $needsPath -Force
-      $removedNeedsDecision = $true
-    }
+  Out-Result $true "OK" "用户技术路线选择已记录；批准与 Tree 绑定由 Plan CLI 单独完成。" @{
+    id=$Id
+    decision=$decisionFile
+    decisionMemory=$memoryFile
   }
-
-  Out-Result $true "OK" "用户技术路线选择已记录，Plan Mode 阻塞标记已处理。" ([ordered]@{
-    repoRoot=$RepoRoot
-    selectedSolution=$selectedPath
-    decisionMemory=$memoryPath
-    removedNeedsDecision=$removedNeedsDecision
-  })
 }
 catch {
   Out-Result $false "INTERNAL_ERROR" ("确认用户决策时发生内部错误：{0}" -f $_.Exception.Message)

@@ -1,6 +1,6 @@
 # TODO 0005: Plan Mode 重构 II —— 产物标准化（per-plan 目录 + frontmatter + plan verify）
 
-Status: Planned
+Status: Done
 Verify: bin/aicoding.exe plan verify --json 全绿，且两个历史会话已迁入 docs/spec/<id>/ 归档
 
 > 依赖 0004（internal/plan 包已存在）。
