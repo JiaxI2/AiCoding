@@ -7,6 +7,9 @@ bin\aicoding.exe doctor --all --json
 bin\aicoding.exe verify --profile Smoke|Full|Release --json
 bin\aicoding.exe test --profile Smoke|Full|Release --json
 bin\aicoding.exe test latest
+bin\aicoding.exe validation status --json
+bin\aicoding.exe validation check --profile Smoke|Full|Release --target HEAD|INDEX --json
+bin\aicoding.exe validation list|clean [--profile Smoke|Full|Release] --json
 ```
 
 机器可读契约是 [`config/schemas/cli-report.schema.json`](../../../config/schemas/cli-report.schema.json)。
@@ -94,6 +97,7 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 	"subjectMode": "head",
 	"reusable": true,
 	"reusableReason": "",
+	"validationCode": "VALIDATION_RECEIPT_HIT",
 	"checkDurationMs": 0,
   "summary": {},
   "results": [
@@ -119,6 +123,8 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 `executionMode` 只使用 `executed` 或 `reused`；复用不引入新的测试结论，`conclusion` 仍使用
 既有 `PASS`、`PASS_WITH_WARNINGS`、`FAIL`。`receiptID` 仅在存在完整可复用 PASS Receipt 时
 出现。`subjectMode` 使用 `head`、`index`、`dirty`；`dirty` 永远不能生成 Receipt。
+`validationCode` 是可选的稳定机器码，用于表达命中、主体不可复用、执行期内容漂移、存储错误
+或复用审计不一致；调用者不能靠解析 `reusableReason` 文本做分支。
 
 可复用的充要条件按 Severity 判定：没有 `FAIL`，所有 profile 内 `REQUIRED` 用例均为
 `PASS`，不存在未声明 optional-path 的 profile 内 `SKIP`，且 start/end validation identity

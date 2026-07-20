@@ -32,6 +32,7 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 	for _, expected := range []string{
 		"Formal product workflow:",
 		"aicoding lifecycle plan",
+		"aicoding validation check --profile Smoke|Full|Release --target HEAD|INDEX",
 		"aicoding powershell regex-lint --path PATH",
 	} {
 		if !strings.Contains(help.String(), expected) {
@@ -48,6 +49,15 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 		if strings.Contains(help.String(), removed) {
 			t.Fatalf("catalog help still exposes removed compatibility form %q: %s", removed, help.String())
 		}
+	}
+	validationForms := 0
+	for _, form := range catalog.Help {
+		if form.Command == CommandValidation {
+			validationForms++
+		}
+	}
+	if validationForms != 4 {
+		t.Fatalf("validation help form count = %d, want 4", validationForms)
 	}
 }
 

@@ -19,6 +19,7 @@ const (
 	CommandHook       CommandID = "hook"
 	CommandBootstrap  CommandID = "bootstrap"
 	CommandTest       CommandID = "test"
+	CommandValidation CommandID = "validation"
 	CommandDocSync    CommandID = "docsync"
 	CommandSkill      CommandID = "skill"
 	CommandLifecycle  CommandID = "lifecycle"
@@ -93,10 +94,11 @@ type typedCommandCatalog struct {
 }
 
 var (
-	catalogSnapshotOnce sync.Once
-	catalogSnapshot     registry.Snapshot
-	catalogHelpOnce     sync.Once
-	catalogHelpText     string
+	catalogSnapshotOnce          sync.Once
+	catalogSnapshot              registry.Snapshot
+	catalogHelpOnce              sync.Once
+	catalogHelpText              string
+	commandCatalogEvidenceDigest string
 )
 
 var commands = mustCommandCatalog(
@@ -106,6 +108,7 @@ var commands = mustCommandCatalog(
 		{descriptor: CommandDescriptor{ID: CommandHook, Name: "hook", RequiresSubcommand: true}, handler: runHook},
 		{descriptor: CommandDescriptor{ID: CommandBootstrap, Name: "bootstrap"}, handler: runBootstrap},
 		{descriptor: CommandDescriptor{ID: CommandTest, Name: "test"}, handler: runTest},
+		{descriptor: CommandDescriptor{ID: CommandValidation, Name: "validation", RequiresSubcommand: true}, handler: runValidation},
 		{descriptor: CommandDescriptor{ID: CommandDocSync, Name: "docsync", RequiresSubcommand: true}, handler: runDocSync},
 		{descriptor: CommandDescriptor{ID: CommandSkill, Name: "skill", RequiresSubcommand: true}, handler: runSkill},
 		{descriptor: CommandDescriptor{ID: CommandLifecycle, Name: "lifecycle", RequiresSubcommand: true}, handler: runLifecycle},
@@ -137,7 +140,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandHook, Section: HelpUsage, Usage: "aicoding hook post-commit [--repo-root PATH] [--json]"},
 		{Command: CommandBootstrap, Section: HelpUsage, Usage: "aicoding bootstrap [--repo-root PATH] [--json]"},
 
-		{Command: CommandTest, Section: HelpFormal, Usage: "aicoding test --profile Smoke|Full|Release [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]"},
+		{Command: CommandTest, Section: HelpFormal, Usage: "aicoding test --profile Smoke|Full|Release [--reuse auto|off] [--force] [--allow-dirty] [--verify-reuse] [--repo-root PATH] [--timeout-sec N] [--long-timeout-sec N] [--concurrency N] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle plan --action install|update|uninstall --scope kit --all [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle install|update|uninstall --scope kit --all [--repo-root PATH] [--json]"},
 		{Command: CommandLifecycle, Section: HelpFormal, Usage: "aicoding lifecycle plan --action install|update --scope all --runtime-profile runtime|full|skill-development [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--migrate-unmanaged] [--codex-config PATH] [--repo-root PATH] [--json]"},
@@ -156,6 +159,10 @@ var commands = mustCommandCatalog(
 		{Command: CommandRelease, Section: HelpFormal, Usage: "aicoding release gate [--repo-root PATH] [--json]"},
 
 		{Command: CommandTest, Section: HelpDomain, Usage: "aicoding test latest [--repo-root PATH] [--json]"},
+		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation status [--repo-root PATH] [--json]"},
+		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation check --profile Smoke|Full|Release --target HEAD|INDEX [--repo-root PATH] [--json]"},
+		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation list [--profile Smoke|Full|Release] [--repo-root PATH] [--json]"},
+		{Command: CommandValidation, Section: HelpDomain, Usage: "aicoding validation clean [--profile Smoke|Full|Release] [--repo-root PATH] [--json]"},
 		{Command: CommandDocSync, Section: HelpDomain, Usage: "aicoding docsync staged|all|ci|release [--repo-root PATH] [--json]"},
 		{Command: CommandSkill, Section: HelpDomain, Usage: "aicoding skill verify --all --profile Smoke|Full|Release [--repo-root PATH] [--json]"},
 		{Command: CommandSkill, Section: HelpDomain, Usage: "aicoding skill c99-standard-c status [--repo-root PATH] [--json]"},
@@ -191,6 +198,10 @@ var commands = mustCommandCatalog(
 		{Command: CommandPowerShell, Section: HelpDomain, Usage: "aicoding powershell regex-lint --path PATH [--repo-root PATH] [--json]"},
 	},
 )
+
+func init() {
+	commandCatalogEvidenceDigest = CatalogSnapshot().Digest()
+}
 
 func mustCommandCatalog(routes []commandRoute, sections []HelpSection, help []HelpForm) typedCommandCatalog {
 	catalog, err := newCommandCatalog(routes, sections, help)

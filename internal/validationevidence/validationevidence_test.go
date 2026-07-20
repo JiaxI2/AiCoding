@@ -59,6 +59,28 @@ func TestPackageBoundaryAndPublicAPIRemainSmall(t *testing.T) {
 	}
 }
 
+func TestExactCheckPathDoesNotWalkRepositoryFiles(t *testing.T) {
+	for _, path := range []string{"checker.go", "subject.go", "fingerprint.go"} {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		text := string(content)
+		for _, forbidden := range []string{"filepath.Walk(", "filepath.WalkDir(", "fs.WalkDir(", "os.ReadDir(", "git ls-files"} {
+			if strings.Contains(text, forbidden) {
+				t.Fatalf("%s introduces repository enumeration through %q", path, forbidden)
+			}
+		}
+	}
+	checker, err := os.ReadFile("checker.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(checker), "r.receiptPath(") || !strings.Contains(string(checker), "r.readReceipt(") || strings.Contains(string(checker), "r.List(") {
+		t.Fatal("Check no longer uses the exact Receipt path")
+	}
+}
+
 func TestReceiptSurvivesCommitMessageAmendAndLinkedWorktree(t *testing.T) {
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")

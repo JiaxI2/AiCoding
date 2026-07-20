@@ -48,6 +48,10 @@ func runTestProfile(profile string, args []string, command string, start time.Ti
 	runnerTimeoutSec := fs.Int("runner-timeout-sec", 3600, "overall tester process timeout seconds")
 	strictArg := fs.Bool("strict", false, "treat WARN severity command failures as FAIL")
 	noJSONCheckArg := fs.Bool("no-json-check", false, "disable JSON output validation")
+	reuseArg := fs.String("reuse", string(testengine.ReuseOff), "auto|off")
+	forceArg := fs.Bool("force", false, "ignore a matching Receipt and execute all selected cases")
+	allowDirtyArg := fs.Bool("allow-dirty", false, "allow execution for a dirty subject; never reusable")
+	verifyReuseArg := fs.Bool("verify-reuse", false, "execute and audit the conclusion against a matching Receipt")
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args); err != nil {
 		return report.Result{}, err
@@ -55,6 +59,13 @@ func runTestProfile(profile string, args []string, command string, start time.Ti
 	profile, displayProfile, err := normalizeTestProfile(profileValue)
 	if err != nil {
 		return report.Result{}, err
+	}
+	reuseMode := strings.ToLower(strings.TrimSpace(*reuseArg))
+	if !validChoice(reuseMode, string(testengine.ReuseAuto), string(testengine.ReuseOff)) {
+		return report.Result{}, usageErrorf("unsupported test reuse mode: %s", *reuseArg)
+	}
+	if *forceArg && *verifyReuseArg {
+		return report.Result{}, usageErrorf("--force and --verify-reuse cannot be combined")
 	}
 	if command == "" {
 		command = "test --profile " + displayProfile
@@ -74,14 +85,19 @@ func runTestProfile(profile string, args []string, command string, start time.Ti
 	}
 
 	cfg := testengine.Config{
-		Repo:        repo,
-		Out:         outDir,
-		Profile:     profile,
-		Timeout:     time.Duration(*timeoutSec) * time.Second,
-		LongTimeout: time.Duration(*longTimeoutSec) * time.Second,
-		Concurrency: *concurrency,
-		Strict:      *strictArg,
-		NoJSONCheck: *noJSONCheckArg,
+		Repo:                 repo,
+		Out:                  outDir,
+		Profile:              profile,
+		Timeout:              time.Duration(*timeoutSec) * time.Second,
+		LongTimeout:          time.Duration(*longTimeoutSec) * time.Second,
+		Concurrency:          *concurrency,
+		Strict:               *strictArg,
+		NoJSONCheck:          *noJSONCheckArg,
+		Reuse:                testengine.ReuseMode(reuseMode),
+		Force:                *forceArg,
+		AllowDirty:           *allowDirtyArg,
+		VerifyReuse:          *verifyReuseArg,
+		CommandCatalogDigest: commandCatalogEvidenceDigest,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(*runnerTimeoutSec)*time.Second)
@@ -174,18 +190,27 @@ func globalTestStandardReport(command string, profile string, outDir string, dur
 		SchemaVersion: report.SchemaVersion,
 		Status:        status,
 		Summary: map[string]interface{}{
-			"repo":        s.Repo,
-			"profile":     s.Profile,
-			"started_at":  s.StartedAt,
-			"ended_at":    s.EndedAt,
-			"duration_ms": s.DurationMS,
-			"total":       s.Total,
-			"pass":        s.Pass,
-			"fail":        s.Fail,
-			"warn":        s.Warn,
-			"skip":        s.Skip,
-			"conclusion":  s.Conclusion,
-			"output_dir":  filepath.ToSlash(outDir),
+			"repo":                s.Repo,
+			"profile":             s.Profile,
+			"started_at":          s.StartedAt,
+			"ended_at":            s.EndedAt,
+			"duration_ms":         s.DurationMS,
+			"total":               s.Total,
+			"pass":                s.Pass,
+			"fail":                s.Fail,
+			"warn":                s.Warn,
+			"skip":                s.Skip,
+			"conclusion":          s.Conclusion,
+			"output_dir":          filepath.ToSlash(outDir),
+			"execution_mode":      fileReport.ExecutionMode,
+			"receipt_id":          fileReport.ReceiptID,
+			"validation_identity": fileReport.ValidationIdentity,
+			"subject_tree_oid":    fileReport.SubjectTreeOID,
+			"subject_mode":        fileReport.SubjectMode,
+			"reusable":            fileReport.Reusable,
+			"reusable_reason":     fileReport.ReusableReason,
+			"validation_code":     fileReport.ValidationCode,
+			"check_duration_ms":   fileReport.CheckDurationMS,
 		},
 		Findings:   globalTestFindings(fileReport.Results),
 		Command:    command,

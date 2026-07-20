@@ -76,6 +76,32 @@ Release 仍执行真实 `export --zip` 与一次 `fresh-clone --profile Release`
 Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 versioned cache
 是可删除的临时数据，不再由当前 `cache status|clean` 管理。
 
+## Validation Evidence
+
+Validation Evidence 把一次完整 PASS 测试绑定到 Git Tree 和验证语义。第一期只提供显式
+复用，`test --profile ...` 的默认值仍是 `--reuse off`；只有调用者明确传入
+`--reuse auto` 才允许命中 Receipt 后短路。`--force` 忽略命中并完整执行，
+`--verify-reuse` 同样完整执行并审计实际结论，二者不能同时使用；`--allow-dirty` 只允许
+脏主体继续执行，所得报告永远不可复用。
+
+```powershell
+bin\aicoding.exe validation status --json
+bin\aicoding.exe validation check --profile Smoke --target HEAD --json
+bin\aicoding.exe validation check --profile Full --target INDEX --json
+bin\aicoding.exe validation list [--profile Release] --json
+bin\aicoding.exe validation clean [--profile Release] --json
+```
+
+`validation check` 只按完整 validation identity 查找精确 Receipt 路径，不扫描或逐文件哈希
+仓库。`HEAD` 证明当前提交 Tree；`INDEX` 通过 `git write-tree` 证明暂存区 Tree，因此不会修改
+工作区、暂存区或 HEAD，但可能向 Git object database 写入 tree object。仅改 commit message
+不会改变 Tree，Receipt 仍可命中；tracked 内容、暂存内容、非 ignored 未跟踪文件或子模块
+工作区变脏都会 fail-closed。ignored files 明确不在 Receipt 的证明范围内。
+
+Receipt、完整性绑定的报告和 toolchain cache 保存在 Git common-dir 下的
+`aicoding/validation/`，不提交到仓库。`validation list` 可按 profile 列出完整 Receipt；
+`validation clean` 删除所选 profile（省略时为全部 profile）的本地 Receipt 及其报告。
+
 ## 领域与专项命令
 
 | 目的 | 命令 |
@@ -98,6 +124,9 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 | Dependency direction / stable identity | `bin\aicoding.exe governance dependencies --json` |
 | Repository layout gate | `bin\aicoding.exe governance layout --json` |
 | Reuse governance evidence | `bin\aicoding.exe governance reuse --json` |
+| Validation evidence 状态 | `bin\aicoding.exe validation status --json` |
+| Validation Receipt 精确检查 | `bin\aicoding.exe validation check --profile Smoke\|Full\|Release --target HEAD\|INDEX --json` |
+| Validation Receipt 列出/清理 | `bin\aicoding.exe validation list\|clean [--profile Smoke\|Full\|Release] --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
 | Release notes verification | `bin\aicoding.exe verify release-notes --json` |
