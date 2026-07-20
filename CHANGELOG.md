@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(perf)**: 建立 `task full` 权威性能基线，记录冷/热各三次墙钟与引擎耗时、最慢 15 用例、环境和 cache 口径；六次实测中 FRESH/BOOT 占比为 66.3%–81.8%，满足继续优化的 40% 硬门禁。 / Establishes the authoritative Full performance baseline with six measured runs, environment and cache methodology, slowest-case evidence, and the measured cost-model gate.
+
 - **feat(kit)**: 新增消费者侧只读 `kit describe --kit <id>|--all [--with-state] --json` Plugin View——复用 detached Kit catalog、`CatalogKitViews`、manifest Skill 解析、Typed Command Catalog、Static Adapter Catalog 与 `report.Result`，区分 per-kit operations 和 scope 级 lifecycle actions；默认不读 state，显式 state 摘要剔除时间戳且不进入 inputDigest。Lifecycle 结构门禁新增 `plugin view projection`，Smoke 降级 warning，并修复 `aicoding-platform` manifest 已移除的 `status --all` 路由。 / Adds the read-only Kit Plugin View with deterministic catalog/adapter-derived identity, operations, workflows, optional timestamp-free state, and projection governance; also repairs the removed status route advertised by the platform manifest.
 
 - **feat(testengine)**: 落地 todolist 0001 / ADR 0006——新增 `internal/adrreview` Primitive（零仓库扫描：只读 `docs/decisions/*.md` 顶层，逐文件单遍、条件命中即停，`BenchmarkCheck` 度量），并在唯一测试 Registry 登记静态用例 `ADR-001`（三档全跑、Required）：声明 `PrimitiveReview: required` 的 ADR 必含 `## §12 Checklist 自评` 节，缺失即门禁红并指明具体文件；只查存在性，质量判断留给人（不做 theater）。0003/0004/0005/0006 已标注该头；历史 ADR 无头则忽略，可 `n/a` 显式豁免。守卫 `TestRegistryHasPrimitiveChecklistGate`；GLOBAL_TEST_CASES 补登记 RC-001/RC-002/ADR-001；todolist 0001 转 Done。 / Lands the ADR checklist gate: the adrreview primitive plus registry case ADR-001 enforce that new-primitive ADRs carry the §12 self-review section (existence only), with opt-in headers, a regression guard, and test-case docs updated.
