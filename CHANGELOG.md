@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(perf)**: 实测 Validation Evidence 的 Windows Git 性能地板：带子模块脏检测的 `git status` 中位数为 186.153ms，`HEAD^{tree}` 为 69.480ms；通过 400ms 停止门禁，并据此把 warm-cache `validation check --target HEAD` 中位数 SLA 定为 300ms。 / Records the measured Windows Git floor and sets the evidence-check SLA from observed medians before implementation.
+
 - **test(bootstrap)**: 为新用户 `task setup` 所走的默认 `bootstrap` 构建路径增加临时 Go module 回归，真实执行 `Options{Build:true}` 并断言二进制落盘；不把真实构建重新加入 Smoke/Full/Release profile。 / Covers the default bootstrap build path with an isolated temporary module without restoring a real build to any test profile.
 
 - **fix(testengine)**: 校正 Full 性能表述：阶段一去重复构建实测仅约 1.7%，阶段二主要是合法删除重复 `go test ./...` 并重划 Full/Release 成本边界；基于高方差基线按约 78%–84% 范围报告，并新增每周/手动 clean-clone Full CI 执行真实 `go test ./...`。 / Reframes the measured result as a Full cost-boundary reduction with a conservative observed range and restores real clean-clone Full testing in scheduled/manual CI.
