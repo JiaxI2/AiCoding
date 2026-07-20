@@ -139,10 +139,12 @@ func Decide(spec workspec.Spec, history []Attempt, gates []GateStatus, now time.
 			return finish(decision, Checkpoint, "context pressure"), nil
 		}
 	}
-	for _, gate := range decision.RequiredGates {
+	for _, gate := range gates {
 		if gate.State == GateViolation {
-			return finish(decision, StopViolation, "required gate reported a boundary violation"), nil
+			return finish(decision, StopViolation, "authority boundary violation detected"), nil
 		}
+	}
+	for _, gate := range decision.RequiredGates {
 		if gate.State != GateSatisfied {
 			return finish(decision, Continue, "required gates are not satisfied for the current tree"), nil
 		}

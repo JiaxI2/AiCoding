@@ -33,6 +33,8 @@
         "internal/loopkit/gateref/gateref.go",
         "internal/loopkit/transition/transition.go",
         "internal/loopkit/workspec/workspec.go",
+        "internal/loopkit/workstate/store.go",
+        "internal/cli/work.go",
         "config/schemas/loop-work-spec.schema.json",
         "config/schemas/loop-attempt.schema.json",
         "config/schemas/loop-profile.schema.json",

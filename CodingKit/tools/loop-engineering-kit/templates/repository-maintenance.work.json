@@ -16,7 +16,7 @@
         "allow": ["cmd/**", "internal/**", "config/**", "docs/**", ".github/**", ".githooks/**"],
         "deny": ["CodingKit/agents/skills/**"]
       },
-      "requiredGates": ["governance-dependencies", "governance-layout", "verify-smoke"],
+      "requiredGates": ["full"],
       "checkpoints": ["architecture-unfreeze", "submodule-pin-change", "merge", "release"]
     }
   },

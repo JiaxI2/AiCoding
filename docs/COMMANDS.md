@@ -156,6 +156,9 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` |
 | Tag audit | `bin\aicoding.exe tag audit --json` |
 | Todolist（待实现工作清单） | `bin\aicoding.exe todolist --json` |
+| Loop WorkSpec 校验 | `bin\aicoding.exe work validate --file <SPEC.json> --json` |
+| Loop 下一步裁决/状态 | `bin\aicoding.exe work next\|status --file <SPEC.json> --json` |
+| Loop 尝试记录 | `bin\aicoding.exe work record --file <SPEC.json> --attempt <ATTEMPT.json> --json` |
 | 本地环境初始化 | `bin\aicoding.exe provision [--repo-root PATH] --json`（git init + 接线 `.githooks` + 写 `aicoding.*` 到 `.git/config` + 建 `.aicoding` 根；幂等） |
 | 解析 Codex Token JSONL | `bin\aicoding.exe codex usage parse --file <FILE> --json` |
 | 运行 Codex 并采集 Token | `bin\aicoding.exe codex usage run -- codex exec --json "<PROMPT>"` |

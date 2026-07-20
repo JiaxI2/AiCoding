@@ -51,13 +51,20 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 		}
 	}
 	validationForms := 0
+	workForms := 0
 	for _, form := range catalog.Help {
 		if form.Command == CommandValidation {
 			validationForms++
 		}
+		if form.Command == CommandWork {
+			workForms++
+		}
 	}
 	if validationForms != 4 {
 		t.Fatalf("validation help form count = %d, want 4", validationForms)
+	}
+	if workForms != 4 {
+		t.Fatalf("work help form count = %d, want 4", workForms)
 	}
 }
 

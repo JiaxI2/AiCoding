@@ -49,6 +49,9 @@ func (s Spec) Validate() error {
 	if strings.TrimSpace(s.ID) == "" {
 		return errors.New("id is required")
 	}
+	if !validID(s.ID) {
+		return errors.New("id must be lowercase kebab-case")
+	}
 	switch s.Domain {
 	case DomainProjectDevelopment, DomainRepositoryMaintenance, DomainCIRepair,
 		DomainPerformanceExperiment, DomainDocumentation, DomainArchitecture:
@@ -81,4 +84,22 @@ func (s Spec) Digest() (string, error) {
 	}
 	sum := sha256.Sum256(data)
 	return "sha256:" + hex.EncodeToString(sum[:]), nil
+}
+
+func validID(id string) bool {
+	if id == "" || id[0] == '-' || id[len(id)-1] == '-' {
+		return false
+	}
+	previousDash := false
+	for _, char := range id {
+		switch {
+		case char >= 'a' && char <= 'z', char >= '0' && char <= '9':
+			previousDash = false
+		case char == '-' && !previousDash:
+			previousDash = true
+		default:
+			return false
+		}
+	}
+	return true
 }

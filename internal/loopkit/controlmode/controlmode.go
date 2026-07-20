@@ -53,6 +53,10 @@ func (c Control) Normalized() Control {
 	if c.Stop.ContextPressureThreshold == 0 {
 		c.Stop.ContextPressureThreshold = DefaultContextPressureThreshold
 	}
+	c.Authority.RequiredGates = append([]string(nil), c.Authority.RequiredGates...)
+	for i, gate := range c.Authority.RequiredGates {
+		c.Authority.RequiredGates[i] = strings.ToLower(strings.TrimSpace(gate))
+	}
 	return c
 }
 

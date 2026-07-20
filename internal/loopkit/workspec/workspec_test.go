@@ -60,3 +60,11 @@ func TestRejectsMissingRequiredGates(t *testing.T) {
 		t.Fatal("expected validation error")
 	}
 }
+
+func TestRejectsPathEscapingID(t *testing.T) {
+	s := validSpec()
+	s.ID = "../escape"
+	if err := s.Validate(); err == nil {
+		t.Fatal("expected path-escaping id to fail")
+	}
+}

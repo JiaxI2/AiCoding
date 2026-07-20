@@ -16,7 +16,7 @@
         "allow": ["src/**", "tests/**", "docs/**"],
         "deny": [".git/**", "vendor/**"]
       },
-      "requiredGates": ["scope", "project-build", "project-test"],
+      "requiredGates": ["full"],
       "checkpoints": ["architecture-change", "merge"]
     }
   },
