@@ -20,9 +20,12 @@ else
   hook_status=$?
 fi
 
-# TODO 0004: Plan Mode is warning-only until approval binding lands in TODO 0006.
-if ! "$cli" plan check --staged --repo-root "$repo_root" --json; then
-  echo "warning: Plan Mode trigger detected; enforcement begins after TODO 0006" >&2
+if "$cli" plan check --staged --repo-root "$repo_root" --json; then
+  :
+else
+  plan_status=$?
+  echo "Plan Mode gate rejected staged architecture-sensitive paths" >&2
+  exit "$plan_status"
 fi
 
 exit "$hook_status"

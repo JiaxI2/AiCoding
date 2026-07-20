@@ -129,17 +129,20 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | Plan Mode 触发检查 | `bin\aicoding.exe plan check (--staged | --paths PATH ...) --json` |
 | Plan Mode 产物校验 | `bin\aicoding.exe plan verify --json` |
 | Plan Mode 产物状态 | `bin\aicoding.exe plan status [--id <id>\|--all] --json` |
+| Plan Mode 内容批准 | `bin\aicoding.exe plan approve --id <id> --json` |
 | Skill verify | `bin\aicoding.exe skill verify --all --profile Smoke|Full|Release --json` |
 | MCP inventory | `bin\aicoding.exe mcp list --json` |
 
-`plan check` 只按 `config/plan-policy.json` 判断路径是否触发 Plan Mode，不运行验证、
-不创建计划，也不检查批准覆盖（批准绑定在 TODO 0006 接入）。`exemptPaths` 优先于
-`sensitivePaths`。TODO 0004 阶段 pre-commit 只输出告警，不阻断提交。
+`plan check` 先按 `config/plan-policy.json` 判断路径是否敏感，再要求每条敏感路径被至少
+一个 `approved` plan 的 scope 覆盖；它不运行验证或创建计划。`exemptPaths` 优先于
+`sensitivePaths`，pre-commit 对未覆盖路径 fail-closed。
 
 每个 Plan Mode 会话位于 `docs/spec/<id>/`；`PLAN.md` 是唯一必需文件，
 `OPTIONS.md`、`DECISION.md`、`TASKS.md` 按需存在。`plan verify` 只校验 frontmatter、
-目录 ID、scope pattern 与文件依赖；`plan status` 返回排序后的 frontmatter 视图，不做
-批准 Tree 漂移判断（该能力在 TODO 0006 接入）。
+目录 ID、scope pattern 与文件依赖。`plan approve` 只接受 clean worktree，把当前
+`HEAD^{tree}` 写入 `approvedTree` 并把状态改为 `approved`；它是 plan 域唯一写命令。
+`plan status` 比较批准树与当前 `HEAD`，列出 scope 内漂移、越界路径、exempt 路径和
+当前树的 validationevidence gate 引用；它只建议 `implemented`，不会自动改状态。
 | MCP status/doctor | `bin\aicoding.exe mcp status|doctor <COMPONENT> --json` |
 | MCP verify | `bin\aicoding.exe mcp verify <COMPONENT>\|--all --profile Smoke\|Full\|Release --configured --json` |
 | C99 skill status | `bin\aicoding.exe skill c99-standard-c status --json` |

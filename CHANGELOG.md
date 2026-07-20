@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- **feat(plan)**: 新增 clean-tree `plan approve`、Git Tree 内容绑定、scope 漂移/越界裁决与 approved plan 敏感路径覆盖检查；验证证据仍只引用既有 Receipt，不复制证据模型。 / Adds clean-tree plan approval, Git-tree binding, scope drift adjudication, and approved-plan coverage for sensitive paths while retaining validation evidence as the sole Receipt authority.
+- **feat(plan)**: 新增 clean-tree `plan approve`、Git Tree 内容绑定、scope 漂移/越界裁决与 approved plan 敏感路径覆盖检查，pre-commit 升级为强制门禁，并以 ADR 0009 和唯一架构文档固化边界；验证证据仍只引用既有 Receipt。 / Adds clean-tree plan approval, Git-tree drift adjudication, approved-plan coverage, enforced pre-commit gating, ADR 0009, and one architecture authority while retaining validation evidence as the sole Receipt authority.
 
 - **docs(plan)**: 为 Plan Mode 内容绑定阶段登记独立的 per-plan scope 与 Full gate，作为后续 clean-tree `plan approve` 的自举契约。 / Registers the bounded per-plan scope and Full gate used to bootstrap clean-tree approval for the Plan Mode content-binding stage.
 

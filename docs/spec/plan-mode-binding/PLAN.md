@@ -1,6 +1,6 @@
 ---
 id: plan-mode-binding
-status: draft
+status: approved
 scope:
   - internal/plan/**
   - internal/cli/**
@@ -13,7 +13,7 @@ scope:
   - .githooks/pre-commit
   - CHANGELOG.md
   - docs/todolist/0006-plan-mode-binding.md
-approvedTree: ""
+approvedTree: "7d09305d98143e5830808ebf81be7fe89d08ac12"
 decision: ""
 gates:
   - profile: full
