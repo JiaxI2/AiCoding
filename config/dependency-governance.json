@@ -314,7 +314,8 @@
       "internal/pwshregex",
       "internal/repohealth",
       "internal/repoinit",
-      "internal/tagpolicy"
+      "internal/tagpolicy",
+      "internal/validationevidence"
     ]
   },
   "goPackageBoundaries": [
@@ -342,7 +343,8 @@
         "internal/runner",
         "internal/tagpolicy",
         "internal/testengine",
-        "internal/todolist"
+        "internal/todolist",
+        "internal/validationevidence"
       ]
     },
     {
@@ -416,6 +418,33 @@
         "internal/mcpcontrol",
         "internal/repohealth",
         "internal/testengine"
+      ]
+    },
+    {
+      "path": "internal/validationevidence",
+      "forbiddenImports": [
+        "internal/bootstrap",
+        "internal/cache",
+        "internal/cli",
+        "internal/cstyle",
+        "internal/docsync",
+        "internal/governance",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/mcpcontrol",
+        "internal/platform",
+        "internal/pwshregex",
+        "internal/registry",
+        "internal/releasegate",
+        "internal/repocontext",
+        "internal/report",
+        "internal/repohealth",
+        "internal/repoinit",
+        "internal/reuse",
+        "internal/runner",
+        "internal/tagpolicy",
+        "internal/testengine",
+        "internal/todolist"
       ]
     },
     {

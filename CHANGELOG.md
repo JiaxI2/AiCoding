@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(validationevidence)**: 新增内容寻址 Validation Evidence Primitive：以 Git common-dir、Tree OID 和验证语义摘要计算 identity，按精确路径原子保存 PASS Receipt 与报告 digest；amend/linked worktree 保持有效，跨仓隔离，脏主体与任何篡改 fail-closed，并显式声明 ignored files 不在证明范围。 / Adds content-addressed PASS Receipts with semantic identities, integrity-bound reports, linked-worktree reuse, repository isolation, and an explicit ignored-file boundary.
+
 - **feat(gitx)**: 新增 5 个 Git 内容身份 Primitive：HEAD commit、任意 ref tree、index write-tree、worktree 共用 common-dir，以及单次 porcelain-v2 status 解析；子模块 gitlink 继续由 Tree OID 覆盖，子模块工作区脏状态不再触发递归查询。 / Adds the five Git content-identity primitives with one status process and no recursive submodule probe.
 
 - **docs(perf)**: 实测 Validation Evidence 的 Windows Git 性能地板：带子模块脏检测的 `git status` 中位数为 186.153ms，`HEAD^{tree}` 为 69.480ms；通过 400ms 停止门禁，并据此把 warm-cache `validation check --target HEAD` 中位数 SLA 定为 300ms。 / Records the measured Windows Git floor and sets the evidence-check SLA from observed medians before implementation.
