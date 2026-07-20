@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(docsync)**: 新增架构文档分层阅读入口与 `Status:` 强制检查，明确 MCP 单一权威，并把冻结 schema、唯一 Result、唯一 Receipt 三项声明登记为 `FREEZE-001..003` 静态门禁。 / Adds a layered architecture reading path, enforced status headers, explicit MCP authority, and three executable freeze assertions for schemas, Result, and Receipt.
+
 - **docs(plan)**: 为架构文档治理阶段登记独立 approved scope 与 Full gate。 / Registers the approved scope and Full gate for the architecture-document governance stage.
 
 - **feat(plan)**: 新增 clean-tree `plan approve`、Git Tree 内容绑定、scope 漂移/越界裁决与 approved plan 敏感路径覆盖检查，pre-commit 升级为强制门禁，并以 ADR 0009 和唯一架构文档固化边界；验证证据仍只引用既有 Receipt。 / Adds clean-tree plan approval, Git-tree drift adjudication, approved-plan coverage, enforced pre-commit gating, ADR 0009, and one architecture authority while retaining validation evidence as the sole Receipt authority.

@@ -1,5 +1,7 @@
 # Kit Lifecycle Architecture
 
+Status: Accepted and Frozen
+
 当前产品使用 Go-native lifecycle control。`internal/lifecycle` 以静态 Adapter Catalog
 组合 Kit、MCP 和 runtime Skill，并将选择结果转换为 `ExecutionPlan`；不引入动态插件系统，
 也不复制各领域已有实现。Lifecycle 的可观测入口是

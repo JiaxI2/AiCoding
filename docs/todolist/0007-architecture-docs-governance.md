@@ -1,6 +1,6 @@
 # TODO 0007: 架构文档治理（阅读路径 + Status 门禁 + MCP 权威收敛）
 
-Status: Planned
+Status: Done
 Verify: bin/aicoding.exe docsync all --json 通过且含 architecture Status 检查；docs/architecture/README.md 存在
 
 > 对抗性审计结论：22 份/2969 行架构文档中，真正定义契约的只有 4 份共 755 行；

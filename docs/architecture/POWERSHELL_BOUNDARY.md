@@ -1,5 +1,7 @@
 # PowerShell Boundary
 
+Status: Accepted and Frozen
+
 本文档只描述当前 main 的 PowerShell 保留边界。默认控制面是 Go CLI；Taskfile 只做路由；PowerShell 不承载 Smoke、CI、Full、Release gate、DocSync、skill verify、lifecycle、export 或 fresh-clone 的默认编排。
 
 ## 默认入口

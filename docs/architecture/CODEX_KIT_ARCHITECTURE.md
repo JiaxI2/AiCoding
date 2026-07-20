@@ -1,5 +1,7 @@
 # Codex Kit Architecture
 
+Status: Accepted and Frozen
+
 AiCoding 是 Codex kit 的平台集成仓库。当前 main 的可观测标准是 Go-first 控制面、Taskfile 短路由、PowerShell 专项保留。
 
 ## Ownership

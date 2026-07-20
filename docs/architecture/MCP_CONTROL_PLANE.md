@@ -1,5 +1,9 @@
 # MCP Control Plane
 
+Status: Derived View
+
+> 权威见 [CLI_MCP_CONTROL_PLANE.md](CLI_MCP_CONTROL_PLANE.md)；若有冲突，以该权威文档为准。
+
 AiCoding 的 MCP 控制面属于上层 platform/integration。它负责组件登记、安装状态、Codex 配置、兼容性回归和生命周期；通用 MCP capability 只提供领域工具与资源，不观察 AiCoding。
 
 ## 依赖方向

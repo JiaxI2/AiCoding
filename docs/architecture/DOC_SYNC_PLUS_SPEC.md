@@ -1,5 +1,7 @@
 ﻿# AiCoding DocSync Plus Specification
 
+Status: Accepted and Frozen
+
 ## Role
 
 DocSync Plus is a repository-maintenance kit for AiCoding. It upgrades documentation synchronization from a path-only gate to a Git-diff-driven semantic drift gate.

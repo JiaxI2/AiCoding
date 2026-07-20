@@ -429,6 +429,9 @@ func Registry(cfg Config) []TestCase {
 		{ID: "DOCS-003", Category: "README_DOCS", Title: "COMMANDS 命令矩阵", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-004", Category: "README_DOCS", Title: "Fast Path 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-005", Category: "README_DOCS", Title: "C99 skill 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-001", Category: "FREEZE", Title: "冻结 schema 文件存在", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-002", Category: "FREEZE", Title: "report Result 权威唯一", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-003", Category: "FREEZE", Title: "validation Receipt 权威唯一", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
 		{ID: "GIT-001", Category: "GIT_GOVERNANCE", Title: "工作区状态", Severity: WarnOnly, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"git", "status", "--short"}},
 		{ID: "GIT-002", Category: "GIT_GOVERNANCE", Title: "hooks verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "hooks", "--json"}, ExpectJSON: true},
@@ -699,6 +702,12 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"Go CLI", "Doctor", "Verify", "test engine", "DocSync", "PowerShell Boundary"})
 	case "DOCS-005":
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/guides/C99_STANDARD_C_SKILL.md"), []string{"config/skills/c99-standard-c", "skill c99-standard-c", "fmt", "check", "templates"})
+	case "FREEZE-001":
+		err = checkFrozenSchemas(cfg.Repo)
+	case "FREEZE-002":
+		err = checkUniqueProductionType(cfg.Repo, "internal/report", "Result")
+	case "FREEZE-003":
+		err = checkUniqueProductionType(cfg.Repo, "internal/validationevidence", "Receipt")
 	case "GIT-007":
 		err = checkGitAttributes(cfg.Repo)
 	case "PWSH-003":

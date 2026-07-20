@@ -1,13 +1,13 @@
 ---
 id: architecture-docs-governance
-status: draft
+status: approved
 scope:
   - docs/architecture/**
   - internal/docsync/**
   - internal/testengine/**
   - CHANGELOG.md
   - docs/todolist/0007-architecture-docs-governance.md
-approvedTree: ""
+approvedTree: "f925db7c68b3a18d862dd572602157918b809829"
 decision: ""
 gates:
   - profile: full
