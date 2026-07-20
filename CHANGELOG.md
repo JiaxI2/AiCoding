@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(todolist)**: 登记 TODO 0003–0008：Loop Engineering Kit 落地（裁决者契约）、Plan Mode 重构三部曲（触发机器化/产物标准化/批准绑定内容）、架构文档治理与 Kit 架构文档还债；同时提交 `docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md`（Status: Proposed）。 / Registers TODO 0003-0008 covering the loop-engineering kit landing plan, the three-stage Plan Mode rework, architecture-doc governance, and kit architecture debt, plus the proposed loop-engineering architecture document.
+
 - **fix(validationevidence)**: 在没有远端 CI 连续绿灯证据时把默认复用退回 `--reuse off`，规定 main 的 Release seed/audit 连续 3 次成功后方可独立晋级；新增显式 `validation check --target HEAD --bind-alias`，只为同 Tree 的 metadata-only 重写 tip 修复 alias，Tree 变化仍必须重跑。 / Restores reuse-off by default until three consecutive remote Release audits pass, and adds an explicit same-tree tip-alias recovery path without weakening tree-change misses.
 
 - **docs(perf)**: 回填第二期实测：已有 main 的单 ref 快进 pre-push 端到端中位数 `213.784 ms`（5/5 允许），显式 Release 自动复用中位数 `397.799 ms`；两条路径均使用预构建 CLI，Hook 不运行构建或测试。 / Records Phase 2 measurements for the exact-object pre-push gate and explicit Release reuse, both through the prebuilt CLI with no build or test in hooks.
