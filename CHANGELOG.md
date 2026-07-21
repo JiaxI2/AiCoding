@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(governance)**: 完成 TODO 0019 的 AiCoding 侧准备：把 0012 已验证的双主题 banner、技术栈 badge 投影、30 秒/3 分钟/persona、Mermaid 节点预算、能力橱窗、四象限与无凭据 Star History 边界整理为 Codex-Skills 上游 PR 的规则/模板/lint/兼容负例清单；同时定位本仓版本硬编码与 `required_sections` 尚未泛化的真实落点。未修改只读子模块、未前移 pin，0019 保持 Planned，待独立上游 PR 合并后继续。 / Prepares the AiCoding side of TODO 0019 with an evidence-backed upstream rule, template, lint, compatibility, and adoption checklist while leaving the read-only submodule and pin untouched and the cross-repository item Planned.
+
 - **docs(powershell)**: 完成 TODO 0002 的重新评估：22 个 `tools/specialty/**/*.ps1` 全部归入已冻结的 tag、release overlay、PowerShell quality、Plan Mode helper、external Skill、硬件安全类别，或处于已有 ADR/Retirement Plan 的兼容退役窗口；默认 profile 继续由 PWSH-003 保证直达 Go CLI。接受 `remainingScripts=20 / thinShells=2 / deprecated=2` 为只读退役快照，不为脚本数归零重写合法专项流程，专项面继续只减不增。 / Completes TODO 0002 by classifying the entire frozen PowerShell surface, preserving only explicit specialty responsibilities and governed compatibility windows, and rejecting a count-driven rewrite while Go-native default routes remain required.
 
 - **feat(authoring)**: 完成 TODO 0020：新增 fail-closed 的 `skill init` 与 `mcp init`，复用既有 CLI/report 与编译期模板机制。Skill 默认仅预览，显式写入也必须位于 AiCoding 仓库外，符号链接解析后落入只读 Skill 子模块同样拒绝；生成草稿零编辑通过 Codex-Skills 结构门禁。MCP 只生成冻结 manifest 与 disabled registry entry 建议，不改 registry、不生成 runtime、不拥有工作流 prompt。新增中文优先创作指引，明确 Skill/Kit/MCP/Hook 的唯一权威和跨仓 pin 流程，且不提供 `hook init`。 / Completes TODO 0020 with safe external Skill drafting and MCP manifest scaffolding, strict no-overwrite and ownership boundaries, schema-aligned outputs, no automatic registration or enablement, and one authoring guide for all four asset classes.
