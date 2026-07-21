@@ -283,7 +283,7 @@ func TestScheduledCISeedsAndAuditsReleaseBeforeDefaultPromotion(t *testing.T) {
 	}
 }
 
-func TestCIUsesGoModToolchainAndPinsEveryActionBySHA(t *testing.T) {
+func TestCIPinsEffectiveGoVersionAndEveryActionBySHA(t *testing.T) {
 	workflowPaths := []string{
 		filepath.Join("..", "..", ".github", "workflows", "aicoding-ci.yml"),
 		filepath.Join("..", "..", ".github", "workflows", "issue-governance.yml"),
@@ -305,11 +305,11 @@ func TestCIUsesGoModToolchainAndPinsEveryActionBySHA(t *testing.T) {
 		t.Fatal(err)
 	}
 	workflow := string(data)
-	if got := strings.Count(workflow, "go-version-file: 'go.mod'"); got != 3 {
-		t.Fatalf("setup-go go-version-file count = %d, want 3", got)
+	if got := strings.Count(workflow, "go-version: '1.26.5'"); got != 3 {
+		t.Fatalf("setup-go explicit go-version count = %d, want 3", got)
 	}
-	if regexp.MustCompile(`(?m)^\s+go-version:\s*`).MatchString(workflow) {
-		t.Fatal("CI still contains an explicit go-version instead of go.mod single-source selection")
+	if strings.Contains(workflow, "go-version-file:") {
+		t.Fatal("CI still uses go-version-file even though setup-go reads the go directive instead of the toolchain directive")
 	}
 	if got := strings.Count(workflow, "go version"); got != 3 {
 		t.Fatalf("effective Go version log count = %d, want 3", got)
