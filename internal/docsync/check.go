@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/JiaxI2/AiCoding/internal/capability"
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 )
@@ -68,6 +69,10 @@ func Check(repo, mode string) CheckResult {
 		result.Checks = append(result.Checks, CheckItem{Name: "architecture status headers", OK: len(statusErrors) == 0})
 		result.Errors = append(result.Errors, statusErrors...)
 	}
+	if checked, generatedErrors := capabilityGeneratedIndexErrors(repo); checked {
+		result.Checks = append(result.Checks, CheckItem{Name: "capability generated index", OK: len(generatedErrors) == 0})
+		result.Errors = append(result.Errors, generatedErrors...)
+	}
 	if mode == "ci" || mode == "release" {
 		result.Errors = append(result.Errors, requiredPathErrors(repo, []string{
 			"internal/docsync/docsync.go",
@@ -88,6 +93,40 @@ func Check(repo, mode string) CheckResult {
 	result.Warnings = compact(result.Warnings)
 	result.OK = len(result.Errors) == 0
 	return result
+}
+
+func capabilityGeneratedIndexErrors(repo string) (bool, []string) {
+	registryPath := filepath.Join(repo, filepath.FromSlash(capability.CatalogPath))
+	if _, err := os.Stat(registryPath); os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return true, []string{"capability generated index: " + err.Error()}
+	}
+	catalog, err := capability.Load(repo)
+	if err != nil {
+		return true, []string{"capability generated index: " + err.Error()}
+	}
+	readme, err := os.ReadFile(filepath.Join(repo, "README.md"))
+	if err != nil {
+		return true, []string{"capability generated index: " + err.Error()}
+	}
+	rendered, err := capability.RenderIndex(catalog, string(readme))
+	if err != nil {
+		return true, []string{"capability generated index: " + err.Error()}
+	}
+	errs := []string{}
+	if normalizeDocSyncNewlines(string(readme)) != normalizeDocSyncNewlines(rendered.README) {
+		errs = append(errs, "capability generated index: README.md is stale; run `aicoding capability index --write`")
+	}
+	document, err := os.ReadFile(filepath.Join(repo, filepath.FromSlash(capability.CapabilitiesPath)))
+	if err != nil || normalizeDocSyncNewlines(string(document)) != normalizeDocSyncNewlines(rendered.Document) {
+		errs = append(errs, "capability generated index: docs/CAPABILITIES.md is stale; run `aicoding capability index --write`")
+	}
+	return true, errs
+}
+
+func normalizeDocSyncNewlines(value string) string {
+	return strings.ReplaceAll(value, "\r\n", "\n")
 }
 
 func architectureStatusErrors(repo string) []string {

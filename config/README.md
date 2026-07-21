@@ -19,6 +19,8 @@ Do not create a parallel source of truth outside this domain. Add new items only
 
 - `dependency-governance.json`: layer direction, registry bindings, namespace ownership, Skill/MCP responsibility, stable identity and README version badge authority.
 - `schemas/dependency-governance.schema.json`: machine schema for that policy.
+- `internal-capabilities.json`: 28 个 `internal/` 一级包的唯一能力目录，登记类型、稳定态、公共入口、架构文档与验证命令。
+- `schemas/internal-capabilities.schema.json`: 能力目录的结构与分级文档义务 schema。
 - `schemas/cli-report.schema.json`: `report.Result`, `StandardReport` and shared product-check JSON contract.
 - `validation-policy.json`: pre-push Context Gate 的远端 ref、必需验证 profile、快进与删除策略。
 - `impact-policy.json`: 影响规则的单一文件；当前 `raceScope.packages` 登记 Full race 包集合，GO-007 机器阻断并发包漏登。Release 不读取该缩减集合，始终全仓 race。

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(capability)**: 完成 TODO 0023：以 `config/internal-capabilities.json` 唯一登记 28 个 `internal/` 一级包，新增只读 `capability list/describe` 与受限 `index --write`，从 typed HelpForm 校验公共入口；`governance capabilities` 阻断孤儿包、缺文档和 stable 无验证，DocSync 阻断 README/`docs/CAPABILITIES.md` 确定性生成区漂移，并由 CAP-001 纳入唯一测试引擎。 / Completes TODO 0023 with one internal-capability registry, typed-catalog-backed discovery, deterministic whitespace-clean index generation, orphan and documentation governance, DocSync drift detection, and the CAP-001 global gate.
+
 - **docs(plan)**: 在 clean worktree 上重新批准 Loop Engineering backlog plan，将扩展后的 scope 绑定到 tree `6cedb32a413b59c1764424bf21f2db6f24840d4b`，后续 capability 实现重新受内容绑定约束。 / Reapproves the expanded backlog plan on a clean worktree and binds subsequent capability work to tree `6cedb32a413b59c1764424bf21f2db6f24840d4b`.
 
 - **docs(plan)**: 将已实际使用的 `internal/platform/**` 与 TODO 0023 明确新增的 `internal/capability/**` 补入 Loop Engineering backlog plan scope，并回到 draft 以执行 clean-tree 重新批准；不借 Plan Mode 非敏感路径空档接受越界实现。 / Expands the backlog plan scope for the implemented platform and capability domains and returns it to draft for a clean-tree reapproval instead of accepting out-of-scope work.

@@ -90,7 +90,13 @@
 | DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含唯一 test engine、共享 report 和 PowerShell boundary | REQUIRED |
 | DOCS-005 | C99 skill 文档 | 检查 `docs/guides/C99_STANDARD_C_SKILL.md` | 包含配置边界、C Kit 资产边界和统一 CLI 入口 | REQUIRED |
 
-## 9. GIT_GOVERNANCE：Git 仓库治理
+## 9. CAPABILITY：平台能力目录
+
+| ID | 用例 | 方法 | 期望结果 | 严重级别 |
+|---|---|---|---|---|
+| CAP-001 | internal capability registry | `bin/aicoding.exe governance capabilities --json` | `internal/` 一级包无孤儿、公共入口存在、架构文档与生成索引同步 | REQUIRED |
+
+## 10. GIT_GOVERNANCE：Git 仓库治理
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
@@ -104,7 +110,7 @@
 | GIT-008 | repository layout | `bin/aicoding.exe governance layout --json` | 仓库 ownership 与 layout 规则通过 | REQUIRED |
 | GIT-009 | reuse governance | `bin/aicoding.exe governance reuse --json` | reuse evidence gate 通过 | REQUIRED |
 
-## 10. PWSH_BOUNDARY：PowerShell 边界
+## 11. PWSH_BOUNDARY：PowerShell 边界
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
@@ -113,20 +119,20 @@
 | PWSH-003 | 默认入口不经 PS 编排 | 检查 Taskfile 是否存在 Go-native 默认路由 | doctor/verify/Smoke/Full/Release 均直达正式 Go CLI；允许变量和 Windows/Unix 路径分隔符 | REQUIRED |
 | HEALTH-001 | typed command 延迟门禁 | `bin/aicoding.exe doctor perf --json` | fast/standard 注册命令各进程内实测 3 次取中位数；1.5× Warn、3× Fail | REQUIRED |
 
-## 11. REPO_CONTEXT：仓库上下文领域
+## 12. REPO_CONTEXT：仓库上下文领域
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | RC-001 | repo-context 扫描与结构验证 | `bin/aicoding.exe lifecycle verify --scope repo-context --json` | 事实快照可构建；已安装时 manifest 结构完整（未安装为空操作通过） | REQUIRED |
 | RC-002 | repo-context 生成计划 | `bin/aicoding.exe lifecycle plan --action install --scope repo-context --json`（Full/Release） | 生成计划可计算且不写盘 | REQUIRED |
 
-## 12. ADR_REVIEW：Primitive 宪法自评门禁
+## 13. ADR_REVIEW：Primitive 宪法自评门禁
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | ADR-001 | 新 Primitive ADR 含 §12 自评 | 静态检查 `docs/decisions/*.md`：声明 `PrimitiveReview: required` 的 ADR 必含 `## §12 Checklist 自评` 节（`internal/adrreview`） | 无缺口；缺失时报出具体 ADR 文件与修复指引 | REQUIRED |
 
-## 13. RELEASE_GATE：Release policy
+## 14. RELEASE_GATE：Release policy
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|

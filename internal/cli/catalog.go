@@ -44,6 +44,7 @@ const (
 	CommandExport     CommandID = "export"
 	CommandFreshClone CommandID = "fresh-clone"
 	CommandCache      CommandID = "cache"
+	CommandCapability CommandID = "capability"
 	CommandCodex      CommandID = "codex"
 	CommandMCP        CommandID = "mcp"
 	CommandTag        CommandID = "tag"
@@ -135,6 +136,7 @@ var commands = mustCommandCatalog(
 		{descriptor: CommandDescriptor{ID: CommandExport, Name: "export", LatencyClass: LatencyWork}, handler: runExport},
 		{descriptor: CommandDescriptor{ID: CommandFreshClone, Name: "fresh-clone", LatencyClass: LatencyWork}, handler: runFreshClone},
 		{descriptor: CommandDescriptor{ID: CommandCache, Name: "cache", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"status"}}, handler: runCache},
+		{descriptor: CommandDescriptor{ID: CommandCapability, Name: "capability", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"list"}}, handler: runCapability},
 		{descriptor: CommandDescriptor{ID: CommandCodex, Name: "codex", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runCodexUsage},
 		{descriptor: CommandDescriptor{ID: CommandMCP, Name: "mcp", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"list"}}, handler: runMCP},
 		{descriptor: CommandDescriptor{ID: CommandTag, Name: "tag", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"audit"}}, handler: runTag},
@@ -206,6 +208,9 @@ var commands = mustCommandCatalog(
 		{Command: CommandFreshClone, Section: HelpDomain, Usage: "aicoding fresh-clone --profile Smoke|Full|Release [--repo-root PATH] [--json]"},
 		{Command: CommandCache, Section: HelpDomain, Usage: "aicoding cache status [--repo-root PATH] [--json]"},
 		{Command: CommandCache, Section: HelpDomain, Usage: "aicoding cache clean [--scope fast-path|test-results|validation-reports|temp|work-state] [--keep N] [--dry-run] [--adopt] [--all-repos] [--repo-root PATH] [--json]"},
+		{Command: CommandCapability, Section: HelpDomain, Usage: "aicoding capability list [--type TYPE] [--status STATUS] [--repo-root PATH] [--json]"},
+		{Command: CommandCapability, Section: HelpDomain, Usage: "aicoding capability describe --id ID [--repo-root PATH] [--json]"},
+		{Command: CommandCapability, Section: HelpDomain, Usage: "aicoding capability index --write [--repo-root PATH] [--json]"},
 		{Command: CommandCodex, Section: HelpDomain, Usage: "aicoding codex usage parse [--file FILE|-] [--json]"},
 		{Command: CommandCodex, Section: HelpDomain, Usage: "aicoding codex usage run [--json] -- codex exec --json \"PROMPT\""},
 		{Command: CommandMCP, Section: HelpDomain, Usage: "aicoding mcp list [--codex-config PATH] [--repo-root PATH] [--json]"},
@@ -216,6 +221,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandGovernance, Section: HelpDomain, Usage: "aicoding governance dependencies [--repo-root PATH] [--json]"},
 		{Command: CommandGovernance, Section: HelpDomain, Usage: "aicoding governance layout [--repo-root PATH] [--json]"},
 		{Command: CommandGovernance, Section: HelpDomain, Usage: "aicoding governance reuse [--repo-root PATH] [--json]"},
+		{Command: CommandGovernance, Section: HelpDomain, Usage: "aicoding governance capabilities [--repo-root PATH] [--json]"},
 		{Command: CommandKit, Section: HelpDomain, Usage: "aicoding kit list [--repo-root PATH] [--json]"},
 		{Command: CommandKit, Section: HelpDomain, Usage: "aicoding kit init ID [--external] [--dry-run] [--repo-root PATH] [--json]"},
 		{Command: CommandKit, Section: HelpDomain, Usage: "aicoding kit describe --kit ID|--all [--with-state] [--repo-root PATH] [--json]"},
@@ -240,6 +246,7 @@ func init() {
 	}
 	catalogHelpText = renderCatalogHelp()
 	commandCatalogEvidenceDigest = catalogSnapshot.Digest()
+	commandPublicEntryExists = catalogHasPublicEntry
 }
 
 func mustCommandCatalog(routes []commandRoute, sections []HelpSection, help []HelpForm) typedCommandCatalog {

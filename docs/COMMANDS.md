@@ -46,6 +46,11 @@ Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`
 catalog，并通过 catalog 完整性与 CLI contract 测试；不能再在 router、help 和
 namespace 判断中分别维护字符串列表。
 
+`config/internal-capabilities.json` 是 `internal/` 一级包的唯一能力目录，不是第二套命令
+catalog。公共入口反向校验上面的 typed HelpForm；`capability list`/`describe` 只读查询，
+`capability index --write` 只写 README 生成区和 `docs/CAPABILITIES.md`。`docsync` 阻断手改
+生成区，`governance capabilities` 阻断未登记包、缺失架构文档、失效公共入口和 stable 无验证。
+
 延迟等级也是命令契约：`fast` 的 warm 中位数预算为 400ms，覆盖只读查询；`standard`
 预算为 1200ms，覆盖 `doctor --all`、`lifecycle status --scope all`、
 `governance dependencies` 与 `verify Smoke` 等聚合读取；`work` 表示测试、发布、clone、
@@ -185,6 +190,9 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | 目的 | 命令 |
 |---|---|
 | DocSync staged/all/ci/release | `bin\aicoding.exe docsync staged|all|ci|release --json` |
+| 能力目录筛选 | `bin\aicoding.exe capability list [--type TYPE] [--status STATUS] --json` |
+| 能力详情 | `bin\aicoding.exe capability describe --id <ID> --json` |
+| 刷新能力索引 | `bin\aicoding.exe capability index --write --json` |
 | Plan Mode 触发检查 | `bin\aicoding.exe plan check (--staged | --paths PATH ...) --json` |
 | Plan Mode 产物校验 | `bin\aicoding.exe plan verify --json` |
 | Plan Mode 产物状态 | `bin\aicoding.exe plan status [--id <id>\|--all] --json` |
@@ -218,6 +226,7 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | Dependency direction / stable identity | `bin\aicoding.exe governance dependencies --json` |
 | Repository layout gate | `bin\aicoding.exe governance layout --json` |
 | Reuse governance evidence | `bin\aicoding.exe governance reuse --json` |
+| Capability orphan/document gate | `bin\aicoding.exe governance capabilities --json` |
 | Validation evidence 状态 | `bin\aicoding.exe validation status --json` |
 | Validation Receipt 精确检查 | `bin\aicoding.exe validation check --profile Smoke\|Full\|Release --target HEAD\|INDEX --json` |
 | Validation Receipt miss 解释 | `bin\aicoding.exe validation explain --profile Smoke\|Full\|Release --target HEAD\|INDEX --json` |

@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "name": "AiCoding Internal Capabilities",
+  "capabilities": [
+    {
+      "id": "adr-review",
+      "package": "internal/adrreview",
+      "name": "ADR Review",
+      "type": "internal-only",
+      "status": "stable",
+      "summary": "检查新 Primitive ADR 是否包含必需的自评清单。",
+      "publicEntries": [],
+      "verification": ["go test ./internal/adrreview/..."]
+    },
+    {
+      "id": "bootstrap",
+      "package": "internal/bootstrap",
+      "name": "Bootstrap",
+      "type": "product-workflow",
+      "status": "stable",
+      "summary": "检查并构建 AiCoding Go CLI 的最小本地启动路径。",
+      "publicEntries": ["aicoding bootstrap"],
+      "architectureDoc": "docs/architecture/AICODING_CORE_ARCHITECTURE.md",
+      "verification": ["go test ./internal/bootstrap/..."]
+    },
+    {
+      "id": "cache",
+      "package": "internal/cache",
+      "name": "Local Artifact Retention",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "观测并按证据保护规则回收已注册的本地生成物与临时资源。",
+      "publicEntries": ["aicoding cache status", "aicoding cache clean"],
+      "architectureDoc": "docs/architecture/01-system-architecture.md",
+      "verification": ["go test ./internal/cache/..."]
+    },
+    {
+      "id": "capability",
+      "package": "internal/capability",
+      "name": "Capability Discoverability",
+      "type": "domain-capability",
+      "status": "beta",
+      "summary": "把 internal 包投影为可查询、可生成且可治理的单一能力目录。",
+      "publicEntries": ["aicoding capability list", "aicoding capability describe", "aicoding capability index"],
+      "architectureDoc": "docs/architecture/01-system-architecture.md",
+      "verification": ["go test ./internal/capability/..."]
+    },
+    {
+      "id": "cli",
+      "package": "internal/cli",
+      "name": "Typed CLI Control Plane",
+      "type": "product-workflow",
+      "status": "stable",
+      "summary": "拥有 typed command catalog、参数解析、帮助、JSON stdout 与退出码。",
+      "publicEntries": ["aicoding --help"],
+      "architectureDoc": "docs/architecture/AICODING_CORE_ARCHITECTURE.md",
+      "verification": ["go test ./internal/cli/..."]
+    },
+    {
+      "id": "c-style",
+      "package": "internal/cstyle",
+      "name": "C99 Style Control",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "统一 C99 风格、注释、格式化与宿主验证入口。",
+      "publicEntries": ["aicoding skill c99-standard-c check", "aicoding skill c99-standard-c verify"],
+      "architectureDoc": "docs/architecture/C_USERSTYLE_KIT_ARCHITECTURE.md",
+      "verification": ["go test ./internal/cstyle/..."]
+    },
+    {
+      "id": "docsync",
+      "package": "internal/docsync",
+      "name": "DocSync",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "检测源码、配置与权威文档之间的同步漂移。",
+      "publicEntries": ["aicoding docsync all"],
+      "architectureDoc": "docs/architecture/DOC_SYNC_PLUS_SPEC.md",
+      "verification": ["go test ./internal/docsync/..."]
+    },
+    {
+      "id": "git",
+      "package": "internal/gitx",
+      "name": "Git Boundary",
+      "type": "primitive",
+      "status": "stable",
+      "summary": "拥有全仓唯一 Git 子进程边界与内容状态读取。",
+      "publicEntries": [],
+      "verification": ["go test ./internal/gitx/..."]
+    },
+    {
+      "id": "governance",
+      "package": "internal/governance",
+      "name": "Repository Governance",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "执行提交、依赖方向、目录布局与能力孤儿门禁。",
+      "publicEntries": ["aicoding governance lint", "aicoding governance dependencies", "aicoding governance layout", "aicoding governance capabilities"],
+      "architectureDoc": "docs/architecture/GRAPH_FIRST.md",
+      "verification": ["go test ./internal/governance/..."]
+    },
+    {
+      "id": "kit",
+      "package": "internal/kit",
+      "name": "Kit Management",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "加载、投影、验证并脚手架化 Kit 能力。",
+      "publicEntries": ["aicoding kit list", "aicoding kit describe", "aicoding kit init", "aicoding kit verify"],
+      "architectureDoc": "docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md",
+      "verification": ["go test ./internal/kit/..."]
+    },
+    {
+      "id": "lifecycle",
+      "package": "internal/lifecycle",
+      "name": "Lifecycle Composition",
+      "type": "product-workflow",
+      "status": "stable",
+      "summary": "以统一 adapter catalog 编排 Kit、MCP、runtime Skill 与 repo-context 生命周期。",
+      "publicEntries": ["aicoding lifecycle plan", "aicoding lifecycle status", "aicoding lifecycle verify"],
+      "architectureDoc": "docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md",
+      "verification": ["go test ./internal/lifecycle/..."]
+    },
+    {
+      "id": "loop-engineering",
+      "package": "internal/loopkit",
+      "name": "Loop Engineering",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "校验有界 WorkSpec、裁决下一步并追加记录尝试，不执行循环。",
+      "publicEntries": ["aicoding work validate", "aicoding work next", "aicoding work status", "aicoding work record"],
+      "architectureDoc": "docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md",
+      "verification": ["go test ./internal/loopkit/..."]
+    },
+    {
+      "id": "mcp-control",
+      "package": "internal/mcpcontrol",
+      "name": "MCP Control Plane",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "读取 MCP 注册表并执行状态、诊断、验证与生命周期动作。",
+      "publicEntries": ["aicoding mcp list", "aicoding mcp status", "aicoding mcp doctor", "aicoding mcp verify"],
+      "architectureDoc": "docs/architecture/MCP_CONTROL_PLANE.md",
+      "verification": ["go test ./internal/mcpcontrol/..."]
+    },
+    {
+      "id": "plan-mode",
+      "package": "internal/plan",
+      "name": "Plan Mode",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "校验计划产物、批准绑定与 Git Tree 漂移。",
+      "publicEntries": ["aicoding plan check", "aicoding plan verify", "aicoding plan status", "aicoding plan approve"],
+      "architectureDoc": "docs/architecture/PLAN_MODE_ARCHITECTURE.md",
+      "verification": ["go test ./internal/plan/..."]
+    },
+    {
+      "id": "platform",
+      "package": "internal/platform",
+      "name": "Platform Paths and Resources",
+      "type": "primitive",
+      "status": "stable",
+      "summary": "提供仓库路径、文件事实与临时资源生命周期原语。",
+      "publicEntries": [],
+      "verification": ["go test ./internal/platform/..."]
+    },
+    {
+      "id": "powershell-regex",
+      "package": "internal/pwshregex",
+      "name": "PowerShell Regex Lint",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "对 PowerShell 正则高风险写法执行 Go-native 快速检查。",
+      "publicEntries": ["aicoding powershell regex-lint"],
+      "architectureDoc": "docs/architecture/POWERSHELL_BOUNDARY.md",
+      "verification": ["go test ./internal/pwshregex/..."]
+    },
+    {
+      "id": "registry",
+      "package": "internal/registry",
+      "name": "Registry Snapshot",
+      "type": "primitive",
+      "status": "stable",
+      "summary": "提供确定性 snapshot、digest 与防可变泄漏的注册表原语。",
+      "publicEntries": [],
+      "verification": ["go test ./internal/registry/..."]
+    },
+    {
+      "id": "release-gate",
+      "package": "internal/releasegate",
+      "name": "Release Gate",
+      "type": "product-workflow",
+      "status": "stable",
+      "summary": "执行发布结构验证并组合正式 Release 门禁。",
+      "publicEntries": ["aicoding release verify", "aicoding release gate"],
+      "architectureDoc": "docs/governance/RELEASE_POLICY.md",
+      "verification": ["go test ./internal/releasegate/..."]
+    },
+    {
+      "id": "repo-context",
+      "package": "internal/repocontext",
+      "name": "Repository Context",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "构建并同步仓库事实快照，供生命周期只读使用。",
+      "publicEntries": ["aicoding lifecycle status"],
+      "architectureDoc": "docs/architecture/02-context-architecture.md",
+      "verification": ["go test ./internal/repocontext/..."]
+    },
+    {
+      "id": "repo-health",
+      "package": "internal/repohealth",
+      "name": "Repository Health",
+      "type": "product-workflow",
+      "status": "stable",
+      "summary": "聚合产品 doctor 与确定性 verify 检查。",
+      "publicEntries": ["aicoding doctor --all", "aicoding verify"],
+      "architectureDoc": "docs/architecture/01-system-architecture.md",
+      "verification": ["go test ./internal/repohealth/..."]
+    },
+    {
+      "id": "repo-init",
+      "package": "internal/repoinit",
+      "name": "Repository Provisioning",
+      "type": "product-workflow",
+      "status": "stable",
+      "summary": "幂等初始化 Git 本地设置、Hook、状态根与文档骨架。",
+      "publicEntries": ["aicoding provision"],
+      "architectureDoc": "docs/decisions/0005-repo-init.md",
+      "verification": ["go test ./internal/repoinit/..."]
+    },
+    {
+      "id": "report",
+      "package": "internal/report",
+      "name": "Report Envelope",
+      "type": "primitive",
+      "status": "stable",
+      "summary": "拥有全仓唯一 Result、StandardReport 与共享证据信封。",
+      "publicEntries": [],
+      "verification": ["go test ./internal/report/..."]
+    },
+    {
+      "id": "reuse-governance",
+      "package": "internal/reuse",
+      "name": "Reuse Governance",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "验证可复用模块边界与既有复用证据。",
+      "publicEntries": ["aicoding governance reuse"],
+      "architectureDoc": "docs/architecture/GIT_REUSE_BOUNDARY.md",
+      "verification": ["go test ./internal/reuse/..."]
+    },
+    {
+      "id": "runner",
+      "package": "internal/runner",
+      "name": "Bounded Runner",
+      "type": "primitive",
+      "status": "stable",
+      "summary": "按确定性顺序执行有界并发任务，不拥有测试语义。",
+      "publicEntries": [],
+      "verification": ["go test ./internal/runner/..."]
+    },
+    {
+      "id": "tag-policy",
+      "package": "internal/tagpolicy",
+      "name": "Tag Policy",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "只读审计 Git tag 命名空间与发布标签策略。",
+      "publicEntries": ["aicoding tag audit"],
+      "architectureDoc": "docs/governance/TAGGING_POLICY.md",
+      "verification": ["go test ./internal/tagpolicy/..."]
+    },
+    {
+      "id": "test-engine",
+      "package": "internal/testengine",
+      "name": "Global Test Engine",
+      "type": "product-workflow",
+      "status": "stable",
+      "summary": "拥有 Smoke、Full、Release 测试注册、执行、超时与报告。",
+      "publicEntries": ["aicoding test"],
+      "architectureDoc": "docs/architecture/AICODING_CORE_ARCHITECTURE.md",
+      "verification": ["go test ./internal/testengine/..."]
+    },
+    {
+      "id": "todolist",
+      "package": "internal/todolist",
+      "name": "Todolist Projection",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "只读投影 docs/todolist 的状态、标题与验证入口。",
+      "publicEntries": ["aicoding todolist"],
+      "architectureDoc": "docs/decisions/0004-todolist-primitive.md",
+      "verification": ["go test ./internal/todolist/..."]
+    },
+    {
+      "id": "validation-evidence",
+      "package": "internal/validationevidence",
+      "name": "Validation Evidence",
+      "type": "domain-capability",
+      "status": "stable",
+      "summary": "把测试结论绑定到 Git 内容身份，同一内容可审计复用。",
+      "publicEntries": ["aicoding validation status", "aicoding validation check", "aicoding validation explain", "aicoding validation list"],
+      "architectureDoc": "docs/decisions/0007-validation-evidence.md",
+      "verification": ["go test ./internal/validationevidence/..."]
+    }
+  ]
+}

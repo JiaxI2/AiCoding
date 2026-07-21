@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/JiaxI2/AiCoding/internal/capability"
 )
 
 func TestCheckModesExposeFileClasses(t *testing.T) {
@@ -52,6 +54,54 @@ func TestCheckModesExposeFileClasses(t *testing.T) {
 	}
 }
 
+func TestGeneratedCapabilityIndexDriftFails(t *testing.T) {
+	repo := t.TempDir()
+	if out, err := exec.Command("git", "init", repo).CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v: %s", err, out)
+	}
+	writeDocSyncTestFile(t, repo, "internal/alpha/alpha.go", "package alpha\n")
+	writeDocSyncTestFile(t, repo, "docs/architecture/alpha.md", "# Alpha\n\nStatus: Accepted\n")
+	writeDocSyncTestFile(t, repo, "README.md", "# Fixture\n\n<!-- BEGIN GENERATED: CAPABILITIES -->\n<!-- END GENERATED: CAPABILITIES -->\n")
+	writeDocSyncTestFile(t, repo, capability.CatalogPath, `{
+  "schemaVersion": 1,
+  "name": "fixture capabilities",
+  "capabilities": [{
+    "id": "alpha",
+    "package": "internal/alpha",
+    "name": "Alpha",
+    "type": "internal-only",
+    "status": "stable",
+    "summary": "alpha capability",
+    "publicEntries": [],
+    "verification": ["go test ./internal/alpha/..."]
+  }]
+}`)
+	catalog, err := capability.Load(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	readme, err := os.ReadFile(filepath.Join(repo, "README.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rendered, err := capability.RenderIndex(catalog, string(readme))
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeDocSyncTestFile(t, repo, "README.md", rendered.README)
+	writeDocSyncTestFile(t, repo, capability.CapabilitiesPath, rendered.Document)
+
+	green := Check(repo, "all")
+	if !green.OK || !containsDocSyncCheck(green.Checks, "capability generated index", true) {
+		t.Fatalf("generated index should pass: %#v", green)
+	}
+	writeDocSyncTestFile(t, repo, "README.md", strings.Replace(rendered.README, "完整的 1 项能力", "完整的 2 项能力", 1))
+	red := Check(repo, "all")
+	if red.OK || !containsDocSyncCheck(red.Checks, "capability generated index", false) || !containsDocSyncSubstring(red.Errors, "README.md is stale") {
+		t.Fatalf("hand-edited generated index should fail: %#v", red)
+	}
+}
+
 func TestArchitectureStatusGateFailsClosedOutsideStagedMode(t *testing.T) {
 	repo := t.TempDir()
 	if out, err := exec.Command("git", "init", repo).CombinedOutput(); err != nil {
@@ -91,6 +141,15 @@ func containsDocSyncTestValue(values []string, want string) bool {
 func containsDocSyncSubstring(values []string, want string) bool {
 	for _, value := range values {
 		if strings.Contains(value, want) {
+			return true
+		}
+	}
+	return false
+}
+
+func containsDocSyncCheck(checks []CheckItem, name string, ok bool) bool {
+	for _, check := range checks {
+		if check.Name == name && check.OK == ok {
 			return true
 		}
 	}

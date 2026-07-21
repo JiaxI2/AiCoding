@@ -90,6 +90,24 @@ go run ./cmd/aicoding bootstrap --json && .\bin\aicoding.exe provision --json
 | `c-userstyle-kit` | First-party C99 style, comment, lint, host-compile, and behavior verification assets backed by the Huawei DKBA 2826-2011&#46;5 reference. | [C UserStyle Kit](docs/guides/C99_STANDARD_C_SKILL.md) |
 | `release-governance-overlay-kit` | Tag/release namespace governance, Taskfile entry, and performance-loop overlay for AiCoding. | [发布治理](docs/governance/RELEASE_GOVERNANCE_OVERLAY.md) |
 
+## 平台能力索引
+
+<!-- BEGIN GENERATED: CAPABILITIES -->
+
+> 此区由 `config/internal-capabilities.json` 生成（`sha256:9bc4958912fedd4f95a592d6588076cdeab4c39655eecbc97da829fab7e33d14`）。完整的 28 项能力见 [能力索引](docs/CAPABILITIES.md)。
+
+| 正式工作流 | 核心职责 | 公共入口 | 架构 |
+|---|---|---|---|
+| `bootstrap` Bootstrap | 检查并构建 AiCoding Go CLI 的最小本地启动路径。 | `aicoding bootstrap` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+| `cli` Typed CLI Control Plane | 拥有 typed command catalog、参数解析、帮助、JSON stdout 与退出码。 | `aicoding --help` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+| `lifecycle` Lifecycle Composition | 以统一 adapter catalog 编排 Kit、MCP、runtime Skill 与 repo-context 生命周期。 | `aicoding lifecycle plan`<br>`aicoding lifecycle status`<br>`aicoding lifecycle verify` | [文档](docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md) |
+| `release-gate` Release Gate | 执行发布结构验证并组合正式 Release 门禁。 | `aicoding release verify`<br>`aicoding release gate` | [文档](docs/governance/RELEASE_POLICY.md) |
+| `repo-health` Repository Health | 聚合产品 doctor 与确定性 verify 检查。 | `aicoding doctor --all`<br>`aicoding verify` | [文档](docs/architecture/01-system-architecture.md) |
+| `repo-init` Repository Provisioning | 幂等初始化 Git 本地设置、Hook、状态根与文档骨架。 | `aicoding provision` | [文档](docs/decisions/0005-repo-init.md) |
+| `test-engine` Global Test Engine | 拥有 Smoke、Full、Release 测试注册、执行、超时与报告。 | `aicoding test` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+
+<!-- END GENERATED: CAPABILITIES -->
+
 ## 为什么这个仓库越用越值钱
 
 - **地基复利**：冻结内核只接受向上组合，新能力不推倒旧边界（[愿景与四象限](docs/architecture/00-vision.md)）。

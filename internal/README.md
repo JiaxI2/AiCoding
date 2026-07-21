@@ -20,6 +20,7 @@ Do not create a parallel source of truth outside this domain. Add new items only
 | Package | Sole responsibility |
 |---|---|
 | `cli` | typed command catalog, command parsing, help, JSON stdout and exit codes |
+| `capability` | `internal/` 能力目录的加载、筛选、孤儿校验与 README/文档确定性投影 |
 | `lifecycle` | static Kit, MCP and runtime Skill adapter composition |
 | `repohealth` | product doctor and deterministic verify checks |
 | `testengine` | Smoke, Full and Release test registry, execution, timeout and reports |

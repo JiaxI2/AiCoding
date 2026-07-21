@@ -1,7 +1,7 @@
 # TODO 0023: 能力可发现性（单一 Registry + 生成式 README 索引 + 孤儿门禁）
 
-Status: Planned
-Verify: bin/aicoding.exe capability list --json 覆盖全部 internal 一级目录且无 unregistered；README 生成区与 registry 一致（篡改后 docsync 报错）
+Status: Done
+Verify: bin/aicoding.exe capability list --json 覆盖 28/28 个 internal 一级目录且无 unregistered；四条负例均被抓；Full 65/62/0/0/3 PASS
 
 > 来源：《internal 能力产品化与可发现性架构优化方案》评审。
 > **问题真实、方案超配 5 倍。** 本项取其诊断，砍掉 4/5 的产物义务。
@@ -147,3 +147,26 @@ bin\aicoding.exe docsync all --json ; bin\aicoding.exe test --profile Full --jso
 5. **全仓只有一个能力注册表**（`grep -rn "product-catalog" .` 为空）。
 6. 无新增 `loop run` 类命令（`grep -rn '"loop"' internal/cli/catalog.go` 为空）。
 
+## 六、完成证据（2026-07-21）
+
+- `governance capabilities --json`：`registeredCount=28`、`internalDirectoryCount=28`、
+  `unregistered=[]`，README 与 `docs/CAPABILITIES.md` 均为最新。
+- 四条真实注入逐条转红并回滚：
+
+  | 注入 | 明确错误 |
+  |---|---|
+  | 新建 `internal/orphan/orphan.go` | `unregistered internal package: internal/orphan` |
+  | `architectureDoc` 指向 `docs/architecture/DOES_NOT_EXIST.md` | `architecture document is missing: validation-evidence: ...` |
+  | 把 README 生成区的 28 手改为 29 | `capability generated index: README.md is stale` |
+  | 写入 `aicoding validation nonexistent` | `public entry is absent from typed command catalog` |
+
+- `capability list` 五次进程级墙钟为 `3911.442 / 47.958 / 41.970 / 49.999 /
+  45.286 ms`，中位数 `47.958 ms < 300 ms`；包级调用计数回归证明 `List` 对
+  `internal/` 目录读取为 0，`Verify` 恰好单次 `ReadDir`。
+- 禁止项断言：仓库没有 `product-catalog` 文件或 TODO 自述之外的实现引用；
+  `internal/cli/catalog.go` 没有 `"loop"` command；唯一能力数据文件为
+  `config/internal-capabilities.json`（另有配套 schema）。
+- 最终 Full 报告：`65 total / 62 pass / 0 fail / 0 warn / 3 skip`，引擎耗时
+  `219388 ms`；新增 `CAP-001` 为 REQUIRED/PASS，耗时 `58 ms`。首次 Full 曾抓到
+  README 投影测试误把 domain capability 当成 product workflow；修正断言并以
+  `go test -count=1` 回归后，第二次 Full 完整转绿。

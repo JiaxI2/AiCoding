@@ -469,10 +469,10 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 }
 func runGovernance(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, usageErrorf("governance requires subcommand: lint, dependencies, layout, or reuse")
+		return report.Result{}, usageErrorf("governance requires subcommand: lint, dependencies, layout, reuse, or capabilities")
 	}
 	sub := args[0]
-	if !validChoice(sub, "lint", "dependencies", "layout", "reuse") {
+	if !validChoice(sub, "lint", "dependencies", "layout", "reuse", "capabilities") {
 		return report.Result{}, usageErrorf("unsupported governance subcommand: %s", sub)
 	}
 	fs := newFlagSet("governance " + sub)
@@ -499,6 +499,8 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 	case "reuse":
 		check := reuse.Verify(repo)
 		return report.Result{SchemaVersion: 1, Command: "governance reuse", OK: check.OK, Message: "reuse governance evidence gate", RepoRoot: repo, Data: check, Warnings: check.Warnings, Errors: check.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(check.Errors)
+	case "capabilities":
+		return runGovernanceCapabilities(repo, start)
 	default:
 		return report.Result{}, usageErrorf("unsupported governance subcommand: %s", sub)
 	}

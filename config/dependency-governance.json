@@ -353,6 +353,7 @@
       "forbiddenImports": [
         "internal/bootstrap",
         "internal/cache",
+        "internal/capability",
         "internal/cli",
         "internal/cstyle",
         "internal/docsync",
@@ -380,6 +381,7 @@
     {
       "path": "internal/registry",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
@@ -393,8 +395,40 @@
       ]
     },
     {
+      "path": "internal/capability",
+      "forbiddenImports": [
+        "internal/adrreview",
+        "internal/bootstrap",
+        "internal/cache",
+        "internal/cli",
+        "internal/cstyle",
+        "internal/docsync",
+        "internal/gitx",
+        "internal/governance",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/loopkit",
+        "internal/mcpcontrol",
+        "internal/plan",
+        "internal/platform",
+        "internal/pwshregex",
+        "internal/releasegate",
+        "internal/repocontext",
+        "internal/report",
+        "internal/repohealth",
+        "internal/repoinit",
+        "internal/reuse",
+        "internal/runner",
+        "internal/tagpolicy",
+        "internal/testengine",
+        "internal/todolist",
+        "internal/validationevidence"
+      ]
+    },
+    {
       "path": "internal/runner",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
@@ -409,6 +443,7 @@
     {
       "path": "internal/report",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
@@ -423,6 +458,7 @@
     {
       "path": "internal/kit",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/lifecycle",
         "internal/mcpcontrol",
@@ -434,6 +470,7 @@
     {
       "path": "internal/mcpcontrol",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
@@ -445,6 +482,7 @@
     {
       "path": "internal/repocontext",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
@@ -458,6 +496,7 @@
       "forbiddenImports": [
         "internal/bootstrap",
         "internal/cache",
+        "internal/capability",
         "internal/cli",
         "internal/cstyle",
         "internal/docsync",
