@@ -381,7 +381,7 @@ func TestVerifyBySkillRejectsInvalidOrFailedJSON(t *testing.T) {
 		runErr error
 		want   string
 	}{
-		{name: "invalid", stdout: "not-json", want: "invalid C Kit verify JSON"},
+		{name: "invalid", stdout: "not-json", want: "invalid c kit verify JSON"},
 		{name: "multiple", stdout: `{"ok":true} {"ok":true}`, want: "multiple JSON values"},
 		{name: "wrong schema", stdout: `{"schema":"other","profile":"fast","ok":true}`, want: "schema must be"},
 		{name: "wrong profile", stdout: `{"schema":"cstylekit.verify.v1","profile":"full","ok":true}`, want: "profile must match"},

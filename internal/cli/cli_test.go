@@ -149,7 +149,7 @@ func writeIssueGovernanceFixture(t *testing.T, repo string) {
 		t.Fatal(err)
 	}
 	mustWrite(t, filepath.Join(repo, ".github", "issue-labels.json"), string(manifest))
-	mustWrite(t, filepath.Join(repo, ".github", "workflows", "issue-governance.yml"), "name: Issue governance\nopened\nreopened\nlabeled\nclosed\npermissions:\n  issues: write\nmanifest: .github/issue-labels.json\nuses: actions/github-script@v9\n")
+	mustWrite(t, filepath.Join(repo, ".github", "workflows", "issue-governance.yml"), "name: Issue governance\nopened\nreopened\nlabeled\nclosed\npermissions:\n  issues: write\nmanifest: .github/issue-labels.json\nuses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9\n")
 }
 
 func mustWrite(t *testing.T, path, content string) {

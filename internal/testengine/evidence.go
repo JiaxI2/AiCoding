@@ -15,7 +15,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
 
-const evidenceImplVersion = 2
+const evidenceImplVersion = 3
 
 var executeTestCases = runAll
 
@@ -24,13 +24,14 @@ var captureValidationSubject = func(repository validationevidence.Repository) (v
 }
 
 type normalizedTestCase struct {
-	ID           string   `json:"id"`
-	Kind         string   `json:"kind"`
-	Command      []string `json:"command,omitempty"`
-	Severity     Severity `json:"severity"`
-	TimeoutKind  string   `json:"timeoutKind,omitempty"`
-	ExpectJSON   bool     `json:"expectJSON,omitempty"`
-	OptionalPath string   `json:"optionalPath,omitempty"`
+	ID                 string   `json:"id"`
+	Kind               string   `json:"kind"`
+	Command            []string `json:"command,omitempty"`
+	Severity           Severity `json:"severity"`
+	TimeoutKind        string   `json:"timeoutKind,omitempty"`
+	ExpectJSON         bool     `json:"expectJSON,omitempty"`
+	OptionalPath       string   `json:"optionalPath,omitempty"`
+	NetworkFailureWarn bool     `json:"networkFailureWarn,omitempty"`
 }
 
 type evidenceOptions struct {
@@ -100,6 +101,7 @@ func RegistryDigest(cfg Config) (string, error) {
 		selected = append(selected, normalizedTestCase{
 			ID: testCase.ID, Kind: testCase.Kind, Command: command, Severity: testCase.Severity,
 			TimeoutKind: testCase.TimeoutKind, ExpectJSON: testCase.ExpectJSON, OptionalPath: filepath.ToSlash(testCase.OptionalPath),
+			NetworkFailureWarn: testCase.NetworkFailureWarn,
 		})
 	}
 	sort.Slice(selected, func(i, j int) bool { return selected[i].ID < selected[j].ID })

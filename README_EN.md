@@ -2,6 +2,9 @@
 
 [![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=release)](https://github.com/JiaxI2/AiCoding/releases/latest)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/go1.22)
+[![Go toolchain](https://img.shields.io/badge/Go%20toolchain-1.26.5-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/devel/release#go1.26.5)
+[![Staticcheck](https://img.shields.io/badge/Staticcheck-2026.1-5C2D91)](https://github.com/dominikh/go-tools/releases/tag/2026.1)
+[![govulncheck](https://img.shields.io/badge/govulncheck-1.6.0-00ADD8?logo=go&logoColor=white)](https://go.googlesource.com/vuln/+/refs/tags/v1.6.0)
 [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.10/whatsnew/3.10.html)
 [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)

@@ -109,6 +109,8 @@ push tree 继续复用既有通用 `gitx.TreeOID(repo, rev)`，不复制 `RefTre
    完整执行并比对 `resultsDigest`；
 3. 切换提交或 PR 必须引用这 3 次 run URL；本地运行和“workflow 已接线”不能替代远端证据。
 
+toolchain 变更不重置 `release-gate` 三次绿灯计数；`--verify-reuse` 审计逻辑与具体 toolchain 无关。
+
 将来若已晋级，任一次 audit mismatch、Receipt 完整性失败或 `release-gate` 失败，回滚触发条件
 即成立：默认值立即退回 `off`，调查完成并重新累计 3 次连续绿灯后才能再次晋级。
 

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -32,7 +33,7 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 		}
 		seen[testCase.ID] = true
 	}
-	for _, id := range []string{"ENV-001", "GO-001", "GIT-009", "EXP-002", "FRESH-001", "FRESH-003", "REL-002"} {
+	for _, id := range []string{"ENV-001", "GO-001", "GO-005", "GO-006", "GIT-009", "EXP-002", "FRESH-001", "FRESH-003", "REL-002"} {
 		if !seen[id] {
 			t.Fatalf("registry is missing %s", id)
 		}
@@ -137,21 +138,35 @@ func TestRegistryBuildCommandsAreBoundedAndBootstrapCoverageRemains(t *testing.T
 		t.Fatal(err)
 	}
 	buildCommands := 0
+	goRunCommands := map[string]string{
+		"GO-005": staticcheckCommand,
+		"GO-006": govulncheckCommand,
+	}
+	seenGoRun := map[string]bool{}
 	found := map[string]TestCase{}
 	for _, testCase := range Registry(cfg) {
 		found[testCase.ID] = testCase
 		if len(testCase.Command) == 0 || testCase.Command[0] != "go" {
 			continue
 		}
-		for _, arg := range testCase.Command[1:] {
-			if arg == "build" || arg == "run" {
-				buildCommands++
-				break
+		if len(testCase.Command) > 1 && testCase.Command[1] == "build" {
+			buildCommands++
+		}
+		if len(testCase.Command) > 1 && testCase.Command[1] == "run" {
+			expected, ok := goRunCommands[testCase.ID]
+			if !ok || len(testCase.Command) < 3 || testCase.Command[2] != expected {
+				t.Fatalf("registry contains an unapproved or unpinned go run command: %#v", testCase)
 			}
+			seenGoRun[testCase.ID] = true
 		}
 	}
 	if buildCommands > 1 {
-		t.Fatalf("registry contains %d direct go build/run commands, want at most 1", buildCommands)
+		t.Fatalf("registry contains %d direct go build commands, want at most 1", buildCommands)
+	}
+	for id := range goRunCommands {
+		if !seenGoRun[id] {
+			t.Fatalf("registry is missing pinned go run command %s", id)
+		}
 	}
 	if _, exists := found["BOOT-001"]; exists {
 		t.Fatal("BOOT-001 duplicate build case is still registered")
@@ -161,6 +176,44 @@ func TestRegistryBuildCommandsAreBoundedAndBootstrapCoverageRemains(t *testing.T
 	}
 	if boot := found["BOOT-003"]; boot.Kind != "static" || boot.Severity != Required {
 		t.Fatalf("BOOT-003 static prerequisite coverage is missing: %#v", boot)
+	}
+}
+
+func TestRegistryPinsStaticcheckAndGovulncheckPolicy(t *testing.T) {
+	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileFull})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := map[string]TestCase{}
+	for _, testCase := range Registry(cfg) {
+		found[testCase.ID] = testCase
+	}
+	staticcheck := found["GO-005"]
+	if staticcheck.Severity != WarnOnly || strings.Join(staticcheck.Command, " ") != "go run "+staticcheckCommand+" ./..." {
+		t.Fatalf("GO-005 policy mismatch: %#v", staticcheck)
+	}
+	govulncheck := found["GO-006"]
+	if govulncheck.Severity != Required || !govulncheck.NetworkFailureWarn || strings.Join(govulncheck.Command, " ") != "go run "+govulncheckCommand+" ./..." {
+		t.Fatalf("GO-006 policy mismatch: %#v", govulncheck)
+	}
+	for _, testCase := range []TestCase{staticcheck, govulncheck} {
+		if !profileEnabled(testCase, ProfileFull) || !profileEnabled(testCase, ProfileRelease) || profileEnabled(testCase, ProfileSmoke) {
+			t.Fatalf("%s profile selection mismatch: %#v", testCase.ID, testCase.Profiles)
+		}
+	}
+}
+
+func TestGovulncheckOnlyDowngradesRecognizableNetworkFailures(t *testing.T) {
+	for _, output := range []string{
+		`Get "https://vuln.go.dev/index/modules.json": dial tcp: lookup vuln.go.dev: no such host`,
+		`proxyconnect tcp: connection refused`,
+	} {
+		if !isNetworkFailure(output) {
+			t.Fatalf("network failure was not recognized: %q", output)
+		}
+	}
+	if isNetworkFailure("Your code is affected by GO-2026-5856; exit status 3") {
+		t.Fatal("a real vulnerability must not be downgraded as a network failure")
 	}
 }
 
@@ -227,6 +280,39 @@ func TestScheduledCISeedsAndAuditsReleaseBeforeDefaultPromotion(t *testing.T) {
 		if !strings.Contains(workflow, required) {
 			t.Fatalf("scheduled CI is missing Release reuse promotion contract %q", required)
 		}
+	}
+}
+
+func TestCIUsesGoModToolchainAndPinsEveryActionBySHA(t *testing.T) {
+	workflowPaths := []string{
+		filepath.Join("..", "..", ".github", "workflows", "aicoding-ci.yml"),
+		filepath.Join("..", "..", ".github", "workflows", "issue-governance.yml"),
+	}
+	pinnedUse := regexp.MustCompile(`^\s*-?\s*uses:\s+[^@\s]+@[0-9a-f]{40}\s+#\s+v[0-9]+\s*$`)
+	for _, path := range workflowPaths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, line := range strings.Split(string(data), "\n") {
+			if strings.Contains(line, "uses:") && !pinnedUse.MatchString(line) {
+				t.Fatalf("workflow action is not pinned by full SHA with a major-version comment: %s", strings.TrimSpace(line))
+			}
+		}
+	}
+	data, err := os.ReadFile(workflowPaths[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow := string(data)
+	if got := strings.Count(workflow, "go-version-file: 'go.mod'"); got != 3 {
+		t.Fatalf("setup-go go-version-file count = %d, want 3", got)
+	}
+	if regexp.MustCompile(`(?m)^\s+go-version:\s*`).MatchString(workflow) {
+		t.Fatal("CI still contains an explicit go-version instead of go.mod single-source selection")
+	}
+	if got := strings.Count(workflow, "go version"); got != 3 {
+		t.Fatalf("effective Go version log count = %d, want 3", got)
 	}
 }
 

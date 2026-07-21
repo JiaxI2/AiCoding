@@ -126,6 +126,27 @@
         "displayVersion": "1.22+"
       },
       {
+        "label": "Go toolchain",
+        "imageFragment": "Go%20toolchain-1.26.5",
+        "target": "https://go.dev/doc/devel/release#go1.26.5",
+        "authority": "upstream-version",
+        "displayVersion": "1.26.5"
+      },
+      {
+        "label": "Staticcheck",
+        "imageFragment": "Staticcheck-2026.1",
+        "target": "https://github.com/dominikh/go-tools/releases/tag/2026.1",
+        "authority": "upstream-version",
+        "displayVersion": "2026.1"
+      },
+      {
+        "label": "govulncheck",
+        "imageFragment": "govulncheck-1.6.0",
+        "target": "https://go.googlesource.com/vuln/+/refs/tags/v1.6.0",
+        "authority": "upstream-version",
+        "displayVersion": "1.6.0"
+      },
+      {
         "label": "PowerShell",
         "imageFragment": "PowerShell-7%2B",
         "target": "https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0",

@@ -25,6 +25,7 @@
 - **CI 失败可诊断**：GitHub Actions 的 Smoke 与 `release-gate` 无论结论如何均上传本次 `test-results/` artifact，保留逐用例原始输出。
 - **验证绑定内容**：成功运行可把 PASS 结论绑定到 Git Tree 与验证语义；commit message amend 不失效，tracked/untracked/submodule 脏状态 fail-closed。
 - **复用可审计**：默认保持 `--reuse off`；`--reuse auto` 只显式启用。main 远端 `release-gate` 连续 3 次完成 off seed + `--verify-reuse` audit，并在独立切换提交引用三次 run URL 后，才允许晋级默认值。workflow 已接线不等于已跑绿。
+- **工具链安全**：Full/Release 固定运行 Staticcheck v0.7.0 与 govulncheck v1.6.0；真实漏洞保持 REQUIRED，只有可识别的网络访问失败可降级为 WARN。
 - **数据化输出**：统计总用例、通过、失败、告警、跳过、总耗时、各命令耗时。
 - **标准 Markdown 文档**：测试计划、测试用例、报告均使用 `.md`。
 - **全局分功能框架**：用例按照 ENV/BOOTSTRAP/GO/C99_SKILL/DOCSYNC/LIFECYCLE/EXPORT/FRESH_CLONE/README_DOCS/GIT_GOVERNANCE/PWSH_BOUNDARY/RELEASE_GATE 分类。
@@ -81,6 +82,7 @@
 
 - Smoke 全部通过。
 - `go test ./...` 成功。
+- GO-005 Staticcheck 零告警；GO-006 govulncheck 无可达漏洞，网络访问失败须保留可诊断 WARN。
 - DocSync `ci` 成功。
 - lifecycle install/update/uninstall plan 成功。
 - EXP-002 export manifest 静态验证成功，且 Full 不创建 ZIP。

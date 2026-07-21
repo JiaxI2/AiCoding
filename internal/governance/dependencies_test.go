@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -366,13 +365,4 @@ func dependencyCheckByName(checks []DependencyCheck, name string) (DependencyChe
 		}
 	}
 	return DependencyCheck{}, false
-}
-
-func hasDependencyErrorContaining(errs []string, needle string) bool {
-	for _, err := range errs {
-		if strings.Contains(err, needle) {
-			return true
-		}
-	}
-	return false
 }

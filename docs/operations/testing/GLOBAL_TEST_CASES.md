@@ -28,7 +28,8 @@
 | GO-002 | Go race 检查 | `go test -race ./...` | 退出码 0；环境不支持 race 或历史包不兼容记 WARN | WARN |
 | GO-003 | Go vet 基础检查 | `go vet ./...` | 退出码 0 | WARN |
 | GO-004 | CLI 并发只读调用 | 并发运行 C99 status/templates/governance lint | 全部退出码 0，无 timeout | REQUIRED |
-| GO-005 | JSON envelope 稳定性 | 解析核心 CLI 输出 | JSON 可解析 | REQUIRED |
+| GO-005 | Staticcheck 静态分析 | `go run honnef.co/go/tools/cmd/staticcheck@v0.7.0 ./...` | 零告警；首个 release 失败记 WARN | WARN |
+| GO-006 | Go 漏洞扫描 | `go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...` | 无可达漏洞；仅可识别的网络失败记 WARN | REQUIRED |
 
 ## 4. C99_SKILL：C 语言 skill 风格一致性
 

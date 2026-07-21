@@ -47,6 +47,9 @@ const (
 
 	ReuseOff  ReuseMode = "off"
 	ReuseAuto ReuseMode = "auto"
+
+	staticcheckCommand = "honnef.co/go/tools/cmd/staticcheck@v0.7.0"
+	govulncheckCommand = "golang.org/x/vuln/cmd/govulncheck@v1.6.0"
 )
 
 type Config struct {
@@ -67,17 +70,18 @@ type Config struct {
 }
 
 type TestCase struct {
-	ID           string
-	Category     string
-	Title        string
-	Severity     Severity
-	Profiles     []Profile
-	Kind         string // command, static, concurrent
-	Command      []string
-	TimeoutKind  string // normal, long
-	ExpectJSON   bool
-	OptionalPath string
-	Note         string
+	ID                 string
+	Category           string
+	Title              string
+	Severity           Severity
+	Profiles           []Profile
+	Kind               string // command, static, concurrent
+	Command            []string
+	TimeoutKind        string // normal, long
+	ExpectJSON         bool
+	OptionalPath       string
+	NetworkFailureWarn bool
+	Note               string
 }
 
 type Result struct {
@@ -393,6 +397,8 @@ func Registry(cfg Config) []TestCase {
 		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "test", "-race", "./..."}, TimeoutKind: "long"},
 		{ID: "GO-003", Category: "GO", Title: "go vet 基础检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "vet", "./..."}, TimeoutKind: "long"},
 		{ID: "GO-004", Category: "GO", Title: "CLI 并发只读调用", Severity: Required, Profiles: []string{"full", "release"}, Kind: "concurrent", TimeoutKind: "normal", ExpectJSON: true},
+		{ID: "GO-005", Category: "GO", Title: "Staticcheck 静态分析", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", staticcheckCommand, "./..."}, TimeoutKind: "long", Note: "WarnOnly for one release before promotion to Required"},
+		{ID: "GO-006", Category: "GO", Title: "Go 漏洞扫描", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", govulncheckCommand, "./..."}, TimeoutKind: "long", NetworkFailureWarn: true},
 
 		{ID: "C99-001", Category: "C99_SKILL", Title: "C99 skill status", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "status", "--json"}, ExpectJSON: true},
 		{ID: "C99-002", Category: "C99_SKILL", Title: "C99 注释模板校验", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "templates", "--json"}, ExpectJSON: true},
@@ -551,6 +557,11 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	} else {
 		r.Reason = "command failed"
 	}
+	if tc.NetworkFailureWarn && isNetworkFailure(stdout.String()+"\n"+stderr.String()) {
+		r.Status = Warn
+		r.Reason = "network-dependent command failed: " + err.Error()
+		return r
+	}
 
 	if tc.Severity == Required || cfg.Strict {
 		r.Status = Fail
@@ -558,6 +569,25 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 		r.Status = Warn
 	}
 	return r
+}
+
+func isNetworkFailure(output string) bool {
+	output = strings.ToLower(output)
+	for _, marker := range []string{
+		"dial tcp",
+		"no such host",
+		"temporary failure in name resolution",
+		"tls handshake timeout",
+		"i/o timeout",
+		"connection reset by peer",
+		"connection refused",
+		"proxyconnect tcp",
+	} {
+		if strings.Contains(output, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 func runConcurrent(parent context.Context, cfg Config, tc TestCase) Result {
@@ -802,13 +832,13 @@ func checkCStyleKitAssets(repo string) error {
 	}
 
 	if kitManifest.ID != "c-userstyle-kit" || skillConfig.Kit.ID != kitManifest.ID {
-		return fmt.Errorf("C Kit id mismatch: manifest=%q skill=%q", kitManifest.ID, skillConfig.Kit.ID)
+		return fmt.Errorf("c kit id mismatch: manifest=%q skill=%q", kitManifest.ID, skillConfig.Kit.ID)
 	}
 	if kitManifest.Version != expectedVersion || assetManifest.Version != expectedVersion || skillConfig.Kit.Version != expectedVersion {
-		return fmt.Errorf("C Kit version mismatch: kit=%q asset=%q skill=%q expected=%q", kitManifest.Version, assetManifest.Version, skillConfig.Kit.Version, expectedVersion)
+		return fmt.Errorf("c kit version mismatch: kit=%q asset=%q skill=%q expected=%q", kitManifest.Version, assetManifest.Version, skillConfig.Kit.Version, expectedVersion)
 	}
 	if skillConfig.Kit.Root != "CodingKit/tools/c-userstyle-kit" {
-		return fmt.Errorf("unexpected C Kit root: %q", skillConfig.Kit.Root)
+		return fmt.Errorf("unexpected c kit root: %q", skillConfig.Kit.Root)
 	}
 	return nil
 }
@@ -1165,7 +1195,7 @@ func checkTaskfileGoRoutes(repo string) error {
 		}
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("Taskfile missing Go-native default routes: %s", strings.Join(missing, ", "))
+		return fmt.Errorf("taskfile missing Go-native default routes: %s", strings.Join(missing, ", "))
 	}
 	return nil
 }

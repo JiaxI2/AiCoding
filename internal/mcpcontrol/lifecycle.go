@@ -304,7 +304,7 @@ func findPython(minimum, overrideEnvVar string) (string, error) {
 			return absolute, nil
 		}
 	}
-	return "", fmt.Errorf("Python %s or newer was not found", minimum)
+	return "", fmt.Errorf("python %s or newer was not found", minimum)
 }
 
 func versionAtLeast(actual, minimum string) bool {

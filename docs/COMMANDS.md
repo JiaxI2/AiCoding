@@ -47,6 +47,8 @@ namespace 判断中分别维护字符串列表。
 
 Full 保留 Go/race/vet、CLI/JSON、治理和领域结构验证，但不创建发布 ZIP、也不执行 hermetic
 fresh clone；对应覆盖由 EXP-002 export manifest 静态验证和 FRESH-003 clone 契约静态验证承担。
+Full/Release 还会执行固定版本的 Staticcheck `v0.7.0`（GO-005，首个 release 为 WARN）和
+govulncheck `v1.6.0`（GO-006，真实漏洞为 REQUIRED；仅可识别的网络访问失败降级为 WARN）。
 Release 仍执行真实 `export --zip` 与一次 `fresh-clone --profile Release`，因此 Release 比 Full
 更慢是刻意的发布边界，而不是性能回退。
 

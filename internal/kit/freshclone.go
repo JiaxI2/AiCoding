@@ -30,10 +30,7 @@ type FreshCloneStep struct {
 }
 
 func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
-	profile = strings.Title(strings.ToLower(strings.TrimSpace(profile)))
-	if profile == "" {
-		profile = "Smoke"
-	}
+	profile = normalizeKitProfile(profile)
 	tempRoot := filepath.Join(os.TempDir(), "aicoding-fresh-clone-"+time.Now().UTC().Format("20060102-150405")+"-"+randomSuffix())
 	cloneRoot := filepath.Join(tempRoot, "AiCoding")
 	report := FreshCloneReport{SchemaVersion: 1, Profile: profile, OK: true, SourceRoot: repo, TempRoot: tempRoot, CloneRoot: cloneRoot}

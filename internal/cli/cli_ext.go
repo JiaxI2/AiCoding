@@ -270,36 +270,3 @@ func runReleaseCommand(args []string, start time.Time) (report.Result, error) {
 	}
 	return runTestProfile("release", args[1:], "release gate", start)
 }
-
-func selectedKits(repoArg, kitArg string, allArg bool) (string, []kit.RegistryKit, error) {
-	repo, err := platform.ResolveRepoRoot(repoArg)
-	if err != nil {
-		return "", nil, err
-	}
-	entries, err := kit.LoadRegistry(repo)
-	if err != nil {
-		return "", nil, err
-	}
-	selected, err := kit.SelectKits(entries, kitArg, allArg)
-	if err != nil {
-		return "", nil, err
-	}
-	return repo, selected, nil
-}
-
-func selectionMode(all bool) string {
-	if all {
-		return "all"
-	}
-	return "kit"
-}
-
-func lifecyclePlanErrors(plan kit.LifecyclePlan) []string {
-	errs := []string{}
-	for _, item := range plan.Kits {
-		if !item.OK {
-			errs = append(errs, item.ID+": "+item.Reason)
-		}
-	}
-	return errs
-}

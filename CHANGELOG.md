@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **build(toolchain)**: 保留 `go 1.22` 最低语言兼容承诺，并以 `toolchain go1.26.5` 修复 GO-2026-5856；Full/Release 新增固定版本 Staticcheck/govulncheck，清零存量静态分析告警，CI 改由 go.mod 选取工具链且四个 Action 全部钉 full SHA。有效 Go 工具链由 go1.26.4 变为 go1.26.5，因此旧 Receipt 全量 MISS 是 `toolchainDigest` 身份输入变化导致的正确失效，不是回归。 / Keeps the Go 1.22 language floor while selecting go1.26.5 for the security fix, adds pinned analysis and vulnerability gates, pins Actions, and intentionally invalidates old Receipts through the changed effective-toolchain identity.
+
 - **docs(todolist)**: 登记 TODO 0009–0020 的后续工程队列，覆盖 Kit 管理、初始化/文档骨架、仓库卫生、性能预算、工具链、验证观测与后续 Receipt/物化治理；本轮实施范围仍严格限定为 0015–0016。 / Registers the TODO 0009-0020 engineering queue while keeping this implementation batch strictly scoped to 0015-0016.
 
 - **docs(architecture)**: 补齐 C UserStyle Kit 1.2.0 的平台侧架构权威与 AI Debug Kit 准入边界卡，登记现有命令/门禁/数据合同、外部工具链指纹缺口及上游 gitlink 同步纪律。 / Adds the platform architecture authority for C UserStyle Kit 1.2.0 and an admission boundary card for AI Debug Kit, documenting existing commands, gates, data contracts, the external-toolchain fingerprint gap, and upstream gitlink discipline.

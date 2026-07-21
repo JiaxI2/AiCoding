@@ -87,8 +87,11 @@ func lintIssueGovernance(repo, governanceConfig string, fail func(string)) {
 	validateIssueLabels(manifest.Labels, fail)
 
 	workflow, _ := platform.ReadText(platform.RepoPath(repo, ".github/workflows/issue-governance.yml"))
-	for _, token := range []string{"actions/github-script@v9", "issues: write", "opened", "reopened", "labeled", "closed", ".github/issue-labels.json"} {
+	for _, token := range []string{"issues: write", "opened", "reopened", "labeled", "closed", ".github/issue-labels.json"} {
 		mustContain(workflow, token, "Issue governance workflow missing required token: "+token, fail)
+	}
+	if !regexp.MustCompile(`actions/github-script@[0-9a-f]{40}\s+#\s+v[0-9]+`).MatchString(workflow) {
+		fail("Issue governance workflow must pin actions/github-script by full SHA with a major-version comment")
 	}
 	if strings.Contains(workflow, "{{ISSUE_LABEL_MANIFEST}}") {
 		fail("Issue governance workflow contains unresolved ISSUE_LABEL_MANIFEST placeholder")
