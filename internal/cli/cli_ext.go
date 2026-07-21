@@ -73,7 +73,9 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 	}
 	selected, err := catalog.Select(*kitArg, *allArg)
 	if err != nil {
-		return report.Fail("skill verify", start, "kit selection failed", nil, err.Error()), err
+		res := report.Fail("skill verify", start, "kit selection failed", nil, err.Error())
+		res = report.WithDecision(res, report.CategoryUsage, "aicoding kit list --json")
+		return res, usageErrorf("%s", err)
 	}
 	res := kit.VerifyCatalogSkills(repo, selected, *profile)
 	reuseCheck := reuse.Verify(repo)

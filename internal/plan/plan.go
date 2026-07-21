@@ -213,6 +213,20 @@ func matchesAny(patterns []string, path string) (bool, error) {
 	return false, nil
 }
 
+// MatchPattern exposes the same normalized repository-path matcher used by
+// Plan Mode so adjacent policies do not grow a second glob dialect.
+func MatchPattern(pattern, repoPath string) (bool, error) {
+	normalizedPattern, err := normalizePattern(pattern)
+	if err != nil {
+		return false, err
+	}
+	normalizedPaths, err := normalizePaths([]string{repoPath})
+	if err != nil {
+		return false, err
+	}
+	return matchPattern(normalizedPattern, normalizedPaths[0])
+}
+
 func matchPattern(pattern, path string) (bool, error) {
 	compiled, err := regexp.Compile(globRegex(pattern))
 	if err != nil {

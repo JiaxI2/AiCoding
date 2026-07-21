@@ -58,6 +58,7 @@ const (
 	CommandWork       CommandID = "work"
 	CommandPlan       CommandID = "plan"
 	CommandProvision  CommandID = "provision"
+	CommandChange     CommandID = "change"
 )
 
 type CommandDescriptor struct {
@@ -150,6 +151,7 @@ var commands = mustCommandCatalog(
 		{descriptor: CommandDescriptor{ID: CommandWork, Name: "work", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runWork},
 		{descriptor: CommandDescriptor{ID: CommandPlan, Name: "plan", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"check", "--staged"}}, handler: runPlan},
 		{descriptor: CommandDescriptor{ID: CommandProvision, Name: "provision", LatencyClass: LatencyWork}, handler: runProvision},
+		{descriptor: CommandDescriptor{ID: CommandChange, Name: "change", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runChange},
 	},
 	[]HelpSection{
 		{ID: HelpUsage, Title: "Usage:"},
@@ -186,6 +188,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandPlan, Section: HelpDomain, Usage: "aicoding plan status [--id ID | --all] [--repo-root PATH] [--json]"},
 		{Command: CommandPlan, Section: HelpDomain, Usage: "aicoding plan approve --id ID [--repo-root PATH] [--json]"},
 		{Command: CommandProvision, Section: HelpDomain, Usage: "aicoding provision [--repo-root PATH] [--json]"},
+		{Command: CommandChange, Section: HelpFormal, Usage: "aicoding change verify [--staged | --since REV] [--repo-root PATH] [--json]"},
 		{Command: CommandDoctor, Section: HelpFormal, Usage: "aicoding doctor --all [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
 		{Command: CommandVerify, Section: HelpFormal, Usage: "aicoding verify --profile Smoke|Full|Release [--runtime-profile runtime|full|skill-development] [--runtime-skill NAME] [--source-repository PATH] [--standalone-root agents|codex] [--configured] [--codex-config PATH] [--timeout-sec N] [--repo-root PATH] [--json]"},
 		{Command: CommandRelease, Section: HelpFormal, Usage: "aicoding release verify [--repo-root PATH] [--json]"},

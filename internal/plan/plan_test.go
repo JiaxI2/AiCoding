@@ -84,3 +84,17 @@ func TestCheckPathsRejectsNonRepositoryRelativeInput(t *testing.T) {
 		t.Fatal("CheckPaths accepted traversal")
 	}
 }
+
+func TestMatchPatternUsesPlanGlobDialect(t *testing.T) {
+	matched, err := MatchPattern("internal/**/*.go", "internal/plan/plan.go")
+	if err != nil || !matched {
+		t.Fatalf("double-star pattern did not match: matched=%v err=%v", matched, err)
+	}
+	matched, err = MatchPattern("docs/*.md", "docs/architecture/README.md")
+	if err != nil || matched {
+		t.Fatalf("single-star crossed a directory: matched=%v err=%v", matched, err)
+	}
+	if _, err := MatchPattern("../**", "internal/plan/plan.go"); err == nil {
+		t.Fatal("traversal pattern was accepted")
+	}
+}

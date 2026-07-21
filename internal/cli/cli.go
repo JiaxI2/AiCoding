@@ -53,6 +53,7 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 			message := "unknown command: " + requestedCommand
 			res := report.Fail(requestedCommand, start, message, nil, message)
 			res.ErrorKind = report.ErrorKindUsage
+			res = report.FinalizeDecision(res)
 			_ = report.WriteJSONTo(stdout, res)
 			return ExitUsage
 		}
@@ -104,6 +105,7 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 	case res.ErrorKind == "" && err != nil:
 		res.ErrorKind = report.ErrorKindExecution
 	}
+	res = report.FinalizeDecision(res)
 	if jsonRequested(commandArgs) {
 		_ = report.WriteJSONTo(stdout, res)
 	} else {
@@ -656,7 +658,9 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		}
 		selected, err := catalog.Select(*kitArg, *allArg)
 		if err != nil {
-			return report.Fail("kit "+sub, start, "kit selection failed", nil, err.Error()), err
+			res := report.Fail("kit "+sub, start, "kit selection failed", nil, err.Error())
+			res = report.WithDecision(res, report.CategoryUsage, "aicoding kit list --json")
+			return res, usageErrorf("%s", err)
 		}
 		if strings.EqualFold(*profile, "Lifecycle") {
 			if sub != "verify" {

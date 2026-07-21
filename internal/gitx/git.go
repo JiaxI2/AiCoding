@@ -23,6 +23,8 @@ type Status struct {
 	Untracked       bool
 	SubmoduleDirty  bool
 	Unmerged        bool
+	Paths           []string
+	StagedPaths     []string
 }
 
 // PushUpdate is one record from Git's pre-push stdin protocol.
@@ -303,27 +305,44 @@ func commonDirFromDotGit(repo string) (string, error) {
 // StatusSnapshot parses tracked, staged, untracked, unmerged, and submodule
 // dirtiness from one Git status process.
 func StatusSnapshot(repo string) (Status, error) {
-	out, err := Run(repo, "status", "--porcelain=v2", "--untracked-files=normal", "--ignore-submodules=none")
+	out, err := Run(repo, "status", "--porcelain=v2", "-z", "--untracked-files=normal", "--ignore-submodules=none")
 	if err != nil {
 		return Status{}, err
 	}
+	return parseStatusSnapshot(out)
+}
+
+func parseStatusSnapshot(out string) (Status, error) {
 	var status Status
-	for _, line := range strings.Split(out, "\n") {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
+	paths := map[string]struct{}{}
+	stagedPaths := map[string]struct{}{}
+	records := strings.Split(out, "\x00")
+	for index := 0; index < len(records); index++ {
+		record := records[index]
+		if record == "" || strings.HasPrefix(record, "#") {
 			continue
 		}
-		switch line[0] {
+		switch record[0] {
 		case '?':
+			if len(record) < 3 || record[1] != ' ' {
+				return Status{}, fmt.Errorf("parse git status untracked record %q", record)
+			}
 			status.Untracked = true
+			addStatusPath(paths, record[2:])
 		case 'u':
+			fields := strings.SplitN(record, " ", 11)
+			if len(fields) != 11 {
+				return Status{}, fmt.Errorf("parse git status unmerged record %q", record)
+			}
 			status.Unmerged = true
 			status.Staged = true
 			status.TrackedModified = true
-		case '1', '2':
-			fields := strings.Fields(line)
-			if len(fields) < 3 {
-				return Status{}, fmt.Errorf("parse git status porcelain line %q", line)
+			addStatusPath(paths, fields[10])
+			addStatusPath(stagedPaths, fields[10])
+		case '1':
+			fields := strings.SplitN(record, " ", 9)
+			if len(fields) != 9 {
+				return Status{}, fmt.Errorf("parse git status ordinary record %q", record)
 			}
 			xy, sub := fields[1], fields[2]
 			if len(xy) != 2 {
@@ -334,11 +353,57 @@ func StatusSnapshot(repo string) (Status, error) {
 			if len(sub) == 4 && sub[0] == 'S' && sub[1:] != "..." {
 				status.SubmoduleDirty = true
 			}
+			addStatusPath(paths, fields[8])
+			if xy[0] != '.' {
+				addStatusPath(stagedPaths, fields[8])
+			}
+		case '2':
+			fields := strings.SplitN(record, " ", 10)
+			if len(fields) != 10 || index+1 >= len(records) || records[index+1] == "" {
+				return Status{}, fmt.Errorf("parse git status rename record %q", record)
+			}
+			xy, sub := fields[1], fields[2]
+			if len(xy) != 2 {
+				return Status{}, fmt.Errorf("parse git status XY %q", xy)
+			}
+			status.Staged = status.Staged || xy[0] != '.'
+			status.TrackedModified = status.TrackedModified || xy[1] != '.'
+			if len(sub) == 4 && sub[0] == 'S' && sub[1:] != "..." {
+				status.SubmoduleDirty = true
+			}
+			addStatusPath(paths, fields[9])
+			addStatusPath(paths, records[index+1])
+			if xy[0] != '.' {
+				addStatusPath(stagedPaths, fields[9])
+				addStatusPath(stagedPaths, records[index+1])
+			}
+			index++
 		default:
-			return Status{}, fmt.Errorf("unsupported git status porcelain line %q", line)
+			return Status{}, fmt.Errorf("unsupported git status porcelain record %q", record)
 		}
 	}
+	status.Paths = statusPathList(paths)
+	status.StagedPaths = statusPathList(stagedPaths)
 	return status, nil
+}
+
+func addStatusPath(paths map[string]struct{}, value string) {
+	value = filepath.ToSlash(value)
+	if value != "" {
+		paths[value] = struct{}{}
+	}
+}
+
+func statusPathList(paths map[string]struct{}) []string {
+	if len(paths) == 0 {
+		return nil
+	}
+	values := make([]string, 0, len(paths))
+	for value := range paths {
+		values = append(values, value)
+	}
+	sort.Strings(values)
+	return values
 }
 
 // CommitFiles returns the paths changed by a single commit reference (default

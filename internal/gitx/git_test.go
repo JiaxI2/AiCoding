@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -78,7 +79,7 @@ func TestContentIdentityPrimitives(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status != (Status{}) {
+	if !reflect.DeepEqual(status, Status{}) {
 		t.Fatalf("clean status = %#v", status)
 	}
 }
@@ -101,6 +102,32 @@ func TestStatusSnapshotClassifiesChanges(t *testing.T) {
 	}
 	if !status.TrackedModified || !status.Staged || !status.Untracked || status.SubmoduleDirty || status.Unmerged {
 		t.Fatalf("status = %#v", status)
+	}
+	wantPaths := []string{"staged.txt", "tracked.txt", "untracked.txt"}
+	if !reflect.DeepEqual(status.Paths, wantPaths) || !reflect.DeepEqual(status.StagedPaths, []string{"staged.txt"}) {
+		t.Fatalf("status paths = %#v staged=%#v, want %#v", status.Paths, status.StagedPaths, wantPaths)
+	}
+}
+
+func TestStatusSnapshotPreservesRenameSourceAndUTF8Path(t *testing.T) {
+	repo := newGitRepo(t)
+	writeGitFile(t, repo, "internal/old.go", "package internal\n")
+	mustGit(t, repo, "add", ".")
+	mustGit(t, repo, "commit", "-m", "initial")
+	if err := os.MkdirAll(filepath.Join(repo, "docs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(filepath.Join(repo, "internal", "old.go"), filepath.Join(repo, "docs", "中文 说明.md")); err != nil {
+		t.Fatal(err)
+	}
+	mustGit(t, repo, "add", "-A")
+	status, err := StatusSnapshot(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"docs/中文 说明.md", "internal/old.go"}
+	if !reflect.DeepEqual(status.Paths, want) || !reflect.DeepEqual(status.StagedPaths, want) {
+		t.Fatalf("rename paths = %#v staged=%#v, want %#v", status.Paths, status.StagedPaths, want)
 	}
 }
 

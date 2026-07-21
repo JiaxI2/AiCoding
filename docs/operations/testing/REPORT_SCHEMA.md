@@ -5,6 +5,7 @@
 ```powershell
 bin\aicoding.exe doctor --all --json
 bin\aicoding.exe verify --profile Smoke|Full|Release --json
+bin\aicoding.exe change verify [--staged|--since REV] --json
 bin\aicoding.exe test --profile Smoke|Full|Release --json
 bin\aicoding.exe test latest
 bin\aicoding.exe validation status --json
@@ -21,6 +22,8 @@ bin\aicoding.exe validation list|clean [--profile Smoke|Full|Release] --json
   "schemaVersion": 1,
   "command": "verify --profile Smoke",
   "ok": true,
+  "category": "none",
+  "retryable": false,
   "message": "AiCoding product verification",
   "inputDigest": "sha256:<normalized-input>",
   "planDigest": "sha256:<execution-plan>",
@@ -36,7 +39,13 @@ bin\aicoding.exe validation list|clean [--profile Smoke|Full|Release] --json
 adapter catalog，`data.adapters[*].inputDigest` 标识各领域输入。Digest 用于完整性与追踪，
 不替代来源信任、授权和运行结果。
 
-失败时可选 `errorKind` 只使用：
+`category` 与 `retryable` 是每个外层 Result 的必需字段；成功固定为 `none/false`。失败时
+`category` 只能取 `usage`、`validation`、`transient`、`toolchain`、`evidence-missing`、
+`conflict`、`internal`，其中只有 `transient` 与 `conflict` 可重试；失败结果同时给出非空
+`nextAction`。非法或互相矛盾的组合统一 fail-closed 为 `internal/false`。消费者只需读取
+`{ok,category,retryable,nextAction}`，不得解析 `errors[]` 自然语言推进工作流。
+
+兼容字段 `errorKind` 只使用：
 
 - `usage`：参数、flag 或命令使用错误，退出码 `2`；
 - `execution`：文件、进程或运行时执行失败，退出码 `1`；
@@ -68,6 +77,12 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 `duration_ms`、warnings、errors 和领域详情；`test` 的 details 仍是唯一 test engine
 生成的 summary/results。test engine 在执行和写报告前校验 Registry 的 `title`：文本必须是
 有效 UTF-8 且不得包含 Unicode 替换字符 `U+FFFD`，避免不可读标题进入任何 JSON 消费者。
+
+`change verify` 的 `data` 固定公开 `mode/paths/matches/chosenProfile/target/executionMode`、
+`executedCases/reusedCases/receipt/steps`；内部步骤名称为 `changes.detect`、`impact.select`、
+`receipt.check`、`test.run`。Receipt 精确命中不运行 test engine，返回
+`executionMode=receipt-hit` 与 `executedCases=0`；未命中则内嵌既有 `testReport`，不定义第二份
+结果 schema。
 
 ## 1. 测试 `summary.json`
 

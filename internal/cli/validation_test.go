@@ -60,6 +60,9 @@ func TestValidationCommandsCheckListStatusAndCleanReceipts(t *testing.T) {
 	if err == nil || !report.IsValidationError(err) || miss.OK {
 		t.Fatalf("initial check = %#v, %v", miss, err)
 	}
+	if miss.Category != report.CategoryEvidenceMissing || miss.Retryable || !strings.Contains(miss.NextAction, "test --profile Smoke --reuse off") {
+		t.Fatalf("initial check lacks a structured recovery decision: %#v", miss)
+	}
 	missData := miss.Data.(validationCheckData)
 	if missData.Decision.Code != validationevidence.CodeReceiptMiss {
 		t.Fatalf("initial decision = %#v", missData.Decision)

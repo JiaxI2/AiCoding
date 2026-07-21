@@ -286,6 +286,15 @@ func runValidationCheck(args []string, start time.Time) (report.Result, error) {
 	}
 	if !result.OK {
 		result.ErrorKind = report.ErrorKindValidation
+		switch decision.Code {
+		case validationevidence.CodeReceiptMiss, validationevidence.CodeReceiptInvalid:
+			result = report.WithDecision(result, report.CategoryEvidenceMissing,
+				"aicoding test --profile "+displayTestProfile(profile)+" --reuse off --json")
+		case validationevidence.CodeStoreError:
+			result = report.WithDecision(result, report.CategoryInternal, "aicoding validation status --json")
+		default:
+			result = report.WithDecision(result, report.CategoryValidation, "aicoding validation explain --profile "+displayTestProfile(profile)+" --target "+string(target)+" --json")
+		}
 	}
 	return result, report.BoolErr(errs)
 }

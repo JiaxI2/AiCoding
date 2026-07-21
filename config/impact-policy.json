@@ -10,5 +10,50 @@
       "internal/validationevidence"
     ],
     "reason": "Packages containing goroutines, channels, sync primitives, shared state, or concurrent file writes."
+  },
+  "changeVerify": {
+    "defaultProfile": "Full",
+    "rules": [
+      {
+        "pattern": "docs/**",
+        "profile": "Smoke",
+        "reason": "Documentation-only repository content."
+      },
+      {
+        "pattern": "*.md",
+        "profile": "Smoke",
+        "reason": "Root documentation-only repository content."
+      },
+      {
+        "pattern": "**/*.go",
+        "profile": "Full",
+        "reason": "Go implementation or test code requires the Full profile."
+      },
+      {
+        "pattern": "*.go",
+        "profile": "Full",
+        "reason": "Root Go code requires the Full profile."
+      },
+      {
+        "pattern": "config/**",
+        "profile": "Full",
+        "reason": "Configuration can change validation semantics."
+      },
+      {
+        "pattern": ".githooks/**",
+        "profile": "Full",
+        "reason": "Hook execution changes require the Full profile."
+      },
+      {
+        "pattern": ".github/**",
+        "profile": "Full",
+        "reason": "Repository automation changes require the Full profile."
+      },
+      {
+        "pattern": "tools/**",
+        "profile": "Full",
+        "reason": "Specialty tool changes require the Full profile."
+      }
+    ]
   }
 }

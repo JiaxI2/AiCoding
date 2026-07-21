@@ -37,6 +37,34 @@ func TestValidationErrorClassification(t *testing.T) {
 	}
 }
 
+func TestResultDecisionCategoriesAreClosedAndCanonical(t *testing.T) {
+	valid := []Category{
+		CategoryNone, CategoryUsage, CategoryValidation, CategoryTransient,
+		CategoryToolchain, CategoryEvidenceMissing, CategoryConflict, CategoryInternal,
+	}
+	for _, category := range valid {
+		if !ValidCategory(category) {
+			t.Fatalf("declared category is not valid: %q", category)
+		}
+	}
+	if ValidCategory(Category("free-text")) {
+		t.Fatal("free-text category was accepted")
+	}
+
+	usage := FinalizeDecision(Result{SchemaVersion: 1, Command: "kit verify", ErrorKind: ErrorKindUsage})
+	if usage.Category != CategoryUsage || usage.Retryable || usage.NextAction == "" {
+		t.Fatalf("usage decision is incomplete: %#v", usage)
+	}
+	transient := FinalizeDecision(WithDecision(Result{SchemaVersion: 1, Command: "fresh-clone"}, CategoryTransient, "aicoding fresh-clone --profile Release --json"))
+	if transient.Category != CategoryTransient || !transient.Retryable {
+		t.Fatalf("transient decision is not retryable: %#v", transient)
+	}
+	invalid := FinalizeDecision(Result{SchemaVersion: 1, Command: "broken", Category: Category("free-text")})
+	if invalid.OK || invalid.Category != CategoryInternal || invalid.Retryable || len(invalid.Errors) == 0 {
+		t.Fatalf("invalid decision did not fail closed: %#v", invalid)
+	}
+}
+
 func TestCLIReportSchemaAndGoTypesStayAligned(t *testing.T) {
 	schemaPath := filepath.Join("..", "..", "config", "schemas", "cli-report.schema.json")
 	data, err := os.ReadFile(schemaPath)
@@ -60,6 +88,8 @@ func TestCLIReportSchemaAndGoTypesStayAligned(t *testing.T) {
 		SchemaVersion: SchemaVersion,
 		Command:       "verify --profile Smoke",
 		OK:            true,
+		Category:      CategoryNone,
+		Retryable:     false,
 		InputDigest:   "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
 		PlanDigest:    "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
 		Data: StandardReport{
@@ -84,7 +114,7 @@ func TestCLIReportSchemaAndGoTypesStayAligned(t *testing.T) {
 		t.Fatal(err)
 	}
 	if object["schemaVersion"] != float64(SchemaVersion) || object["command"] == "" || object["elapsedMs"] == nil ||
-		object["inputDigest"] == nil || object["planDigest"] == nil {
+		object["inputDigest"] == nil || object["planDigest"] == nil || object["category"] != string(CategoryNone) || object["retryable"] != false {
 		t.Fatalf("result JSON does not match schema-required fields: %s", encoded)
 	}
 	standard, ok := object["data"].(map[string]interface{})

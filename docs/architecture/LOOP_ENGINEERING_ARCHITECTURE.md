@@ -371,7 +371,26 @@ aicoding work record   --file <spec.json> --attempt <a.json> --json    仅追加
 
 ---
 
-## 10. 可靠性与安全
+## 10. Meta-tool 晋升准入
+
+重复工具序列只有同时满足以下七项，才可由人工评审晋升为一个确定性 meta-tool：
+
+1. 在真实使用中重复出现至少 5 次；次数由人确认，不自动采集。
+2. 顺序稳定，中间步骤不需要语义决策。
+3. 输入与输出可形成稳定 schema。
+4. 副作用和权限边界清晰。
+5. 可独立测试。
+6. 合并后不隐藏必要的可观测信息，内部子步骤仍进入报告。
+7. 由人显式批准；禁止运行时自动晋升或自动改写自身工作流。
+
+`change verify` 是首个通过该清单的实例：它复用 `gitx`、Plan pattern、
+`validationevidence` 与唯一 `testengine`，将变更检测、影响面选择、Receipt 检查和测试执行
+组合为一条命令，同时在 `data.steps` 中保留四个子步骤。该准入规则只允许编译掉确定性编排，
+不授权新增 Workflow DSL、第二 runner/scheduler/state store/cache 或第二结果 schema。
+
+---
+
+## 11. 可靠性与安全
 
 | 面 | 机制 | 失败时行为 |
 |---|---|---|
@@ -388,7 +407,7 @@ aicoding work record   --file <spec.json> --attempt <a.json> --json    仅追加
 
 ---
 
-## 11. 演进边界
+## 12. 演进边界
 
 以下能力**已被评估并明确推迟**，重新提出必须走 ADR 并给出至少两个真实消费者：
 
@@ -403,7 +422,7 @@ aicoding work record   --file <spec.json> --attempt <a.json> --json    仅追加
 
 ---
 
-## 12. 参考
+## 13. 参考
 
 外部实践（本架构的分歧点见 §1「明确不做」与 §2）：
 
