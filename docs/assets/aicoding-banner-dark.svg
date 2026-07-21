@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-labelledby="title desc">
   <title id="title">AiCoding — Verifiable AI Engineering</title>
-  <desc id="desc">A restrained engineering diagram linking plan, check, proof, and reuse.</desc>
+  <desc id="desc">A restrained engineering diagram linking plan, check, proof, receipt, and reuse.</desc>
   <defs>
     <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
       <path d="M0 0L8 4L0 8Z" fill="#b3b3b3"/>
@@ -30,12 +30,14 @@
       <rect x="838" y="61" width="116" height="56" rx="9"/>
       <rect x="996" y="61" width="116" height="56" rx="9"/>
       <rect x="838" y="151" width="116" height="56" rx="9"/>
+      <rect x="996" y="151" width="116" height="56" rx="9"/>
     </g>
     <g fill="#f2f2f2" font-size="12" font-weight="700" letter-spacing=".8">
       <text x="738" y="94">PLAN</text>
       <text x="896" y="94">CHECK</text>
       <text x="1054" y="94">PROOF</text>
       <text x="896" y="184">REUSE</text>
+      <text x="1054" y="184">RECEIPT</text>
     </g>
     <text x="896" y="229" fill="#a6a6a6" font-size="11" letter-spacing="1.4">CLOSED EVIDENCE LOOP</text>
   </g>

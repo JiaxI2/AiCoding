@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **fix(readme-banner)**: 补回明暗两版 README 工程图中遗漏的 `RECEIPT` 节点与矩形，使 `PLAN → CHECK → PROOF → RECEIPT → REUSE` 证据闭环完整，并同步无障碍描述。 / Restores the missing `RECEIPT` node in both README banner themes so the evidence loop and accessible description are complete.
+
 - **feat(kit-init)**: 新增 `aicoding kit init <id> [--external] [--dry-run]` 合规脚手架，从 `config/templates/kit/` 确定性生成 schema v2 manifest、disabled registry entry 与 workspec 示例；外部变体附四栏边界卡并固定 third-party/pinned 锚点。命令校验 ID 与保留命名空间、目标存在时绝不覆盖，dry-run 仅报告路径/摘要；同时为当前空实现登记 capability、platform-agnostic、无依赖的保守 binding，使生成物零编辑通过 Lifecycle 与 dependency coverage，正式 enable 前再按真实边界修正，且不自动 enable、写 Skill 或虚构外部依赖。 / Adds a deterministic, fail-closed Kit scaffold with dry-run evidence, an external-wrapper boundary variant, and a conservative empty capability binding so zero-edit output passes Lifecycle and dependency coverage without inventing enablement, Skills, or upstream dependencies.
 
 - **feat(kit-management)**: 建立 Kit 快速入门、使用与维护的三面九问唯一标准；`kit describe` 从既有 description、首个 read command 与 Skill 描述确定性派生 Quickstart，并由文本报告即时呈现；既有 plugin projection 门禁新增 enabled Kit 的用户结果描述、read command、升级策略与第三方边界卡检查，Smoke 告警、Lifecycle/Full/Release 阻断，不新增 manifest 字段或 QUICKSTART 文件。 / Establishes the single Kit management standard, deterministically projects Quickstart from existing manifest and Skill facts, renders it through the existing report path, and adds severity-aware management checks without a new schema field or parallel quickstart file.
