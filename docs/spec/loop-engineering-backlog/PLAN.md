@@ -1,12 +1,14 @@
 ---
 id: loop-engineering-backlog
-status: approved
+status: draft
 scope:
   - "internal/cache/**"
+  - "internal/capability/**"
   - "internal/cli/**"
   - "internal/governance/**"
   - "internal/kit/**"
   - "internal/lifecycle/**"
+  - "internal/platform/**"
   - "internal/repohealth/**"
   - "internal/repoinit/**"
   - "internal/report/**"
@@ -21,7 +23,7 @@ scope:
   - "README_CN.md"
   - "README_EN.md"
   - "CHANGELOG.md"
-approvedTree: "cc458acca8078cc38a96436cefd03fda6cec0cd5"
+approvedTree: ""
 gates:
   - profile: full
   - profile: release
