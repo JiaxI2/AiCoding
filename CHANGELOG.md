@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 在 clean worktree 上重新批准 Loop Engineering backlog plan，将扩展后的 scope 绑定到 tree `6cedb32a413b59c1764424bf21f2db6f24840d4b`，后续 capability 实现重新受内容绑定约束。 / Reapproves the expanded backlog plan on a clean worktree and binds subsequent capability work to tree `6cedb32a413b59c1764424bf21f2db6f24840d4b`.
+
 - **docs(plan)**: 将已实际使用的 `internal/platform/**` 与 TODO 0023 明确新增的 `internal/capability/**` 补入 Loop Engineering backlog plan scope，并回到 draft 以执行 clean-tree 重新批准；不借 Plan Mode 非敏感路径空档接受越界实现。 / Expands the backlog plan scope for the implemented platform and capability domains and returns it to draft for a clean-tree reapproval instead of accepting out-of-scope work.
 
 - **feat(cache)**: 完成 TODO 0024：`internal/platform` 以 Git common-dir 追加式 ledger 登记 `aicoding-*` 临时目录生命周期，fresh-clone 成功即释放、失败或显式保留均留下可审计 outcome；既有 `cache` 增加第五个 `temp` scope、24h/最近 3 个失败/`investigating` 保留规则，以及显式 `--adopt` / `--all-repos` 边界。`doctor --all` 增加 temp bloat warning 与 Windows 孤儿进程只读报告，严格不匹配大小写错误前缀、不清 work/plan 审计轨迹、不 kill 进程。 / Completes TODO 0024 with an append-only temporary-resource ledger, bounded fresh-clone teardown, a fifth cache scope with explicit orphan and cross-worktree controls, warning-only bloat diagnostics, and report-only Windows orphan-process inspection.
