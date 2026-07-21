@@ -38,6 +38,12 @@ bin\aicoding.exe doctor pwsh-budget --json
 
 `doctor pwsh-budget` 用于确认 PowerShell 调用仍限制在上述专项类别内。
 
+2026-07-22 的冻结面复核记录为 22 个 `tools/specialty/**/*.ps1`：20 个顶层专项入口与
+2 个嵌套 AEF Hook 薄壳；顶层计数中 `thinShells=2`、`deprecated=2`。可执行职责全部属于
+上表六类，或处于 ADR/独立 Retirement Plan 已登记的 release 退役窗口。计数是只读观测，
+不是归零 KPI；默认 Taskfile/CI profile 仍只调用 Go CLI。详细逐文件裁决见
+[TODO 0002](../todolist/0002-powershell-specialty-convergence.md)。
+
 ## 禁止事项
 
 - 专项命令面停止增长：不新增专项脚本，不新增保留类别；新能力一律进入 Go 控制面。

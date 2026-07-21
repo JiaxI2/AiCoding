@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(powershell)**: 完成 TODO 0002 的重新评估：22 个 `tools/specialty/**/*.ps1` 全部归入已冻结的 tag、release overlay、PowerShell quality、Plan Mode helper、external Skill、硬件安全类别，或处于已有 ADR/Retirement Plan 的兼容退役窗口；默认 profile 继续由 PWSH-003 保证直达 Go CLI。接受 `remainingScripts=20 / thinShells=2 / deprecated=2` 为只读退役快照，不为脚本数归零重写合法专项流程，专项面继续只减不增。 / Completes TODO 0002 by classifying the entire frozen PowerShell surface, preserving only explicit specialty responsibilities and governed compatibility windows, and rejecting a count-driven rewrite while Go-native default routes remain required.
+
 - **feat(authoring)**: 完成 TODO 0020：新增 fail-closed 的 `skill init` 与 `mcp init`，复用既有 CLI/report 与编译期模板机制。Skill 默认仅预览，显式写入也必须位于 AiCoding 仓库外，符号链接解析后落入只读 Skill 子模块同样拒绝；生成草稿零编辑通过 Codex-Skills 结构门禁。MCP 只生成冻结 manifest 与 disabled registry entry 建议，不改 registry、不生成 runtime、不拥有工作流 prompt。新增中文优先创作指引，明确 Skill/Kit/MCP/Hook 的唯一权威和跨仓 pin 流程，且不提供 `hook init`。 / Completes TODO 0020 with safe external Skill drafting and MCP manifest scaffolding, strict no-overwrite and ownership boundaries, schema-aligned outputs, no automatic registration or enablement, and one authoring guide for all four asset classes.
 
 - **feat(change-verify)**: 完成 TODO 0021：统一 `report.Result` 增加必需的封闭 `category`/`retryable` 与失败恢复 `nextAction`，非法组合 fail-closed；新增 `change verify`，复用 Git 状态、Plan pattern、Validation Evidence 与唯一 TestEngine，将变更检测、影响面选择、Receipt 检查和测试执行压成一条可观测 meta-tool。`--staged`/`--since` 均执行严格主体检查，未知路径保守选择 Full；Receipt 命中零用例执行。 / Completes TODO 0021 with closed machine-decidable Result fields and a deterministic, observable change-verification meta-tool built exclusively from existing Git, Plan, evidence, and test-engine authorities.
