@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "raceScope": {
+    "packages": [
+      "internal/mcpcontrol",
+      "internal/report/tokenusage",
+      "internal/runner",
+      "internal/testengine",
+      "internal/validationevidence"
+    ],
+    "reason": "Packages containing goroutines, channels, sync primitives, shared state, or concurrent file writes."
+  }
+}

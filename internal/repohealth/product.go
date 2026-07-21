@@ -13,6 +13,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/repoinit"
 	"github.com/JiaxI2/AiCoding/internal/report"
 	"github.com/JiaxI2/AiCoding/internal/reuse"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 )
 
 type ProductOptions struct {
@@ -26,7 +27,7 @@ type ProductOptions struct {
 }
 
 func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.Check {
-	checks := []report.Check{}
+	checks := []runner.Task{}
 	checks = append(checks, productCheck("doctor.repository", "REPOSITORY", func() (interface{}, []string, []string) {
 		status, errorsFound := StatusAll(repo)
 		return status, nil, errorsFound
@@ -86,7 +87,7 @@ func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 		budget, errorsFound := ScanPwshBudget(repo)
 		return budget, nil, errorsFound
 	}))
-	return checks
+	return executeProductChecks(ctx, checks, 4)
 }
 
 func doctorInstalledMCP(ctx context.Context, repo, codexConfig string) (interface{}, []string, []string) {
@@ -138,7 +139,7 @@ func doctorInstalledMCP(ctx context.Context, repo, codexConfig string) (interfac
 }
 
 func VerifyAll(ctx context.Context, repo string, opts ProductOptions) []report.Check {
-	checks := []report.Check{}
+	checks := []runner.Task{}
 	checks = append(checks, productCheck("verify.hooks", "REPOSITORY", func() (interface{}, []string, []string) {
 		data, errorsFound := VerifyHooks(repo)
 		return data, nil, errorsFound
@@ -232,11 +233,42 @@ func VerifyAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 			return inventory, inventory.Warnings, nil
 		}))
 	}
-	return checks
+	return executeProductChecks(ctx, checks, 4)
 }
 
-func productCheck(id, category string, run func() (interface{}, []string, []string)) report.Check {
-	started := time.Now()
-	details, warnings, errorsFound := run()
-	return report.NewCheck(id, category, started, details, warnings, errorsFound)
+func productCheck(id, category string, run func() (interface{}, []string, []string)) runner.Task {
+	return runner.Task{
+		ID:     id,
+		Action: "repohealth.product-check",
+		Group:  category,
+		Run: func(context.Context) runner.TaskResult {
+			started := time.Now()
+			details, warnings, errorsFound := run()
+			check := report.NewCheck(id, category, started, details, warnings, errorsFound)
+			return runner.TaskResult{OK: check.OK, Warnings: check.Warnings, Errors: check.Errors, Data: check}
+		},
+	}
+}
+
+func executeProductChecks(ctx context.Context, tasks []runner.Task, maxParallel int) []report.Check {
+	results := runner.Run(ctx, tasks, runner.Options{MaxParallel: maxParallel})
+	checks := make([]report.Check, len(results))
+	for index, result := range results {
+		if check, ok := result.Data.(report.Check); ok {
+			checks[index] = check
+			continue
+		}
+		checks[index] = report.Check{
+			ID:       tasks[index].ID,
+			Category: tasks[index].Group,
+			OK:       false,
+			Status:   "FAIL",
+			Warnings: append([]string{}, result.Warnings...),
+			Errors:   append([]string{}, result.Errors...),
+		}
+		if len(checks[index].Errors) == 0 {
+			checks[index].Errors = []string{"product check returned no result"}
+		}
+	}
+	return checks
 }

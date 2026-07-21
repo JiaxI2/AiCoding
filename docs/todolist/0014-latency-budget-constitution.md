@@ -1,6 +1,6 @@
 # TODO 0014: 延迟预算入宪（CLI ≤10s 分级承诺 + pull 暴露面收敛）
 
-Status: Planned
+Status: Done
 Verify: bin/aicoding.exe doctor perf --json 按延迟等级断言实测中位数；git pull 路径的子模块配置由 provision 写入并可验证
 
 > 实测基线（2026-07-20，warm）：kit list 206ms / governance layout 273ms /
@@ -81,3 +81,21 @@ bin\aicoding.exe test --profile Full --json
 通过判据：catalog 等级全覆盖且启动校验生效（负例）；doctor perf 对注入的慢命令报警
 （负例贴输出）；provision 后三项 git config 就位；COMMANDS.md 标注 toolchain-bound 豁免；
 两次 pull 实测数字记入本 todo 作为基线（网络路径只记录不承诺）。
+
+## 执行证据（2026-07-21，与 0022 刀 6 合并完成）
+
+- A：typed command catalog 的 25 个顶层命令全部登记 `fast` / `standard` / `work`；构造缺失
+  `LatencyClass` 的 route 时，`TestCommandCatalogRejectsMissingLatencyClass` 通过，启动期
+  catalog 校验会拒绝该 route。
+- B：`doctor perf --json` 对 14 个 fast/standard 代表路径各跑 3 次并全部 PASS。本轮实测
+  `doctor --all` 中位数 351.807ms、`lifecycle status --scope all` 38.750ms、
+  `governance dependencies` 157.952ms、`verify Smoke` 219.803ms。注入 fast 慢命令的真实
+  负例输出为 `median=601ms budget=400ms status=warn` 与
+  `median=1202ms budget=400ms status=fail`。
+- C：本 worktree 的三项 local config 初始均为 `<missing>`；执行 `provision --json` 后为
+  `fetch.parallel=0`、`submodule.fetchJobs=4`、`core.fscache=true`，第二次执行三个 action
+  均为 `kept`。`TestInitRepairsGitTransportConfiguration` 还实际验证了错误值
+  `1 / 1 / false` 会被纠偏为 `0 / 4 / true`。
+
+网络耗时不作为本项硬门禁：日常 `git pull` 不递归同步 skills 子模块；需要更新依赖时仍由
+lifecycle install/update 显式执行。没有引入浅克隆、partial clone、镜像或第二套性能预算。

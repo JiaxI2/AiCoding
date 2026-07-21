@@ -35,6 +35,12 @@ Git 操作、Token、Agent 推理轮数、Context 长度、工具调用、网络
 结果、为少量数据构建巨大上下文、无意义调用 Agent/外部工具、为简单任务启动复杂 Workflow。
 **默认选执行成本最低的实现，而非实现最简单的方案。**
 
+CLI 延迟预算是接口契约，登记在唯一 typed command catalog 的 `LatencyClass`，不得另建
+平行预算文件：`fast` warm 中位数 <400ms，`standard` <1200ms，`work` 不设绝对上限但须
+支持已有的内容证据复用。命令变慢一档必须作为接口回退评审。`doctor perf` 对 fast/standard
+代表路径各执行 3 次取中位数，超过预算 1.5 倍 Warn、3 倍 Fail；环境或工具链主导的 work
+路径不能靠削减验证内容换取达标。
+
 ### 4. Fast Path First
 优先设计最快执行路径：增量、按需加载、缓存复用、局部处理、并行、零重复计算。只有 Fast
 Path 不满足时才进入更复杂流程。**"最快"须由测量证据支撑**（先测后改），不靠直觉。

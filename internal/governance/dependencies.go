@@ -187,6 +187,10 @@ type DependencyCheck struct {
 // CheckDependencies validates layer direction, registry classification,
 // reserved namespaces and lower-layer platform independence.
 func CheckDependencies(repo string) DependencyReport {
+	return checkDependencies(repo, filepath.WalkDir)
+}
+
+func checkDependencies(repo string, walk dependencyWalkDir) DependencyReport {
 	report := DependencyReport{
 		SchemaVersion: 1,
 		Config:        dependencyGovernancePath,
@@ -199,6 +203,11 @@ func CheckDependencies(repo string) DependencyReport {
 		return report
 	}
 	report.Direction = policy.Direction
+	inventory, err := buildDependencyInventory(repo, policy, walk)
+	if err != nil {
+		report.addDependencyCheck("build dependency inventory", []string{err.Error()}, nil)
+		return report
+	}
 
 	layers, layerErrors := dependencyLayers(policy)
 	report.addDependencyCheck("layer model", layerErrors, nil)
@@ -227,17 +236,17 @@ func CheckDependencies(repo string) DependencyReport {
 	report.addDependencyCheck("MCP registry coverage", mcpCoverageErrors, nil)
 
 	report.addDependencyCheck("declared dependency direction", checkDependencyDirection(bindings, layers), nil)
-	report.addDependencyCheck("lower-layer platform independence", checkPlatformAgnosticRoots(repo, policy, layers), nil)
+	report.addDependencyCheck("lower-layer platform independence", checkPlatformAgnosticRoots(repo, policy, layers, inventory), nil)
 	report.addDependencyCheck("MCP component identity", checkMCPComponentIdentity(repo, policy, mcpEntries), nil)
-	report.addDependencyCheck("MCP and Skill responsibility boundary", checkMCPPromptPolicy(repo, policy), nil)
+	report.addDependencyCheck("MCP and Skill responsibility boundary", checkMCPPromptPolicy(repo, policy, inventory), nil)
 	report.addDependencyCheck("Skill naming and exposure", checkSkillDependencyPolicy(repo, policy, layers), nil)
-	report.addDependencyCheck("asset identity version opacity", checkAssetVersionOpacity(repo, policy), nil)
+	report.addDependencyCheck("asset identity version opacity", checkAssetVersionOpacity(repo, policy, inventory), nil)
 	report.addDependencyCheck("README version badge authority", checkReadmeVersionBadges(repo, policy), nil)
-	report.addDependencyCheck("activation manifests URL-free", checkActivationManifestsURLFree(repo, policy.AcquisitionBoundary), nil)
-	report.addDependencyCheck("cloneable sources registry", checkCloneableSourcesRegistry(repo, policy.AcquisitionBoundary), nil)
-	report.addDependencyCheck("orthogonal Go package boundaries", checkGoPackageBoundaries(repo, policy.GoPackageBoundaries), nil)
-	report.addDependencyCheck("git process ownership", checkGitProcessOwnership(repo, policy.GitProcessBoundary), nil)
-	report.addDependencyCheck("gitx importer allowlist", checkGitxImporterAllowlist(repo, policy.GitProcessBoundary), nil)
+	report.addDependencyCheck("activation manifests URL-free", checkActivationManifestsURLFree(policy.AcquisitionBoundary, inventory), nil)
+	report.addDependencyCheck("cloneable sources registry", checkCloneableSourcesRegistry(repo, policy.AcquisitionBoundary, inventory), nil)
+	report.addDependencyCheck("orthogonal Go package boundaries", checkGoPackageBoundariesWithInventory(repo, policy.GoPackageBoundaries, inventory), nil)
+	report.addDependencyCheck("git process ownership", checkGitProcessOwnership(repo, policy.GitProcessBoundary, inventory), nil)
+	report.addDependencyCheck("gitx importer allowlist", checkGitxImporterAllowlist(repo, policy.GitProcessBoundary, inventory), nil)
 
 	for _, rel := range []string{
 		"config/schemas/dependency-governance.schema.json",
@@ -253,7 +262,7 @@ func CheckDependencies(repo string) DependencyReport {
 	return report
 }
 
-func checkGoPackageBoundaries(repo string, boundaries []goPackageBoundary) []string {
+func checkGoPackageBoundariesWithInventory(repo string, boundaries []goPackageBoundary, inventory *dependencyInventory) []string {
 	errs := []string{}
 	for _, boundary := range boundaries {
 		rel := filepath.ToSlash(filepath.Clean(boundary.Path))
@@ -261,50 +270,48 @@ func checkGoPackageBoundaries(repo string, boundaries []goPackageBoundary) []str
 			errs = append(errs, "Go package boundary path must stay under internal/: "+boundary.Path)
 			continue
 		}
-		root := platform.RepoPath(repo, rel)
-		if !platform.IsDir(root) {
+		if !inventory.hasDirectory(rel) {
 			errs = append(errs, "Go package boundary directory is missing: "+rel)
 			continue
 		}
-		walkErr := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
+		for _, relFile := range inventory.filesWithin(rel, nil) {
+			if filepath.Ext(relFile) != ".go" || strings.HasSuffix(relFile, "_test.go") {
+				continue
 			}
-			if entry.IsDir() || filepath.Ext(path) != ".go" || strings.HasSuffix(path, "_test.go") {
-				return nil
+			data, readErr := inventory.read(relFile)
+			if readErr != nil {
+				errs = append(errs, "cannot inspect Go package boundary "+rel+": "+readErr.Error())
+				continue
 			}
-			file, parseErr := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+			file, parseErr := parser.ParseFile(token.NewFileSet(), relFile, data, parser.ImportsOnly)
 			if parseErr != nil {
-				return parseErr
+				errs = append(errs, "cannot inspect Go package boundary "+rel+": "+parseErr.Error())
+				continue
 			}
 			for _, imported := range file.Imports {
 				value, unquoteErr := strconv.Unquote(imported.Path.Value)
 				if unquoteErr != nil {
-					return unquoteErr
+					errs = append(errs, "cannot inspect Go package boundary "+rel+": "+unquoteErr.Error())
+					continue
 				}
 				for _, forbidden := range boundary.ForbiddenImports {
 					prefix := "github.com/JiaxI2/AiCoding/" + strings.TrimSuffix(filepath.ToSlash(forbidden), "/")
 					if value == prefix || strings.HasPrefix(value, prefix+"/") {
-						relFile, _ := filepath.Rel(repo, path)
-						errs = append(errs, filepath.ToSlash(relFile)+" imports forbidden package "+value)
+						errs = append(errs, relFile+" imports forbidden package "+value)
 					}
 				}
 			}
-			return nil
-		})
-		if walkErr != nil {
-			errs = append(errs, "cannot inspect Go package boundary "+rel+": "+walkErr.Error())
 		}
 	}
 	return errs
 }
 
-func checkGitProcessOwnership(repo string, boundary gitProcessBoundary) []string {
+func checkGitProcessOwnership(repo string, boundary gitProcessBoundary, inventory *dependencyInventory) []string {
 	if errs := validateGitProcessBoundary(boundary); len(errs) != 0 {
 		return errs
 	}
-	return inspectGitBoundaryFiles(repo, boundary, true, func(path, relFile string) []string {
-		startsGit, err := startsLiteralGitProcess(path)
+	return inspectGitBoundaryFiles(repo, boundary, inventory, true, func(relFile string, data []byte) []string {
+		startsGit, err := startsLiteralGitProcess(relFile, data)
 		if err != nil {
 			return []string{relFile + ": " + err.Error()}
 		}
@@ -315,7 +322,7 @@ func checkGitProcessOwnership(repo string, boundary gitProcessBoundary) []string
 	})
 }
 
-func checkGitxImporterAllowlist(repo string, boundary gitProcessBoundary) []string {
+func checkGitxImporterAllowlist(repo string, boundary gitProcessBoundary, inventory *dependencyInventory) []string {
 	if errs := validateGitProcessBoundary(boundary); len(errs) != 0 {
 		return errs
 	}
@@ -323,8 +330,8 @@ func checkGitxImporterAllowlist(repo string, boundary gitProcessBoundary) []stri
 	for _, importer := range boundary.AllowedImporters {
 		allowed[filepath.ToSlash(filepath.Clean(importer))] = struct{}{}
 	}
-	return inspectGitBoundaryFiles(repo, boundary, false, func(path, relFile string) []string {
-		importsGitx, err := importsInternalGitx(path)
+	return inspectGitBoundaryFiles(repo, boundary, inventory, false, func(relFile string, data []byte) []string {
+		importsGitx, err := importsInternalGitx(relFile, data)
 		if err != nil {
 			return []string{relFile + ": " + err.Error()}
 		}
@@ -350,50 +357,38 @@ func validateGitProcessBoundary(boundary gitProcessBoundary) []string {
 	return nil
 }
 
-func inspectGitBoundaryFiles(repo string, boundary gitProcessBoundary, skipOwner bool, inspect func(string, string) []string) []string {
+func inspectGitBoundaryFiles(repo string, boundary gitProcessBoundary, inventory *dependencyInventory, skipOwner bool, inspect func(string, []byte) []string) []string {
 	errs := []string{}
 	owner := filepath.ToSlash(filepath.Clean(boundary.OwnerPackage))
+	seen := map[string]bool{}
 	for _, scanRoot := range boundary.ScanRoots {
 		root := filepath.ToSlash(filepath.Clean(scanRoot))
 		if root == "." || filepath.IsAbs(scanRoot) || strings.HasPrefix(root, "../") {
 			errs = append(errs, "gitProcessBoundary scan root must stay inside the repository: "+scanRoot)
 			continue
 		}
-		absoluteRoot := platform.RepoPath(repo, root)
-		if !platform.IsDir(absoluteRoot) {
+		if !inventory.hasDirectory(root) {
 			errs = append(errs, "gitProcessBoundary scan root is missing: "+root)
 			continue
 		}
-		walkErr := filepath.WalkDir(absoluteRoot, func(path string, entry os.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
+		for _, relFile := range inventory.filesWithin(root, nil) {
+			if seen[relFile] || (skipOwner && isLayoutWithin(relFile, owner)) || filepath.Ext(relFile) != ".go" || strings.HasSuffix(relFile, "_test.go") {
+				continue
 			}
-			relFile, relErr := filepath.Rel(repo, path)
-			if relErr != nil {
-				return relErr
+			seen[relFile] = true
+			data, readErr := inventory.read(relFile)
+			if readErr != nil {
+				errs = append(errs, "cannot inspect git process boundary "+root+": "+readErr.Error())
+				continue
 			}
-			relFile = filepath.ToSlash(relFile)
-			if entry.IsDir() {
-				if skipOwner && relFile == owner {
-					return filepath.SkipDir
-				}
-				return nil
-			}
-			if filepath.Ext(path) != ".go" || strings.HasSuffix(path, "_test.go") {
-				return nil
-			}
-			errs = append(errs, inspect(path, relFile)...)
-			return nil
-		})
-		if walkErr != nil {
-			errs = append(errs, "cannot inspect git process boundary "+root+": "+walkErr.Error())
+			errs = append(errs, inspect(relFile, data)...)
 		}
 	}
 	return errs
 }
 
-func startsLiteralGitProcess(path string) (bool, error) {
-	file, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+func startsLiteralGitProcess(path string, data []byte) (bool, error) {
+	file, err := parser.ParseFile(token.NewFileSet(), path, data, 0)
 	if err != nil {
 		return false, err
 	}
@@ -468,8 +463,8 @@ func startsLiteralGitProcess(path string) (bool, error) {
 	return found, nil
 }
 
-func importsInternalGitx(path string) (bool, error) {
-	file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
+func importsInternalGitx(path string, data []byte) (bool, error) {
+	file, err := parser.ParseFile(token.NewFileSet(), path, data, parser.ImportsOnly)
 	if err != nil {
 		return false, err
 	}
@@ -518,13 +513,18 @@ func loadDependencyPolicy(repo string) (dependencyPolicy, error) {
 	return policy, nil
 }
 
-func checkActivationManifestsURLFree(repo string, boundary acquisitionBoundary) []string {
+func checkActivationManifestsURLFree(boundary acquisitionBoundary, inventory *dependencyInventory) []string {
 	if errs := validateAcquisitionBoundary(boundary); len(errs) != 0 {
 		return errs
 	}
-	files, errs := activationJSONFiles(repo, boundary.ActivationURLFreeFiles)
+	files, errs := activationJSONFiles(boundary.ActivationURLFreeFiles, inventory)
 	for _, rel := range files {
-		values, err := loadDependencyJSONStrings(platform.RepoPath(repo, rel))
+		data, readErr := inventory.read(rel)
+		if readErr != nil {
+			errs = append(errs, rel+": "+readErr.Error())
+			continue
+		}
+		values, err := decodeDependencyJSONStrings(data)
 		if err != nil {
 			errs = append(errs, rel+": "+err.Error())
 			continue
@@ -538,7 +538,7 @@ func checkActivationManifestsURLFree(repo string, boundary acquisitionBoundary) 
 	return errs
 }
 
-func checkCloneableSourcesRegistry(repo string, boundary acquisitionBoundary) []string {
+func checkCloneableSourcesRegistry(repo string, boundary acquisitionBoundary, inventory *dependencyInventory) []string {
 	if errs := validateAcquisitionBoundary(boundary); len(errs) != 0 {
 		return errs
 	}
@@ -562,27 +562,23 @@ func checkCloneableSourcesRegistry(repo string, boundary acquisitionBoundary) []
 			errList = append(errList, "acquisitionBoundary scan root "+normalizeErr.Error())
 			continue
 		}
-		root := platform.RepoPath(repo, normalizedRoot)
-		if !platform.IsDir(root) {
+		if !inventory.hasDirectory(normalizedRoot) {
 			errList = append(errList, "acquisitionBoundary scan root is missing: "+normalizedRoot)
 			continue
 		}
-		walkErr := filepath.WalkDir(root, func(path string, entry os.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
+		for _, relFile := range inventory.filesWithin(normalizedRoot, nil) {
+			if !strings.EqualFold(filepath.Ext(relFile), ".json") {
+				continue
 			}
-			if entry.IsDir() || !strings.EqualFold(filepath.Ext(path), ".json") {
-				return nil
+			data, readErr := inventory.read(relFile)
+			if readErr != nil {
+				errList = append(errList, relFile+": "+readErr.Error())
+				continue
 			}
-			relFile, relErr := filepath.Rel(repo, path)
-			if relErr != nil {
-				return relErr
-			}
-			relFile = filepath.ToSlash(relFile)
-			values, loadErr := loadDependencyJSONStrings(path)
+			values, loadErr := decodeDependencyJSONStrings(data)
 			if loadErr != nil {
 				errList = append(errList, relFile+": "+loadErr.Error())
-				return nil
+				continue
 			}
 			for _, value := range values {
 				if !pattern.MatchString(value.Value) {
@@ -592,10 +588,6 @@ func checkCloneableSourcesRegistry(repo string, boundary acquisitionBoundary) []
 					errList = append(errList, relFile+" "+value.Path+" contains cloneable source outside acquisition registry")
 				}
 			}
-			return nil
-		})
-		if walkErr != nil {
-			errList = append(errList, "cannot inspect acquisitionBoundary scan root "+normalizedRoot+": "+walkErr.Error())
 		}
 	}
 	gitmodules := ".gitmodules"
@@ -613,7 +605,7 @@ func validateAcquisitionBoundary(boundary acquisitionBoundary) []string {
 	return nil
 }
 
-func activationJSONFiles(repo string, configured []string) ([]string, []string) {
+func activationJSONFiles(configured []string, inventory *dependencyInventory) ([]string, []string) {
 	files := []string{}
 	errs := []string{}
 	for _, rel := range configured {
@@ -622,30 +614,23 @@ func activationJSONFiles(repo string, configured []string) ([]string, []string) 
 			errs = append(errs, "activationUrlFreeFiles path "+err.Error())
 			continue
 		}
-		path := platform.RepoPath(repo, normalized)
-		info, statErr := os.Stat(path)
-		if statErr != nil {
+		if !inventory.hasDirectory(normalized) && !inventory.hasFile(normalized) {
 			errs = append(errs, "activationUrlFreeFiles path is missing: "+normalized)
 			continue
 		}
-		if !info.IsDir() {
-			if !strings.EqualFold(filepath.Ext(path), ".json") {
+		if inventory.hasFile(normalized) {
+			if !strings.EqualFold(filepath.Ext(normalized), ".json") {
 				errs = append(errs, "activationUrlFreeFiles entry is not JSON: "+normalized)
 				continue
 			}
 			files = append(files, normalized)
 			continue
 		}
-		entries, readErr := os.ReadDir(path)
-		if readErr != nil {
-			errs = append(errs, "cannot read activationUrlFreeFiles directory "+normalized+": "+readErr.Error())
-			continue
-		}
-		for _, entry := range entries {
-			if entry.IsDir() || !strings.EqualFold(filepath.Ext(entry.Name()), ".json") {
+		for _, relFile := range inventory.filesWithin(normalized, nil) {
+			if filepath.ToSlash(filepath.Dir(relFile)) != normalized || !strings.EqualFold(filepath.Ext(relFile), ".json") {
 				continue
 			}
-			files = append(files, filepath.ToSlash(filepath.Join(normalized, entry.Name())))
+			files = append(files, relFile)
 		}
 	}
 	sort.Strings(files)
@@ -662,11 +647,7 @@ func normalizeDependencyPath(rel string) (string, error) {
 	return normalized, nil
 }
 
-func loadDependencyJSONStrings(path string) ([]dependencyJSONString, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
+func decodeDependencyJSONStrings(data []byte) ([]dependencyJSONString, error) {
 	var value interface{}
 	if err := json.Unmarshal(data, &value); err != nil {
 		return nil, err
@@ -870,7 +851,7 @@ func checkDependencyDirection(bindings map[string]dependencyBinding, layers map[
 	return errs
 }
 
-func checkPlatformAgnosticRoots(repo string, policy dependencyPolicy, layers map[string]int) []string {
+func checkPlatformAgnosticRoots(repo string, policy dependencyPolicy, layers map[string]int, inventory *dependencyInventory) []string {
 	errs := []string{}
 	for kind, bindings := range map[string][]dependencyBinding{
 		"kit": policy.KitRegistry.Bindings,
@@ -886,41 +867,32 @@ func checkPlatformAgnosticRoots(repo string, policy dependencyPolicy, layers map
 				}
 			}
 			for _, root := range binding.Roots {
-				errs = append(errs, scanPlatformAgnosticRoot(repo, kind+":"+binding.ID, root, policy)...)
+				errs = append(errs, scanPlatformAgnosticRoot(repo, kind+":"+binding.ID, root, policy, inventory)...)
 			}
 		}
 	}
 	return errs
 }
 
-func scanPlatformAgnosticRoot(repo, bindingID, root string, policy dependencyPolicy) []string {
-	rootPath := platform.RepoPath(repo, root)
-	if !platform.IsDir(rootPath) {
+func scanPlatformAgnosticRoot(repo, bindingID, root string, policy dependencyPolicy, inventory *dependencyInventory) []string {
+	if !inventory.hasDirectory(root) {
 		return []string{bindingID + " root is missing: " + root}
 	}
 	excluded := stringSet(policy.Scan.ExcludeDirectories)
 	extensions := stringSetLower(policy.Scan.Extensions)
 	fileNames := stringSet(policy.Scan.FileNames)
 	errs := []string{}
-	walkErr := filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
+	for _, relFile := range inventory.filesWithin(root, excluded) {
+		name := filepath.Base(relFile)
+		if !extensions[strings.ToLower(filepath.Ext(name))] && !fileNames[name] {
+			continue
 		}
-		if entry.IsDir() {
-			if path != rootPath && (excluded[entry.Name()] || strings.HasSuffix(strings.ToLower(entry.Name()), ".egg-info")) {
-				return filepath.SkipDir
-			}
-			return nil
+		data, readErr := inventory.read(relFile)
+		if readErr != nil {
+			errs = append(errs, bindingID+" scan failed: "+readErr.Error())
+			continue
 		}
-		if !extensions[strings.ToLower(filepath.Ext(entry.Name()))] && !fileNames[entry.Name()] {
-			return nil
-		}
-		file, openErr := os.Open(path)
-		if openErr != nil {
-			return openErr
-		}
-		defer file.Close()
-		scanner := bufio.NewScanner(file)
+		scanner := bufio.NewScanner(strings.NewReader(string(data)))
 		line := 0
 		for scanner.Scan() {
 			line++
@@ -928,16 +900,14 @@ func scanPlatformAgnosticRoot(repo, bindingID, root string, policy dependencyPol
 			lower := strings.ToLower(text)
 			for _, reserved := range policy.ReservedNamespaces {
 				if strings.Contains(lower, strings.ToLower(reserved.Value)) {
-					rel, _ := filepath.Rel(repo, path)
-					errs = append(errs, fmt.Sprintf("%s contains upper-layer namespace %q at %s:%d", bindingID, reserved.Value, filepath.ToSlash(rel), line))
+					errs = append(errs, fmt.Sprintf("%s contains upper-layer namespace %q at %s:%d", bindingID, reserved.Value, relFile, line))
 					break
 				}
 			}
 		}
-		return scanner.Err()
-	})
-	if walkErr != nil {
-		errs = append(errs, bindingID+" scan failed: "+walkErr.Error())
+		if scanErr := scanner.Err(); scanErr != nil {
+			errs = append(errs, bindingID+" scan failed: "+scanErr.Error())
+		}
 	}
 	return errs
 }
@@ -980,7 +950,7 @@ func checkMCPComponentIdentity(repo string, policy dependencyPolicy, entries []d
 	return errs
 }
 
-func checkMCPPromptPolicy(repo string, policy dependencyPolicy) []string {
+func checkMCPPromptPolicy(repo string, policy dependencyPolicy, inventory *dependencyInventory) []string {
 	if policy.MCPRegistry.PromptPolicy != "forbid-workflow-prompts" {
 		return []string{"unsupported MCP prompt policy: " + policy.MCPRegistry.PromptPolicy}
 	}
@@ -991,48 +961,43 @@ func checkMCPPromptPolicy(repo string, policy dependencyPolicy) []string {
 			continue
 		}
 		for _, root := range binding.Roots {
-			rootPath := platform.RepoPath(repo, root)
-			walkErr := filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, err error) error {
-				if err != nil {
-					return err
+			if !inventory.hasDirectory(root) {
+				errs = append(errs, binding.ID+" prompt scan failed: root is missing: "+root)
+				continue
+			}
+			for _, directory := range inventory.directoriesWithin(root, excluded) {
+				if filepath.Base(directory) == "prompts" && inventory.entryCounts[directory] > 0 {
+					errs = append(errs, "capability MCP must not own workflow prompt directory: "+directory)
 				}
-				if entry.IsDir() {
-					if path != rootPath && (excluded[entry.Name()] || strings.HasSuffix(strings.ToLower(entry.Name()), ".egg-info")) {
-						return filepath.SkipDir
-					}
-					if path != rootPath && entry.Name() == "prompts" {
-						entries, readErr := os.ReadDir(path)
-						if readErr != nil {
-							return readErr
-						}
-						if len(entries) > 0 {
-							rel, _ := filepath.Rel(repo, path)
-							errs = append(errs, "capability MCP must not own workflow prompt directory: "+filepath.ToSlash(rel))
-						}
-						return filepath.SkipDir
-					}
-					return nil
+			}
+			for _, relFile := range inventory.filesWithin(root, excluded) {
+				if strings.ToLower(filepath.Ext(relFile)) != ".py" || dependencyPathContainsDirectory(relFile, root, "prompts") {
+					continue
 				}
-				if strings.ToLower(filepath.Ext(entry.Name())) != ".py" {
-					return nil
-				}
-				data, readErr := os.ReadFile(path)
+				data, readErr := inventory.read(relFile)
 				if readErr != nil {
-					return readErr
+					errs = append(errs, binding.ID+" prompt scan failed: "+readErr.Error())
+					continue
 				}
 				text := string(data)
 				if strings.Contains(text, "@server.prompt") || strings.Contains(text, ".prompt(") {
-					rel, _ := filepath.Rel(repo, path)
-					errs = append(errs, "capability MCP must not register workflow prompts: "+filepath.ToSlash(rel))
+					errs = append(errs, "capability MCP must not register workflow prompts: "+relFile)
 				}
-				return nil
-			})
-			if walkErr != nil {
-				errs = append(errs, binding.ID+" prompt scan failed: "+walkErr.Error())
 			}
 		}
 	}
 	return errs
+}
+
+func dependencyPathContainsDirectory(path, root, target string) bool {
+	relative := strings.TrimPrefix(strings.TrimPrefix(filepath.ToSlash(path), strings.TrimSuffix(filepath.ToSlash(root), "/")), "/")
+	segments := strings.Split(relative, "/")
+	for index, segment := range segments {
+		if index < len(segments)-1 && segment == target {
+			return true
+		}
+	}
+	return false
 }
 
 func checkSkillDependencyPolicy(repo string, policy dependencyPolicy, layers map[string]int) []string {
@@ -1092,7 +1057,7 @@ func checkSkillDependencyPolicy(repo string, policy dependencyPolicy, layers map
 	return errs
 }
 
-func checkAssetVersionOpacity(repo string, policy dependencyPolicy) []string {
+func checkAssetVersionOpacity(repo string, policy dependencyPolicy, inventory *dependencyInventory) []string {
 	identityPattern, err := regexp.Compile(policy.VersionVisibility.IdentityPattern)
 	if err != nil {
 		return []string{"invalid version identity pattern: " + err.Error()}
@@ -1111,7 +1076,7 @@ func checkAssetVersionOpacity(repo string, policy dependencyPolicy) []string {
 				errs = append(errs, kind+":"+binding.ID+" encodes a version in its stable id")
 			}
 			for _, root := range binding.Roots {
-				errs = append(errs, scanAssetVersionOpacity(repo, kind+":"+binding.ID, root, policy, identityPattern, selfVersionPattern)...)
+				errs = append(errs, scanAssetVersionOpacity(repo, kind+":"+binding.ID, root, policy, identityPattern, selfVersionPattern, inventory)...)
 			}
 		}
 	}
@@ -1129,9 +1094,8 @@ func checkAssetVersionOpacity(repo string, policy dependencyPolicy) []string {
 	return errs
 }
 
-func scanAssetVersionOpacity(repo, bindingID, root string, policy dependencyPolicy, identityPattern, selfVersionPattern *regexp.Regexp) []string {
-	rootPath := platform.RepoPath(repo, root)
-	if !platform.IsDir(rootPath) {
+func scanAssetVersionOpacity(repo, bindingID, root string, policy dependencyPolicy, identityPattern, selfVersionPattern *regexp.Regexp, inventory *dependencyInventory) []string {
+	if !inventory.hasDirectory(root) {
 		return []string{bindingID + " root is missing: " + root}
 	}
 	excluded := stringSet(policy.Scan.ExcludeDirectories)
@@ -1140,18 +1104,9 @@ func scanAssetVersionOpacity(repo, bindingID, root string, policy dependencyPoli
 	documentationDirectories := stringSet(policy.VersionVisibility.DocumentationDirectories)
 	authorityFiles := stringSet(policy.VersionVisibility.AuthorityFiles)
 	errs := []string{}
-	walkErr := filepath.WalkDir(rootPath, func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() {
-			if path != rootPath && (excluded[entry.Name()] || strings.HasSuffix(strings.ToLower(entry.Name()), ".egg-info")) {
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		relFromRoot, _ := filepath.Rel(rootPath, path)
-		segments := strings.Split(filepath.ToSlash(relFromRoot), "/")
+	for _, relFile := range inventory.filesWithin(root, excluded) {
+		relFromRoot := strings.TrimPrefix(strings.TrimPrefix(relFile, strings.TrimSuffix(filepath.ToSlash(root), "/")), "/")
+		segments := strings.Split(relFromRoot, "/")
 		inDocumentation := false
 		for index, segment := range segments {
 			if index == len(segments)-1 {
@@ -1162,58 +1117,87 @@ func scanAssetVersionOpacity(repo, bindingID, root string, policy dependencyPoli
 				break
 			}
 			if identityPattern.MatchString(segment) {
-				rel, _ := filepath.Rel(repo, path)
-				errs = append(errs, bindingID+" path encodes a version in stable identity: "+filepath.ToSlash(rel))
+				errs = append(errs, bindingID+" path encodes a version in stable identity: "+relFile)
 				break
 			}
 		}
-		if !inDocumentation && !authorityFiles[entry.Name()] && identityPattern.MatchString(entry.Name()) {
-			rel, _ := filepath.Rel(repo, path)
-			errs = append(errs, bindingID+" file name encodes a version in stable identity: "+filepath.ToSlash(rel))
+		name := filepath.Base(relFile)
+		if !inDocumentation && !authorityFiles[name] && identityPattern.MatchString(name) {
+			errs = append(errs, bindingID+" file name encodes a version in stable identity: "+relFile)
 		}
-		if !codeExtensions[strings.ToLower(filepath.Ext(entry.Name()))] && !codeFileNames[entry.Name()] {
-			return nil
+		if !codeExtensions[strings.ToLower(filepath.Ext(name))] && !codeFileNames[name] {
+			continue
 		}
-		data, readErr := os.ReadFile(path)
+		data, readErr := inventory.read(relFile)
 		if readErr != nil {
-			return readErr
+			errs = append(errs, bindingID+" version scan failed: "+readErr.Error())
+			continue
 		}
 		scanner := bufio.NewScanner(strings.NewReader(string(data)))
 		line := 0
 		for scanner.Scan() {
 			line++
 			text := scanner.Text()
-			allowedSelfVersion := false
 			lowerText := strings.ToLower(text)
-			for _, symbol := range policy.VersionVisibility.CodeSelfVersionAllowedSymbols {
-				if strings.Contains(lowerText, strings.ToLower(symbol)) {
-					allowedSelfVersion = true
-					break
+			identityMatch := dependencyIdentityVersionCandidate(lowerText) && identityPattern.MatchString(text)
+			selfMatch := strings.Contains(lowerText, "version") && selfVersionPattern.MatchString(text)
+			if !identityMatch && !selfMatch {
+				continue
+			}
+			allowedSelfVersion := false
+			if selfMatch {
+				for _, symbol := range policy.VersionVisibility.CodeSelfVersionAllowedSymbols {
+					if strings.Contains(lowerText, strings.ToLower(symbol)) {
+						allowedSelfVersion = true
+						break
+					}
 				}
 			}
-			if identityPattern.MatchString(text) || (selfVersionPattern.MatchString(text) && !allowedSelfVersion) {
-				rel, _ := filepath.Rel(repo, path)
-				errs = append(errs, fmt.Sprintf("%s code observes an asset version at %s:%d", bindingID, filepath.ToSlash(rel), line))
+			if identityMatch || (selfMatch && !allowedSelfVersion) {
+				errs = append(errs, fmt.Sprintf("%s code observes an asset version at %s:%d", bindingID, relFile, line))
 			}
 		}
-		return scanner.Err()
-	})
-	if walkErr != nil {
-		errs = append(errs, bindingID+" version scan failed: "+walkErr.Error())
+		if scanErr := scanner.Err(); scanErr != nil {
+			errs = append(errs, bindingID+" version scan failed: "+scanErr.Error())
+		}
 	}
-	readme := filepath.Join(rootPath, "README.md")
-	if data, readErr := os.ReadFile(readme); readErr == nil {
+	readme := filepath.ToSlash(filepath.Join(root, "README.md"))
+	if data, readErr := inventory.read(readme); readErr == nil {
 		for _, line := range strings.Split(string(data), "\n") {
 			if strings.HasPrefix(strings.TrimSpace(line), "# ") {
 				if identityPattern.MatchString(line) {
-					rel, _ := filepath.Rel(repo, readme)
-					errs = append(errs, bindingID+" README title encodes an asset version: "+filepath.ToSlash(rel))
+					errs = append(errs, bindingID+" README title encodes an asset version: "+readme)
 				}
 				break
 			}
 		}
 	}
 	return errs
+}
+
+func dependencyIdentityVersionCandidate(lower string) bool {
+	for offset := 0; offset < len(lower); {
+		index := strings.IndexByte(lower[offset:], 'v')
+		if index < 0 {
+			return false
+		}
+		index += offset
+		tail := lower[index+1:]
+		switch {
+		case strings.HasPrefix(tail, "ersion"):
+			tail = tail[len("ersion"):]
+		case strings.HasPrefix(tail, "er"):
+			tail = tail[len("er"):]
+		}
+		if len(tail) > 0 && (tail[0] == '_' || tail[0] == '-') {
+			tail = tail[1:]
+		}
+		if len(tail) > 0 && tail[0] >= '0' && tail[0] <= '9' {
+			return true
+		}
+		offset = index + 1
+	}
+	return false
 }
 
 func checkReadmeVersionBadges(repo string, policy dependencyPolicy) []string {

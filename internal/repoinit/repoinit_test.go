@@ -35,6 +35,17 @@ func TestInitIsIdempotentAndGitNative(t *testing.T) {
 			t.Fatalf("marker %s = %q, want %q", key, first.ConfigMarkers[key], want)
 		}
 	}
+	for key, want := range map[string]string{
+		"fetch.parallel": "0", "submodule.fetchJobs": "4", "core.fscache": "true",
+	} {
+		if first.TransportConfig[key] != want {
+			t.Fatalf("transport config %s = %q, want %q", key, first.TransportConfig[key], want)
+		}
+		out, err := gitx.Run(repo, "config", "--get", key)
+		if err != nil || trimLine(out) != want {
+			t.Fatalf("git config %s = %q, want %q: %v", key, out, want, err)
+		}
+	}
 	if _, err := os.Stat(filepath.Join(repo, ".aicoding")); err != nil {
 		t.Fatalf(".aicoding home not created: %v", err)
 	}
@@ -83,6 +94,34 @@ func TestInitIsIdempotentAndGitNative(t *testing.T) {
 	}
 	if statusAfter != statusBefore || string(configAfter) != string(configBefore) {
 		t.Fatalf("second provision changed state: status before=%q after=%q", statusBefore, statusAfter)
+	}
+}
+
+func TestInitRepairsGitTransportConfiguration(t *testing.T) {
+	repo := t.TempDir()
+	if _, err := gitx.Run(repo, "init"); err != nil {
+		t.Skipf("git unavailable: %v", err)
+	}
+	for key, value := range map[string]string{
+		"fetch.parallel": "1", "submodule.fetchJobs": "1", "core.fscache": "false",
+	} {
+		if _, err := gitx.Run(repo, "config", key, value); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	report := Init(repo)
+	if !report.OK {
+		t.Fatalf("Init: %#v", report)
+	}
+	for _, setting := range transportConfig {
+		out, err := gitx.Run(repo, "config", "--get", setting.Key)
+		if err != nil || trimLine(out) != setting.Value {
+			t.Fatalf("git config %s = %q, want %q: %v", setting.Key, out, setting.Value, err)
+		}
+		if !containsAction(report.Actions, "updated git config "+setting.Key+" = "+setting.Value) {
+			t.Fatalf("updated action missing for %s: %#v", setting.Key, report.Actions)
+		}
 	}
 }
 

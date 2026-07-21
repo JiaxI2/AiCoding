@@ -32,6 +32,12 @@ var markers = []struct{ Key, Value string }{
 	{configPrefix + "docsSkeleton", "1"},
 }
 
+var transportConfig = []struct{ Key, Value string }{
+	{"fetch.parallel", "0"},
+	{"submodule.fetchJobs", "4"},
+	{"core.fscache", "true"},
+}
+
 var docsSkeleton = []string{
 	"docs/README.md",
 	"docs/architecture/README.md",
@@ -47,6 +53,7 @@ type Report struct {
 	GitAlreadyRepo   bool              `json:"gitAlreadyRepo"`   // true when .git already existed
 	HooksPath        string            `json:"hooksPath"`        // core.hooksPath after wiring
 	ConfigMarkers    map[string]string `json:"configMarkers"`    // aicoding.* keys written to .git/config
+	TransportConfig  map[string]string `json:"transportConfig"`  // local Git transfer settings written to .git/config
 	AicodingHomePath string            `json:"aicodingHomePath"` // .aicoding local state root
 	DocsSkeleton     []string          `json:"docsSkeleton,omitempty"`
 	Actions          []string          `json:"actions"` // human-readable, ordered
@@ -61,7 +68,7 @@ type Report struct {
 // the local key/value store is git config, which git owns.
 func Init(repo string) Report {
 	report := Report{
-		Repo: repo, ConfigMarkers: map[string]string{}, AicodingHomePath: ".aicoding",
+		Repo: repo, ConfigMarkers: map[string]string{}, TransportConfig: map[string]string{}, AicodingHomePath: ".aicoding",
 		DocsSkeleton: append([]string(nil), docsSkeleton...),
 	}
 
@@ -86,6 +93,18 @@ func Init(repo string) Report {
 	}
 	report.HooksPath = ".githooks"
 	report.Actions = append(report.Actions, hooksState+" git config core.hooksPath = .githooks")
+
+	// Keep normal pull/fetch on Git's local fast path. Skills submodules are
+	// synchronized explicitly by lifecycle install/update instead of every pull.
+	for _, setting := range transportConfig {
+		state, err := ensureGitConfig(repo, setting.Key, setting.Value)
+		if err != nil {
+			report.Errors = append(report.Errors, "set "+setting.Key+": "+err.Error())
+			return report
+		}
+		report.TransportConfig[setting.Key] = setting.Value
+		report.Actions = append(report.Actions, fmt.Sprintf("%s git config %s = %s", state, setting.Key, setting.Value))
+	}
 
 	// 3) Ensure the .aicoding local state home exists (its versioned subtrees are
 	//    created on demand and gitignored; init only guarantees the root).
@@ -174,12 +193,12 @@ func ensureSkeletonFile(repo, relative string) (string, error) {
 }
 
 func ensureGitConfig(repo, key, value string) (string, error) {
-	current, readErr := gitx.Run(repo, "config", "--get", key)
+	current, readErr := gitx.Run(repo, "config", "--local", "--get", key)
 	current = trimLine(current)
 	if readErr == nil && current == value {
 		return "kept", nil
 	}
-	if _, err := gitx.Run(repo, "config", key, value); err != nil {
+	if _, err := gitx.Run(repo, "config", "--local", key, value); err != nil {
 		return "", err
 	}
 	if readErr == nil && current != "" {
@@ -195,7 +214,7 @@ func Status(repo string) (map[string]string, bool) {
 	found := map[string]string{}
 	initialized := false
 	for _, m := range markers {
-		out, err := gitx.Run(repo, "config", "--get", m.Key)
+		out, err := gitx.Run(repo, "config", "--local", "--get", m.Key)
 		value := trimLine(out)
 		if err != nil || value == "" {
 			continue

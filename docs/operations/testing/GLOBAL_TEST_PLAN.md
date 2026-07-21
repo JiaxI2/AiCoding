@@ -27,6 +27,7 @@
 - **验证绑定内容**：成功运行可把 PASS 结论绑定到 Git Tree 与验证语义；commit message amend 不失效，tracked/untracked/submodule 脏状态 fail-closed。
 - **复用可审计**：默认保持 `--reuse off`；`--reuse auto` 只显式启用。main 远端 `release-gate` 连续 3 次完成 off seed + `--verify-reuse` audit，并在独立切换提交引用三次 run URL 后，才允许晋级默认值。workflow 已接线不等于已跑绿。
 - **工具链安全**：Full/Release 固定运行 Staticcheck v0.7.0 与 govulncheck v1.6.0；真实漏洞保持 REQUIRED，只有可识别的网络访问失败可降级为 WARN。
+- **race 降频不降级**：Full 的 GO-002 只跑 `impact-policy.json` 登记的并发包，GO-007 以 AST 门禁阻断漏登；Release 与每周 schedule 仍跑全仓 race。
 - **数据化输出**：统计总用例、通过、失败、告警、跳过、总耗时、各命令耗时。
 - **标准 Markdown 文档**：测试计划、测试用例、报告均使用 `.md`。
 - **全局分功能框架**：用例按照 ENV/BOOTSTRAP/GO/C99_SKILL/DOCSYNC/LIFECYCLE/EXPORT/FRESH_CLONE/README_DOCS/GIT_GOVERNANCE/PWSH_BOUNDARY/RELEASE_GATE 分类。
@@ -83,6 +84,7 @@
 
 - Smoke 全部通过。
 - `go test ./...` 成功。
+- GO-002 对登记并发包执行 race，GO-007 证明全仓并发包没有漏登。
 - GO-005 Staticcheck 零告警；GO-006 govulncheck 无可达漏洞，网络访问失败须保留可诊断 WARN。
 - DocSync `ci` 成功。
 - lifecycle install/update/uninstall plan 成功。
@@ -97,6 +99,7 @@
 - Full 全部通过。
 - `test --profile Full --json` 成功，且不经旧位置参数入口。
 - `test --profile Release --json` 成功，且 Release gate 不递归回调 test CLI。
+- GO-002 的实际命令保持 `go test -race ./...`，不得继承 Full 的 scoped race。
 - fresh-clone Release 路径成功，或因网络/远程访问失败产生可解释 WARN。
 - release notes/tag policy/release policy 对齐检查通过。
 
@@ -104,6 +107,7 @@
 
 - `.github/workflows/aicoding-ci.yml` 的每周 schedule 和手动触发必须运行
   `fresh-clone --profile Full --json`。
+- 同一 schedule 必须运行 Release profile；其 GO-002 是周期性的全仓 race 证明。
 - 该命令必须在临时递归 clone 中重新构建 CLI 并执行 `go test ./...`，用于提前发现子模块、
   gitignore、干净检出和 Go 构建漂移。
 - 这是一条独立的正式 leaf command，不新增 test Registry 聚合器，也不回到日常 Full profile。

@@ -2,6 +2,7 @@ package governance
 
 import (
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -135,10 +136,11 @@ func TestGoPackageBoundariesRejectReverseCoreDependency(t *testing.T) {
 	mustWrite(t, filepath.Join(repo, "internal", "registry", "bad.go"), `package registry
 import _ "github.com/JiaxI2/AiCoding/internal/lifecycle"
 `)
-	errs := checkGoPackageBoundaries(repo, []goPackageBoundary{{
+	boundaries := []goPackageBoundary{{
 		Path:             "internal/registry",
 		ForbiddenImports: []string{"internal/lifecycle"},
-	}})
+	}}
+	errs := checkGoPackageBoundariesWithInventory(repo, boundaries, dependencyInventoryForTest(t, repo, "internal/registry"))
 	if !hasErrorContaining(errs, "imports forbidden package") {
 		t.Fatalf("expected orthogonal package boundary error, got %#v", errs)
 	}
@@ -149,10 +151,11 @@ func TestGoPackageBoundariesAllowLowerUtilityDependency(t *testing.T) {
 	mustWrite(t, filepath.Join(repo, "internal", "kit", "good.go"), `package kit
 import _ "github.com/JiaxI2/AiCoding/internal/registry"
 `)
-	errs := checkGoPackageBoundaries(repo, []goPackageBoundary{{
+	boundaries := []goPackageBoundary{{
 		Path:             "internal/kit",
 		ForbiddenImports: []string{"internal/lifecycle", "internal/mcpcontrol"},
-	}})
+	}}
+	errs := checkGoPackageBoundariesWithInventory(repo, boundaries, dependencyInventoryForTest(t, repo, "internal/kit"))
 	if len(errs) != 0 {
 		t.Fatalf("valid lower utility dependency was rejected: %#v", errs)
 	}
@@ -258,10 +261,35 @@ func TestCloneableSourcesRegistryRejectsUndeclaredFile(t *testing.T) {
 }
 
 func TestAcquisitionBoundaryRejectsMissingPolicy(t *testing.T) {
-	err := checkActivationManifestsURLFree(t.TempDir(), acquisitionBoundary{})
+	err := checkActivationManifestsURLFree(acquisitionBoundary{}, nil)
 	if !hasErrorContaining(err, "acquisitionBoundary policy is missing or incomplete") {
 		t.Fatalf("expected missing acquisition policy error, got %#v", err)
 	}
+}
+
+func TestCheckDependenciesWalksRepositoryOnce(t *testing.T) {
+	repo := dependencyFixture(t)
+	walks := 0
+	report := checkDependencies(repo, func(root string, walkFn fs.WalkDirFunc) error {
+		walks++
+		return filepath.WalkDir(root, walkFn)
+	})
+	if len(report.Errors) != 0 {
+		t.Fatalf("dependency fixture failed: %#v", report.Errors)
+	}
+	if walks != 1 {
+		t.Fatalf("dependency inventory WalkDir calls = %d, want 1", walks)
+	}
+	t.Logf("dependency inventory WalkDir calls=%d", walks)
+}
+
+func dependencyInventoryForTest(t *testing.T, repo string, roots ...string) *dependencyInventory {
+	t.Helper()
+	inventory, err := collectDependencyInventory(repo, roots, filepath.WalkDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return inventory
 }
 
 func dependencyFixture(t *testing.T) string {

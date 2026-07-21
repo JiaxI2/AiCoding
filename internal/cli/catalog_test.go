@@ -17,6 +17,9 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 			t.Fatalf("duplicate command id: %s", command.ID)
 		}
 		seen[command.ID] = true
+		if command.LatencyClass == "" {
+			t.Fatalf("command %s has no latency class", command.ID)
+		}
 		if commandRequiresSubcommand(command.Name) != command.RequiresSubcommand {
 			t.Fatalf("namespace contract drift for %s", command.ID)
 		}
@@ -92,12 +95,23 @@ func TestCommandCatalogSnapshotIsStableAndDetached(t *testing.T) {
 
 func TestCommandCatalogRejectsIncompleteRoutes(t *testing.T) {
 	_, err := newCommandCatalog(
-		[]commandRoute{{descriptor: CommandDescriptor{ID: "broken", Name: "broken"}}},
+		[]commandRoute{{descriptor: CommandDescriptor{ID: "broken", Name: "broken", LatencyClass: LatencyWork}}},
 		[]HelpSection{{ID: HelpUsage, Title: "Usage:"}},
 		[]HelpForm{{Command: "broken", Section: HelpUsage, Usage: "aicoding broken"}},
 	)
 	if err == nil {
 		t.Fatal("catalog accepted a command without a route")
+	}
+}
+
+func TestCommandCatalogRejectsMissingLatencyClass(t *testing.T) {
+	_, err := newCommandCatalog(
+		[]commandRoute{{descriptor: CommandDescriptor{ID: "broken", Name: "broken"}, handler: runBootstrap}},
+		[]HelpSection{{ID: HelpUsage, Title: "Usage:"}},
+		[]HelpForm{{Command: "broken", Section: HelpUsage, Usage: "aicoding broken"}},
+	)
+	if err == nil || !strings.Contains(err.Error(), "invalid latency class") {
+		t.Fatalf("catalog accepted a command without LatencyClass: %v", err)
 	}
 }
 

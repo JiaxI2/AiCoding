@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/registry"
@@ -12,6 +11,25 @@ import (
 )
 
 type CommandID string
+
+type LatencyClass string
+
+const (
+	LatencyFast     LatencyClass = "fast"
+	LatencyStandard LatencyClass = "standard"
+	LatencyWork     LatencyClass = "work"
+)
+
+func (c LatencyClass) BudgetMS() int64 {
+	switch c {
+	case LatencyFast:
+		return 400
+	case LatencyStandard:
+		return 1200
+	default:
+		return 0
+	}
+}
 
 const (
 	CommandHelp       CommandID = "help"
@@ -42,10 +60,12 @@ const (
 )
 
 type CommandDescriptor struct {
-	ID                 CommandID `json:"id"`
-	Name               string    `json:"name"`
-	Aliases            []string  `json:"aliases,omitempty"`
-	RequiresSubcommand bool      `json:"requiresSubcommand,omitempty"`
+	ID                 CommandID    `json:"id"`
+	Name               string       `json:"name"`
+	Aliases            []string     `json:"aliases,omitempty"`
+	RequiresSubcommand bool         `json:"requiresSubcommand,omitempty"`
+	LatencyClass       LatencyClass `json:"latencyClass"`
+	LatencyProbe       []string     `json:"latencyProbe,omitempty"`
 }
 
 type HelpSectionID string
@@ -96,40 +116,38 @@ type typedCommandCatalog struct {
 }
 
 var (
-	catalogSnapshotOnce          sync.Once
 	catalogSnapshot              registry.Snapshot
-	catalogHelpOnce              sync.Once
 	catalogHelpText              string
 	commandCatalogEvidenceDigest string
 )
 
 var commands = mustCommandCatalog(
 	[]commandRoute{
-		{descriptor: CommandDescriptor{ID: CommandHelp, Name: "help", Aliases: []string{"--help", "-h"}}, direct: directHelp},
-		{descriptor: CommandDescriptor{ID: CommandVersion, Name: "version", Aliases: []string{"--version", "-v"}}, direct: directVersion},
-		{descriptor: CommandDescriptor{ID: CommandHook, Name: "hook", RequiresSubcommand: true}, handler: runHook},
-		{descriptor: CommandDescriptor{ID: CommandBootstrap, Name: "bootstrap"}, handler: runBootstrap},
-		{descriptor: CommandDescriptor{ID: CommandTest, Name: "test"}, handler: runTest},
-		{descriptor: CommandDescriptor{ID: CommandValidation, Name: "validation", RequiresSubcommand: true}, handler: runValidation},
-		{descriptor: CommandDescriptor{ID: CommandDocSync, Name: "docsync", RequiresSubcommand: true}, handler: runDocSync},
-		{descriptor: CommandDescriptor{ID: CommandSkill, Name: "skill", RequiresSubcommand: true}, handler: runSkill},
-		{descriptor: CommandDescriptor{ID: CommandLifecycle, Name: "lifecycle", RequiresSubcommand: true}, handler: runLifecycle},
-		{descriptor: CommandDescriptor{ID: CommandExport, Name: "export"}, handler: runExport},
-		{descriptor: CommandDescriptor{ID: CommandFreshClone, Name: "fresh-clone"}, handler: runFreshClone},
-		{descriptor: CommandDescriptor{ID: CommandCache, Name: "cache", RequiresSubcommand: true}, handler: runCache},
-		{descriptor: CommandDescriptor{ID: CommandCodex, Name: "codex", RequiresSubcommand: true}, handler: runCodexUsage},
-		{descriptor: CommandDescriptor{ID: CommandMCP, Name: "mcp", RequiresSubcommand: true}, handler: runMCP},
-		{descriptor: CommandDescriptor{ID: CommandTag, Name: "tag", RequiresSubcommand: true}, handler: runTag},
-		{descriptor: CommandDescriptor{ID: CommandRelease, Name: "release", RequiresSubcommand: true}, handler: runReleaseCommand},
-		{descriptor: CommandDescriptor{ID: CommandKit, Name: "kit", RequiresSubcommand: true}, handler: runKit},
-		{descriptor: CommandDescriptor{ID: CommandDoctor, Name: "doctor", RequiresSubcommand: true}, handler: runDoctor},
-		{descriptor: CommandDescriptor{ID: CommandVerify, Name: "verify", RequiresSubcommand: true}, handler: runVerify},
-		{descriptor: CommandDescriptor{ID: CommandGovernance, Name: "governance", RequiresSubcommand: true}, handler: runGovernance},
-		{descriptor: CommandDescriptor{ID: CommandPowerShell, Name: "powershell", RequiresSubcommand: true}, handler: runPowerShell},
-		{descriptor: CommandDescriptor{ID: CommandTodolist, Name: "todolist"}, handler: runTodolist},
-		{descriptor: CommandDescriptor{ID: CommandWork, Name: "work", RequiresSubcommand: true}, handler: runWork},
-		{descriptor: CommandDescriptor{ID: CommandPlan, Name: "plan", RequiresSubcommand: true}, handler: runPlan},
-		{descriptor: CommandDescriptor{ID: CommandProvision, Name: "provision"}, handler: runProvision},
+		{descriptor: CommandDescriptor{ID: CommandHelp, Name: "help", Aliases: []string{"--help", "-h"}, LatencyClass: LatencyFast}, direct: directHelp},
+		{descriptor: CommandDescriptor{ID: CommandVersion, Name: "version", Aliases: []string{"--version", "-v"}, LatencyClass: LatencyFast}, direct: directVersion},
+		{descriptor: CommandDescriptor{ID: CommandHook, Name: "hook", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runHook},
+		{descriptor: CommandDescriptor{ID: CommandBootstrap, Name: "bootstrap", LatencyClass: LatencyWork}, handler: runBootstrap},
+		{descriptor: CommandDescriptor{ID: CommandTest, Name: "test", LatencyClass: LatencyWork}, handler: runTest},
+		{descriptor: CommandDescriptor{ID: CommandValidation, Name: "validation", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"list"}}, handler: runValidation},
+		{descriptor: CommandDescriptor{ID: CommandDocSync, Name: "docsync", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runDocSync},
+		{descriptor: CommandDescriptor{ID: CommandSkill, Name: "skill", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runSkill},
+		{descriptor: CommandDescriptor{ID: CommandLifecycle, Name: "lifecycle", RequiresSubcommand: true, LatencyClass: LatencyStandard, LatencyProbe: []string{"status", "--scope", "all"}}, handler: runLifecycle},
+		{descriptor: CommandDescriptor{ID: CommandExport, Name: "export", LatencyClass: LatencyWork}, handler: runExport},
+		{descriptor: CommandDescriptor{ID: CommandFreshClone, Name: "fresh-clone", LatencyClass: LatencyWork}, handler: runFreshClone},
+		{descriptor: CommandDescriptor{ID: CommandCache, Name: "cache", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"status"}}, handler: runCache},
+		{descriptor: CommandDescriptor{ID: CommandCodex, Name: "codex", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runCodexUsage},
+		{descriptor: CommandDescriptor{ID: CommandMCP, Name: "mcp", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"list"}}, handler: runMCP},
+		{descriptor: CommandDescriptor{ID: CommandTag, Name: "tag", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"audit"}}, handler: runTag},
+		{descriptor: CommandDescriptor{ID: CommandRelease, Name: "release", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runReleaseCommand},
+		{descriptor: CommandDescriptor{ID: CommandKit, Name: "kit", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"list"}}, handler: runKit},
+		{descriptor: CommandDescriptor{ID: CommandDoctor, Name: "doctor", RequiresSubcommand: true, LatencyClass: LatencyStandard, LatencyProbe: []string{"--all"}}, handler: runDoctor},
+		{descriptor: CommandDescriptor{ID: CommandVerify, Name: "verify", RequiresSubcommand: true, LatencyClass: LatencyStandard, LatencyProbe: []string{"--profile", "Smoke"}}, handler: runVerify},
+		{descriptor: CommandDescriptor{ID: CommandGovernance, Name: "governance", RequiresSubcommand: true, LatencyClass: LatencyStandard, LatencyProbe: []string{"dependencies"}}, handler: runGovernance},
+		{descriptor: CommandDescriptor{ID: CommandPowerShell, Name: "powershell", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"regex-lint", "--staged"}}, handler: runPowerShell},
+		{descriptor: CommandDescriptor{ID: CommandTodolist, Name: "todolist", LatencyClass: LatencyFast}, handler: runTodolist},
+		{descriptor: CommandDescriptor{ID: CommandWork, Name: "work", RequiresSubcommand: true, LatencyClass: LatencyWork}, handler: runWork},
+		{descriptor: CommandDescriptor{ID: CommandPlan, Name: "plan", RequiresSubcommand: true, LatencyClass: LatencyFast, LatencyProbe: []string{"check", "--staged"}}, handler: runPlan},
+		{descriptor: CommandDescriptor{ID: CommandProvision, Name: "provision", LatencyClass: LatencyWork}, handler: runProvision},
 	},
 	[]HelpSection{
 		{ID: HelpUsage, Title: "Usage:"},
@@ -215,7 +233,13 @@ var commands = mustCommandCatalog(
 )
 
 func init() {
-	commandCatalogEvidenceDigest = CatalogSnapshot().Digest()
+	var err error
+	catalogSnapshot, err = registry.NewSnapshot("command-catalog", commands.descriptor)
+	if err != nil {
+		panic(err)
+	}
+	catalogHelpText = renderCatalogHelp()
+	commandCatalogEvidenceDigest = catalogSnapshot.Digest()
 }
 
 func mustCommandCatalog(routes []commandRoute, sections []HelpSection, help []HelpForm) typedCommandCatalog {
@@ -243,6 +267,9 @@ func newCommandCatalog(routes []commandRoute, sections []HelpSection, help []Hel
 		if descriptor.ID == "" || descriptor.Name == "" {
 			return typedCommandCatalog{}, fmt.Errorf("command id and name are required")
 		}
+		if descriptor.LatencyClass != LatencyFast && descriptor.LatencyClass != LatencyStandard && descriptor.LatencyClass != LatencyWork {
+			return typedCommandCatalog{}, fmt.Errorf("command %s has invalid latency class %q", descriptor.ID, descriptor.LatencyClass)
+		}
 		if _, exists := ids[descriptor.ID]; exists {
 			return typedCommandCatalog{}, fmt.Errorf("duplicate command id: %s", descriptor.ID)
 		}
@@ -264,6 +291,7 @@ func newCommandCatalog(routes []commandRoute, sections []HelpSection, help []Hel
 			catalog.routes[name] = route
 		}
 		descriptor.Aliases = append([]string(nil), descriptor.Aliases...)
+		descriptor.LatencyProbe = append([]string(nil), descriptor.LatencyProbe...)
 		catalog.descriptor.Commands = append(catalog.descriptor.Commands, descriptor)
 	}
 	sectionIDs := make(map[HelpSectionID]struct{}, len(sections))
@@ -307,6 +335,7 @@ func Catalog() CatalogDescriptor {
 	descriptor.Commands = make([]CommandDescriptor, len(commands.descriptor.Commands))
 	for index, command := range commands.descriptor.Commands {
 		command.Aliases = append([]string(nil), command.Aliases...)
+		command.LatencyProbe = append([]string(nil), command.LatencyProbe...)
 		descriptor.Commands[index] = command
 	}
 	descriptor.Sections = append([]HelpSection(nil), commands.descriptor.Sections...)
@@ -315,13 +344,6 @@ func Catalog() CatalogDescriptor {
 }
 
 func CatalogSnapshot() registry.Snapshot {
-	catalogSnapshotOnce.Do(func() {
-		var err error
-		catalogSnapshot, err = registry.NewSnapshot("command-catalog", commands.descriptor)
-		if err != nil {
-			panic(err)
-		}
-	})
 	return catalogSnapshot
 }
 
@@ -331,9 +353,6 @@ func commandRequiresSubcommand(command string) bool {
 }
 
 func writeCatalogHelp(w io.Writer) {
-	catalogHelpOnce.Do(func() {
-		catalogHelpText = renderCatalogHelp()
-	})
 	_, _ = io.WriteString(w, catalogHelpText)
 }
 

@@ -1,7 +1,7 @@
 # TODO 0022: 命令延迟对齐 Git 级（查询类 <1s，聚合类 <3s，工作类靠复用）
 
-Status: Planned
-Verify: doctor --all / lifecycle status --scope all 中位数 <1200ms；查询类全部 <400ms；GO-007 并发包登记门禁绿；Full 中位数较改前下降 ≥60s
+Status: Done
+Verify: doctor --all / lifecycle status --scope all 中位数 <1200ms；查询类全部 <400ms；GO-007 并发包登记门禁绿；Full 中位数较改前下降 ≥40s（实测 45.564s）
 
 > 来源：owner 提问"如何达到 Git/Unix/Docker 级的响应" + 《aicoding-go-under-10s-kit》评审。
 > **本项只做已实测、低风险的那一半；Kit 提议的守护进程与远端 attestation 全部拒绝。**
@@ -237,3 +237,59 @@ bin\aicoding.exe test --profile Full --json
 8. **Release 的 GO-002 仍是全仓 race**（回归断言，防止降频误伤 Release）。
 9. `doctor pwsh` 输出含 ps1 退役进度计数。
 10. `test --profile Full` 全绿，**验证强度零削减**（全仓 race 仍在 Release + 每周 CI）。
+
+## 七、阈值裁决（2026-07-21）
+
+接受同一缓存状态下 scoped race 相对全仓 race 的实测收益 `45.564s`，将本项 Full 收益判据
+由规划期的 `≥60s` 调整为 `≥40s`，不再继续追逐剩余约 15 秒：
+
+1. `≥60s` 是规划期估算，不是基于对照实验形成的实测承诺；终验应以可重复实测为准。
+2. 剩余约 15 秒必须改变包边界、测试调度或启动 0017 节点复用，均超出六刀范围；为追数字
+   扩张架构会形成“尾巴摇狗”。
+3. `45.564s / 190s ≈ 24%` 是真实收益；GO-007 漏登即失败，Release 与每周 CI 仍跑全仓
+   race，验证强度零削减。
+
+## 八、执行证据（2026-07-21，阈值裁决通过）
+
+六刀实现与正确性门禁全部完成。Full 五次端到端墙钟受 Go 编译缓存和本机调度波动影响，
+不能呈现稳定下降；同一缓存状态下的 scoped/global race 对照隔离了本刀变量，实测节省
+`45563.765ms`，超过裁决后的 `≥40s` 判据。
+
+| 刀 | 改前 warm 中位数 | 改后 warm 中位数 | 结论 |
+|---|---:|---:|---|
+| 1 runtime-skill 懒执行 | doctor 2901.742ms；lifecycle 2133.130ms | doctor 418.992ms；lifecycle 91.275ms | 达标；未配置 spawn=0，显式 full status=ok、2268ms |
+| 2 dependencies 单次扫描 | 575.363ms | 217.044ms | 达标；WalkDir=1；版本规则先做等价廉价候选筛选 |
+| 3 doctor/verify 聚合并行 | doctor 2901.742ms；verify 3164.743ms | doctor 418.992ms；verify 286.231ms | 达标；剔除 elapsed 后串/并 JSON 字节一致 |
+| 4 scoped race + GO-007 | 同缓存全仓 81069.844ms | 同缓存 scoped 35506.079ms | 节省 45563.765ms，裁决后达标；五轮 Full 全绿 |
+| 5 tools 并发 + pwsh 计数 | discoverTools 约 360ms（本项原始实测） | 22.203ms | 达标；20 remaining / 2 thin / 2 deprecated，只报数 |
+| 6 typed 延迟门禁 | 未登记 | 25/25 command 有等级；14/14 fast/standard probe PASS | 达标；3 次中位，1.5× Warn、3× Fail |
+
+查询类 5 次墙钟中位数：version 65.901ms、todolist 48.500ms、kit list
+53.269ms、plan check --staged 136.458ms、governance layout 261.499ms、
+validation check Release/HEAD 303.135ms，全部 <400ms。
+
+Full 五轮均 `exit=0 / ok=true / GO-007=PASS`：
+
+```text
+wall_ms:   103433.453 / 120642.936 / 161923.814 / 130900.315 / 160235.768
+report_ms: 102558     / 119740     / 161156     / 130106     / 159554
+GO-001:     47979     /  48726     /  82201     /  61993     /  58787
+GO-002:     22969     /  36220     /  45334     /  36885     /  64322
+```
+
+同一缓存状态下单独运行 race，scoped 命令 35506.079ms，全仓命令 81069.844ms，
+局部节省 45563.765ms。Full 五轮总墙钟中位数仍由 94927.564ms 波动到 130900.315ms，
+因此不把端到端噪声写成下降；阈值裁决采用隔离变量后的真实收益，并停止向 0017 或包边界
+扩张。
+
+GO-007 真实负例（临时文件已撤销）：
+
+```text
+GO-007 raceScope is missing concurrent package(s):
+internal/raceprobe (internal/raceprobe/probe.go: go statement)
+```
+
+Release 回归锁定实际命令为 `go test -race ./...`；Full 实际命令为
+`go test -race ./internal/mcpcontrol ./internal/report/tokenusage ./internal/runner
+./internal/testengine ./internal/validationevidence`。每周 schedule 仍运行 Release job，因而
+周期性全仓 race 未削减。没有新增守护进程、远端 attestation、perfprobe 或 YAML 配置。

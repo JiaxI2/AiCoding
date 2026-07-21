@@ -25,6 +25,12 @@ func runRuntimeSkillAdapter(ctx context.Context, repo string, opts Options, exec
 		OK:     false,
 		Status: "failed",
 	}
+	if !runtimeSkillConfigured(repo, opts) {
+		result.OK = true
+		result.Status = "skipped"
+		result.Warnings = []string{"no runtime Skill configured; probe skipped"}
+		return result
+	}
 	sourceRepository := opts.SourceRepository
 	sourceExists := false
 	if sourceRepository == "" {
@@ -117,6 +123,57 @@ func runRuntimeSkillAdapter(ctx context.Context, repo string, opts Options, exec
 		result.Status = "ok"
 	}
 	return result
+}
+
+func runtimeSkillConfigured(repo string, opts Options) bool {
+	if opts.Action == "install" || opts.Action == "update" || opts.Action == "uninstall" ||
+		strings.TrimSpace(opts.RuntimeProfile) != "" || strings.TrimSpace(opts.RuntimeSkill) != "" ||
+		strings.TrimSpace(opts.SourceRepository) != "" {
+		return true
+	}
+
+	data, err := os.ReadFile(filepath.Join(repo, "config", "skill-sources.json"))
+	if err != nil {
+		return true
+	}
+	var sources struct {
+		Sources []struct {
+			Skill string `json:"skill"`
+		} `json:"sources"`
+	}
+	if err := json.Unmarshal(data, &sources); err != nil {
+		return true
+	}
+
+	stateRoot := filepath.Join(repo, ".aicoding", "state", "skills")
+	for _, source := range sources.Sources {
+		if strings.TrimSpace(source.Skill) == "" {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(stateRoot, source.Skill, "install-state.json")); err == nil {
+			return true
+		} else if !os.IsNotExist(err) {
+			return true
+		}
+	}
+	entries, err := os.ReadDir(stateRoot)
+	if os.IsNotExist(err) {
+		return false
+	}
+	if err != nil {
+		return true
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(stateRoot, entry.Name(), "install-state.json")); err == nil {
+			return true
+		} else if !os.IsNotExist(err) {
+			return true
+		}
+	}
+	return false
 }
 
 func runtimeSkillInputDigest(repo, sourceRepository string, sourceExists bool) (string, error) {

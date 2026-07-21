@@ -414,11 +414,12 @@ func Registry(cfg Config) []TestCase {
 		{ID: "BOOT-003", Category: "BOOTSTRAP", Title: "bootstrap 前置条件完整", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
 		{ID: "GO-001", Category: "GO", Title: "全仓 Go 单元测试", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "test", "./..."}, TimeoutKind: "long"},
-		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "test", "-race", "./..."}, TimeoutKind: "long"},
+		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: raceTestCommand(cfg), TimeoutKind: "long"},
 		{ID: "GO-003", Category: "GO", Title: "go vet 基础检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "vet", "./..."}, TimeoutKind: "long"},
 		{ID: "GO-004", Category: "GO", Title: "CLI 并发只读调用", Severity: Required, Profiles: []string{"full", "release"}, Kind: "concurrent", TimeoutKind: "normal", ExpectJSON: true},
 		{ID: "GO-005", Category: "GO", Title: "Staticcheck 静态分析", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", staticcheckCommand, "./..."}, TimeoutKind: "long", Note: "WarnOnly for one release before promotion to Required"},
 		{ID: "GO-006", Category: "GO", Title: "Go 漏洞扫描", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", govulncheckCommand, "./..."}, TimeoutKind: "long", NetworkFailureWarn: true},
+		{ID: "GO-007", Category: "GO", Title: "并发包 raceScope 登记", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
 
 		{ID: "C99-001", Category: "C99_SKILL", Title: "C99 skill status", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "status", "--json"}, ExpectJSON: true},
 		{ID: "C99-002", Category: "C99_SKILL", Title: "C99 注释模板校验", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "templates", "--json"}, ExpectJSON: true},
@@ -743,6 +744,8 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = checkGoMod(cfg.Repo)
 	case "BOOT-003":
 		err = checkBootstrapPrerequisites(cfg.Repo)
+	case "GO-007":
+		err = checkRaceScope(cfg.Repo)
 	case "C99-005":
 		err = requirePaths(cfg.Repo,
 			"config/skills/c99-standard-c/skill.json",

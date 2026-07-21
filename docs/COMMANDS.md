@@ -41,13 +41,25 @@ Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`
 
 ## 命令契约固化
 
-顶层 command ID、名称/alias、是否要求 subcommand、handler 和 `aicoding --help` form
+顶层 command ID、名称/alias、是否要求 subcommand、handler、延迟等级和 `aicoding --help` form
 由 `internal/cli` 的 typed command catalog 统一描述。新增或删除顶层命令必须先更新该
 catalog，并通过 catalog 完整性与 CLI contract 测试；不能再在 router、help 和
 namespace 判断中分别维护字符串列表。
 
+延迟等级也是命令契约：`fast` 的 warm 中位数预算为 400ms，覆盖只读查询；`standard`
+预算为 1200ms，覆盖 `doctor --all`、`lifecycle status --scope all`、
+`governance dependencies` 与 `verify Smoke` 等聚合读取；`work` 表示测试、发布、clone、
+写操作或工具链主导路径，不设虚假的绝对上限，但必须保留 Receipt 复用。混合命名空间的
+只读代表路径通过同一 `CommandDescriptor.LatencyProbe` 登记，例如 `kit list` 和
+`governance dependencies`，不另建预算表。`doctor perf --json` 对所有 fast/standard
+代表路径进程内执行 3 次取中位数；超过预算 1.5 倍报 Warn，超过 3 倍报 Fail。
+
 Full 保留 Go/race/vet、CLI/JSON、治理和领域结构验证，但不创建发布 ZIP、也不执行 hermetic
 fresh clone；对应覆盖由 EXP-002 export manifest 静态验证和 FRESH-003 clone 契约静态验证承担。
+Full 的 GO-002 只对 `config/impact-policy.json` 的 `raceScope.packages` 跑 race；Required
+静态门禁 GO-007 扫描全仓 Go AST，发现含 goroutine、channel 或 `sync` 的未登记包即失败。
+Release 的 GO-002 始终保持 `go test -race ./...`，每周 schedule 会运行 Release job，因而
+全仓 race 的发布与周期覆盖均未削减。
 Full/Release 还会执行固定版本的 Staticcheck `v0.7.0`（GO-005，首个 release 为 WARN）和
 govulncheck `v1.6.0`（GO-006，真实漏洞为 REQUIRED；仅可识别的网络访问失败降级为 WARN）。
 Release 仍执行真实 `export --zip` 与一次 `fresh-clone --profile Release`，因此 Release 比 Full
@@ -215,7 +227,7 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | Loop WorkSpec 校验 | `bin\aicoding.exe work validate --file <SPEC.json> --json` |
 | Loop 下一步裁决/状态 | `bin\aicoding.exe work next\|status --file <SPEC.json> --json` |
 | Loop 尝试记录 | `bin\aicoding.exe work record --file <SPEC.json> --attempt <ATTEMPT.json> --json` |
-| 本地环境初始化 | `bin\aicoding.exe provision [--repo-root PATH] --json`（git init + 接线 `.githooks` + 写 `aicoding.*` + 建 `.aicoding` 根 + 放置 docs/ SDD 骨架；既有路径 kept、不覆盖，幂等） |
+| 本地环境初始化 | `bin\aicoding.exe provision [--repo-root PATH] --json`（git init + 接线 `.githooks` + 写 `aicoding.*` + 本仓 local `fetch.parallel=0` / `submodule.fetchJobs=4` / `core.fscache=true` + 建 `.aicoding` 根 + 放置 docs/ SDD 骨架；既有路径 kept、不覆盖，幂等） |
 | 解析 Codex Token JSONL | `bin\aicoding.exe codex usage parse --file <FILE> --json` |
 | 运行 Codex 并采集 Token | `bin\aicoding.exe codex usage run -- codex exec --json "<PROMPT>"` |
 
@@ -252,7 +264,10 @@ bin\aicoding.exe verify --profile Smoke --runtime-profile full --source-reposito
 ```
 
 底层 PowerShell profile/audit 脚本保留为 lifecycle adapter 的显式 specialty 实现，不再作为
-常规文档主入口。
+常规文档主入口。未配置 runtime skill 且未显式传入 `--runtime-skill`、
+`--runtime-profile full` 或 source repository 时，status/doctor/verify 直接返回 `skipped`
+且不启动 PowerShell；显式路径仍执行完整探测。`doctor pwsh` 同时只读报告
+`remainingScripts`、`thinShells`、`deprecated`，这些退役计数不构成门禁。
 
 ## MCP 组件控制面
 

@@ -745,8 +745,8 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("doctor "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
 	if sub == "pwsh" {
-		calls, errs := repohealth.ScanPwsh(repo)
-		return report.Result{SchemaVersion: 1, Command: "doctor pwsh", OK: len(errs) == 0, Message: "PowerShell invocation inventory", RepoRoot: repo, Data: calls, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+		inventory, errs := repohealth.InspectPwsh(repo)
+		return report.Result{SchemaVersion: 1, Command: "doctor pwsh", OK: len(errs) == 0, Message: "PowerShell invocation and retirement inventory", RepoRoot: repo, Data: inventory, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	}
 	if sub == "pwsh-budget" {
 		budget, errs := repohealth.ScanPwshBudget(repo)
@@ -755,22 +755,7 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 	if sub != "perf" {
 		return report.Result{}, usageErrorf("unsupported doctor subcommand: %s", sub)
 	}
-	checks := []map[string]interface{}{}
-	measure := func(name string, fn func() error) {
-		t0 := time.Now()
-		err := fn()
-		item := map[string]interface{}{"name": name, "elapsedMs": time.Since(t0).Milliseconds(), "ok": err == nil}
-		if err != nil {
-			item["error"] = err.Error()
-		}
-		checks = append(checks, item)
-	}
-	measure("git rev-parse", func() error { _, e := gitx.Run(repo, "rev-parse", "--show-toplevel"); return e })
-	measure("git diff cached names", func() error { _, e := gitx.StagedFiles(repo); return e })
-	measure("load kit registry", func() error { _, e := kit.LoadRegistry(repo); return e })
-	measure("governance lint", func() error { return report.BoolErr(governance.Lint(repo, "pre-commit", "")) })
-	measure("staged docsync lint", func() error { return report.BoolErr(docsync.LintStaged(repo)) })
-	return report.Result{SchemaVersion: 1, Command: "doctor perf", OK: true, Message: "performance probes", RepoRoot: repo, Data: checks, ElapsedMS: report.Elapsed(start)}, nil
+	return runLatencyDoctor(repo, start)
 }
 
 func runBootstrap(args []string, start time.Time) (report.Result, error) {

@@ -1,6 +1,9 @@
 package repohealth
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,6 +11,45 @@ import (
 
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 )
+
+func TestDiscoverToolsParallelMatchesSerialJSON(t *testing.T) {
+	names := []string{"go", "missing", "git", "go"}
+	lookup := func(name string) (string, error) {
+		if name == "missing" {
+			return "", errors.New("not found")
+		}
+		return "/tools/" + name, nil
+	}
+	serial, err := json.Marshal(discoverToolsWith(context.Background(), names, lookup, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	parallel, err := json.Marshal(discoverToolsWith(context.Background(), names, lookup, 4))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(serial) != string(parallel) {
+		t.Fatalf("serial/parallel tool JSON differs:\nserial=%s\nparallel=%s", serial, parallel)
+	}
+	t.Logf("serial=%s", serial)
+	t.Logf("parallel=%s", parallel)
+}
+
+func TestInspectPwshRetirementReportsCountsWithoutGate(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "tools", "specialty", "active.ps1"), "Write-Host active\n")
+	mustWrite(t, filepath.Join(repo, "tools", "specialty", "thin.ps1"), "# Compatibility wrapper only\n& bin/aicoding.exe version\n")
+	mustWrite(t, filepath.Join(repo, "tools", "specialty", "deprecated.ps1"), "# DEPRECATED(TODO-0022): remove later\n")
+
+	retirement, errs := inspectPwshRetirement(repo)
+	if len(errs) != 0 {
+		t.Fatalf("retirement inventory errors: %v", errs)
+	}
+	if retirement.RemainingScripts != 3 || retirement.ThinShells != 1 || retirement.Deprecated != 1 {
+		t.Fatalf("unexpected retirement counts: %#v", retirement)
+	}
+	t.Logf("remainingScripts=%d thinShells=%d deprecated=%d", retirement.RemainingScripts, retirement.ThinShells, retirement.Deprecated)
+}
 
 func TestHooksWiredDetectsUnwiredThenWired(t *testing.T) {
 	repo := t.TempDir()

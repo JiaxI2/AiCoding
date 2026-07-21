@@ -25,11 +25,12 @@
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | GO-001 | 全仓 Go 单元测试 | `go test ./...` | 退出码 0 | REQUIRED |
-| GO-002 | Go race 检查 | `go test -race ./...` | 退出码 0；环境不支持 race 或历史包不兼容记 WARN | WARN |
+| GO-002 | Go race 检查 | Full：`go test -race <raceScope.packages>`；Release：`go test -race ./...` | 退出码 0；环境不支持 race 或历史包不兼容记 WARN；Release 必须保持全仓 | WARN |
 | GO-003 | Go vet 基础检查 | `go vet ./...` | 退出码 0 | WARN |
 | GO-004 | CLI 并发只读调用 | 并发运行 C99 status/templates/governance lint | 全部退出码 0，无 timeout | REQUIRED |
 | GO-005 | Staticcheck 静态分析 | `go run honnef.co/go/tools/cmd/staticcheck@v0.7.0 ./...` | 零告警；首个 release 失败记 WARN | WARN |
 | GO-006 | Go 漏洞扫描 | `go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...` | 无可达漏洞；仅可识别的网络失败记 WARN | REQUIRED |
+| GO-007 | 并发包 raceScope 登记 | AST 扫描全仓 `.go` 文件，并与 `config/impact-policy.json` 对账 | goroutine、channel 或 `sync` 所在包全部登记；漏登即 Full/Release 失败 | REQUIRED |
 
 ## 4. C99_SKILL：C 语言 skill 风格一致性
 
@@ -107,10 +108,10 @@
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
-| PWSH-001 | PowerShell inventory | `bin/aicoding.exe doctor pwsh --json` | 输出当前 PS 文件清单 | WARN |
+| PWSH-001 | PowerShell inventory | `bin/aicoding.exe doctor pwsh --json` | 输出当前 PS 调用点与 `remainingScripts/thinShells/deprecated` 退役计数；计数只报告、不设门禁 | WARN |
 | PWSH-002 | PowerShell budget | `bin/aicoding.exe doctor pwsh-budget --json` | 不超预算，或输出超预算明细 | REQUIRED |
 | PWSH-003 | 默认入口不经 PS 编排 | 检查 Taskfile 是否存在 Go-native 默认路由 | doctor/verify/Smoke/Full/Release 均直达正式 Go CLI；允许变量和 Windows/Unix 路径分隔符 | REQUIRED |
-| HEALTH-001 | doctor performance probes | `bin/aicoding.exe doctor perf --json` | 核心本地探针可执行且输出 JSON | REQUIRED |
+| HEALTH-001 | typed command 延迟门禁 | `bin/aicoding.exe doctor perf --json` | fast/standard 注册命令各进程内实测 3 次取中位数；1.5× Warn、3× Fail | REQUIRED |
 
 ## 11. REPO_CONTEXT：仓库上下文领域
 
