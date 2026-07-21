@@ -199,9 +199,20 @@ bin\aicoding.exe mcp doctor ppt-mcp --json
 
 ## 新增 Component
 
-1. 使用领域名称创建通用 capability，禁止把 AiCoding 名称或版本写入稳定身份；
-2. 在 `config/mcp/components/` 增加 manifest，并登记到 `config/mcp-registry.json`；
-3. 定义 doctor、Smoke、Full、Release、安全限制和允许输出根；
+当前已有 `visio-mcp` 与 `ppt-mcp` 两个真实组件，因此提供共用的 manifest 创作入口：
+
+```powershell
+bin\aicoding.exe mcp init demo-mcp --dry-run --json
+bin\aicoding.exe mcp init demo-mcp --out config\mcp\components --json
+```
+
+默认预览在 `data.componentContent`，disabled 登记建议在 `data.registryEntry`。命令不会修改
+`config/mcp-registry.json`，也不会生成 Python package 或业务 tools；生成 manifest 结构合规
+不代表 component 已可运行。ID 已登记、使用保留的 `aicoding-` 前缀或目标文件存在时拒绝。
+
+1. 使用领域名称创建 `CodingKit/tools/` 下的通用 capability，禁止把 AiCoding 名称或版本写入稳定身份；
+2. 评审生成的 manifest，按真实实现修正 runtime、doctor、Smoke、Full、Release、安全限制和允许输出根；
+3. 人工把报告中的 disabled entry 登记到 `config/mcp-registry.json`，验证通过前不得 enable；
 4. 对 stdio 或 Streamable HTTP lifecycle 增加只读 compatibility test；
 5. 确认 capability 只暴露 tools/领域 resources，不注册工作流 prompt；
 6. 更新架构、命令、运维和 changelog；
@@ -215,3 +226,4 @@ git diff --check
 ```
 
 架构边界见 [MCP Control Plane](../architecture/MCP_CONTROL_PLANE.md)。
+四类资产的权威位置与 Skill 跨仓流程见 [创作指引](../guides/AUTHORING.md)。

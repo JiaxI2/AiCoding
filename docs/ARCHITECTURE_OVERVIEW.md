@@ -104,6 +104,10 @@ Registry digest 只表示引用目录；catalog digest 表示 registry 与全部
 Lifecycle、Kit list/verify 和 MCP list/status/doctor/verify 消费 detached snapshot values，
 同一命令不在执行阶段重新读取 manifest。
 
+`config/templates/kit|skill|mcp` 是编译期内嵌的创作输入，不是新的 registry 或运行时
+source-of-truth。`skill init` 只预览或写到 AiCoding 仓库外，`mcp init` 只给出 manifest 与
+disabled registry entry 建议；两者都不自动登记、启用或创建工作流权威。Hook 不提供模板入口。
+
 `internal/cli` 的 typed command catalog 是顶层 command ID、alias、namespace、handler 和
 全局 help form 的权威源。Lifecycle 的 adapter catalog 则是 domain/input/state owner/
 entrypoint/action effect 的独立权威；两种 catalog 职责正交，不合并为全能目录。

@@ -73,7 +73,7 @@ See the [architecture roadmap](docs/architecture/07-roadmap.md) for direction. T
 | New user | Reach the first green result and keep exploring | The three lines above → [command matrix](docs/COMMANDS.md) |
 | Agent / automation | Stable commands and JSON result contracts | [Command matrix](docs/COMMANDS.md) → [report schema](docs/operations/testing/REPORT_SCHEMA.md) |
 | Contributor | Change code without crossing architecture boundaries | [Required architecture path](docs/architecture/README.md) → [contributing guide](CONTRIBUTING.md) |
-| Kit author | Understand lifecycle and track the generate-valid-by-default entry | [Kit lifecycle](docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md) → planned [`kit init`](docs/todolist/0010-kit-init-scaffold.md) |
+| Kit / extension author | Resolve Skill, Kit, MCP, and Hook ownership before authoring | [Authoring guide](docs/guides/AUTHORING.md) |
 
 ## Core and Kits
 

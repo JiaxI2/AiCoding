@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -233,7 +234,11 @@ func readSkillDocument(path string) (skillDocument, []string) {
 		return skillDocument{Frontmatter: map[string]string{}}, []string{"missing SKILL.md"}
 	}
 	defer file.Close()
-	scanner := bufio.NewScanner(file)
+	return parseSkillDocument(file)
+}
+
+func parseSkillDocument(reader io.Reader) (skillDocument, []string) {
+	scanner := bufio.NewScanner(reader)
 	if !scanner.Scan() || strings.TrimSpace(scanner.Text()) != "---" {
 		return skillDocument{Frontmatter: map[string]string{}}, []string{"missing frontmatter"}
 	}

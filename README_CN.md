@@ -73,7 +73,7 @@ go run ./cmd/aicoding bootstrap --json && .\bin\aicoding.exe provision --json
 | 新用户 | 跑通第一个绿灯并继续探索 | 上面的三行 → [命令矩阵](docs/COMMANDS.md) |
 | Agent / 自动化 | 稳定命令与 JSON 结果契约 | [命令矩阵](docs/COMMANDS.md) → [报告 schema](docs/operations/testing/REPORT_SCHEMA.md) |
 | 贡献者 | 改代码而不越过架构红线 | [架构必读路径](docs/architecture/README.md) → [贡献指南](CONTRIBUTING.md) |
-| Kit 作者 | 理解生命周期并跟踪“生成即合规”入口 | [Kit 生命周期](docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md) → [`kit init` 计划](docs/todolist/0010-kit-init-scaffold.md) |
+| Kit / 扩展作者 | 先确认 Skill、Kit、MCP、Hook 的权威归属，再进入创作流程 | [创作指引](docs/guides/AUTHORING.md) |
 
 ## 内核与 Kit
 

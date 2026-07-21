@@ -27,4 +27,7 @@ Do not create a parallel source of truth outside this domain. Add new items only
 - `mcp-registry.json` and `mcp/components/*.json`: upper-layer MCP composition and runtime injection.
 - `templates/provision/`: `aicoding provision` 编译期内嵌的最小 SDD 文档骨架单一来源。
 - `templates/kit/`: `aicoding kit init` 编译期内嵌的 manifest、workspec 与外部边界卡单一来源。
+- `templates/skill/`: `aicoding skill init` 编译期内嵌的外部 Skill 草稿模板；只允许输出到 AiCoding 仓库外的可写 Codex-Skills worktree。
+- `templates/mcp/`: `aicoding mcp init` 编译期内嵌的 component manifest 模板；只给出 disabled registry entry 建议，不自动登记。
+- 不提供 `templates/hook/` 或 `hook init`；Hook 只在既有权威实现中维护。
 <!-- AICODING:REPOSITORY_MAP:END -->

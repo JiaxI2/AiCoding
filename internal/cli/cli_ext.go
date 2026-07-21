@@ -51,8 +51,11 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 	if len(args) >= 1 && args[0] == cstyle.DefaultSkillID {
 		return runCStyleCommand("skill "+cstyle.DefaultSkillID, cstyle.DefaultSkillID, args[1:], start)
 	}
+	if len(args) >= 1 && args[0] == "init" {
+		return runSkillInit(args[1:], start)
+	}
 	if len(args) < 1 || args[0] != "verify" {
-		return report.Result{}, usageErrorf("skill requires subcommand: verify or c99-standard-c")
+		return report.Result{}, usageErrorf("skill requires subcommand: init, verify, or c99-standard-c")
 	}
 	fs := newFlagSet("skill verify")
 	repoArg := fs.String("repo-root", "", "repository root")

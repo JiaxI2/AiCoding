@@ -23,6 +23,8 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 |---|---|
 | Bootstrap | `bin\aicoding.exe bootstrap --json` |
 | Kit 合规脚手架 | `bin\aicoding.exe kit init <id> [--external] [--dry-run] --json` |
+| 外部 Skill 草稿脚手架 | `bin\aicoding.exe skill init <id> [--out PATH] [--dry-run] --json` |
+| MCP manifest 脚手架 | `bin\aicoding.exe mcp init <id> [--out PATH] [--dry-run] --json` |
 | Kit 能力深投影 | `bin\aicoding.exe kit describe --kit <id>\|--all [--with-state] --json` |
 | Kit 生命周期 plan/apply | `bin\aicoding.exe lifecycle plan --action install\|update\|uninstall --scope kit --all --json` / `lifecycle install\|update\|uninstall --scope kit --all --json` |
 | 全域生命周期 plan | `bin\aicoding.exe lifecycle plan --action install\|update --scope all --runtime-profile runtime\|full\|skill-development --json` |
@@ -123,6 +125,18 @@ entry、`testdata/kits/<id>/workspec-example.json`，并在 `dependency-governan
 `docs/reference/kits/<id>-BOUNDARY.md`，并固定 `thirdParty:true`、`updatePolicy:pinned`。
 `--dry-run` 只返回目标路径、字节数与内容摘要。命令不自动 enable、不写 Skill，也不猜测真实
 上游依赖；目标或 ID 已存在时 fail-closed。正式启用前须评审并按实际实现修正 binding。
+
+`skill init <id> --json` 默认只在 `data.content` 预览完整 `SKILL.md`；只有显式 `--out`
+才写文件，并拒绝 AiCoding 仓库内或经符号链接落入只读 `CodingKit/agents/skills` 的目标。
+生成物是通过上游结构门禁但尚未由 owner 批准的草稿，必须在外部可写 Codex-Skills
+worktree 完善、评审和合并后，才允许按跨仓流程前移 AiCoding gitlink pin。
+
+`mcp init <id> --json` 默认在 `data.componentContent` 预览冻结结构，并在
+`data.registryEntry` 给出 disabled entry 建议；显式 `--out` 只写 `<id>.json`，不修改
+registry、不生成 capability runtime、不注册工作流 prompt。作者实现真实 capability 并评审
+runtime/doctor/verify/security/outputs 后，才能登记和运行 `mcp verify`。完整边界见
+[创作指引](guides/AUTHORING.md)。
+
 正式 `lifecycle ... --json` 在 `data` 中返回静态 adapter `catalogDigest`、本次
 `planDigest`，并在每个 adapter result 中返回 `inputDigest`。Agent/Skill 应使用这些字段
 追踪“对什么事实执行了什么意图”，不解析人类文本或直接调用 specialty 脚本。
@@ -223,7 +237,9 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | Plan Mode 产物状态 | `bin\aicoding.exe plan status [--id <id>\|--all] --json` |
 | Plan Mode 内容批准 | `bin\aicoding.exe plan approve --id <id> --json` |
 | 变更影响验证 | `bin\aicoding.exe change verify [--staged\|--since REV] --json` |
+| 外部 Skill 草稿脚手架 | `bin\aicoding.exe skill init <id> [--out PATH] [--dry-run] --json` |
 | Skill verify | `bin\aicoding.exe skill verify --all --profile Smoke|Full|Release --json` |
+| MCP manifest 脚手架 | `bin\aicoding.exe mcp init <id> [--out PATH] [--dry-run] --json` |
 | MCP inventory | `bin\aicoding.exe mcp list --json` |
 
 `plan check` 先按 `config/plan-policy.json` 判断路径是否敏感，再要求每条敏感路径被至少
@@ -322,12 +338,16 @@ bin\aicoding.exe verify --profile Smoke --runtime-profile full --source-reposito
 MCP registry、component manifest、Codex 配置、生命周期和兼容性回归统一由 Go CLI 管理：
 
 ```powershell
+bin\aicoding.exe mcp init demo-mcp --dry-run --json
 bin\aicoding.exe mcp list --json
 bin\aicoding.exe mcp status visio-mcp --json
 bin\aicoding.exe mcp doctor visio-mcp --json
 bin\aicoding.exe mcp verify visio-mcp --profile Smoke --json
 bin\aicoding.exe mcp verify --all --profile Smoke --json
 ```
+
+`mcp init` 只生成冻结 manifest 结构与 disabled registry entry 建议，不修改 registry，
+也不生成或启动业务 capability；完整创作流程见 [创作指引](guides/AUTHORING.md)。
 
 Agent/Skill 执行写操作时使用正式 lifecycle plan/apply：
 

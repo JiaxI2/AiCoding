@@ -239,6 +239,8 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		"aicoding plan approve --id ID",
 		"aicoding cache clean [--scope fast-path|test-results|validation-reports|temp|work-state] [--keep N] [--dry-run] [--adopt] [--all-repos]",
 		"aicoding kit init ID [--external] [--dry-run]",
+		"aicoding skill init ID [--out PATH] [--dry-run]",
+		"aicoding mcp init ID [--out PATH] [--dry-run]",
 	} {
 		if !strings.Contains(help.String(), usage) {
 			t.Fatalf("catalog help is missing %q", usage)

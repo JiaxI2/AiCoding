@@ -1,7 +1,7 @@
-# TODO 0020: 仓库自带创作模板（skill / mcp / hook 脚手架，复用 kit init 机制）
+# TODO 0020: 仓库自带创作模板（skill / mcp 脚手架，复用 kit init 机制）
 
-Status: Planned
-Verify: bin/aicoding.exe skill init demo-skill --dry-run --json 与 mcp init demo-mcp --dry-run --json 输出合规骨架；生成物零编辑过对应 verify 门禁
+Status: Done
+Verify: bin/aicoding.exe skill init demo-skill --dry-run --json 与 mcp init demo-mcp --dry-run --json 输出合规骨架；Skill 生成物零编辑通过上游结构门禁，MCP manifest 通过冻结结构校验且不冒充可运行 capability
 
 > **本项是对 owner"仓库自带 skill/plugin kit"想法的审核结论**：方向对，但要拆成
 > **可采纳的一半**和**必须拒绝的一半**，且**排在收敛期之后**。
@@ -49,45 +49,106 @@ Verify: bin/aicoding.exe skill init demo-skill --dry-run --json 与 mcp init dem
    ├── kit/          （0010 已建）
    ├── skill/        SKILL.md frontmatter 骨架 + 章节契约（When to use / Workflow /
    │                 Verification / Constraints——PLUGIN_STANDARD §5 的稳定章节）
-   ├── mcp/          MCP component manifest 骨架（对齐 config/schemas/mcp-component.schema.json）
-   └── hook/         hook 薄壳骨架（禁跑测试/禁构建/fail-closed 三条内建）
+   └── mcp/          MCP component manifest 骨架（对齐 config/schemas/mcp-component.schema.json）
    ```
 
 2. **命令按需增加，不一次全上**：
    - `aicoding skill init <id> --dry-run|--json`：生成 SKILL.md 骨架到
      **目标路径由参数指定**（默认打印到 stdout，不落盘到子模块——
      避免误写只读子模块，这是硬约束）；
-   - `aicoding mcp init <id>`：生成 component manifest + registry 条目建议
-     （**只在出现第二个真实 MCP 组件需求时才实现**，否则纯属为一个场景造轮子）；
+   - `aicoding mcp init <id>`：生成 component manifest + registry 条目建议；当前已有
+     `visio-mcp` 与 `ppt-mcp` 两个真实组件，复用依据成立；
    - `hook init` 暂不做（4 个 hook 已覆盖 git 全部触发点，无新增需求）。
 3. **一页创作指引** `docs/guides/AUTHORING.md`：
    - 改既有 skill → 在子模块开分支 → 上游 PR → pin 前移（三步，配命令）；
    - 造新 skill → `skill init` → 放 Codex-Skills → 登记 → pin 前移；
    - 造新 kit → `kit init`（0010）；
    - **一张表说清"改什么去哪改"**，终结"skill 到底在哪"的困惑。
-4. 门禁：生成物必须过对应既有校验（skill 过 `skill verify`，
-   mcp 过 `mcp verify`），沿用 0010 的"生成即合规"承诺与模板-schema 同步测试。
+4. 门禁：Skill 草稿过 Codex-Skills `quick_validate.py` 与 `skill_gate.py validate`；
+   MCP manifest 过冻结结构的严格解析与模板同步测试。`skill verify` / `mcp verify` 继续验证
+   已登记运行时资产；未登记 Skill 和尚无 capability runtime 的 MCP 骨架不得伪报运行通过。
 
 ## 明确不做
 
 - **不在 AiCoding 仓库内放任何 skill 源码**（单一权威铁律）。
 - 不做 skill 市场/远程模板/模板版本管理。
 - 不做 `hook init`（无需求）。
-- `mcp init` 在第二个真实组件出现前不实现。
+- 不让 `mcp init` 自动改 registry、生成 capability runtime 或注册工作流 prompt。
 - 不改 `CodingKit/agents/skills` 子模块的只读定位。
 
 ## 自测（可信任方式）
 
 ```powershell
-go test ./internal/kit/... ./internal/cli/...
+go test ./internal/kit ./internal/mcpcontrol ./internal/cli
 bin\aicoding.exe skill init demo-skill --dry-run --json     # 骨架含 PLUGIN_STANDARD §5 全部章节
 bin\aicoding.exe skill init demo-skill --out $env:TEMP\demo --json
+python <Codex-Skills>\platform\aicoding-user-skill-creator\scripts\quick_validate.py $env:TEMP\demo
+python <Codex-Skills>\platform\aicoding-user-skill-creator\scripts\skill_gate.py validate $env:TEMP\demo
+bin\aicoding.exe mcp init demo-mcp --dry-run --json
 bin\aicoding.exe skill verify --all --profile Smoke --json  # 既有 skill 未受影响
 # 硬约束负例：尝试把 skill init 输出写进 CodingKit/agents/skills → 必须拒绝（贴错误）
 git status --porcelain                                       # 子模块零变更
 bin\aicoding.exe governance layout --json ; bin\aicoding.exe test --profile Full --json
 ```
 
-通过判据：生成物零编辑过 `skill verify`；**写入只读子模块被拒绝**（核心安全断言）；
+通过判据：Skill 生成物零编辑过上游结构门禁，MCP manifest 过冻结结构校验；
+**写入只读子模块被拒绝**（核心安全断言）；
 `docs/guides/AUTHORING.md` 的"改什么去哪改"表覆盖 skill/kit/mcp/hook 四类；
-全仓 skill 源仍只有子模块一处（`find . -name SKILL.md -not -path "./CodingKit/*"` 为空）。
+本项不新增任何 `SKILL.md`，Skill 权威仍只有 Codex-Skills 子模块一处。
+
+## 实现与实测（2026-07-22）
+
+- 新增 `config/templates/skill/SKILL.tmpl` 与 `config/templates/mcp/component.tmpl.json`，
+  复用 Go `embed`、typed HelpForm、`report.Result` 与各自既有领域包；没有新增 registry、
+  runner、report schema、lifecycle 或 Hook 创作入口。
+- `skill init` 默认只在 `data.content` 预览；显式 `--out` 只能写 AiCoding 仓库外，
+  已存在目标绝不覆盖。第一次真实 `skill_gate.py validate` 暴露模板缺少
+  `## Skill Type`，随后补齐 Skill Type、Workflow Contract、Gate Rules 与 Human
+  Confirmation；最终零编辑生成物得到 `Skill is valid!` 与 `Skill gate valid!`，退出码均为 0。
+- `mcp init` 默认在 `data.componentContent` 预览冻结 manifest，并在
+  `data.registryEntry` 返回 `enabled:false`、`order:30` 的建议；显式输出生成的
+  `demo-mcp.json` 为 schema v1，Smoke/Full/Release 各有一步，且
+  `allowArbitraryShell:false`、`ownsWorkflowPrompts:false`。命令未写 registry。
+- dry-run 实测摘要：Skill digest
+  `sha256:cc47f1803bbb27de6e513dc4b0610334fd08c724902198a89800159c76a9895c`；
+  MCP digest `sha256:753499ecbf549e2bd7bf7819be1c43998883cc0ab72433df4e86c288722d4e37`；
+  两条命令均退出 0，`outputMode=preview`、`action=preview`。
+
+真实负例全部执行，输出如下：
+
+```text
+skill init -> 只读子模块：exit 1, category=validation, retryable=false
+error: skill output is inside read-only CodingKit/agents/skills; create it in a writable Codex-Skills worktree
+targetExists=false, submoduleStatusUnchanged=true, parentGitlinkDiff=""
+
+skill init -> 已存在目标：exit 1, category=validation, retryable=false
+error: target already exists and will not be overwritten: ...\SKILL.md
+hashUnchanged=true
+
+mcp init -> 已存在目标：exit 1, category=validation, retryable=false
+error: target already exists and will not be overwritten: ...\demo-mcp.json
+hashUnchanged=true
+
+mcp init aicoding-demo：exit 1, category=validation, retryable=false
+error: reusable MCP component id must not use the reserved aicoding- namespace: aicoding-demo
+```
+
+既有运行时回归与环境边界：
+
+- `skill verify --all --profile Smoke --json`：6 kits / 2 skills，6 OK、0 failed、0 warnings。
+- `mcp verify --all --profile Smoke --json` 的 configured MCP 为 8/8 可握手，但两个受管
+  component 因本 worktree 未安装 `.venv` 真实失败：`The system cannot find the path specified`。
+  本项没有擅自安装或改写用户配置，也没有把该环境缺失伪报成骨架通过；MCP 骨架以严格
+  struct/schema 同步测试验收，待实现并安装真实 capability 后才进入运行时 verify。
+
+最终门禁：
+
+```text
+go test ./internal/kit ./internal/mcpcontrol ./internal/cli                    PASS
+go vet ./internal/kit ./internal/mcpcontrol ./internal/cli                     PASS
+staticcheck ./internal/kit ./internal/mcpcontrol ./internal/cli                PASS
+governance dependencies / layout / lint                                        PASS
+docsync all / verify repo-text / plan verify                                    PASS
+test --profile Full --reuse off                                                 63 PASS / 4 SKIP / 0 FAIL
+Full duration                                                                   263706 ms
+```
