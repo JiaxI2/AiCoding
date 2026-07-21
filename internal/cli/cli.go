@@ -106,12 +106,39 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 	if jsonRequested(commandArgs) {
 		_ = report.WriteJSONTo(stdout, res)
 	} else {
+		if res.Command == "kit describe" {
+			res.Data = kitDescribeTextRows(res.Data)
+		}
 		report.WriteTextTo(stdout, res)
 		if cmd == "codex" {
 			writeCodexUsageText(stdout, res)
 		}
 	}
 	return exitCodeFor(res, err)
+}
+
+type kitDescribeTextRow struct {
+	OK     bool
+	ID     string
+	Status string
+	Errors []string
+}
+
+func kitDescribeTextRows(data interface{}) interface{} {
+	views, ok := data.([]kit.PluginView)
+	if !ok {
+		return data
+	}
+	rows := make([]kitDescribeTextRow, 0, len(views))
+	for _, view := range views {
+		rows = append(rows, kitDescribeTextRow{
+			OK:     true,
+			ID:     view.ID,
+			Status: view.Quickstart.Command,
+			Errors: []string{},
+		})
+	}
+	return rows
 }
 
 func productVersion() string {

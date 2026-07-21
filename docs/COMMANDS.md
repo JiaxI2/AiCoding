@@ -68,9 +68,11 @@ Release 仍执行真实 `export --zip` 与一次 `fresh-clone --profile Release`
 `kit list --json` 与 `mcp list --json` 的外层报告包含
 `inputDigest`；MCP inventory 同时保留 `registryDigest` 并增加 `catalogDigest`。前者只标识
 规范化 registry，后者标识 registry 与全部 referenced manifests 的内容树。
-`kit describe --kit <id>|--all --json` 在 `report.Result.data` 返回稳定 `[]PluginView`；默认不读
-安装 state，只有 `--with-state` 才附加不含时间戳的摘要。详见
-[Kit Plugin View](reference/KIT_PLUGIN_VIEW.md)。
+`kit describe --kit <id>|--all --json` 在 `report.Result.data` 返回稳定 `[]PluginView`，其中
+`quickstart` 从 manifest description、首个 read command 与 Skill 描述派生；非 JSON 输出由
+`report.WriteText` 即时渲染，不生成 QUICKSTART 文件。默认不读安装 state，只有
+`--with-state` 才附加不含时间戳的摘要。详见 [Kit Plugin View](reference/KIT_PLUGIN_VIEW.md)
+与 [Kit 管理标准](reference/KIT_MANAGEMENT_STANDARD.md)。
 正式 `lifecycle ... --json` 在 `data` 中返回静态 adapter `catalogDigest`、本次
 `planDigest`，并在每个 adapter result 中返回 `inputDigest`。Agent/Skill 应使用这些字段
 追踪“对什么事实执行了什么意图”，不解析人类文本或直接调用 specialty 脚本。

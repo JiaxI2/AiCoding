@@ -225,6 +225,8 @@ func pluginProjectionIssues(repo string, snapshots []ManifestSnapshot, policy Pl
 		}
 		if strings.TrimSpace(manifest.Description) == "" {
 			issues = append(issues, entry.ID+": manifest description is empty")
+		} else if entry.Enabled && implementationLedDescription(manifest.Description) {
+			issues = append(issues, entry.ID+": manifest description is implementation-led: "+strings.Fields(strings.TrimSpace(manifest.Description))[0])
 		}
 		skills, parseErrors := Skills(manifest)
 		for _, parseError := range parseErrors {
@@ -246,12 +248,16 @@ func pluginProjectionIssues(repo string, snapshots []ManifestSnapshot, policy Pl
 			names = append(names, name)
 		}
 		sort.Strings(names)
+		hasReadCommand := false
 		for _, name := range names {
 			command := manifest.Commands[name]
 			effect, ok := pluginOperationEffect(name, policy.Adapter.Actions)
 			if !allowedManifestCommandNames[name] || !ok {
 				issues = append(issues, entry.ID+": command "+name+" has no registered read/write effect")
 				continue
+			}
+			if effect == "read" {
+				hasReadCommand = true
 			}
 			if effect == "write" && strings.TrimSpace(policy.Adapter.StateOwner) == "" {
 				issues = append(issues, entry.ID+": write command "+name+" has no state owner")
@@ -266,8 +272,44 @@ func pluginProjectionIssues(repo string, snapshots []ManifestSnapshot, policy Pl
 				}
 			}
 		}
+		if entry.Enabled && !hasReadCommand {
+			issues = append(issues, entry.ID+": enabled kit has no read command")
+		}
+		if entry.Enabled {
+			updatePolicy, _ := manifest.Trust["updatePolicy"].(string)
+			if !validKitUpdatePolicy(updatePolicy) {
+				issues = append(issues, entry.ID+": trust.updatePolicy must be manual, pinned, or tracked")
+			}
+			thirdParty, _ := manifest.Trust["thirdParty"].(bool)
+			if thirdParty {
+				boundary := filepath.ToSlash(filepath.Join("docs", "reference", "kits", entry.ID+"-BOUNDARY.md"))
+				if !platform.IsFile(platform.RepoPath(repo, boundary)) {
+					issues = append(issues, entry.ID+": external kit boundary card is missing: "+boundary)
+				}
+			}
+		}
 	}
 	return issues
+}
+
+func implementationLedDescription(description string) bool {
+	fields := strings.Fields(strings.TrimSpace(description))
+	if len(fields) == 0 {
+		return false
+	}
+	first := strings.ToLower(strings.Trim(fields[0], "`'\""))
+	return first == "internal" || first == "go" || first == "package" ||
+		strings.HasPrefix(first, "internal/") || strings.HasPrefix(first, "cmd/") ||
+		strings.HasPrefix(first, "pkg/") || strings.HasPrefix(first, "go-")
+}
+
+func validKitUpdatePolicy(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "manual", "pinned", "tracked":
+		return true
+	default:
+		return false
+	}
 }
 
 func isAiCodingExecutable(executable string) bool {

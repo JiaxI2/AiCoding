@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(kit-management)**: 建立 Kit 快速入门、使用与维护的三面九问唯一标准；`kit describe` 从既有 description、首个 read command 与 Skill 描述确定性派生 Quickstart，并由文本报告即时呈现；既有 plugin projection 门禁新增 enabled Kit 的用户结果描述、read command、升级策略与第三方边界卡检查，Smoke 告警、Lifecycle/Full/Release 阻断，不新增 manifest 字段或 QUICKSTART 文件。 / Establishes the single Kit management standard, deterministically projects Quickstart from existing manifest and Skill facts, renders it through the existing report path, and adds severity-aware management checks without a new schema field or parallel quickstart file.
+
 - **docs(readme)**: 将 README 三件套重写为 30 秒价值说明、三行 clean-clone 快速开始、角色分流、网状证据闭环、与 enabled kit 注册表一致的能力橱窗及可追溯复利叙事；明/暗 banner 与 Mermaid 采用 `gia-workflow.svg` 同源的黑白灰 Visio 工程图语言，非官方徽章收敛为中性色，徽章标题首字母大写由配置登记、测试与治理门禁强制；Star History 使用无凭据公开端点，避免过期凭据和手工维护漂移。 / Reframes the README trio as a product entry with an executable three-line quick start, persona routes, graph-first evidence loop, registry-aligned kit showcase, and traceable compounding story; adopts the restrained monochrome Visio language of `gia-workflow.svg`, machine-enforces capitalized badge labels, and embeds Star History through its credential-free public endpoint to avoid expiry and manual drift.
 
 - **feat(provision)**: `aicoding provision` 现从 `config/templates/provision` 放置最小 SDD 文档骨架（hub/architecture/decisions/spec/todolist），每个既有路径严格 kept、绝不覆盖；报告新增 `docsSkeleton` 与逐资源 created/kept action，本地 marker schema 升至 2 并加入 `aicoding.docsSkeleton=1`。二次执行不重写 Git config 或骨架内容。 / Extends provision with an embedded, non-overwriting SDD documentation skeleton, explicit created/kept actions, and a git-native docs-skeleton marker while preserving byte-stable idempotence.

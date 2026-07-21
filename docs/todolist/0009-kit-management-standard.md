@@ -1,6 +1,6 @@
 # TODO 0009: Kit 管理标准化（管理契约 + Quickstart 投影 + 门禁闭环）
 
-Status: Planned
+Status: Done
 Verify: bin/aicoding.exe kit describe --all --json 每个 enabled kit 的 quickstart 字段非空，且 kit verify --all --profile Lifecycle 含管理面检查全绿
 
 > 治理模型一句话（RL+SFT 的工程化翻译，只借结构不借算法）：

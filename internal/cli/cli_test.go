@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -268,6 +269,27 @@ func TestKitDescribeProjectsSelectedAndAllKitsWithoutWrites(t *testing.T) {
 	}
 	if statusAfter := gitStatusPorcelain(t, repo); statusAfter != statusBefore {
 		t.Fatalf("kit describe changed the worktree:\nbefore=%q\nafter=%q", statusBefore, statusAfter)
+	}
+}
+
+func TestKitDescribeTextUsesExistingReportRenderer(t *testing.T) {
+	repo, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Execute([]string{"kit", "describe", "--kit", "aicoding-platform", "--repo-root", repo}, &stdout, &stderr)
+	if code != ExitSuccess {
+		t.Fatalf("kit describe text failed with %d: %s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"[OK] aicoding-platform",
+		"aicoding lifecycle status --scope kit --kit aicoding-platform --json",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("kit describe text is missing %q:\n%s", want, stdout.String())
+		}
 	}
 }
 

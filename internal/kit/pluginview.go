@@ -14,6 +14,7 @@ type PluginView struct {
 	ID          string            `json:"id"`
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
+	Quickstart  PluginQuickstart  `json:"quickstart"`
 	Identity    PluginIdentity    `json:"identity"`
 	Skills      []SkillEntry      `json:"skills"`
 	Operations  []PluginOperation `json:"operations"`
@@ -21,6 +22,17 @@ type PluginView struct {
 	Workflows   []PluginWorkflow  `json:"workflows"`
 	Source      PluginSource      `json:"source"`
 	State       *PluginState      `json:"state,omitempty"`
+}
+
+type PluginQuickstart struct {
+	Purpose string                  `json:"purpose"`
+	Command string                  `json:"command"`
+	Skills  []PluginQuickstartSkill `json:"skills"`
+}
+
+type PluginQuickstartSkill struct {
+	ID          string `json:"id"`
+	Description string `json:"description"`
 }
 
 type PluginIdentity struct {
@@ -127,6 +139,7 @@ func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapte
 			ID:          identity.ID,
 			Name:        identity.Name,
 			Description: manifest.Description,
+			Quickstart:  projectPluginQuickstart(identity.ID, manifest.Description, operations, skills),
 			Identity: PluginIdentity{
 				Enabled: identity.Enabled,
 				Order:   identity.Order,
@@ -151,6 +164,40 @@ func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapte
 		views = append(views, view)
 	}
 	return views, nil
+}
+
+func projectPluginQuickstart(id, description string, operations []PluginOperation, skills []SkillEntry) PluginQuickstart {
+	quickstart := PluginQuickstart{
+		Purpose: strings.TrimSpace(description),
+		Skills:  make([]PluginQuickstartSkill, 0, len(skills)),
+	}
+	for _, operation := range operations {
+		if operation.Effect == "read" {
+			quickstart.Command = pluginQuickstartCommand(id, operation.Name)
+			break
+		}
+	}
+	for _, skill := range skills {
+		quickstart.Skills = append(quickstart.Skills, PluginQuickstartSkill{
+			ID:          skill.ID,
+			Description: strings.TrimSpace(skill.Description),
+		})
+	}
+	return quickstart
+}
+
+func pluginQuickstartCommand(id, operation string) string {
+	selector := " --scope kit --kit " + id + " --json"
+	switch operation {
+	case "doctor", "status", "verify":
+		return "aicoding lifecycle " + operation + selector
+	case "test":
+		return "aicoding kit test --kit " + id + " --profile Smoke --json"
+	case "skills", "verify-skills":
+		return "aicoding skill verify --kit " + id + " --profile Smoke --json"
+	default:
+		return ""
+	}
 }
 
 func cloneSkillEntries(skills []SkillEntry) []SkillEntry {
