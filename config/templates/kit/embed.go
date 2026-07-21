@@ -5,5 +5,5 @@ import "embed"
 
 // Files contains the first-party and external-wrapper Kit templates.
 //
-//go:embed *.tmpl.json *.tmpl.md
+//go:embed *.tmpl.json boundary-card.tmpl
 var Files embed.FS

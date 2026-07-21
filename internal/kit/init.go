@@ -189,7 +189,7 @@ func Init(repo, id string, opts InitOptions) (InitReport, error) {
 		{path: data.WorkSpecPath, content: workSpecContent},
 	}
 	if opts.External {
-		boundaryContent, renderErr := renderKitInitTemplate("boundary-card.tmpl.md", data)
+		boundaryContent, renderErr := renderKitInitTemplate("boundary-card.tmpl", data)
 		if renderErr != nil {
 			return failKitInit(report, renderErr)
 		}

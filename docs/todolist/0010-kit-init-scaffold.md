@@ -26,7 +26,7 @@ Verify: bin/aicoding.exe kit init demo-kit --json 后，不改一个字直接 ki
    config/templates/kit/
    ├── manifest.tmpl.json        schema v2 合规骨架（enabled 不在此——那是 registry 的字段）
    ├── manifest-external.tmpl.json   外部包装变体（trust.thirdParty:true, updatePolicy:pinned）
-   ├── boundary-card.tmpl.md     外部包装边界卡（由 ai-debug-kit 边界卡泛化，见 0008）
+   ├── boundary-card.tmpl        外部包装边界卡源码模板（生成物仍为 `.md`；避免被 layout 当作仓库文档）
    └── workspec-example.tmpl.json    testdata 示例
    ```
 

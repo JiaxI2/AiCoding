@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **fix(kit-init)**: 将外部边界卡的源码模板由 `.tmpl.md` 改为非文档扩展名 `.tmpl`，生成的 `docs/reference/kits/*-BOUNDARY.md` 不变；避免已跟踪模板被文档布局门禁误判，且不放宽 layout 规则。 / Renames the external boundary-card source template to the non-document `.tmpl` extension while preserving generated Markdown output, so tracked scaffolding passes the existing documentation-placement gate without weakening it.
+
 - **docs(todolist)**: 入仓 TODO 0021–0022，分别登记结构化结论与 `change verify` meta-tool、以及命令延迟分级和六项低风险性能优化；本轮实现范围严格限定为 0022，0017/0018 与 0021 不提前启动。 / Imports TODO 0021–0022 for deterministic agent decisions and Git-class command latency while limiting this implementation batch to 0022.
 
 - **fix(readme-banner)**: 补回明暗两版 README 工程图中遗漏的 `RECEIPT` 节点与矩形，使 `PLAN → CHECK → PROOF → RECEIPT → REUSE` 证据闭环完整，并同步无障碍描述。 / Restores the missing `RECEIPT` node in both README banner themes so the evidence loop and accessible description are complete.
