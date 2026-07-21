@@ -1,6 +1,6 @@
 # TODO 0015: 工具链加固（补 lint/漏洞扫描空白 + CI 版本对齐 + 供应链钉死）
 
-Status: In-Progress
+Status: Done
 Verify: bin/aicoding.exe test --profile Full --json 含 lint 节点全绿；CI 与本地实际 Go 版本均为 go1.26.5
 
 > 工具链评审结论（2026-07-20）：**现有选型全部正确，不换任何东西** ——
