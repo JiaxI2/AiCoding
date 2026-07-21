@@ -235,6 +235,7 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		"aicoding plan status [--id ID | --all]",
 		"aicoding plan approve --id ID",
 		"aicoding cache clean [--scope fast-path|test-results|validation-reports|work-state] [--keep N] [--dry-run]",
+		"aicoding kit init ID [--external] [--dry-run]",
 	} {
 		if !strings.Contains(help.String(), usage) {
 			t.Fatalf("catalog help is missing %q", usage)
@@ -313,6 +314,55 @@ func TestKitDescribeRejectsInvalidSelectionAndScopesWithState(t *testing.T) {
 	missing, runErr := runKit([]string{"describe", "--kit", "does-not-exist", "--repo-root", repo, "--json"}, time.Now())
 	if runErr == nil || missing.OK || missing.ErrorKind != report.ErrorKindValidation || !strings.Contains(runErr.Error(), "no kit matched") {
 		t.Fatalf("unknown kit did not return a validation error: res=%#v err=%v", missing, runErr)
+	}
+}
+
+func TestKitInitCLIProducesLifecycleValidScaffold(t *testing.T) {
+	repo := t.TempDir()
+	writeGoControlFixture(t, repo)
+
+	dryRun, err := runKit([]string{"init", "tmp-kit", "--dry-run", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !dryRun.OK {
+		t.Fatalf("kit init dry-run failed: result=%#v err=%v", dryRun, err)
+	}
+	if _, err := os.Stat(filepath.Join(repo, "config", "kits", "tmp-kit.json")); !os.IsNotExist(err) {
+		t.Fatalf("kit init dry-run wrote a manifest: %v", err)
+	}
+
+	initialized, err := runKit([]string{"init", "tmp-kit", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !initialized.OK {
+		t.Fatalf("kit init failed: result=%#v err=%v", initialized, err)
+	}
+	verified, err := runKit([]string{"verify", "--kit", "tmp-kit", "--profile", "Lifecycle", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !verified.OK {
+		t.Fatalf("generated Kit failed Lifecycle without edits: result=%#v err=%v", verified, err)
+	}
+	governed, err := runGovernance([]string{"dependencies", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !governed.OK {
+		t.Fatalf("generated Kit failed dependency governance without edits: result=%#v err=%v", governed, err)
+	}
+	listed, err := runKit([]string{"list", "--repo-root", repo, "--json"}, time.Now())
+	views, ok := listed.Data.([]kit.View)
+	if err != nil || !listed.OK || !ok {
+		t.Fatalf("kit list failed: result=%#v err=%v", listed, err)
+	}
+	foundDisabled := false
+	for _, view := range views {
+		if view.ID == "tmp-kit" {
+			foundDisabled = !view.Enabled
+		}
+	}
+	if !foundDisabled {
+		t.Fatalf("kit list did not expose tmp-kit as disabled: %#v", views)
+	}
+
+	duplicate, duplicateErr := runKit([]string{"init", "tmp-kit", "--repo-root", repo, "--json"}, time.Now())
+	if duplicateErr == nil || duplicate.OK || duplicate.ErrorKind != report.ErrorKindValidation {
+		t.Fatalf("duplicate init was not a validation failure: result=%#v err=%v", duplicate, duplicateErr)
+	}
+	reserved, reservedErr := runKit([]string{"init", "aicoding-foo", "--repo-root", repo, "--json"}, time.Now())
+	if reservedErr == nil || reserved.OK || !strings.Contains(strings.Join(reserved.Errors, " "), "reserved aicoding-") {
+		t.Fatalf("reserved namespace was not rejected: result=%#v err=%v", reserved, reservedErr)
 	}
 }
 

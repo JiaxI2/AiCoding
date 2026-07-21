@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 2,
+  "id": "{{.ID}}",
+  "name": "{{.Name}}",
+  "version": "0.1.0",
+  "kind": [
+    "capability-kit"
+  ],
+  "mode": "go-builtin",
+  "description": "Validates the {{.Name}} repository capability and its declared assets.",
+  "paths": {
+    "manifest": "{{.ManifestPath}}",
+    "workSpecExample": "{{.WorkSpecPath}}"
+  },
+  "commands": {
+    "verify": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "{{.ManifestPath}}"
+      ],
+      "supportsJson": true
+    }
+  },
+  "skills": {
+    "members": []
+  },
+  "trust": {
+    "level": "first-party",
+    "source": "repository",
+    "thirdParty": false,
+    "updatePolicy": "manual"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 5
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true
+    }
+  }
+}

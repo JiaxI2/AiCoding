@@ -23,4 +23,5 @@ Do not create a parallel source of truth outside this domain. Add new items only
 - `validation-policy.json`: pre-push Context Gate 的远端 ref、必需验证 profile、快进与删除策略。
 - `mcp-registry.json` and `mcp/components/*.json`: upper-layer MCP composition and runtime injection.
 - `templates/provision/`: `aicoding provision` 编译期内嵌的最小 SDD 文档骨架单一来源。
+- `templates/kit/`: `aicoding kit init` 编译期内嵌的 manifest、workspec 与外部边界卡单一来源。
 <!-- AICODING:REPOSITORY_MAP:END -->

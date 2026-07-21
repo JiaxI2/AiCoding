@@ -1,6 +1,6 @@
 # TODO 0010: kit init 脚手架（快速扩展接口：生成即合规）
 
-Status: Planned
+Status: Done
 Verify: bin/aicoding.exe kit init demo-kit --json 后，不改一个字直接 kit verify --kit demo-kit --profile Lifecycle 全绿
 
 > 依赖 0009（管理标准先立，脚手架按标准生成）。
@@ -36,7 +36,8 @@ Verify: bin/aicoding.exe kit init demo-kit --json 后，不改一个字直接 ki
      （第三方/通用能力不得占用）。
    - 生成：`config/kits/<id>.json`（从模板填 id/name，version 0.1.0，一条 builtin-check
      verify command 指向自身 manifest —— 保证生成即有可跑门禁）+ registry 条目
-     （**enabled:false**，order = 现有最大+10）+ `--external` 时附边界卡
+     （**enabled:false**，order = 现有最大+10）+ dependency-governance 保守 binding
+     （capability、platformAgnostic、空 roots/dependsOn）+ `--external` 时附边界卡
      `docs/reference/kits/<id>-BOUNDARY.md`。
    - `--dry-run` 输出将写入的文件清单与内容摘要，不落盘。
    - 幂等：目标已存在即 fail-closed（不覆盖），提示用 `--dry-run` 查看差异。

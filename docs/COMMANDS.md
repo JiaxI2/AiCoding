@@ -21,6 +21,7 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 | 目的 | 命令 |
 |---|---|
 | Bootstrap | `bin\aicoding.exe bootstrap --json` |
+| Kit 合规脚手架 | `bin\aicoding.exe kit init <id> [--external] [--dry-run] --json` |
 | Kit 能力深投影 | `bin\aicoding.exe kit describe --kit <id>\|--all [--with-state] --json` |
 | Kit 生命周期 plan/apply | `bin\aicoding.exe lifecycle plan --action install\|update\|uninstall --scope kit --all --json` / `lifecycle install\|update\|uninstall --scope kit --all --json` |
 | 全域生命周期 plan | `bin\aicoding.exe lifecycle plan --action install\|update --scope all --runtime-profile runtime\|full\|skill-development --json` |
@@ -73,6 +74,13 @@ Release 仍执行真实 `export --zip` 与一次 `fresh-clone --profile Release`
 `report.WriteText` 即时渲染，不生成 QUICKSTART 文件。默认不读安装 state，只有
 `--with-state` 才附加不含时间戳的摘要。详见 [Kit Plugin View](reference/KIT_PLUGIN_VIEW.md)
 与 [Kit 管理标准](reference/KIT_MANAGEMENT_STANDARD.md)。
+
+`kit init <id> --json` 从 `config/templates/kit/` 生成 schema v2 manifest、disabled registry
+entry、`testdata/kits/<id>/workspec-example.json`，并在 `dependency-governance.json` 追加
+`capability`、`platformAgnostic:true`、空 roots/dependsOn 的保守 binding；`--external` 额外生成
+`docs/reference/kits/<id>-BOUNDARY.md`，并固定 `thirdParty:true`、`updatePolicy:pinned`。
+`--dry-run` 只返回目标路径、字节数与内容摘要。命令不自动 enable、不写 Skill，也不猜测真实
+上游依赖；目标或 ID 已存在时 fail-closed。正式启用前须评审并按实际实现修正 binding。
 正式 `lifecycle ... --json` 在 `data` 中返回静态 adapter `catalogDigest`、本次
 `planDigest`，并在每个 adapter result 中返回 `inputDigest`。Agent/Skill 应使用这些字段
 追踪“对什么事实执行了什么意图”，不解析人类文本或直接调用 specialty 脚本。

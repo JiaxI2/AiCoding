@@ -63,12 +63,32 @@ Status: Accepted
 结构用例间接阻断，不新建 validator 或 profile。修复方式只能是补正 manifest 或边界卡，
 不得降低检查集。
 
+### 4.1 外部包装通则
+
+- 上游代码只允许通过 submodule 的不可变 commit pin 或 `go.mod` 明确版本进入；禁止复制进仓后
+  分叉修改。
+- 边界卡固定回答四栏：上游地址与 pin 策略、明确的不进控制面声明或入口 command、
+  不承担的门禁、同步纪律。
+- 同步顺序固定为“上游或 fork 验证 → 评审目标版本/commit → 前移 pin → 本仓只改引用、
+  边界卡与验证证据”。
+- `trust.thirdParty: true` 与 `trust.updatePolicy: pinned` 是机器锚点；边界卡路径固定为
+  `docs/reference/kits/<id>-BOUNDARY.md`。
+
+`aicoding kit init <id> --external` 只生成 disabled 草案。脚手架为当前空实现登记
+`capability`、`platformAgnostic:true`、空 roots/dependsOn 的保守 binding，使全仓 coverage 门禁
+立即成立；上游地址、真实依赖、roots 与入口必须由维护者评审后再 enable，脚手架不编造这些事实。
+
 ## 5. 维护流程
 
 1. 修改既有 manifest、Skill 或 adapter 权威。
 2. 运行 `kit describe --kit <id> --json`，确认 Quickstart 随权威输入变化。
 3. 运行 `kit verify --all --profile Lifecycle --json`。
 4. 运行 DocSync 与目标 Full/Release 门禁。
+
+新增 Kit 优先执行 `aicoding kit init <id> [--external] --json`。模板权威位于
+`config/templates/kit/`；生成物已满足 manifest、Quickstart、Lifecycle 与 dependency coverage
+基础契约，但保持 `enabled:false`，也不会自动创建 Skill 或虚构外部依赖。正式实现前按真实边界
+修正脚手架生成的保守 dependency binding。
 
 回滚仓库事实使用 `git revert`；已执行的 Kit 写状态使用领域 lifecycle rollback。两者不合并，
 也不得靠删除未知文件模拟恢复。

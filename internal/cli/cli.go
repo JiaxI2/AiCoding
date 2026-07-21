@@ -562,8 +562,11 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, usageErrorf("kit requires subcommand")
 	}
 	sub := args[0]
-	if !validChoice(sub, "list", "describe", "doctor", "verify", "test") {
+	if !validChoice(sub, "list", "describe", "doctor", "verify", "test", "init") {
 		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
+	}
+	if sub == "init" {
+		return runKitInit(args[1:], start)
 	}
 	fs := newFlagSet("kit " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
