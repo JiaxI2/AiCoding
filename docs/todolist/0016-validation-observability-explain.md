@@ -8,6 +8,11 @@ Verify: bin/aicoding.exe test --profile Release --json 输出各用例 setup/exe
 > §16.4（explain）+ §22.1（阶段一：先建时间分解，不改行为）——
 > **它是 0017 节点级 Receipt 的前置：没有时间分解证据，不许拆节点。**
 
+> 验收修正（2026-07-21）：warm-full/warm-release 是 `cache_hit_ratio=1` 的 Receipt 复用视图，
+> 报告中的 `duration_ms` 与 `slowest_cases` 逐项继承种子，不是第二次实际执行。为排除 Go
+> 工具链切换后的缓存失效干扰，已先预热 Full，再在同一 `GOCACHE` 串行重测 cold-full、
+> docs-only、one-go-file；0017 只使用这三行的可比数据立项。
+
 ## 背景
 
 docx §19.2 说得对：`Release completed in 76s` 是不可行动的输出。当前 Result 已有
