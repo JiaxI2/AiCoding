@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(todolist)**: 从外部 staging 仅导入 TODO 0023（能力可发现性）、0024（临时资源收尾）与 0025（五张分层架构图），保持 Planned 并登记后续执行顺序 `0024 → 0023 → 0025`；staging 的 README 与模式笔记不入仓。 / Imports only TODO 0023, 0024, and 0025 from staging, preserving Planned status and the required 0024-to-0023-to-0025 execution order.
+
 - **perf(control-plane)**: 合并完成 TODO 0022 与 0014：未配置 runtime Skill 的聚合查询零 PowerShell spawn；Full race 按 `impact-policy.json` 并发包收敛且由 GO-007 防漏，Release/每周 CI 仍全仓 race；dependency governance 合并为单次 WalkDir；工具发现与 doctor/verify 聚合复用既有 runner 有界并发；`doctor pwsh` 报告退役计数；typed command catalog 登记 fast/standard/work 延迟等级，`doctor perf` 以 3 次中位数执行 1.5× Warn / 3× Fail 门禁；provision 在本仓 `.git/config` 写入 `fetch.parallel=0`、`submodule.fetchJobs=4`、`core.fscache=true`。owner 依据同缓存 scoped/global race 对照接受 `45.564s`（约 24%）真实收益，不为追规划期 `≥60s` 估算而扩张包边界或提前侵入 0017；全部正确性门禁保持不变。 / Completes TODO 0022 and 0014 with typed latency budgets, local Git transport settings, and an evidence-based 45.564-second scoped-race threshold decision while preserving Release and weekly full-race coverage.
 
 - **fix(kit-init)**: 将外部边界卡的源码模板由 `.tmpl.md` 改为非文档扩展名 `.tmpl`，生成的 `docs/reference/kits/*-BOUNDARY.md` 不变；避免已跟踪模板被文档布局门禁误判，且不放宽 layout 规则。 / Renames the external boundary-card source template to the non-document `.tmpl` extension while preserving generated Markdown output, so tracked scaffolding passes the existing documentation-placement gate without weakening it.
