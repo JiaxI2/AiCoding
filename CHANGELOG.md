@@ -116,7 +116,7 @@
 
 - **docs(architecture)**: 新增 `docs/architecture/GRAPH_FIRST.md`——把 Graph First / 网状思维固化为设计法最上层：设计顺序（Graph→Primitive→Workflow→Implementation）、AiCoding 的真实节点/边地图（读自强制的 `goPackageBoundaries`）、中心节点冻结理由、Network Thinking 七步与收敛 Checklist，并向下交叉引用 PRIMITIVE_CONSTITUTION / 核心架构 / 扩展契约 / 依赖治理而不重复；登记进架构手册 §8。含两个 worked 例子（补齐缺失边的正例、不做过早收敛的克制例）。 / Adds the Graph First design law with AiCoding's real node/edge map read from the enforced boundaries, positioned atop the existing constitution docs.
 
-- **docs(plan)**: 登记 `loop-engineering-backlog` Plan Mode draft，绑定 owner 已决策的 TODO 0022/0014、0024/0023/0025、0017/0018、0021/0020/0002 与 0019 仅准备边界，并声明 Full/Release 门禁。 / Registers the scoped Plan Mode draft for the remaining loop-engineering backlog and its Full/Release gates.
+- **docs(plan)**: 批准 `loop-engineering-backlog` Plan Mode，绑定 owner 已决策的 TODO 0022/0014、0024/0023/0025、0017/0018、0021/0020/0002 与 0019 仅准备边界，并声明 Full/Release 门禁。 / Approves the scoped Plan Mode contract for the remaining loop-engineering backlog and its Full/Release gates.
 
 ## [1.1.0] - 2026-07-19
 
