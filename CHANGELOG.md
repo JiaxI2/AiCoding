@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(provision)**: `aicoding provision` 现从 `config/templates/provision` 放置最小 SDD 文档骨架（hub/architecture/decisions/spec/todolist），每个既有路径严格 kept、绝不覆盖；报告新增 `docsSkeleton` 与逐资源 created/kept action，本地 marker schema 升至 2 并加入 `aicoding.docsSkeleton=1`。二次执行不重写 Git config 或骨架内容。 / Extends provision with an embedded, non-overwriting SDD documentation skeleton, explicit created/kept actions, and a git-native docs-skeleton marker while preserving byte-stable idempotence.
+
 - **feat(cache)**: 将 `cache status|clean` 扩展为 fast-path、test-results、validation-reports 与 work-state 四类本地生成物的统一观测面；`clean` 支持 scope/keep/dry-run，默认保留最近 5 份测试结果及全部 FAIL、仅删除无 Receipt/alias 引用的验证报告，并拒绝清理审计型 work-state。成功测试写入后自动执行保留策略，失败运行不清理；`doctor --all` 在测试结果超过 20 份或 50MB 时只告警、不自动删除。 / Expands cache status and retention across four registered local-artifact scopes, preserves failed and referenced evidence, applies keep-last-five only after successful tests, and adds a warning-only doctor bloat check.
 
 - **docs(validation-evidence)**: 修正 TODO 0015 的 CI 证据解释：`Setup go version spec 1.22` 后的 `go version go1.26.5` 证明 toolchain 指令已在运行时自动下载并切换，显式 `go-version: '1.26.5'` 的目的则是让 setup-go `Found in cache`、消除每轮下载；同时把 warm Full/Release 标为继承种子耗时与 Top5 的 Receipt 复用视图，并在固定同一 GOCACHE、先 Full 预热后串行重测 cold-full/docs-only/one-go-file，报告耗时为 `149675/191053/198870 ms`，原 docs-only `425435 ms` 不再作为 0017 依据。 / Corrects the CI toolchain interpretation, labels warm rows as inherited Receipt views rather than independent executions, and replaces the three comparable Full rows after a controlled shared-cache warm-up.

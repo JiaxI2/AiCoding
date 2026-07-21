@@ -22,4 +22,5 @@ Do not create a parallel source of truth outside this domain. Add new items only
 - `schemas/cli-report.schema.json`: `report.Result`, `StandardReport` and shared product-check JSON contract.
 - `validation-policy.json`: pre-push Context Gate 的远端 ref、必需验证 profile、快进与删除策略。
 - `mcp-registry.json` and `mcp/components/*.json`: upper-layer MCP composition and runtime injection.
+- `templates/provision/`: `aicoding provision` 编译期内嵌的最小 SDD 文档骨架单一来源。
 <!-- AICODING:REPOSITORY_MAP:END -->

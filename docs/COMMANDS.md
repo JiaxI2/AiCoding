@@ -197,7 +197,7 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |
 | Release notes verification | `bin\aicoding.exe verify release-notes --json` |
 | Git hook 接线检测 | `bin\aicoding.exe doctor --all --json`（含 `doctor.hooks-wired`：用 `git config core.hooksPath` 检测 `.githooks` 是否已激活，未接线只 warning） |
-| Provision 状态检测 | `bin\aicoding.exe doctor --all --json`（含 `doctor.provisioned`：读 `.git/config` 的 `aicoding.*` 标记零扫描判断是否已初始化，未初始化只 warning 并提示 `aicoding provision`） |
+| Provision 状态检测 | `bin\aicoding.exe doctor --all --json`（含 `doctor.provisioned`：读 `.git/config` 的 `aicoding.*` 标记零扫描判断是否已初始化；`aicoding.docsSkeleton=1` 表示文档骨架已放置，未初始化只 warning） |
 | PowerShell inventory | `bin\aicoding.exe doctor pwsh --json` |
 | PowerShell budget | `bin\aicoding.exe doctor pwsh-budget --json` |
 | Tag audit | `bin\aicoding.exe tag audit --json` |
@@ -205,7 +205,7 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | Loop WorkSpec 校验 | `bin\aicoding.exe work validate --file <SPEC.json> --json` |
 | Loop 下一步裁决/状态 | `bin\aicoding.exe work next\|status --file <SPEC.json> --json` |
 | Loop 尝试记录 | `bin\aicoding.exe work record --file <SPEC.json> --attempt <ATTEMPT.json> --json` |
-| 本地环境初始化 | `bin\aicoding.exe provision [--repo-root PATH] --json`（git init + 接线 `.githooks` + 写 `aicoding.*` 到 `.git/config` + 建 `.aicoding` 根；幂等） |
+| 本地环境初始化 | `bin\aicoding.exe provision [--repo-root PATH] --json`（git init + 接线 `.githooks` + 写 `aicoding.*` + 建 `.aicoding` 根 + 放置 docs/ SDD 骨架；既有路径 kept、不覆盖，幂等） |
 | 解析 Codex Token JSONL | `bin\aicoding.exe codex usage parse --file <FILE> --json` |
 | 运行 Codex 并采集 Token | `bin\aicoding.exe codex usage run -- codex exec --json "<PROMPT>"` |
 

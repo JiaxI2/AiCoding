@@ -1,6 +1,6 @@
 # TODO 0011: provision 建立 SDD 文档骨架（git-native 仓库初始化）
 
-Status: Planned
+Status: Done
 Verify: 在空目录执行 bin/aicoding.exe provision --json 后，docs 骨架就位、二次执行零变更、git status 只含骨架文件
 
 > 依赖关系：独立可做；与 0004–0006（Plan Mode）配合最佳——骨架为 plan/spec/todolist 预留位置。

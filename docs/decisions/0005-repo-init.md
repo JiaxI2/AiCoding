@@ -11,7 +11,8 @@ Accepted。实现于 `internal/repoinit` + CLI `aicoding provision`。
 对标 `git init` 建 `.git/`（本地文件 + 后续命令靠它快速判断状态），`aicoding provision`
 在仓库里一次性建立**本地 AI-coding 环境**：确保 git 仓库、接线 `.githooks`、把 AI-coding
 标记写进 **git 自己的 config（`.git/config` 的 `aicoding.*` 命名空间）**、并确保 `.aicoding`
-本地状态根存在。它不新增业务逻辑，只**组合**已有 Primitive（gitx、platform），幂等可重跑。
+本地状态根存在；同时从编译期内嵌模板放置最小 `docs/` SDD 骨架，既有路径永不覆盖。
+它不新增业务逻辑，只**组合**已有 Primitive（gitx、platform、模板资产），幂等可重跑。
 
 ## Context
 
@@ -28,10 +29,14 @@ Accepted。实现于 `internal/repoinit` + CLI `aicoding provision`。
 1. **确保 git 仓库**：`.git` 缺失则 `git init`（经 gitx；幂等）。
 2. **接线 hooks**：`git config core.hooksPath .githooks`——激活 pre-commit/commit-msg/
    post-commit（用 git 自带机制，不重造 hook 发现）。
-3. **写 AI-coding 标记进 `.git/config`**：`aicoding.initialized/home/schemaVersion`。这就是
+3. **确保 `.aicoding` 本地状态根**存在（其版本化子树按需创建且 gitignore，provision 只保证根）。
+4. **放置最小文档约定**：从 `config/templates/provision/` 编译期内嵌并生成
+   `docs/README.md`、`architecture/README.md`、`decisions/README.md`、`spec/README.md`、
+   `todolist/README.md`；任一路径已存在即 `kept`，不比较也不覆盖仓库自有内容。
+5. **写 AI-coding 标记进 `.git/config`**：`aicoding.initialized/home/schemaVersion/docsSkeleton`。这就是
    "混在 git 文件夹下"的**安全实现**——`.git/config` 是 git 自己的本地、per-clone、不提交的
-   配置文件；后续命令用 `git config --get aicoding.*` **瞬时**读取，无需扫描工作树。
-4. **确保 `.aicoding` 本地状态根**存在（其版本化子树按需创建且 gitignore，provision 只保证根）。
+   配置文件；`aicoding.docsSkeleton=1` 表示一次性骨架已成功放置，marker schema 为 2；
+   后续命令用 `git config --get aicoding.*` **瞬时**读取，无需扫描工作树。
 
 配套只读 helper `repoinit.Status(repo)`：从 git config 读标记，供后续命令快速判断
 "是否已 provision"而不扫描。
@@ -51,7 +56,7 @@ Accepted。实现于 `internal/repoinit` + CLI `aicoding provision`。
 
 **架构**
 - 单一职责？是——`repoinit.Init` 只做"建立本地 AI-coding 环境"这一件事的编排。
-- 可继续拆分？否——四步都是幂等的最小 git/fs 调用。
+- 可继续拆分？否——五步都是幂等的最小 git/fs/模板调用。
 - 能被直接复用？是——`Init`/`Status` 是纯函数，任何命令可调用（Status 供后续命令判断）。
 - 存在重复实现？否——hooks 接线逻辑与 kit 的 `configurePlatformRepository` 都用同一 git
   机制；未来若第二处也需接线，可把该行抽为共享 helper（当前两处足够简单，不预抽）。
@@ -71,6 +76,8 @@ Accepted。实现于 `internal/repoinit` + CLI `aicoding provision`。
 
 ## Rollback
 
-删除 `internal/repoinit`、CLI catalog 的 `provision` 行 + `runProvision`、
+回退文档骨架扩展时删除 `config/templates/provision` 与 `repoinit` 的 skeleton 步骤，并把 marker
+schema/`aicoding.docsSkeleton` 恢复；已生成的目标仓库文档已归该仓库所有，回滚不自动删除。
+若完整删除 Primitive，则删除 `internal/repoinit`、CLI catalog 的 `provision` 行 + `runProvision`、
 `dependency-governance.json` 中 repoinit 的 gitx 允许项；内核零改动。
 `.git/config` 的 `aicoding.*` 与 `core.hooksPath` 可用 `git config --unset` 清除。
