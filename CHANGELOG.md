@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(todolist)**: 登记 TODO 0009–0020 的后续工程队列，覆盖 Kit 管理、初始化/文档骨架、仓库卫生、性能预算、工具链、验证观测与后续 Receipt/物化治理；本轮实施范围仍严格限定为 0015–0016。 / Registers the TODO 0009-0020 engineering queue while keeping this implementation batch strictly scoped to 0015-0016.
+
 - **docs(architecture)**: 补齐 C UserStyle Kit 1.2.0 的平台侧架构权威与 AI Debug Kit 准入边界卡，登记现有命令/门禁/数据合同、外部工具链指纹缺口及上游 gitlink 同步纪律。 / Adds the platform architecture authority for C UserStyle Kit 1.2.0 and an admission boundary card for AI Debug Kit, documenting existing commands, gates, data contracts, the external-toolchain fingerprint gap, and upstream gitlink discipline.
 
 - **feat(docsync)**: 新增架构文档分层阅读入口与 `Status:` 强制检查，明确 MCP 单一权威，并把冻结 schema、唯一 Result、唯一 Receipt 三项声明登记为 `FREEZE-001..003` 静态门禁。 / Adds a layered architecture reading path, enforced status headers, explicit MCP authority, and three executable freeze assertions for schemas, Result, and Receipt.
