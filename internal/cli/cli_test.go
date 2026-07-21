@@ -203,6 +203,9 @@ func TestRunCacheCleanParsesRetentionFlags(t *testing.T) {
 	if _, err := runCache([]string{"clean", "--keep", "0", "--repo-root", repo}, time.Now()); err == nil {
 		t.Fatal("zero cache keep was accepted")
 	}
+	if _, err := runCache([]string{"clean", "--adopt", "--repo-root", repo}, time.Now()); err == nil {
+		t.Fatal("temp adoption without an explicit temp scope was accepted")
+	}
 }
 
 func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
@@ -234,7 +237,7 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		"aicoding plan verify",
 		"aicoding plan status [--id ID | --all]",
 		"aicoding plan approve --id ID",
-		"aicoding cache clean [--scope fast-path|test-results|validation-reports|work-state] [--keep N] [--dry-run]",
+		"aicoding cache clean [--scope fast-path|test-results|validation-reports|temp|work-state] [--keep N] [--dry-run] [--adopt] [--all-repos]",
 		"aicoding kit init ID [--external] [--dry-run]",
 	} {
 		if !strings.Contains(help.String(), usage) {

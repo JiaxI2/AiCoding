@@ -205,7 +205,7 @@ var commands = mustCommandCatalog(
 		{Command: CommandExport, Section: HelpDomain, Usage: "aicoding export --all --zip [--repo-root PATH] [--json]"},
 		{Command: CommandFreshClone, Section: HelpDomain, Usage: "aicoding fresh-clone --profile Smoke|Full|Release [--repo-root PATH] [--json]"},
 		{Command: CommandCache, Section: HelpDomain, Usage: "aicoding cache status [--repo-root PATH] [--json]"},
-		{Command: CommandCache, Section: HelpDomain, Usage: "aicoding cache clean [--scope fast-path|test-results|validation-reports|work-state] [--keep N] [--dry-run] [--repo-root PATH] [--json]"},
+		{Command: CommandCache, Section: HelpDomain, Usage: "aicoding cache clean [--scope fast-path|test-results|validation-reports|temp|work-state] [--keep N] [--dry-run] [--adopt] [--all-repos] [--repo-root PATH] [--json]"},
 		{Command: CommandCodex, Section: HelpDomain, Usage: "aicoding codex usage parse [--file FILE|-] [--json]"},
 		{Command: CommandCodex, Section: HelpDomain, Usage: "aicoding codex usage run [--json] -- codex exec --json \"PROMPT\""},
 		{Command: CommandMCP, Section: HelpDomain, Usage: "aicoding mcp list [--codex-config PATH] [--repo-root PATH] [--json]"},

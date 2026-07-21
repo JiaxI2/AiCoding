@@ -74,7 +74,7 @@
 |---|---|---|---|---|
 | EXP-001 | Release export zip | `bin/aicoding.exe export --all --zip --json` | 仅 Release 执行；生成 zip/manifest | REQUIRED |
 | EXP-002 | Full export manifest | 进程内 dry-run manifest 校验 | include 均匹配，outputName token 可解析，不生成 ZIP | REQUIRED |
-| FRESH-001 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | 仅 Release 执行；clone 内执行 `release verify` | WARN |
+| FRESH-001 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | 仅 Release 执行；clone 内执行 `release verify`；成功临时目录登记后释放，失败现场登记为 `failed` 后保留 | WARN |
 | FRESH-003 | Full fresh-clone 契约 | 静态检查 `.gitmodules`、skills gitlink 与三个 profile 分支 | 不 clone，契约完整 | REQUIRED |
 
 定期 CI 不新增 Registry ID：每周/手动 `clean-clone-full` job 直接运行正式 leaf command

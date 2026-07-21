@@ -7,17 +7,19 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
 
 func Clean(repo string, options CleanOptions) (CleanResult, error) {
-	if options.Keep == 0 {
-		options.Keep = DefaultTestResultKeep
-	}
-	result := CleanResult{Scope: "all", DryRun: options.DryRun, Keep: options.Keep}
-	if options.Keep < 1 {
+	result := CleanResult{Scope: "all", DryRun: options.DryRun, Keep: options.Keep, Adopt: options.Adopt, AllRepos: options.AllRepos}
+	if options.Keep < 0 {
 		return result, fmt.Errorf("keep must be at least 1")
+	}
+	if (options.Adopt || options.AllRepos) && options.Scope != ScopeTemp {
+		return result, fmt.Errorf("adopt and all-repos require temp scope")
 	}
 	if options.Scope != "" {
 		result.Scope = string(options.Scope)
@@ -42,7 +44,7 @@ func Clean(repo string, options CleanOptions) (CleanResult, error) {
 
 	plans := make([]scopePlan, 0, len(selected))
 	for _, spec := range selected {
-		plan, err := planScope(repo, spec, options.Keep)
+		plan, err := planScope(repo, spec, options)
 		if err != nil {
 			return result, err
 		}
@@ -63,9 +65,27 @@ func Clean(repo string, options CleanOptions) (CleanResult, error) {
 		}
 		if !options.DryRun {
 			for _, entry := range plan.entries {
+				if plan.spec.scope == ScopeTemp {
+					if entry.adopt {
+						if err := platform.RecordTempOutcome(repo, entry.path, entry.kind, "adopted"); err != nil {
+							result.Scopes = append(result.Scopes, scopeResult)
+							return result, err
+						}
+					}
+					if err := platform.RecordTempOutcome(repo, entry.path, entry.kind, "releasing"); err != nil {
+						result.Scopes = append(result.Scopes, scopeResult)
+						return result, err
+					}
+				}
 				if err := removePlanned(plan.spec, entry); err != nil {
 					result.Scopes = append(result.Scopes, scopeResult)
 					return result, err
+				}
+				if plan.spec.scope == ScopeTemp {
+					if err := platform.RecordTempOutcome(repo, entry.path, entry.kind, "released"); err != nil {
+						result.Scopes = append(result.Scopes, scopeResult)
+						return result, err
+					}
 				}
 				removed := CleanEntry{Scope: plan.spec.scope, Path: entry.display, SizeBytes: entry.size, Reason: entry.reason}
 				scopeResult.Removed = append(scopeResult.Removed, removed)
@@ -86,6 +106,8 @@ type plannedEntry struct {
 	modTime   int64
 	directory bool
 	reason    string
+	kind      string
+	adopt     bool
 }
 
 type scopePlan struct {
@@ -94,12 +116,19 @@ type scopePlan struct {
 	retained int
 }
 
-func planScope(repo string, spec artifactSpec, keep int) (scopePlan, error) {
+func planScope(repo string, spec artifactSpec, options CleanOptions) (scopePlan, error) {
+	if spec.scope == ScopeTemp {
+		return planTempScope(repo, spec, options)
+	}
 	status, entries, err := scan(repo, spec)
 	if err != nil {
 		return scopePlan{}, err
 	}
 	plan := scopePlan{spec: spec, retained: status.EntryCount}
+	keep := options.Keep
+	if keep == 0 {
+		keep = DefaultTestResultKeep
+	}
 	switch spec.scope {
 	case ScopeFastPath:
 		if !status.Exists {
@@ -143,6 +172,112 @@ func planScope(repo string, spec artifactSpec, keep int) (scopePlan, error) {
 		return plan.entries[i].modTime < plan.entries[j].modTime
 	})
 	return plan, nil
+}
+
+func planTempScope(repo string, spec artifactSpec, options CleanOptions) (scopePlan, error) {
+	status, entries, err := scan(repo, spec)
+	if err != nil {
+		return scopePlan{}, err
+	}
+	records, err := platform.ReadTempLedger(repo)
+	if err != nil {
+		return scopePlan{}, err
+	}
+	latest := latestTempRecords(records)
+	keep := options.Keep
+	if keep == 0 {
+		keep = DefaultTempKeep
+	}
+
+	type candidate struct {
+		entry     artifactEntry
+		record    platform.TempRecord
+		createdAt time.Time
+		failure   bool
+		adopt     bool
+	}
+	candidates := []candidate{}
+	failures := []candidate{}
+	for _, entry := range entries {
+		record, registered := latest[tempPathKey(entry.path)]
+		if !registered {
+			if options.Adopt {
+				candidates = append(candidates, candidate{entry: entry, createdAt: time.Unix(0, entry.modTime), adopt: true})
+			}
+			continue
+		}
+		if !options.AllRepos && !sameTempRepo(record.RepoRoot, repo) {
+			continue
+		}
+		if record.Outcome == "investigating" {
+			continue
+		}
+		createdAt, parseErr := time.Parse(time.RFC3339Nano, record.CreatedAt)
+		if parseErr != nil {
+			return scopePlan{}, fmt.Errorf("invalid temp ledger createdAt for %s: %w", record.Path, parseErr)
+		}
+		if cacheNow().UTC().Sub(createdAt) < tempRecentWindow {
+			continue
+		}
+		item := candidate{entry: entry, record: record, createdAt: createdAt}
+		switch record.Outcome {
+		case "created", "failed", "releasing":
+			item.failure = true
+			failures = append(failures, item)
+		}
+		candidates = append(candidates, item)
+	}
+	sort.Slice(failures, func(i, j int) bool { return failures[i].createdAt.After(failures[j].createdAt) })
+	protected := map[string]bool{}
+	for index := 0; index < len(failures) && index < keep; index++ {
+		protected[tempPathKey(failures[index].entry.path)] = true
+	}
+
+	plan := scopePlan{spec: spec, retained: status.EntryCount}
+	for _, item := range candidates {
+		if protected[tempPathKey(item.entry.path)] {
+			continue
+		}
+		kind := item.record.Kind
+		reason := "older than 24h and outside retained failure set"
+		if item.adopt {
+			kind = inferTempKind(filepath.Base(item.entry.path))
+			reason = "explicitly adopted unledgered aicoding-* directory"
+		}
+		plan.entries = append(plan.entries, plannedEntry{
+			path: item.entry.path, display: item.entry.display, size: item.entry.size,
+			modTime: item.entry.modTime, directory: item.entry.directory,
+			reason: reason, kind: kind, adopt: item.adopt,
+		})
+		plan.retained--
+	}
+	sort.Slice(plan.entries, func(i, j int) bool {
+		if plan.entries[i].modTime == plan.entries[j].modTime {
+			return plan.entries[i].display < plan.entries[j].display
+		}
+		return plan.entries[i].modTime < plan.entries[j].modTime
+	})
+	return plan, nil
+}
+
+func inferTempKind(name string) string {
+	trimmed := strings.TrimPrefix(name, platform.TempDirectoryPrefix)
+	if strings.HasPrefix(trimmed, "fresh-clone-") {
+		return "fresh-clone"
+	}
+	if index := strings.IndexByte(trimmed, '-'); index > 0 {
+		trimmed = trimmed[:index]
+	}
+	trimmed = strings.Trim(trimmed, "-")
+	if trimmed == "" {
+		return "adopted"
+	}
+	for _, char := range trimmed {
+		if (char < 'a' || char > 'z') && (char < '0' || char > '9') && char != '-' {
+			return "adopted"
+		}
+	}
+	return trimmed
 }
 
 func failedOrUnclearTestResult(path string) (bool, error) {
@@ -237,6 +372,9 @@ func removePlanned(spec artifactSpec, entry plannedEntry) error {
 	}
 	if target == root && spec.scope != ScopeFastPath {
 		return fmt.Errorf("refuse to remove scope root %s", target)
+	}
+	if spec.scope == ScopeTemp && !strings.HasPrefix(filepath.Base(target), platform.TempDirectoryPrefix) {
+		return fmt.Errorf("refuse to remove non-%s path: %s", platform.TempDirectoryPrefix, target)
 	}
 	if entry.directory {
 		return os.RemoveAll(target)

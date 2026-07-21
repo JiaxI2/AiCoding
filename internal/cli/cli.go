@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -796,10 +797,14 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 	var scope *string
 	var keep *int
 	var dryRun *bool
+	var adopt *bool
+	var allRepos *bool
 	if sub == "clean" {
-		scope = fs.String("scope", "", "fast-path|test-results|validation-reports|work-state")
-		keep = fs.Int("keep", cache.DefaultTestResultKeep, "number of newest test result directories to retain")
+		scope = fs.String("scope", "", "fast-path|test-results|validation-reports|temp|work-state")
+		keep = fs.Int("keep", 0, "number of newest test results or failed temp directories to retain")
 		dryRun = fs.Bool("dry-run", false, "list planned removals without deleting files")
+		adopt = fs.Bool("adopt", false, "adopt and remove unledgered aicoding-* temp directories")
+		allRepos = fs.Bool("all-repos", false, "include ledger entries created by other worktrees")
 	}
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
 		return report.Result{}, err
@@ -820,10 +825,15 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 		if selectedScope != "" && !cache.ValidScope(selectedScope) {
 			return report.Result{}, usageErrorf("unsupported cache scope: %s", *scope)
 		}
-		if *keep < 1 {
+		keepSet := false
+		fs.Visit(func(visited *flag.Flag) { keepSet = keepSet || visited.Name == "keep" })
+		if keepSet && *keep < 1 {
 			return report.Result{}, usageErrorf("cache clean --keep must be at least 1")
 		}
-		result, err := cache.Clean(repo, cache.CleanOptions{Scope: selectedScope, Keep: *keep, DryRun: *dryRun})
+		if (*adopt || *allRepos) && selectedScope != cache.ScopeTemp {
+			return report.Result{}, usageErrorf("cache clean --adopt/--all-repos require --scope temp")
+		}
+		result, err := cache.Clean(repo, cache.CleanOptions{Scope: selectedScope, Keep: *keep, DryRun: *dryRun, Adopt: *adopt, AllRepos: *allRepos})
 		if err != nil {
 			return report.Fail("cache clean", start, "cache clean failed", result, err.Error()), err
 		}

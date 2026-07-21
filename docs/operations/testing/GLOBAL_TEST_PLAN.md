@@ -123,6 +123,7 @@
 | `.exe` 仅 Windows | Linux/macOS 自动查找 `bin/aicoding` |
 | 子模块未初始化 | bootstrap/governance/docsync 可能失败，报告中保留证据 |
 | 本地测试报告持续累积 | `doctor.cache-bloat` 只告警；`cache clean --scope test-results --dry-run` 先审计清单，FAIL 永不自动删除 |
+| 系统临时目录持续累积 | `doctor.cache-bloat` 对严格小写 `aicoding-*` 超过 20 个或 100MB 只告警；历史孤儿必须先 `cache clean --scope temp --dry-run --adopt` 审计，再显式回收 |
 
 ## 7. 用户检查重点
 

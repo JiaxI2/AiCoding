@@ -2,6 +2,7 @@ package repohealth
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/cache"
@@ -82,6 +83,16 @@ func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 			return status, nil, []string{err.Error()}
 		}
 		return status, cache.BloatWarnings(status), nil
+	}))
+	checks = append(checks, productCheck("doctor.orphan-processes", "PROCESS", func() (interface{}, []string, []string) {
+		status, err := InspectOrphanProcesses()
+		if err != nil {
+			return status, []string{"orphan process inspection unavailable: " + err.Error()}, nil
+		}
+		if len(status.Orphans) > 0 {
+			return status, []string{fmt.Sprintf("found %d orphaned aicoding/pwsh process(es); inspection is report-only and did not kill them", len(status.Orphans))}, nil
+		}
+		return status, nil, nil
 	}))
 	checks = append(checks, productCheck("doctor.pwsh-budget", "POWERSHELL", func() (interface{}, []string, []string) {
 		budget, errorsFound := ScanPwshBudget(repo)

@@ -2,10 +2,14 @@ package kit
 
 import (
 	"encoding/json"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
 func TestFreshCloneChecksAreLeafCommands(t *testing.T) {
@@ -54,4 +58,29 @@ func TestFreshCloneStepElapsedMSIsAlwaysSerialized(t *testing.T) {
 	if !strings.Contains(string(payload), `"elapsed_ms":0`) {
 		t.Fatalf("elapsed_ms is missing from FreshCloneStep JSON: %s", payload)
 	}
+}
+
+func TestFreshCloneFailureRetainsRegisteredEvidence(t *testing.T) {
+	repo := t.TempDir()
+	command := exec.Command("git", "init", "-q")
+	command.Dir = repo
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Skipf("git unavailable: %v: %s", err, output)
+	}
+	report := FreshClone(repo, "Smoke", false)
+	if report.OK || !report.KeptTemp || report.TempRoot == "" {
+		t.Fatalf("fresh-clone failure was not retained: %#v", report)
+	}
+	t.Cleanup(func() { _ = platform.ReleaseTempDir(repo, report.TempRoot, "fresh-clone") })
+	if _, err := os.Stat(report.TempRoot); err != nil {
+		t.Fatalf("failed evidence directory is missing: %v", err)
+	}
+	records, err := platform.ReadTempLedger(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records) < 2 || records[len(records)-1].Outcome != "failed" || records[len(records)-1].Path != report.TempRoot {
+		t.Fatalf("failed outcome missing from ledger: %#v", records)
+	}
+	t.Logf("failure retained=%t outcome=%s path=%s", report.KeptTemp, records[len(records)-1].Outcome, report.TempRoot)
 }

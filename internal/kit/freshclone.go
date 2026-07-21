@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
 type FreshCloneReport struct {
@@ -30,11 +32,9 @@ type FreshCloneStep struct {
 	ElapsedMS int64  `json:"elapsed_ms"`
 }
 
-func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
+func FreshClone(repo, profile string, keepTemp bool) (report FreshCloneReport) {
 	profile = normalizeKitProfile(profile)
-	tempRoot := filepath.Join(os.TempDir(), "aicoding-fresh-clone-"+time.Now().UTC().Format("20060102-150405")+"-"+randomSuffix())
-	cloneRoot := filepath.Join(tempRoot, "AiCoding")
-	report := FreshCloneReport{SchemaVersion: 1, Profile: profile, OK: true, SourceRoot: repo, TempRoot: tempRoot, CloneRoot: cloneRoot}
+	report = FreshCloneReport{SchemaVersion: 1, Profile: profile, OK: true, SourceRoot: repo}
 	add := func(name string, started time.Time, ok bool, message string, output string) {
 		report.Steps = append(report.Steps, FreshCloneStep{
 			Name: name, OK: ok, Message: message, Output: trimOutput(output), ElapsedMS: time.Since(started).Milliseconds(),
@@ -45,15 +45,39 @@ func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
 		}
 	}
 	stepStarted := time.Now()
-	if err := os.MkdirAll(tempRoot, 0o755); err != nil {
+	tempRoot, err := platform.CreateTempDir(repo, "fresh-clone")
+	report.TempRoot = tempRoot
+	report.CloneRoot = filepath.Join(tempRoot, "AiCoding")
+	if err != nil {
 		add("temp", stepStarted, false, err.Error(), "")
 		return report
 	}
+	add("temp", stepStarted, true, "created and registered temporary directory", "")
+	cloneRoot := report.CloneRoot
 	defer func() {
-		if report.OK && !keepTemp {
-			_ = os.RemoveAll(tempRoot)
-		} else {
+		started := time.Now()
+		switch {
+		case report.OK && !keepTemp:
+			if err := platform.ReleaseTempDir(repo, tempRoot, "fresh-clone"); err != nil {
+				report.KeptTemp = true
+				add("temp.release", started, false, err.Error(), "")
+				return
+			}
+			add("temp.release", started, true, "released and recorded temporary directory", "")
+		case keepTemp:
 			report.KeptTemp = true
+			if err := platform.RecordTempOutcome(repo, tempRoot, "fresh-clone", "investigating"); err != nil {
+				add("temp.ledger", started, false, err.Error(), "")
+				return
+			}
+			add("temp.ledger", started, true, "kept as investigating by explicit request", "")
+		default:
+			report.KeptTemp = true
+			if err := platform.RecordTempOutcome(repo, tempRoot, "fresh-clone", "failed"); err != nil {
+				add("temp.ledger", started, false, err.Error(), "")
+				return
+			}
+			add("temp.ledger", started, true, "failed evidence retained and registered", "")
 		}
 	}()
 	stepStarted = time.Now()
@@ -191,8 +215,6 @@ func trimOutput(s string) string {
 	}
 	return s
 }
-func randomSuffix() string { return fmt.Sprintf("%d", time.Now().UnixNano()%1000000) }
-
 func overlayWorkingTree(repo, cloneRoot string) (string, error) {
 	changed := []string{}
 	for _, args := range [][]string{

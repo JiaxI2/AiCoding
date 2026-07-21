@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(cache)**: 完成 TODO 0024：`internal/platform` 以 Git common-dir 追加式 ledger 登记 `aicoding-*` 临时目录生命周期，fresh-clone 成功即释放、失败或显式保留均留下可审计 outcome；既有 `cache` 增加第五个 `temp` scope、24h/最近 3 个失败/`investigating` 保留规则，以及显式 `--adopt` / `--all-repos` 边界。`doctor --all` 增加 temp bloat warning 与 Windows 孤儿进程只读报告，严格不匹配大小写错误前缀、不清 work/plan 审计轨迹、不 kill 进程。 / Completes TODO 0024 with an append-only temporary-resource ledger, bounded fresh-clone teardown, a fifth cache scope with explicit orphan and cross-worktree controls, warning-only bloat diagnostics, and report-only Windows orphan-process inspection.
+
 - **docs(todolist)**: 从外部 staging 仅导入 TODO 0023（能力可发现性）、0024（临时资源收尾）与 0025（五张分层架构图），保持 Planned 并登记后续执行顺序 `0024 → 0023 → 0025`；staging 的 README 与模式笔记不入仓。 / Imports only TODO 0023, 0024, and 0025 from staging, preserving Planned status and the required 0024-to-0023-to-0025 execution order.
 
 - **perf(control-plane)**: 合并完成 TODO 0022 与 0014：未配置 runtime Skill 的聚合查询零 PowerShell spawn；Full race 按 `impact-policy.json` 并发包收敛且由 GO-007 防漏，Release/每周 CI 仍全仓 race；dependency governance 合并为单次 WalkDir；工具发现与 doctor/verify 聚合复用既有 runner 有界并发；`doctor pwsh` 报告退役计数；typed command catalog 登记 fast/standard/work 延迟等级，`doctor perf` 以 3 次中位数执行 1.5× Warn / 3× Fail 门禁；provision 在本仓 `.git/config` 写入 `fetch.parallel=0`、`submodule.fetchJobs=4`、`core.fscache=true`。owner 依据同缓存 scoped/global race 对照接受 `45.564s`（约 24%）真实收益，不为追规划期 `≥60s` 估算而扩张包边界或提前侵入 0017；全部正确性门禁保持不变。 / Completes TODO 0022 and 0014 with typed latency budgets, local Git transport settings, and an evidence-based 45.564-second scoped-race threshold decision while preserving Release and weekly full-race coverage.

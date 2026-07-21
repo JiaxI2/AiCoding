@@ -103,24 +103,31 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 
 ## 本地生成物观测与保留
 
-`cache` 是仓库内本地生成物的唯一观测/清理面，只扫描以下四个注册根，不遍历无关目录：
+`cache` 是本地生成物的唯一观测/清理面，只扫描以下五个注册根，不遍历无关目录：
 
 | scope | 路径 | `clean` 策略 |
 |---|---|---|
 | `fast-path` | `.aicoding/cache/fast-path` | 全部删除，可重新生成。 |
 | `test-results` | `test-results/aicoding-global-test-*` | 保留最近 N 份（默认 5）并额外保留全部 FAIL 或无法判定结论的证据。 |
 | `validation-reports` | `<git-common-dir>/aicoding/validation/reports/*` | 仅删除没有 Receipt 或 commit alias 引用的报告；完整性读取复用 Validation Evidence store。 |
+| `temp` | `%TEMP%/aicoding-*` | 通过 `<git-common-dir>/aicoding/temp-ledger.jsonl` 追踪；默认保留 24h 内目录、最近 3 个失败现场及全部 `investigating` 现场。只匹配严格小写前缀。 |
 | `work-state` | `.aicoding/state/work/*` | 只报告大小；审计轨迹（尤其 `attempts.jsonl`）不允许由 cache 清理。 |
 
 ```powershell
 bin\aicoding.exe cache status --json
-bin\aicoding.exe cache clean [--scope fast-path|test-results|validation-reports|work-state] [--keep 5] [--dry-run] --json
+bin\aicoding.exe cache clean [--scope fast-path|test-results|validation-reports|temp|work-state] [--keep N] [--dry-run] [--adopt] [--all-repos] --json
 ```
 
 不指定 `--scope` 时应用全部可清 scope 的默认策略，但跳过 `work-state`；`--dry-run`
 只返回计划删除清单和预计释放字节，零落盘。成功的 `test --profile ...` 在报告写入完成后自动对
-`test-results` 应用 keep-last-5；失败或取消的运行不触发清理。`doctor --all` 的
-`doctor.cache-bloat` 在测试结果超过 20 份或 50MB 时给出 warning 和显式 clean 命令，绝不代替用户清理。
+`test-results` 应用 keep-last-5；失败或取消的运行不触发清理。`temp` 默认只处理当前
+`repoRoot` 登记的现场；`--all-repos` 才扩到共享 Git common-dir 中其它 worktree 的登记，
+`--adopt` 才会登记并回收未入 ledger 的历史孤儿，二者都必须显式搭配 `--scope temp`。
+
+`doctor.cache-bloat` 在测试结果超过 20 份或 50MB、或严格小写 `aicoding-*` 临时目录超过
+20 个或 100MB 时只给 warning 和 dry-run 指引。`doctor.orphan-processes` 在 Windows
+只读列出父进程已退出的 `aicoding` / `pwsh` / `powershell` 进程，并明确报告
+`killAttempted=false`；两项诊断都不自动清理或终止进程。
 
 ## Validation Evidence
 

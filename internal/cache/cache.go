@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
@@ -17,20 +19,35 @@ const (
 	ScopeFastPath          Scope = "fast-path"
 	ScopeTestResults       Scope = "test-results"
 	ScopeValidationReports Scope = "validation-reports"
+	ScopeTemp              Scope = "temp"
 	ScopeWorkState         Scope = "work-state"
 
 	DefaultTestResultKeep = 5
+	DefaultTempKeep       = 3
 	testResultWarnCount   = 20
 	testResultWarnBytes   = 50 * 1024 * 1024
+	tempWarnCount         = 20
+	tempWarnBytes         = 100 * 1024 * 1024
+	tempRecentWindow      = 24 * time.Hour
+)
+
+var (
+	cacheTempRoot = os.TempDir
+	cacheNow      = time.Now
+	cachePathSize = pathSize
 )
 
 type ScopeStatus struct {
-	Scope      Scope  `json:"scope"`
-	Path       string `json:"path"`
-	Exists     bool   `json:"exists"`
-	EntryCount int    `json:"entryCount"`
-	SizeBytes  int64  `json:"sizeBytes"`
-	Policy     string `json:"policy"`
+	Scope       Scope  `json:"scope"`
+	Path        string `json:"path"`
+	Exists      bool   `json:"exists"`
+	EntryCount  int    `json:"entryCount"`
+	SizeBytes   int64  `json:"sizeBytes"`
+	Policy      string `json:"policy"`
+	OwnedCount  int    `json:"ownedCount,omitempty"`
+	OtherRepos  int    `json:"otherRepoCount,omitempty"`
+	OrphanCount int    `json:"orphanCount,omitempty"`
+	OldestAt    string `json:"oldestCreatedAt,omitempty"`
 }
 
 type StatusResult struct {
@@ -40,9 +57,11 @@ type StatusResult struct {
 }
 
 type CleanOptions struct {
-	Scope  Scope
-	Keep   int
-	DryRun bool
+	Scope    Scope
+	Keep     int
+	DryRun   bool
+	Adopt    bool
+	AllRepos bool
 }
 
 type CleanEntry struct {
@@ -67,6 +86,8 @@ type CleanResult struct {
 	Scope        string             `json:"scope"`
 	DryRun       bool               `json:"dryRun"`
 	Keep         int                `json:"keep"`
+	Adopt        bool               `json:"adopt"`
+	AllRepos     bool               `json:"allRepos"`
 	Scopes       []ScopeCleanResult `json:"scopes"`
 	PlannedCount int                `json:"plannedCount"`
 	RemovedCount int                `json:"removedCount"`
@@ -97,6 +118,9 @@ func Status(repo string) (StatusResult, error) {
 	result := StatusResult{Scopes: make([]ScopeStatus, 0, len(specs))}
 	for _, spec := range specs {
 		status, _, err := scan(repo, spec)
+		if err == nil && spec.scope == ScopeTemp {
+			status, err = annotateTempStatus(repo, status)
+		}
 		if err != nil {
 			return result, err
 		}
@@ -108,19 +132,24 @@ func Status(repo string) (StatusResult, error) {
 }
 
 func BloatWarnings(status StatusResult) []string {
+	warnings := []string{}
 	for _, scope := range status.Scopes {
-		if scope.Scope != ScopeTestResults {
-			continue
-		}
-		if scope.EntryCount > testResultWarnCount || scope.SizeBytes > testResultWarnBytes {
-			return []string{fmt.Sprintf("test results use %d entries / %d bytes; run `aicoding cache clean --scope test-results --json`", scope.EntryCount, scope.SizeBytes)}
+		switch scope.Scope {
+		case ScopeTestResults:
+			if scope.EntryCount > testResultWarnCount || scope.SizeBytes > testResultWarnBytes {
+				warnings = append(warnings, fmt.Sprintf("test results use %d entries / %d bytes; run `aicoding cache clean --scope test-results --json`", scope.EntryCount, scope.SizeBytes))
+			}
+		case ScopeTemp:
+			if scope.EntryCount > tempWarnCount || scope.SizeBytes > tempWarnBytes {
+				warnings = append(warnings, fmt.Sprintf("temporary resources use %d entries / %d bytes; run `aicoding cache clean --scope temp --dry-run --json`", scope.EntryCount, scope.SizeBytes))
+			}
 		}
 	}
-	return nil
+	return warnings
 }
 
 func ValidScope(scope Scope) bool {
-	for _, candidate := range []Scope{ScopeFastPath, ScopeTestResults, ScopeValidationReports, ScopeWorkState} {
+	for _, candidate := range []Scope{ScopeFastPath, ScopeTestResults, ScopeValidationReports, ScopeTemp, ScopeWorkState} {
 		if scope == candidate {
 			return true
 		}
@@ -152,11 +181,87 @@ func registry(repo string) []artifactSpec {
 			match: validReportDirName,
 		},
 		{
+			scope: ScopeTemp, root: cacheTempRoot(),
+			displayPath:    filepath.ToSlash(filepath.Join(cacheTempRoot(), platform.TempDirectoryPrefix+"*")),
+			policy:         "keep-24h-plus-latest-3-failures; current-repo-only; explicit-adopt-for-unledgered",
+			cleanByDefault: true, cleanable: true,
+			match: func(name string) bool { return strings.HasPrefix(name, platform.TempDirectoryPrefix) },
+		},
+		{
 			scope: ScopeWorkState, root: platform.RepoPath(repo, ".aicoding/state/work"),
 			displayPath: ".aicoding/state/work/*", policy: "audit-only; list-size; never-clean-attempts.jsonl",
 			cleanByDefault: false, cleanable: false,
 		},
 	}
+}
+
+func annotateTempStatus(repo string, status ScopeStatus) (ScopeStatus, error) {
+	if _, err := platform.TempLedgerPath(repo); err != nil {
+		status.OrphanCount = status.EntryCount
+		return status, nil
+	}
+	records, err := platform.ReadTempLedger(repo)
+	if err != nil {
+		return status, err
+	}
+	latest := latestTempRecords(records)
+	entries, err := os.ReadDir(cacheTempRoot())
+	if err != nil {
+		return status, err
+	}
+	oldest := time.Time{}
+	for _, entry := range entries {
+		if !entry.IsDir() || !strings.HasPrefix(entry.Name(), platform.TempDirectoryPrefix) {
+			continue
+		}
+		path := filepath.Join(cacheTempRoot(), entry.Name())
+		record, ok := latest[tempPathKey(path)]
+		createdAt := time.Time{}
+		if ok {
+			createdAt, _ = time.Parse(time.RFC3339Nano, record.CreatedAt)
+			if sameTempRepo(record.RepoRoot, repo) {
+				status.OwnedCount++
+			} else {
+				status.OtherRepos++
+			}
+		} else {
+			status.OrphanCount++
+			if info, infoErr := entry.Info(); infoErr == nil {
+				createdAt = info.ModTime()
+			}
+		}
+		if !createdAt.IsZero() && (oldest.IsZero() || createdAt.Before(oldest)) {
+			oldest = createdAt
+		}
+	}
+	if !oldest.IsZero() {
+		status.OldestAt = oldest.UTC().Format(time.RFC3339)
+	}
+	return status, nil
+}
+
+func latestTempRecords(records []platform.TempRecord) map[string]platform.TempRecord {
+	latest := make(map[string]platform.TempRecord, len(records))
+	for _, record := range records {
+		latest[tempPathKey(record.Path)] = record
+	}
+	return latest
+}
+
+func tempPathKey(path string) string {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		absPath = path
+	}
+	key := filepath.Clean(absPath)
+	if runtime.GOOS == "windows" {
+		key = strings.ToLower(key)
+	}
+	return key
+}
+
+func sameTempRepo(left, right string) bool {
+	return tempPathKey(left) == tempPathKey(right)
 }
 
 func scan(repo string, spec artifactSpec) (ScopeStatus, []artifactEntry, error) {
@@ -170,7 +275,7 @@ func scan(repo string, spec artifactSpec) (ScopeStatus, []artifactEntry, error) 
 	}
 	status.Exists = true
 	if !info.IsDir() {
-		size, err := pathSize(spec.root)
+		size, err := cachePathSize(spec.root)
 		if err != nil {
 			return status, nil, err
 		}
@@ -185,16 +290,25 @@ func scan(repo string, spec artifactSpec) (ScopeStatus, []artifactEntry, error) 
 	}
 	entries := make([]artifactEntry, 0, len(children))
 	for _, child := range children {
+		if spec.scope == ScopeTemp && !child.IsDir() {
+			continue
+		}
 		if spec.match != nil && !spec.match(child.Name()) {
 			continue
 		}
 		path := filepath.Join(spec.root, child.Name())
-		size, err := pathSize(path)
+		size, err := cachePathSize(path)
 		if err != nil {
+			if spec.scope == ScopeTemp && os.IsNotExist(err) {
+				continue
+			}
 			return status, nil, err
 		}
 		childInfo, err := child.Info()
 		if err != nil {
+			if spec.scope == ScopeTemp && os.IsNotExist(err) {
+				continue
+			}
 			return status, nil, err
 		}
 		modTime := childInfo.ModTime()
