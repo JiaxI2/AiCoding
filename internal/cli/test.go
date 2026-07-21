@@ -186,36 +186,46 @@ func globalTestStandardReport(command string, profile string, outDir string, dur
 	if status == "" {
 		status = "FAIL"
 	}
+	summary := map[string]interface{}{
+		"repo":                s.Repo,
+		"profile":             s.Profile,
+		"started_at":          s.StartedAt,
+		"ended_at":            s.EndedAt,
+		"duration_ms":         s.DurationMS,
+		"total":               s.Total,
+		"pass":                s.Pass,
+		"fail":                s.Fail,
+		"warn":                s.Warn,
+		"skip":                s.Skip,
+		"conclusion":          s.Conclusion,
+		"output_dir":          filepath.ToSlash(outDir),
+		"execution_mode":      fileReport.ExecutionMode,
+		"receipt_id":          fileReport.ReceiptID,
+		"validation_identity": fileReport.ValidationIdentity,
+		"subject_tree_oid":    fileReport.SubjectTreeOID,
+		"subject_mode":        fileReport.SubjectMode,
+		"reusable":            fileReport.Reusable,
+		"reusable_reason":     fileReport.ReusableReason,
+		"validation_code":     fileReport.ValidationCode,
+		"check_duration_ms":   fileReport.CheckDurationMS,
+	}
+	if len(s.SlowestCases) > 0 {
+		summary["slowest_cases"] = s.SlowestCases
+	}
+	if s.CacheHitRatio != nil {
+		summary["cache_hit_ratio"] = *s.CacheHitRatio
+	}
+	if s.ReceiptInvalidReason != "" {
+		summary["receipt_invalid_reason"] = s.ReceiptInvalidReason
+	}
 	return report.StandardReport{
 		SchemaVersion: report.SchemaVersion,
 		Status:        status,
-		Summary: map[string]interface{}{
-			"repo":                s.Repo,
-			"profile":             s.Profile,
-			"started_at":          s.StartedAt,
-			"ended_at":            s.EndedAt,
-			"duration_ms":         s.DurationMS,
-			"total":               s.Total,
-			"pass":                s.Pass,
-			"fail":                s.Fail,
-			"warn":                s.Warn,
-			"skip":                s.Skip,
-			"conclusion":          s.Conclusion,
-			"output_dir":          filepath.ToSlash(outDir),
-			"execution_mode":      fileReport.ExecutionMode,
-			"receipt_id":          fileReport.ReceiptID,
-			"validation_identity": fileReport.ValidationIdentity,
-			"subject_tree_oid":    fileReport.SubjectTreeOID,
-			"subject_mode":        fileReport.SubjectMode,
-			"reusable":            fileReport.Reusable,
-			"reusable_reason":     fileReport.ReusableReason,
-			"validation_code":     fileReport.ValidationCode,
-			"check_duration_ms":   fileReport.CheckDurationMS,
-		},
-		Findings:   globalTestFindings(fileReport.Results),
-		Command:    command,
-		Profile:    profile,
-		DurationMS: durationMS,
+		Summary:       summary,
+		Findings:      globalTestFindings(fileReport.Results),
+		Command:       command,
+		Profile:       profile,
+		DurationMS:    durationMS,
 		Logs: []report.LogRef{
 			{Label: "report", Path: filepath.ToSlash(filepath.Join(outDir, "report.md"))},
 			{Label: "summary", Path: filepath.ToSlash(filepath.Join(outDir, "summary.json"))},

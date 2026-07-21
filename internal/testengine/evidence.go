@@ -15,7 +15,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
 
-const evidenceImplVersion = 3
+const evidenceImplVersion = 4
 
 var executeTestCases = runAll
 
@@ -305,6 +305,9 @@ func reusedReport(cfg Config, testCases []TestCase, subject validationevidence.S
 	report.ReusableReason = ""
 	report.ValidationCode = validationevidence.CodeReceiptHit
 	report.CheckDurationMS = decision.CheckDurationMS
+	cacheHitRatio := 1.0
+	report.Summary.CacheHitRatio = &cacheHitRatio
+	report.Summary.ReceiptInvalidReason = ""
 	if err := os.MkdirAll(cfg.Out, 0o755); err != nil {
 		return Report{}, err
 	}

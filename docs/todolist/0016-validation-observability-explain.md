@@ -1,6 +1,6 @@
 # TODO 0016: 验证观测与解释（时间分解 + explain —— 测试架构 docx 阶段一）
 
-Status: Planned
+Status: Done
 Verify: bin/aicoding.exe test --profile Release --json 输出各用例 setup/execute/persist 分解；validation explain 给出 Receipt miss 的具体失效字段
 
 > 来源：《AiCoding 测试架构设计.docx》评审采纳项之一。docx 的核心裁决见
@@ -59,11 +59,12 @@ go test ./internal/testengine/... ./internal/validationevidence/... ./internal/c
 bin\aicoding.exe test --profile Release --reuse off --json
 # 断言：每个 command 用例四段分解之和 ≈ duration_ms（±5%）；FRESH-001 各步有 elapsed_ms
 bin\aicoding.exe validation explain --profile Release --target HEAD --json    # hit 路径
-echo x >> README.md
-bin\aicoding.exe validation explain --profile Release --target HEAD --json
+Add-Content README.md "`n0016 docs-only explain probe"
+git add README.md
+bin\aicoding.exe validation explain --profile Release --target INDEX --json
 # 断言：changed 只列 subjectTreeOID（docs 改动不动 toolchain/plan digest）——这就是
-# 0017 要的立项证据：README 改动使整个 Release Receipt 失效，但 9/10 的 digest 没变
-git checkout README.md
+# 0017 要的立项证据：README 改动使整个 Release Receipt 失效，但其余 fingerprint 输入没变
+git restore --staged --worktree README.md
 # 确定性：explain 连续两次输出字节一致（剔除 elapsed）
 bin\aicoding.exe test --profile Full --json
 ```

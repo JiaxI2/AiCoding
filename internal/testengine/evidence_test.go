@@ -44,6 +44,9 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	if first.ExecutionMode != "executed" || !first.Reusable || first.ReceiptID == "" || first.ValidationIdentity == "" || executions != 1 {
 		t.Fatalf("first execution did not create evidence: %#v executions=%d", first, executions)
 	}
+	if first.Summary.CacheHitRatio == nil || *first.Summary.CacheHitRatio != 0 {
+		t.Fatalf("executed cache hit ratio = %#v", first.Summary.CacheHitRatio)
+	}
 	store, err := validationevidence.Open(repo)
 	if err != nil {
 		t.Fatal(err)
@@ -69,6 +72,9 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	}
 	if reused.ExecutionMode != "reused" || reused.ReceiptID != first.ReceiptID || reused.Summary.Conclusion != "PASS" || executions != 1 {
 		t.Fatalf("auto reuse did not short-circuit: %#v executions=%d", reused, executions)
+	}
+	if reused.Summary.CacheHitRatio == nil || *reused.Summary.CacheHitRatio != 1 {
+		t.Fatalf("reused cache hit ratio = %#v", reused.Summary.CacheHitRatio)
 	}
 	loaded, err := Load(auto.Out)
 	if err != nil || loaded.ExecutionMode != "reused" || loaded.ReceiptID != first.ReceiptID {
@@ -106,6 +112,30 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	}
 	if drifted.Summary.Conclusion != "PASS_WITH_WARNINGS" || drifted.ReceiptID != "" || drifted.Reusable || drifted.ValidationCode != validationevidence.CodeReuseAuditMismatch || executions != 4 {
 		t.Fatalf("status drift replaced or claimed the existing Receipt: %#v executions=%d", drifted, executions)
+	}
+}
+
+func TestAutoMissReportsReceiptInvalidReason(t *testing.T) {
+	repo := newEngineEvidenceRepo(t)
+	originalExecute := executeTestCases
+	defer func() { executeTestCases = originalExecute }()
+	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
+		return syntheticResults(cfg, tests, false)
+	}
+
+	cfg := evidenceRunConfig(t, repo)
+	cfg.Out = filepath.Join(t.TempDir(), "auto-miss")
+	cfg.Reuse = ReuseAuto
+	report, err := Run(context.Background(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.CacheHitRatio == nil || *report.Summary.CacheHitRatio != 0 {
+		t.Fatalf("auto miss cache hit ratio = %#v", report.Summary.CacheHitRatio)
+	}
+	wantPrefix := string(validationevidence.CodeReceiptMiss) + ":"
+	if !strings.HasPrefix(report.Summary.ReceiptInvalidReason, wantPrefix) {
+		t.Fatalf("receipt invalid reason = %q, want prefix %q", report.Summary.ReceiptInvalidReason, wantPrefix)
 	}
 }
 

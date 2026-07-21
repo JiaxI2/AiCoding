@@ -9,6 +9,7 @@ bin\aicoding.exe test --profile Smoke|Full|Release --json
 bin\aicoding.exe test latest
 bin\aicoding.exe validation status --json
 bin\aicoding.exe validation check --profile Smoke|Full|Release --target HEAD|INDEX [--bind-alias] --json
+bin\aicoding.exe validation explain --profile Smoke|Full|Release --target HEAD|INDEX --json
 bin\aicoding.exe validation list|clean [--profile Smoke|Full|Release] --json
 ```
 
@@ -82,9 +83,18 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
   "fail": 1,
   "warn": 2,
   "skip": 1,
-  "conclusion": "FAIL"
+  "conclusion": "FAIL",
+  "slowest_cases": [
+    { "id": "FRESH-001", "duration_ms": 101860 }
+  ],
+  "cache_hit_ratio": 0,
+  "receipt_invalid_reason": "VALIDATION_RECEIPT_MISS: no reusable Receipt exists"
 }
 ```
+
+`slowest_cases` 是本次非 SKIP 用例按 `duration_ms` 降序（同耗时按 ID）排列的 Top 5。
+节点级 Receipt 落地前，`cache_hit_ratio` 是整体值：新鲜执行为 `0`，整份 Receipt 复用为
+`1`。`receipt_invalid_reason` 只在请求复用但 Receipt miss/invalid 时出现。
 
 ## 2. 测试 `results.json`
 
@@ -109,6 +119,10 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
       "status": "PASS",
       "severity": "REQUIRED",
       "duration_ms": 123,
+      "queue_ms": 0,
+      "setup_ms": 1,
+      "execute_ms": 118,
+      "persist_ms": 4,
       "exit_code": 0,
       "timed_out": false,
       "json_valid": true,
@@ -120,6 +134,12 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
   ]
 }
 ```
+
+实际执行的用例包含 `queue_ms`、`setup_ms`、`execute_ms`、`persist_ms`，四段之和等于
+`duration_ms`；未被 profile 选中的旧式/SKIP 结果省略这四个加法字段。当前串行调度下
+`queue_ms` 通常为 `0`，保留该字段是为了让后续调度改造有可比基线。`fresh-clone` 的
+`data.steps[*].elapsed_ms` 始终存在（包括小于 1 ms 时的 `0`），用于拆分 clone、submodule、
+overlay、build 与 profile verify。
 
 `executionMode` 只使用 `executed` 或 `reused`；复用不引入新的测试结论，`conclusion` 仍使用
 既有 `PASS`、`PASS_WITH_WARNINGS`、`FAIL`。`receiptID` 仅在存在完整可复用 PASS Receipt 时
@@ -137,7 +157,34 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 一致。`WARN` 默认不阻断 Receipt；`--strict` 导致的失败仍会阻断。Receipt 的 scope 明确声明
 ignored files 不在证明范围，因此它证明 Git 追踪内容，不证明本机 ignored local state。
 
-## 3. 测试 `report.md`
+## 3. `validation explain` 数据
+
+```json
+{
+  "decision": "miss",
+  "checkCode": "VALIDATION_RECEIPT_MISS",
+  "referenceIdentity": "sha256:<latest-same-profile-receipt>",
+  "referenceSelection": "latest same-profile Receipt by receipt-file mtime; diagnostic only",
+  "changed": [
+    { "field": "subjectTreeOID", "old": "<old-tree>", "new": "<new-tree>" }
+  ],
+  "unchanged": [
+    "repositoryID",
+    "profile",
+    "validationPlanDigest",
+    "engineSemanticDigest",
+    "configDigest",
+    "toolchainDigest",
+    "optionsDigest"
+  ]
+}
+```
+
+对比字段顺序固定；派生字段 `identity` 不重复列入 `changed`。explain 只在精确 miss 后按
+Receipt 文件 mtime 选择最新同 profile 参考并执行完整性校验，不改变 `validation check` 的
+O(1) 精确读取路径，也不写 Receipt 或 alias。
+
+## 4. 测试 `report.md`
 
 报告按照功能域输出：
 

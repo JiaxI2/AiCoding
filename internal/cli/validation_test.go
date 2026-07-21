@@ -4,6 +4,7 @@ import (
 	"context"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -13,6 +14,43 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/testengine"
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
+
+func TestValidationExplainHitAndTreeOnlyMissAreDeterministic(t *testing.T) {
+	repo := newValidationCLIRepo(t)
+	_, fingerprint := putValidationCLIReceipt(t, repo, validationevidence.TargetHead)
+
+	hit, err := runValidation([]string{"explain", "--profile", "Smoke", "--target", "HEAD", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !hit.OK {
+		t.Fatalf("explain hit = %#v, %v", hit, err)
+	}
+	hitData := hit.Data.(validationExplainData)
+	if hitData.Decision != "hit" || hitData.ReferenceIdentity != fingerprint.Identity || len(hitData.Changed) != 0 || len(hitData.Unchanged) != 8 {
+		t.Fatalf("explain hit data = %#v", hitData)
+	}
+
+	mustWrite(t, filepath.Join(repo, "tracked.txt"), "docs-only diagnostic change\n")
+	mustValidationCLIGit(t, repo, "add", "tracked.txt")
+	args := []string{"explain", "--profile", "Smoke", "--target", "INDEX", "--repo-root", repo, "--json"}
+	first, err := runValidation(args, time.Now())
+	if err != nil || !first.OK {
+		t.Fatalf("explain miss = %#v, %v", first, err)
+	}
+	second, err := runValidation(args, time.Now())
+	if err != nil || !second.OK {
+		t.Fatalf("second explain miss = %#v, %v", second, err)
+	}
+	firstData := first.Data.(validationExplainData)
+	secondData := second.Data.(validationExplainData)
+	if !reflect.DeepEqual(firstData, secondData) {
+		t.Fatalf("explain data is not deterministic:\nfirst=%#v\nsecond=%#v", firstData, secondData)
+	}
+	if firstData.Decision != "miss" || firstData.CheckCode != validationevidence.CodeReceiptMiss || len(firstData.Changed) != 1 || firstData.Changed[0].Field != "subjectTreeOID" {
+		t.Fatalf("tree-only miss was not explained precisely: %#v", firstData)
+	}
+	if len(firstData.Unchanged) != 7 {
+		t.Fatalf("unchanged fingerprint fields = %#v", firstData.Unchanged)
+	}
+}
 
 func TestValidationCommandsCheckListStatusAndCleanReceipts(t *testing.T) {
 	repo := newValidationCLIRepo(t)
@@ -198,6 +236,8 @@ func TestValidationCommandRejectsRemovedAndInvalidForms(t *testing.T) {
 		{"check", "--profile", "Smoke", "--target", "AUTO"},
 		{"check", "--profile", "Smoke", "--target", "INDEX", "--bind-alias"},
 		{"check", "--profile", "Manual", "--target", "HEAD"},
+		{"explain", "--profile", "Manual", "--target", "HEAD"},
+		{"explain", "--profile", "Smoke", "--target", "AUTO"},
 		{"list", "--profile", "Manual"},
 	} {
 		if _, err := runValidation(args, time.Now()); err == nil {

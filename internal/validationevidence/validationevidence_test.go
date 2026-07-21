@@ -557,6 +557,37 @@ func TestPutRejectsFailAndPathsCannotEscapeStore(t *testing.T) {
 	}
 }
 
+func TestListReturnsNewestReceiptByFileMtime(t *testing.T) {
+	repo := newEvidenceRepo(t)
+	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
+	mustEvidenceGit(t, repo, "add", "tracked.txt")
+	mustEvidenceGit(t, repo, "commit", "-m", "one")
+	store, _, firstFingerprint := evidenceFixture(t, repo, TargetHead)
+	first := putFixture(t, store, firstFingerprint)
+
+	writeEvidenceFile(t, repo, "tracked.txt", "two\n")
+	mustEvidenceGit(t, repo, "add", "tracked.txt")
+	mustEvidenceGit(t, repo, "commit", "-m", "two")
+	_, _, secondFingerprint := evidenceFixture(t, repo, TargetHead)
+	second := putFixture(t, store, secondFingerprint)
+
+	older := time.Unix(100, 0)
+	newer := time.Unix(200, 0)
+	if err := os.Chtimes(store.receiptPath("smoke", second.ValidationIdentity), older, older); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(store.receiptPath("smoke", first.ValidationIdentity), newer, newer); err != nil {
+		t.Fatal(err)
+	}
+	receipts, err := store.List("smoke")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(receipts) != 2 || receipts[0].ValidationIdentity != first.ValidationIdentity || receipts[1].ValidationIdentity != second.ValidationIdentity {
+		t.Fatalf("newest-first Receipt order = %#v", receipts)
+	}
+}
+
 func evidenceFixture(t *testing.T, repo string, target Target) (Repository, Subject, Fingerprint) {
 	t.Helper()
 	store, err := Open(repo)

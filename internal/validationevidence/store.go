@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 )
 
 var reportNames = []string{"report.md", "results.json", "summary.json"}
@@ -56,13 +57,18 @@ func (r Repository) Put(receipt Receipt, reports ReportBundle) (Receipt, error) 
 	return stored, err
 }
 
-// List returns integrity-checked Receipts in stable identity order.
+// List returns integrity-checked Receipts newest-first by Receipt-file mtime.
+// Identity is the deterministic tie-breaker for diagnostic consumers.
 func (r Repository) List(profile string) ([]Receipt, error) {
 	profiles, err := r.profileDirs(profile)
 	if err != nil {
 		return nil, err
 	}
-	receipts := make([]Receipt, 0)
+	type listedReceipt struct {
+		receipt Receipt
+		mtime   time.Time
+	}
+	listed := make([]listedReceipt, 0)
 	for _, selected := range profiles {
 		dir := filepath.Join(r.root, "receipts", selected)
 		entries, err := os.ReadDir(dir)
@@ -84,10 +90,23 @@ func (r Repository) List(profile string) ([]Receipt, error) {
 			if err != nil {
 				return nil, err
 			}
-			receipts = append(receipts, receipt)
+			info, err := entry.Info()
+			if err != nil {
+				return nil, &Error{Code: CodeStoreError, Message: err.Error(), RequiredAction: "check validation store permissions"}
+			}
+			listed = append(listed, listedReceipt{receipt: receipt, mtime: info.ModTime()})
 		}
 	}
-	sort.Slice(receipts, func(i, j int) bool { return receipts[i].ValidationIdentity < receipts[j].ValidationIdentity })
+	sort.Slice(listed, func(i, j int) bool {
+		if listed[i].mtime.Equal(listed[j].mtime) {
+			return listed[i].receipt.ValidationIdentity < listed[j].receipt.ValidationIdentity
+		}
+		return listed[i].mtime.After(listed[j].mtime)
+	})
+	receipts := make([]Receipt, len(listed))
+	for index := range listed {
+		receipts[index] = listed[index].receipt
+	}
 	return receipts, nil
 }
 

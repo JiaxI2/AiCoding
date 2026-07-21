@@ -93,6 +93,7 @@ bin\aicoding.exe validation status --json
 bin\aicoding.exe validation check --profile Smoke --target HEAD --json
 bin\aicoding.exe validation check --profile Release --target HEAD --bind-alias --json
 bin\aicoding.exe validation check --profile Full --target INDEX --json
+bin\aicoding.exe validation explain --profile Release --target HEAD --json
 bin\aicoding.exe validation list [--profile Release] --json
 bin\aicoding.exe validation clean [--profile Release] --json
 ```
@@ -102,6 +103,12 @@ bin\aicoding.exe validation clean [--profile Release] --json
 工作区、暂存区或 HEAD，但可能向 Git object database 写入 tree object。仅改 commit message
 不会改变 Tree，Receipt 仍可命中；tracked 内容、暂存内容、非 ignored 未跟踪文件或子模块
 工作区变脏都会 fail-closed。ignored files 明确不在 Receipt 的证明范围内。
+
+`validation explain` 先走与 `validation check` 相同的精确检查；命中时返回 identity 与完整
+fingerprint，miss 时才扫描完整性校验后的同 profile Receipt，并按 Receipt 文件 mtime 选择
+最新一份作为“仅诊断参考”。输出的 `changed` 逐字段列出 old/new，`unchanged` 列出其余字段；
+命令只读，不创建或绑定 Receipt。普通 `validation check` 仍只读取内容寻址的精确路径，不因
+explain 增加目录扫描。
 
 普通 `validation check` 不写 alias。`--bind-alias` 只接受 `--target HEAD`，并且只在 Receipt
 完整命中后把当前 commit tip 绑定到该 Receipt；报告返回 `commitAliasBound: true`。它用于
@@ -163,6 +170,7 @@ feature ref 明确旁路。hook 本身不运行测试或构建，缺证据时应
 | Reuse governance evidence | `bin\aicoding.exe governance reuse --json` |
 | Validation evidence 状态 | `bin\aicoding.exe validation status --json` |
 | Validation Receipt 精确检查 | `bin\aicoding.exe validation check --profile Smoke\|Full\|Release --target HEAD\|INDEX --json` |
+| Validation Receipt miss 解释 | `bin\aicoding.exe validation explain --profile Smoke\|Full\|Release --target HEAD\|INDEX --json` |
 | Validation Receipt 列出/清理 | `bin\aicoding.exe validation list\|clean [--profile Smoke\|Full\|Release] --json` |
 | Hook verification | `bin\aicoding.exe verify hooks --json` |
 | Repo text verification | `bin\aicoding.exe verify repo-text --json` |

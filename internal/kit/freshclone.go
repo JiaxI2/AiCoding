@@ -23,10 +23,11 @@ type FreshCloneReport struct {
 }
 
 type FreshCloneStep struct {
-	Name    string `json:"name"`
-	OK      bool   `json:"ok"`
-	Message string `json:"message"`
-	Output  string `json:"output,omitempty"`
+	Name      string `json:"name"`
+	OK        bool   `json:"ok"`
+	Message   string `json:"message"`
+	Output    string `json:"output,omitempty"`
+	ElapsedMS int64  `json:"elapsed_ms"`
 }
 
 func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
@@ -34,15 +35,18 @@ func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
 	tempRoot := filepath.Join(os.TempDir(), "aicoding-fresh-clone-"+time.Now().UTC().Format("20060102-150405")+"-"+randomSuffix())
 	cloneRoot := filepath.Join(tempRoot, "AiCoding")
 	report := FreshCloneReport{SchemaVersion: 1, Profile: profile, OK: true, SourceRoot: repo, TempRoot: tempRoot, CloneRoot: cloneRoot}
-	add := func(name string, ok bool, message string, output string) {
-		report.Steps = append(report.Steps, FreshCloneStep{Name: name, OK: ok, Message: message, Output: trimOutput(output)})
+	add := func(name string, started time.Time, ok bool, message string, output string) {
+		report.Steps = append(report.Steps, FreshCloneStep{
+			Name: name, OK: ok, Message: message, Output: trimOutput(output), ElapsedMS: time.Since(started).Milliseconds(),
+		})
 		if !ok {
 			report.OK = false
 			report.Errors = append(report.Errors, name+": "+message)
 		}
 	}
+	stepStarted := time.Now()
 	if err := os.MkdirAll(tempRoot, 0o755); err != nil {
-		add("temp", false, err.Error(), "")
+		add("temp", stepStarted, false, err.Error(), "")
 		return report
 	}
 	defer func() {
@@ -52,48 +56,55 @@ func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
 			report.KeptTemp = true
 		}
 	}()
+	stepStarted = time.Now()
 	if out, err := runFresh("", "git", "clone", "--recurse-submodules", repo, cloneRoot); err != nil {
-		add("git.clone", false, err.Error(), out)
+		add("git.clone", stepStarted, false, err.Error(), out)
 		return report
 	} else {
-		add("git.clone", true, "cloned local repository", out)
+		add("git.clone", stepStarted, true, "cloned local repository", out)
 	}
+	stepStarted = time.Now()
 	if out, err := verifyFreshCloneSubmodules(cloneRoot); err != nil {
-		add("git.submodule", false, err.Error(), out)
+		add("git.submodule", stepStarted, false, err.Error(), out)
 		return report
 	} else {
-		add("git.submodule", true, "submodules verified", out)
+		add("git.submodule", stepStarted, true, "submodules verified", out)
 	}
+	stepStarted = time.Now()
 	if out, err := overlayWorkingTree(repo, cloneRoot); err != nil {
-		add("worktree.overlay", false, err.Error(), out)
+		add("worktree.overlay", stepStarted, false, err.Error(), out)
 		return report
 	} else {
-		add("worktree.overlay", true, "current worktree changes overlaid", out)
+		add("worktree.overlay", stepStarted, true, "current worktree changes overlaid", out)
 	}
 	bin := filepath.Join(cloneRoot, "bin", "aicoding.exe")
+	stepStarted = time.Now()
 	if err := os.MkdirAll(filepath.Dir(bin), 0o755); err != nil {
-		add("go.build.mkdir", false, err.Error(), "")
+		add("go.build.mkdir", stepStarted, false, err.Error(), "")
 		return report
 	}
+	stepStarted = time.Now()
 	if out, err := runFresh(cloneRoot, "go", "build", "-o", bin, "./cmd/aicoding"); err != nil {
-		add("go.build", false, err.Error(), out)
+		add("go.build", stepStarted, false, err.Error(), out)
 		return report
 	} else {
-		add("go.build", true, "built Go CLI", out)
+		add("go.build", stepStarted, true, "built Go CLI", out)
 	}
+	stepStarted = time.Now()
 	checks, err := freshCloneChecks(bin, profile)
 	if err != nil {
-		add("profile", false, err.Error(), "")
+		add("profile", stepStarted, false, err.Error(), "")
 		return report
 	}
 	for _, check := range checks {
+		stepStarted = time.Now()
 		out, err := runFresh(cloneRoot, check[0], check[1:]...)
 		name := "check." + filepath.Base(check[0]) + " " + strings.Join(check[1:], " ")
 		if err != nil {
-			add(name, false, err.Error(), out)
+			add(name, stepStarted, false, err.Error(), out)
 			return report
 		}
-		add(name, true, "passed", out)
+		add(name, stepStarted, true, "passed", out)
 	}
 	return report
 }

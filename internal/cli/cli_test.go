@@ -438,6 +438,28 @@ func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 	}
 }
 
+func TestGlobalTestReportExposesObservabilitySummary(t *testing.T) {
+	cacheHitRatio := 0.0
+	standard := globalTestStandardReport("test --profile Full", "full", t.TempDir(), 12, testengine.Report{
+		ExecutionMode: "executed",
+		Summary: testengine.Summary{
+			Profile: "full", Conclusion: "PASS",
+			SlowestCases:         []testengine.SlowestCase{{ID: "GO-001", DurationMS: 9}},
+			CacheHitRatio:        &cacheHitRatio,
+			ReceiptInvalidReason: "VALIDATION_RECEIPT_MISS: no reusable Receipt exists",
+		},
+	})
+	if got := standard.Summary["cache_hit_ratio"]; got != 0.0 {
+		t.Fatalf("cache_hit_ratio = %#v", got)
+	}
+	if got := standard.Summary["receipt_invalid_reason"]; got != "VALIDATION_RECEIPT_MISS: no reusable Receipt exists" {
+		t.Fatalf("receipt_invalid_reason = %#v", got)
+	}
+	if got, ok := standard.Summary["slowest_cases"].([]testengine.SlowestCase); !ok || len(got) != 1 || got[0].ID != "GO-001" {
+		t.Fatalf("slowest_cases = %#v", standard.Summary["slowest_cases"])
+	}
+}
+
 func TestCanonicalTestCommandsRouteDirectlyToEngine(t *testing.T) {
 	repo := t.TempDir()
 	installPassingTestEngine(t)

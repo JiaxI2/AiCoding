@@ -91,6 +91,10 @@ type Result struct {
 	Status     Status   `json:"status"`
 	Severity   Severity `json:"severity"`
 	DurationMS int64    `json:"duration_ms"`
+	QueueMS    *int64   `json:"queue_ms,omitempty"`
+	SetupMS    *int64   `json:"setup_ms,omitempty"`
+	ExecuteMS  *int64   `json:"execute_ms,omitempty"`
+	PersistMS  *int64   `json:"persist_ms,omitempty"`
 	ExitCode   int      `json:"exit_code"`
 	TimedOut   bool     `json:"timed_out"`
 	JSONValid  bool     `json:"json_valid"`
@@ -102,18 +106,26 @@ type Result struct {
 	Profile    Profile  `json:"profile"`
 }
 
+type SlowestCase struct {
+	ID         string `json:"id"`
+	DurationMS int64  `json:"duration_ms"`
+}
+
 type Summary struct {
-	Repo       string  `json:"repo"`
-	Profile    Profile `json:"profile"`
-	StartedAt  string  `json:"started_at"`
-	EndedAt    string  `json:"ended_at"`
-	DurationMS int64   `json:"duration_ms"`
-	Total      int     `json:"total"`
-	Pass       int     `json:"pass"`
-	Fail       int     `json:"fail"`
-	Warn       int     `json:"warn"`
-	Skip       int     `json:"skip"`
-	Conclusion string  `json:"conclusion"`
+	Repo                 string        `json:"repo"`
+	Profile              Profile       `json:"profile"`
+	StartedAt            string        `json:"started_at"`
+	EndedAt              string        `json:"ended_at"`
+	DurationMS           int64         `json:"duration_ms"`
+	Total                int           `json:"total"`
+	Pass                 int           `json:"pass"`
+	Fail                 int           `json:"fail"`
+	Warn                 int           `json:"warn"`
+	Skip                 int           `json:"skip"`
+	Conclusion           string        `json:"conclusion"`
+	SlowestCases         []SlowestCase `json:"slowest_cases,omitempty"`
+	CacheHitRatio        *float64      `json:"cache_hit_ratio,omitempty"`
+	ReceiptInvalidReason string        `json:"receipt_invalid_reason,omitempty"`
 }
 
 type Report struct {
@@ -302,6 +314,9 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 		return Report{}, fmt.Errorf("digest validation result statuses: %w", err)
 	}
 	summary := summarize(cfg, start, time.Now(), results)
+	if shouldCheck && !reuseDecision.Hit && reuseDecision.Code != "" {
+		summary.ReceiptInvalidReason = string(reuseDecision.Code) + ": " + reuseDecision.Reason
+	}
 	testReport := Report{
 		ExecutionMode:      "executed",
 		ValidationIdentity: startFingerprint.Identity,
@@ -341,6 +356,7 @@ func ExitCode(testReport Report, err error) int {
 func runAll(ctx context.Context, cfg Config, tests []TestCase) []Result {
 	var results []Result
 	for _, tc := range tests {
+		queueStarted := time.Now()
 		if err := ctx.Err(); err != nil {
 			results = append(results, Result{
 				ID: "ENGINE-001", Category: "TEST_ENGINE", Title: "overall test timeout",
@@ -367,6 +383,7 @@ func runAll(ctx context.Context, cfg Config, tests []TestCase) []Result {
 			continue
 		}
 
+		queueElapsed := time.Since(queueStarted)
 		var r Result
 		switch tc.Kind {
 		case "static":
@@ -376,6 +393,7 @@ func runAll(ctx context.Context, cfg Config, tests []TestCase) []Result {
 		default:
 			r = runCommand(ctx, cfg, tc)
 		}
+		addQueueTiming(&r, queueElapsed)
 		results = append(results, r)
 	}
 	return results
@@ -502,8 +520,33 @@ func timeoutFor(cfg Config, tc TestCase) time.Duration {
 	return cfg.Timeout
 }
 
+func setResultTiming(r *Result, queue, setup, execute, persist time.Duration) {
+	queueMS := queue.Milliseconds()
+	setupMS := setup.Milliseconds()
+	executeMS := execute.Milliseconds()
+	persistMS := persist.Milliseconds()
+	r.QueueMS = &queueMS
+	r.SetupMS = &setupMS
+	r.ExecuteMS = &executeMS
+	r.PersistMS = &persistMS
+	r.DurationMS = queueMS + setupMS + executeMS + persistMS
+}
+
+func addQueueTiming(r *Result, queue time.Duration) {
+	queueMS := queue.Milliseconds()
+	r.QueueMS = &queueMS
+	r.DurationMS += queueMS
+}
+
+func timingValue(value *int64) int64 {
+	if value == nil {
+		return 0
+	}
+	return *value
+}
+
 func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
-	start := time.Now()
+	setupStarted := time.Now()
 	r := Result{
 		ID: tc.ID, Category: tc.Category, Title: tc.Title, Severity: tc.Severity,
 		Command: strings.Join(tc.Command, " "), Profile: cfg.Profile, ExitCode: -1,
@@ -512,6 +555,7 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	if len(tc.Command) == 0 {
 		r.Status = Fail
 		r.Reason = "empty command"
+		setResultTiming(&r, 0, time.Since(setupStarted), 0, 0)
 		return r
 	}
 
@@ -525,18 +569,15 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
+	setupElapsed := time.Since(setupStarted)
+	executeStarted := time.Now()
 	err := cmd.Run()
-	r.DurationMS = time.Since(start).Milliseconds()
+	executeElapsed := time.Since(executeStarted)
+	persistStarted := time.Now()
 	if ctx.Err() == context.DeadlineExceeded {
 		r.TimedOut = true
 	}
 	r.ExitCode = commandExitCode(err)
-
-	stdoutFile, stderrFile, metaFile := writeLogs(cfg, tc.ID, stdout.Bytes(), stderr.Bytes(), r, err)
-	r.StdoutFile = stdoutFile
-	r.StderrFile = stderrFile
-	r.MetaFile = metaFile
-
 	r.JSONValid = true
 	if tc.ExpectJSON && !cfg.NoJSONCheck {
 		r.JSONValid = validJSONFromOutput(stdout.String())
@@ -545,10 +586,7 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	if err == nil && !r.TimedOut && (!tc.ExpectJSON || cfg.NoJSONCheck || r.JSONValid) {
 		r.Status = Pass
 		r.Reason = "command passed"
-		return r
-	}
-
-	if r.TimedOut {
+	} else if r.TimedOut {
 		r.Reason = "command timed out"
 	} else if tc.ExpectJSON && !cfg.NoJSONCheck && !r.JSONValid {
 		r.Reason = "command output is not valid JSON"
@@ -557,17 +595,23 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	} else {
 		r.Reason = "command failed"
 	}
-	if tc.NetworkFailureWarn && isNetworkFailure(stdout.String()+"\n"+stderr.String()) {
+	if r.Status == "" && tc.NetworkFailureWarn && isNetworkFailure(stdout.String()+"\n"+stderr.String()) {
 		r.Status = Warn
 		r.Reason = "network-dependent command failed: " + err.Error()
-		return r
 	}
-
-	if tc.Severity == Required || cfg.Strict {
-		r.Status = Fail
-	} else {
-		r.Status = Warn
+	if r.Status == "" {
+		if tc.Severity == Required || cfg.Strict {
+			r.Status = Fail
+		} else {
+			r.Status = Warn
+		}
 	}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
+	stdoutFile, stderrFile, metaFile := writeLogs(cfg, tc.ID, stdout.Bytes(), stderr.Bytes(), r, err)
+	r.StdoutFile = stdoutFile
+	r.StderrFile = stderrFile
+	r.MetaFile = metaFile
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
 	return r
 }
 
@@ -591,7 +635,7 @@ func isNetworkFailure(output string) bool {
 }
 
 func runConcurrent(parent context.Context, cfg Config, tc TestCase) Result {
-	start := time.Now()
+	setupStarted := time.Now()
 	bin := aicodingBin(cfg.Repo)
 	commands := [][]string{
 		{bin, "skill", "c99-standard-c", "status", "--json"},
@@ -613,6 +657,8 @@ func runConcurrent(parent context.Context, cfg Config, tc TestCase) Result {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, workers)
 
+	setupElapsed := time.Since(setupStarted)
+	executeStarted := time.Now()
 	for i := 0; i < cfg.Concurrency; i++ {
 		cmdSpec := commands[i%len(commands)]
 		wg.Add(1)
@@ -648,41 +694,46 @@ func runConcurrent(parent context.Context, cfg Config, tc TestCase) Result {
 		}(i, cmdSpec)
 	}
 	wg.Wait()
+	executeElapsed := time.Since(executeStarted)
+	persistStarted := time.Now()
 
 	r := Result{
 		ID: tc.ID, Category: tc.Category, Title: tc.Title, Severity: tc.Severity,
-		Status: Pass, DurationMS: time.Since(start).Milliseconds(), ExitCode: 0,
+		Status: Pass, ExitCode: 0,
 		TimedOut: timedOut > 0, JSONValid: invalidJSON == 0,
 		Command: "concurrent read-only CLI calls x" + strconv.Itoa(cfg.Concurrency),
 		Profile: cfg.Profile,
 	}
+	if failed == 0 && timedOut == 0 && invalidJSON == 0 {
+		r.Reason = "all concurrent read-only calls passed"
+	} else {
+		r.Reason = fmt.Sprintf("failed=%d timeout=%d invalid_json=%d", failed, timedOut, invalidJSON)
+		if tc.Severity == Required || cfg.Strict {
+			r.Status = Fail
+		} else {
+			r.Status = Warn
+		}
+	}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
 	out := []byte(strings.Join(details, "\n"))
 	stdoutFile, stderrFile, metaFile := writeLogs(cfg, tc.ID, out, nil, r, nil)
 	r.StdoutFile = stdoutFile
 	r.StderrFile = stderrFile
 	r.MetaFile = metaFile
-
-	if failed == 0 && timedOut == 0 && invalidJSON == 0 {
-		r.Reason = "all concurrent read-only calls passed"
-		return r
-	}
-	r.Reason = fmt.Sprintf("failed=%d timeout=%d invalid_json=%d", failed, timedOut, invalidJSON)
-	if tc.Severity == Required || cfg.Strict {
-		r.Status = Fail
-	} else {
-		r.Status = Warn
-	}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
 	return r
 }
 
 func runStatic(cfg Config, tc TestCase) Result {
-	start := time.Now()
+	setupStarted := time.Now()
 	r := Result{
 		ID: tc.ID, Category: tc.Category, Title: tc.Title, Severity: tc.Severity,
 		Status: Pass, ExitCode: 0, JSONValid: true, Profile: cfg.Profile,
 	}
 
 	var err error
+	setupElapsed := time.Since(setupStarted)
+	executeStarted := time.Now()
 	switch tc.ID {
 	case "ENV-001":
 		err = requirePaths(cfg.Repo, ".git", "go.mod", "README.md")
@@ -750,7 +801,8 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = errors.New("static check not implemented")
 	}
 
-	r.DurationMS = time.Since(start).Milliseconds()
+	executeElapsed := time.Since(executeStarted)
+	persistStarted := time.Now()
 	if err != nil {
 		r.Reason = err.Error()
 		if tc.Severity == Required || cfg.Strict {
@@ -761,11 +813,17 @@ func runStatic(cfg Config, tc TestCase) Result {
 	} else {
 		r.Reason = "static check passed"
 	}
-	meta := map[string]any{"id": tc.ID, "status": r.Status, "reason": r.Reason}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
+	meta := map[string]any{
+		"id": tc.ID, "status": r.Status, "reason": r.Reason,
+		"queue_ms": timingValue(r.QueueMS), "setup_ms": timingValue(r.SetupMS),
+		"execute_ms": timingValue(r.ExecuteMS), "persist_ms": timingValue(r.PersistMS),
+	}
 	metaBytes, _ := json.MarshalIndent(meta, "", "  ")
 	_, _, metaFile := writeLogs(cfg, tc.ID, []byte(r.Reason), nil, r, nil)
 	_ = os.WriteFile(filepath.Join(cfg.Out, metaFile), metaBytes, 0o644)
 	r.MetaFile = metaFile
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
 	return r
 }
 
@@ -1262,6 +1320,10 @@ func writeLogs(cfg Config, id string, stdout []byte, stderr []byte, r Result, ru
 		"exit_code":   r.ExitCode,
 		"timed_out":   r.TimedOut,
 		"duration_ms": r.DurationMS,
+		"queue_ms":    timingValue(r.QueueMS),
+		"setup_ms":    timingValue(r.SetupMS),
+		"execute_ms":  timingValue(r.ExecuteMS),
+		"persist_ms":  timingValue(r.PersistMS),
 		"run_error":   "",
 	}
 	if runErr != nil {
@@ -1274,14 +1336,17 @@ func writeLogs(cfg Config, id string, stdout []byte, stderr []byte, r Result, ru
 }
 
 func summarize(cfg Config, start, end time.Time, results []Result) Summary {
+	cacheHitRatio := 0.0
 	s := Summary{
-		Repo:       cfg.Repo,
-		Profile:    cfg.Profile,
-		StartedAt:  start.Format(time.RFC3339),
-		EndedAt:    end.Format(time.RFC3339),
-		DurationMS: end.Sub(start).Milliseconds(),
-		Total:      len(results),
+		Repo:          cfg.Repo,
+		Profile:       cfg.Profile,
+		StartedAt:     start.Format(time.RFC3339),
+		EndedAt:       end.Format(time.RFC3339),
+		DurationMS:    end.Sub(start).Milliseconds(),
+		Total:         len(results),
+		CacheHitRatio: &cacheHitRatio,
 	}
+	slowest := make([]SlowestCase, 0, len(results))
 	for _, r := range results {
 		switch r.Status {
 		case Pass:
@@ -1293,7 +1358,20 @@ func summarize(cfg Config, start, end time.Time, results []Result) Summary {
 		case Skip:
 			s.Skip++
 		}
+		if r.Status != Skip {
+			slowest = append(slowest, SlowestCase{ID: r.ID, DurationMS: r.DurationMS})
+		}
 	}
+	sort.Slice(slowest, func(i, j int) bool {
+		if slowest[i].DurationMS == slowest[j].DurationMS {
+			return slowest[i].ID < slowest[j].ID
+		}
+		return slowest[i].DurationMS > slowest[j].DurationMS
+	})
+	if len(slowest) > 5 {
+		slowest = slowest[:5]
+	}
+	s.SlowestCases = slowest
 	if s.Fail > 0 {
 		s.Conclusion = "FAIL"
 	} else if s.Warn > 0 {
@@ -1345,6 +1423,12 @@ func writeMarkdown(path string, report Report) error {
 	b.WriteString(fmt.Sprintf("| WARN | %d |\n", s.Warn))
 	b.WriteString(fmt.Sprintf("| SKIP | %d |\n", s.Skip))
 	b.WriteString(fmt.Sprintf("| Conclusion | **%s** |\n", s.Conclusion))
+	if s.CacheHitRatio != nil {
+		b.WriteString(fmt.Sprintf("| Cache hit ratio | %.3f |\n", *s.CacheHitRatio))
+	}
+	if s.ReceiptInvalidReason != "" {
+		b.WriteString(fmt.Sprintf("| Receipt invalid reason | %s |\n", mdEscape(s.ReceiptInvalidReason)))
+	}
 
 	writeStatusSection(&b, "Failed Cases", report.Results, Fail)
 	writeStatusSection(&b, "Warning Cases", report.Results, Warn)
@@ -1354,7 +1438,7 @@ func writeMarkdown(path string, report Report) error {
 	cats := categories(report.Results)
 	for _, cat := range cats {
 		b.WriteString("### " + cat + "\n\n")
-		b.WriteString("| ID | Status | Severity | Duration ms | Reason | Logs |\n|---|---|---|---:|---|---|\n")
+		b.WriteString("| ID | Status | Severity | Duration ms | Queue | Setup | Execute | Persist | Reason | Logs |\n|---|---|---|---:|---:|---:|---:|---:|---|---|\n")
 		for _, r := range report.Results {
 			if r.Category != cat {
 				continue
@@ -1369,8 +1453,10 @@ func writeMarkdown(path string, report Report) error {
 				}
 				logs += fmt.Sprintf("[%s](%s)", "stderr", r.StderrFile)
 			}
-			b.WriteString(fmt.Sprintf("| %s | %s | %s | %d | %s | %s |\n",
-				r.ID, r.Status, r.Severity, r.DurationMS, mdEscape(r.Reason), logs))
+			b.WriteString(fmt.Sprintf("| %s | %s | %s | %d | %d | %d | %d | %d | %s | %s |\n",
+				r.ID, r.Status, r.Severity, r.DurationMS,
+				timingValue(r.QueueMS), timingValue(r.SetupMS), timingValue(r.ExecuteMS), timingValue(r.PersistMS),
+				mdEscape(r.Reason), logs))
 		}
 		b.WriteString("\n")
 	}

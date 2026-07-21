@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -71,6 +72,45 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 
 	if _, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: "nightly"}); err == nil {
 		t.Fatal("invalid profile must fail")
+	}
+}
+
+func TestCommandTimingBreakdownAndSlowestCases(t *testing.T) {
+	repo := t.TempDir()
+	cfg := Config{Repo: repo, Out: filepath.Join(repo, "results"), Profile: ProfileFull, Timeout: 10 * time.Second}
+	result := runCommand(context.Background(), cfg, TestCase{
+		ID: "TIMING-001", Category: "TEST", Title: "timed command", Severity: Required,
+		Command: []string{"go", "version"},
+	})
+	if result.Status != Pass {
+		t.Fatalf("timed command = %#v", result)
+	}
+	if result.QueueMS == nil || result.SetupMS == nil || result.ExecuteMS == nil || result.PersistMS == nil {
+		t.Fatalf("timing fields are not all present: %#v", result)
+	}
+	if got := timingValue(result.QueueMS) + timingValue(result.SetupMS) + timingValue(result.ExecuteMS) + timingValue(result.PersistMS); got != result.DurationMS {
+		t.Fatalf("timing sum = %d, duration = %d: %#v", got, result.DurationMS, result)
+	}
+	legacyJSON, err := json.Marshal(Result{ID: "SKIPPED", Status: Skip})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range []string{"queue_ms", "setup_ms", "execute_ms", "persist_ms"} {
+		if bytes.Contains(legacyJSON, []byte(field)) {
+			t.Fatalf("zero-value result must omit %s for compatibility: %s", field, legacyJSON)
+		}
+	}
+
+	results := []Result{}
+	for index := 1; index <= 6; index++ {
+		results = append(results, Result{ID: fmt.Sprintf("CASE-%d", index), Status: Pass, DurationMS: int64(index)})
+	}
+	summary := summarize(cfg, time.Unix(0, 0), time.Unix(1, 0), results)
+	if summary.CacheHitRatio == nil || *summary.CacheHitRatio != 0 {
+		t.Fatalf("executed cache hit ratio = %#v", summary.CacheHitRatio)
+	}
+	if len(summary.SlowestCases) != 5 || summary.SlowestCases[0].ID != "CASE-6" || summary.SlowestCases[4].ID != "CASE-2" {
+		t.Fatalf("slowest cases = %#v", summary.SlowestCases)
 	}
 }
 

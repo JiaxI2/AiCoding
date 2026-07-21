@@ -1,6 +1,7 @@
 package kit
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -8,7 +9,7 @@ import (
 )
 
 func TestFreshCloneChecksAreLeafCommands(t *testing.T) {
-	bin := `C:\repo\bin\aicoding.exe`
+	bin := `C:\\repo\\bin\\aicoding.exe`
 	for _, tc := range []struct {
 		profile string
 		want    [][]string
@@ -42,5 +43,15 @@ func TestFreshCloneDoesNotRepeatSubmoduleInitialization(t *testing.T) {
 	}
 	if err := CheckFreshCloneContract(repo); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestFreshCloneStepElapsedMSIsAlwaysSerialized(t *testing.T) {
+	payload, err := json.Marshal(FreshCloneStep{Name: "git.clone", OK: true, Message: "passed", ElapsedMS: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(payload), `"elapsed_ms":0`) {
+		t.Fatalf("elapsed_ms is missing from FreshCloneStep JSON: %s", payload)
 	}
 }
