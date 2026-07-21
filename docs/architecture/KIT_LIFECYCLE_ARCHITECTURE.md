@@ -1,5 +1,7 @@
 # Kit Lifecycle Architecture
 
+Status: Accepted and Frozen
+
 当前产品使用 Go-native lifecycle control。`internal/lifecycle` 以静态 Adapter Catalog
 组合 Kit、MCP 和 runtime Skill，并将选择结果转换为 `ExecutionPlan`；不引入动态插件系统，
 也不复制各领域已有实现。Lifecycle 的可观测入口是
@@ -12,6 +14,11 @@
 - `kit`：复用 `internal/kit` 的 registry、plan、apply、status、doctor、verify 和 rollback；
 - `mcp`：复用 `internal/mcpcontrol` 的 component selection、lifecycle、status、doctor 和 verify；
 - `runtime-skill`：以显式 PowerShell specialty adapter 调用 runtime Skill profile 与 audit 脚本。
+
+runtime Skill 的只读聚合路径先读取既有 config/state：本仓未配置 runtime skill，且调用方
+没有显式给出 `--runtime-skill`、`--runtime-profile full` 或 source repository 时，adapter
+返回 `skipped`，不启动 PowerShell 或 Git 进程。任何显式选择和所有写动作仍进入完整 probe，
+因此该 Fast Path 只消除无配置成本，不减少显式覆盖。
 
 兼容期内，不带 `--scope` 的 `lifecycle ... --all` 继续保持原 Kit 语义，避免升级后意外修改
 用户 Skill 根目录。跨域操作必须显式使用 `--scope all`；install/update 时还必须指定
@@ -67,6 +74,9 @@ bin\aicoding.exe export --all --zip --json
 Kit 内部只读 planning/verification 使用 `internal/runner` 有界并发并保持稳定结果顺序；
 lifecycle 跨 adapter 当前以单并发执行。State-writing actions 和 ZIP writing 保持串行，state
 与 rollback 仍由 Kit 领域拥有。
+
+产品级 `doctor --all` 与 `verify --profile` 的彼此独立只读检查也复用同一 `runner.Run`
+有界并发，结果按登记索引写回；并行只改变 elapsed 信封，不改变有序结论字节。
 
 统一 lifecycle 不推断默认领域；每次调用都必须显式选择
 `--scope kit|mcp|runtime-skill|all`。

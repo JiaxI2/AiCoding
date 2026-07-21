@@ -156,6 +156,7 @@ func TestPluginProjectionCheckWarnsInSmokeAndFailsInBlockingProfiles(t *testing.
   "kind":["test"],
   "mode":"go-builtin",
   "description":"",
+  "trust":{"updatePolicy":"manual","thirdParty":false},
   "commands":{"status":{"type":"external-command","executable":"bin/aicoding.exe","args":["status","--all","--json"]}}
 }`)
 	catalog, err := LoadCatalogSnapshot(repo)
@@ -184,6 +185,70 @@ func TestPluginProjectionCheckWarnsInSmokeAndFailsInBlockingProfiles(t *testing.
 	}
 	if !containsError(blocking.Errors, "manifest description is empty") || !containsError(blocking.Errors, "unknown typed command: status") {
 		t.Fatalf("projection issues were not precise: %#v", blocking.Errors)
+	}
+}
+
+func TestPluginProjectionManagementRulesUseExistingManifestFacts(t *testing.T) {
+	repo := t.TempDir()
+	writeLifecycleRegistry(t, repo, []string{"external-helper"})
+	manifestPath := filepath.Join(repo, "config", "kits", "external-helper.json")
+	mustWriteLifecycle(t, manifestPath, `{
+  "schemaVersion":2,
+  "id":"external-helper",
+  "name":"External Helper",
+  "version":"0.1.0",
+  "kind":["test"],
+  "mode":"go-builtin",
+  "description":"internal helper",
+  "trust":{"updatePolicy":"floating","thirdParty":true},
+  "commands":{"install":{"type":"builtin-lifecycle","supportsDryRun":true}}
+}`)
+	policy := PluginProjectionPolicy{
+		Adapter: PluginAdapter{
+			Scope:      "kit",
+			StateOwner: "kit",
+			Entrypoint: "go-static",
+		},
+	}
+	catalog, err := LoadCatalogSnapshot(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	smoke := PluginProjectionCheck(repo, catalog.Kits(), policy, false)
+	if !smoke.OK || len(smoke.Warnings) != 4 || len(smoke.Errors) != 0 {
+		t.Fatalf("Smoke management severity mismatch: %#v", smoke)
+	}
+	blocking := PluginProjectionCheck(repo, catalog.Kits(), policy, true)
+	for _, want := range []string{
+		"description is implementation-led",
+		"enabled kit has no read command",
+		"trust.updatePolicy must be manual, pinned, or tracked",
+		"external kit boundary card is missing",
+	} {
+		if !containsError(blocking.Errors, want) {
+			t.Fatalf("missing precise management issue %q: %#v", want, blocking.Errors)
+		}
+	}
+
+	mustWriteLifecycle(t, filepath.Join(repo, "docs", "reference", "kits", "external-helper-BOUNDARY.md"), "# Boundary\n")
+	mustWriteLifecycle(t, manifestPath, `{
+  "schemaVersion":2,
+  "id":"external-helper",
+  "name":"External Helper",
+  "version":"0.1.0",
+  "kind":["test"],
+  "mode":"go-builtin",
+  "description":"Wraps a pinned external helper for repository checks.",
+  "trust":{"updatePolicy":"pinned","thirdParty":true},
+  "commands":{"status":{"type":"builtin-check","requiredPaths":[]}}
+}`)
+	catalog, err = LoadCatalogSnapshot(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if check := PluginProjectionCheck(repo, catalog.Kits(), policy, true); !check.OK {
+		t.Fatalf("corrected external kit did not pass: %#v", check)
 	}
 }
 

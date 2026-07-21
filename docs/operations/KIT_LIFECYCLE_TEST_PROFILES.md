@@ -38,6 +38,7 @@ Full is an explicit manual profile for complete kit tests during local developme
 Full may:
 
 - run each enabled kit's manifest `test` command;
+- run race for every package declared concurrent by `config/impact-policy.json`, with GO-007 rejecting any unregistered concurrent package;
 - copy a temporary source tree for manual source-only restore checks;
 - take longer than the default Smoke gate.
 
@@ -67,6 +68,7 @@ Release may:
 - create and extract `aicoding-kit-bundle-*.zip`;
 - validate `SHA256SUMS.txt`;
 - scan extracted bundle contents and nested package zips for local absolute path leaks.
+- run the full-repository `go test -race ./...`; the weekly Release CI job preserves the same full race coverage.
 
 Release must not:
 

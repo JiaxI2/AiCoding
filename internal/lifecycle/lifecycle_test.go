@@ -138,6 +138,7 @@ func TestRuntimeSkillVerifyUsesStrictAudit(t *testing.T) {
 	if !result.OK || len(result.Adapters) != 1 {
 		t.Fatalf("unexpected runtime verification: %#v", result)
 	}
+	t.Logf("explicit runtime Skill status=%s", result.Adapters[0].Status)
 	for _, expected := range []string{
 		"audit-runtime-skills.ps1",
 		"-ExpectedProfile full",
@@ -151,13 +152,38 @@ func TestRuntimeSkillVerifyUsesStrictAudit(t *testing.T) {
 	}
 }
 
+func TestRuntimeSkillUnconfiguredSkipsWithoutProcess(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "config", "skill-sources.json"), `{
+  "schemaVersion": 1,
+  "sources": [{"skill": "ppt-master"}]
+}`)
+	executed := 0
+	fakeExecutor := func(context.Context, string, string, []string) ([]byte, []byte, error) {
+		executed++
+		return []byte(`{"ok":true}`), nil, nil
+	}
+	result := run(context.Background(), repo, normalizeOptions(Options{
+		Action: "doctor",
+		Scope:  ScopeRuntimeSkill,
+	}), fakeExecutor)
+	if !result.OK || len(result.Adapters) != 1 || result.Adapters[0].Status != "skipped" {
+		t.Fatalf("unconfigured runtime Skill was not skipped: %#v", result)
+	}
+	if executed != 0 {
+		t.Fatalf("runtime Skill process executions = %d, want 0", executed)
+	}
+	t.Logf("unconfigured runtime Skill process executions=%d status=%s", executed, result.Adapters[0].Status)
+}
+
 func TestRuntimeSkillAuditDriftFailsUnifiedReport(t *testing.T) {
 	fakeExecutor := func(context.Context, string, string, []string) ([]byte, []byte, error) {
 		return []byte(`{"ok":false}`), nil, nil
 	}
 	result := run(context.Background(), t.TempDir(), normalizeOptions(Options{
-		Action: "doctor",
-		Scope:  ScopeRuntimeSkill,
+		Action:         "doctor",
+		Scope:          ScopeRuntimeSkill,
+		RuntimeProfile: "runtime",
 	}), fakeExecutor)
 	if result.OK || result.Summary.Failed != 1 || len(result.Errors) == 0 {
 		t.Fatalf("expected runtime drift failure: %#v", result)

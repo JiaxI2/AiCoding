@@ -4,13 +4,28 @@ set -eu
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 cd "$repo_root"
 
+cli=""
 if [ -x "bin/aicoding" ]; then
-  exec bin/aicoding hook pre-commit
+  cli="bin/aicoding"
+elif [ -x "bin/aicoding.exe" ]; then
+  cli="bin/aicoding.exe"
+else
+  echo "AiCoding CLI is required for pre-commit checks; run bootstrap first" >&2
+  exit 1
 fi
 
-if [ -x "bin/aicoding.exe" ]; then
-  exec bin/aicoding.exe hook pre-commit
+if "$cli" hook pre-commit --repo-root "$repo_root"; then
+  hook_status=0
+else
+  hook_status=$?
 fi
 
-echo "AiCoding CLI is required for pre-commit checks; run bootstrap first" >&2
-exit 1
+if "$cli" plan check --staged --repo-root "$repo_root" --json; then
+  :
+else
+  plan_status=$?
+  echo "Plan Mode gate rejected staged architecture-sensitive paths" >&2
+  exit "$plan_status"
+fi
+
+exit "$hook_status"

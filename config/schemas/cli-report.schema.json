@@ -7,6 +7,8 @@
     "schemaVersion",
     "command",
     "ok",
+    "category",
+    "retryable",
     "elapsedMs"
   ],
   "properties": {
@@ -28,6 +30,26 @@
         "execution",
         "validation"
       ]
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "none",
+        "usage",
+        "validation",
+        "transient",
+        "toolchain",
+        "evidence-missing",
+        "conflict",
+        "internal"
+      ]
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "nextAction": {
+      "type": "string",
+      "minLength": 1
     },
     "message": {
       "type": "string"

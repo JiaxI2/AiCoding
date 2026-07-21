@@ -2,6 +2,7 @@ package repohealth
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -15,6 +16,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/platform"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 )
 
 type PwshCall struct {
@@ -24,6 +26,18 @@ type PwshCall struct {
 	Category             string `json:"category"`
 	Recommendation       string `json:"recommendation"`
 	SuggestedReplacement string `json:"suggestedReplacement,omitempty"`
+}
+
+type PwshInventory struct {
+	Calls      []PwshCall     `json:"calls"`
+	Retirement PwshRetirement `json:"retirement"`
+}
+
+type PwshRetirement struct {
+	Scope            string `json:"scope"`
+	RemainingScripts int    `json:"remainingScripts"`
+	ThinShells       int    `json:"thinShells"`
+	Deprecated       int    `json:"deprecated"`
 }
 
 type HookCheck struct {
@@ -104,6 +118,48 @@ func ScanPwsh(repo string) ([]PwshCall, []string) {
 		}
 	}
 	return calls, errs
+}
+
+func InspectPwsh(repo string) (PwshInventory, []string) {
+	calls, errs := ScanPwsh(repo)
+	retirement, retirementErrs := inspectPwshRetirement(repo)
+	errs = append(errs, retirementErrs...)
+	return PwshInventory{Calls: calls, Retirement: retirement}, errs
+}
+
+func inspectPwshRetirement(repo string) (PwshRetirement, []string) {
+	retirement := PwshRetirement{Scope: "tools/specialty/*.ps1"}
+	matches, err := filepath.Glob(platform.RepoPath(repo, "tools/specialty/*.ps1"))
+	if err != nil {
+		return retirement, []string{"bad PowerShell retirement glob: " + err.Error()}
+	}
+	sort.Strings(matches)
+	errs := []string{}
+	for _, path := range matches {
+		info, statErr := os.Stat(path)
+		if statErr != nil || info.IsDir() {
+			if statErr != nil {
+				errs = append(errs, statErr.Error())
+			}
+			continue
+		}
+		retirement.RemainingScripts++
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			errs = append(errs, "cannot read "+path+": "+readErr.Error())
+			continue
+		}
+		lower := strings.ToLower(string(data))
+		thin := strings.Contains(lower, "compatibility wrapper") ||
+			(strings.Contains(lower, "compatibility-only") && strings.Contains(lower, "bin/aicoding"))
+		if thin {
+			retirement.ThinShells++
+		}
+		if strings.Contains(lower, "deprecated(") || (thin && strings.Contains(lower, "warning:")) {
+			retirement.Deprecated++
+		}
+	}
+	return retirement, errs
 }
 
 func isPwshInvocationLine(lower string) bool {
@@ -587,17 +643,42 @@ func commandVersion(name string, args ...string) string {
 }
 
 func discoverTools(names []string) []ToolStatus {
-	out := []ToolStatus{}
+	return discoverToolsWith(context.Background(), names, exec.LookPath, 4)
+}
+
+func discoverToolsWith(ctx context.Context, names []string, lookup func(string) (string, error), maxParallel int) []ToolStatus {
+	unique := []string{}
 	seen := map[string]bool{}
 	for _, name := range names {
 		if seen[name] {
 			continue
 		}
 		seen[name] = true
-		path, err := exec.LookPath(name)
-		item := ToolStatus{Name: name, Found: err == nil}
-		if err == nil {
-			item.Path = path
+		unique = append(unique, name)
+	}
+	tasks := make([]runner.Task, 0, len(unique))
+	for _, name := range unique {
+		name := name
+		tasks = append(tasks, runner.Task{
+			ID:     name,
+			Action: "repohealth.discover-tool",
+			Group:  "repository",
+			Run: func(context.Context) runner.TaskResult {
+				path, err := lookup(name)
+				item := ToolStatus{Name: name, Found: err == nil}
+				if err == nil {
+					item.Path = path
+				}
+				return runner.TaskResult{OK: true, Data: item}
+			},
+		})
+	}
+	results := runner.Run(ctx, tasks, runner.Options{MaxParallel: maxParallel})
+	out := make([]ToolStatus, 0, len(results))
+	for index, result := range results {
+		item, ok := result.Data.(ToolStatus)
+		if !ok {
+			item = ToolStatus{Name: unique[index], Found: false}
 		}
 		out = append(out, item)
 	}

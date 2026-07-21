@@ -4,25 +4,41 @@
 
 `Plugin View` 是面向用户和 Agent 的 Kit 能力只读投影，不是新的 runtime domain、Manifest、
 registry、生命周期、动态 Go plugin ABI 或控制面。生产者如何把新能力接入平台，见
-[Plugin SDK](../architecture/06-plugin-sdk.md)；本文只规定消费者如何查看已经登记的能力。
+[Plugin SDK](../architecture/06-plugin-sdk.md)；快速入门与维护要求见
+[Kit 管理标准](KIT_MANAGEMENT_STANDARD.md)。本文只规定消费者如何查看已经登记的能力。
 
-```text
-Kit Catalog Snapshot
-+ Kit Manifest
-+ Skill Metadata / SKILL.md headings
-+ Static Adapter Catalog
-= Kit Plugin View
-```
+这张图回答 Kit 交付单元如何投影为只读视图，以及它与 `internal/kit` 实现域的边界。
+Kit 事实来自 registry/manifest；八动词与 owned state 仍由内部实现域负责。
 
-执行链保持不变：
-
-```text
-User / Agent
-  -> Go CLI
-     -> registry / lifecycle / governance
-        -> Static Adapter
-           -> Kit / domain-owned state
-              -> report.Result
+```mermaid
+flowchart LR
+  subgraph K["Kit delivery unit"]
+    REG["kit-registry"]
+    MAN["kit manifest"]
+    CMD["commands"]
+    SKILL["skills"]
+  end
+  subgraph V["Read-only projection"]
+    VIEW["PluginView"]
+    CLI["aicoding kit describe"]
+  end
+  subgraph I["Internal implementation domain"]
+    LIFE["lifecycle<br/>plan · install · update · uninstall<br/>status · doctor · verify · rollback"]
+    DOMAIN["internal/kit adapter"]
+    STATE["kit-owned state"]
+  end
+  REG --> MAN
+  MAN --> CMD
+  MAN --> SKILL
+  REG --> VIEW
+  MAN --> VIEW
+  CMD --> VIEW
+  SKILL --> VIEW
+  STATE -. "explicit --with-state" .-> VIEW
+  VIEW --> CLI
+  MAN --> LIFE
+  LIFE --> DOMAIN
+  DOMAIN --> STATE
 ```
 
 禁止新增 `plugin.yaml`、Plugin Registry、Workflow Registry、权限数据库、第二 Report Schema
@@ -41,6 +57,7 @@ User / Agent
 |---|---|
 | Kit 注册、启用状态与顺序 | `config/kit-registry.json` |
 | Kit 名称、版本、kind、mode、description、trust | `config/kits/*.json` |
+| Quickstart 目的、首个 read command、Skill 摘要 | 同一 manifest description/commands/skills 的派生投影 |
 | Skill 身份、角色、描述、标签与路径 | Kit manifest；解析复用 `internal/kit.parseSkillEntries` |
 | Workflow 定位 | manifest Skill 路径与权威 `SKILL.md` 的二级标题 |
 | 顶层命令与 help | `internal/cli` Typed Command Catalog |
@@ -73,7 +90,14 @@ User / Agent
 实现对每个 `SKILL.md` 单次顺序扫描，同时取得 frontmatter 与所有 `## ` 标题；不使用正则
 回溯、不复制章节正文、不建立 Workflow DSL。
 
-### 4.3 Operations（per-kit）
+### 4.3 Quickstart
+
+`quickstart` 不是 manifest 字段或文件，只从同一 detached manifest 派生：`purpose` 复用
+description，`command` 取按名字排序的首个 read operation 并渲染为现有 typed CLI 调用，
+`skills` 复用 Skill ID 与 description。无 Skill 时输出稳定空数组；没有 read command 时管理
+门禁失败。完整管理契约见 [Kit 管理标准](KIT_MANAGEMENT_STANDARD.md)。
+
+### 4.4 Operations（per-kit）
 
 operation 名字只来自 `Manifest.Commands`，且必须属于
 `allowedManifestCommandNames`。effect 的唯一解析规则是：
@@ -93,7 +117,7 @@ stateOwner / entrypoint             -> 使用 lifecycle kit adapter descriptor
 | `export` | write |
 | `test` / `skills` / `verify-skills` | read |
 
-### 4.4 Lifecycle actions（scope 级）
+### 4.5 Lifecycle actions（scope 级）
 
 `lifecycleActions` 逐项投影 Static Adapter Catalog 的 Kit descriptor，并固定
 `scope: "kit"`。它对所有 Kit 一致，不表示某个 Kit 独有。当前 catalog 包含
@@ -103,7 +127,7 @@ stateOwner / entrypoint             -> 使用 lifecycle kit adapter descriptor
 effects 只允许 `{effect: read|write, stateOwner, entrypoint: go-static|bounded-process}`，
 不增加自由文本权限标签。
 
-### 4.5 State 与 digest
+### 4.6 State 与 digest
 
 默认不读 state。只有 `--with-state` 才输出稳定摘要
 `{kitId, version, action, installed}`；`installedAt`、`updatedAt` 和绝对 cache path 不进入 View。
@@ -151,6 +175,11 @@ Plugin View 位于既有 `report.Result.data`：
   "id": "aicoding-platform",
   "name": "AiCoding Platform",
   "description": "...",
+  "quickstart": {
+    "purpose": "...",
+    "command": "aicoding lifecycle status --scope kit --kit aicoding-platform --json",
+    "skills": []
+  },
   "identity": {
     "enabled": true,
     "order": 10,
@@ -174,13 +203,15 @@ Kit 按 registry `order`，各数组按稳定 ID/名字字典序输出。
 门禁落在 `internal/kit.VerifyCatalogStructure` 的 `plugin view projection` StructureCheck，
 不新建 validator 或命令。它检查：
 
-1. manifest description 非空；
+1. enabled Kit 的 manifest description 非空且不以内部实现开头；
 2. Skill description 非空且登记路径存在，umbrella/member 角色沿用既有结构校验；
-3. 每个 manifest command 有唯一 read/write effect；
-4. 每个 write operation 有 adapter state owner；
-5. 当 `external-command` 调用 `aicoding(.exe)` 时，`args[0]` 必须存在于 Typed Command
+3. enabled Kit 至少有一条 read command，且 `quickstart` 可从现有事实完整派生；
+4. enabled Kit 的 `trust.updatePolicy` 属于 `manual|pinned|tracked`；外部包装 Kit 存在约定边界卡；
+5. 每个 manifest command 有唯一 read/write effect；
+6. 每个 write operation 有 adapter state owner；
+7. 当 `external-command` 调用 `aicoding(.exe)` 时，`args[0]` 必须存在于 Typed Command
    Catalog；调用 `go` 等真正外部工具时不把其参数误当 AiCoding 命令；
-6. 投影不宣传已移除的兼容命令。
+8. 投影不宣传已移除的兼容命令。
 
 `kit verify --profile Smoke` 将新增问题报告为 warnings；Lifecycle 为 errors。官方 Full/Release
 测试同样执行 Lifecycle 结构用例，因而保持阻断。验证必须使用：

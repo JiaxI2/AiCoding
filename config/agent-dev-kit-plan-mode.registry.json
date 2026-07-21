@@ -6,32 +6,32 @@
   "phases": [
     {
       "id": "clarify",
-      "artifact": "docs/decisions/plan-mode-overlay/PRD_OPTIONS.md",
+      "artifact": "docs/spec/<id>/OPTIONS.md",
       "requiredWhen": "requirement is fuzzy"
     },
     {
       "id": "specify",
-      "artifact": "docs/decisions/plan-mode-overlay/PLAN_MODE.md",
+      "artifact": "docs/spec/<id>/PLAN.md",
       "requiredWhen": "non-trivial work"
     },
     {
       "id": "plan",
-      "artifact": "docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md",
+      "artifact": "docs/spec/<id>/PLAN.md",
       "requiredWhen": "implementation changes"
     },
     {
       "id": "decision",
-      "artifact": "docs/decisions/plan-mode-overlay/SELECTED_SOLUTION.md",
+      "artifact": "docs/spec/<id>/DECISION.md",
       "requiredWhen": "multiple architecture options exist"
     },
     {
       "id": "tasks",
-      "artifact": "docs/decisions/plan-mode-overlay/TASKS.md",
+      "artifact": "docs/spec/<id>/TASKS.md",
       "requiredWhen": "implementation changes"
     },
     {
       "id": "traceability",
-      "artifact": "docs/decisions/plan-mode-overlay/TRACEABILITY.md",
+      "artifact": "docs/spec/<id>/PLAN.md",
       "requiredWhen": "implementation changes"
     },
     {
@@ -41,10 +41,10 @@
     }
   ],
   "stopFiles": [
-    "docs/decisions/plan-mode-overlay/NEEDS_USER_DECISION.md"
+    "docs/spec/<id>/PLAN.md#status=needs-decision"
   ],
   "acceptedDecisionArtifacts": [
-    "docs/decisions/plan-mode-overlay/SELECTED_SOLUTION.md",
+    "docs/spec/<id>/DECISION.md",
     ".aicoding/memory/DECISIONS.md",
     "docs/decisions",
     "docs/adr"

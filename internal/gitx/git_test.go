@@ -1,11 +1,51 @@
 package gitx
 
 import (
+	"archive/tar"
+	"bytes"
+	"context"
+	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestArchiveStreamsTrackedTreeOnly(t *testing.T) {
+	repo := newGitRepo(t)
+	writeGitFile(t, repo, "tracked.txt", "tracked\n")
+	mustGit(t, repo, "add", "tracked.txt")
+	mustGit(t, repo, "commit", "-m", "initial")
+	writeGitFile(t, repo, "untracked.txt", "untracked\n")
+
+	var archive bytes.Buffer
+	if err := Archive(context.Background(), repo, "HEAD", &archive); err != nil {
+		t.Fatal(err)
+	}
+	reader := tar.NewReader(bytes.NewReader(archive.Bytes()))
+	files := map[string]string{}
+	for {
+		header, err := reader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if header.Typeflag != tar.TypeReg {
+			continue
+		}
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		files[filepath.ToSlash(header.Name)] = strings.ReplaceAll(string(content), "\r\n", "\n")
+	}
+	if files["tracked.txt"] != "tracked\n" || files["untracked.txt"] != "" {
+		t.Fatalf("archive files = %#v", files)
+	}
+}
 
 func TestContentIdentityPrimitives(t *testing.T) {
 	repo := newGitRepo(t)
@@ -39,7 +79,7 @@ func TestContentIdentityPrimitives(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status != (Status{}) {
+	if !reflect.DeepEqual(status, Status{}) {
 		t.Fatalf("clean status = %#v", status)
 	}
 }
@@ -62,6 +102,32 @@ func TestStatusSnapshotClassifiesChanges(t *testing.T) {
 	}
 	if !status.TrackedModified || !status.Staged || !status.Untracked || status.SubmoduleDirty || status.Unmerged {
 		t.Fatalf("status = %#v", status)
+	}
+	wantPaths := []string{"staged.txt", "tracked.txt", "untracked.txt"}
+	if !reflect.DeepEqual(status.Paths, wantPaths) || !reflect.DeepEqual(status.StagedPaths, []string{"staged.txt"}) {
+		t.Fatalf("status paths = %#v staged=%#v, want %#v", status.Paths, status.StagedPaths, wantPaths)
+	}
+}
+
+func TestStatusSnapshotPreservesRenameSourceAndUTF8Path(t *testing.T) {
+	repo := newGitRepo(t)
+	writeGitFile(t, repo, "internal/old.go", "package internal\n")
+	mustGit(t, repo, "add", ".")
+	mustGit(t, repo, "commit", "-m", "initial")
+	if err := os.MkdirAll(filepath.Join(repo, "docs"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(filepath.Join(repo, "internal", "old.go"), filepath.Join(repo, "docs", "中文 说明.md")); err != nil {
+		t.Fatal(err)
+	}
+	mustGit(t, repo, "add", "-A")
+	status, err := StatusSnapshot(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"docs/中文 说明.md", "internal/old.go"}
+	if !reflect.DeepEqual(status.Paths, want) || !reflect.DeepEqual(status.StagedPaths, want) {
+		t.Fatalf("rename paths = %#v staged=%#v, want %#v", status.Paths, status.StagedPaths, want)
 	}
 }
 
@@ -88,6 +154,33 @@ func TestStatusSnapshotDetectsDirtySubmodule(t *testing.T) {
 func TestTreeOIDRejectsEmptyRevision(t *testing.T) {
 	if _, err := TreeOID(t.TempDir(), "  "); err == nil {
 		t.Fatal("TreeOID accepted an empty revision")
+	}
+}
+
+func TestTreeEntriesReturnsTrackedObjectsWithoutWorktreeFiles(t *testing.T) {
+	repo := newGitRepo(t)
+	writeGitFile(t, repo, "z.txt", "z\n")
+	writeGitFile(t, repo, "nested/a.go", "package nested\n")
+	mustGit(t, repo, "add", ".")
+	mustGit(t, repo, "commit", "-m", "tree")
+	tree, err := TreeOID(repo, "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := TreeEntries(repo, tree)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 || entries[0].Path != "nested/a.go" || entries[1].Path != "z.txt" {
+		t.Fatalf("tree entries = %#v", entries)
+	}
+	for _, entry := range entries {
+		if entry.Mode != "100644" || entry.Type != "blob" || len(entry.OID) != 40 {
+			t.Fatalf("invalid tree entry = %#v", entry)
+		}
+	}
+	if _, err := TreeEntries(repo, ""); err == nil {
+		t.Fatal("TreeEntries accepted an empty tree")
 	}
 }
 

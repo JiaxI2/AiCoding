@@ -28,13 +28,20 @@ Status: Derived View（派生视图）
 
 具体步骤：
 
-1. 写 manifest：`config/kits/<id>.json` 或 `config/mcp/components/<id>.json`，
+1. 用 `kit init <id>` 或 `mcp init <id> --out config/mcp/components` 生成并评审
+   manifest；两者都不会自动启用，`mcp init` 也不会修改 registry。
+2. 写 manifest：`config/kits/<id>.json` 或 `config/mcp/components/<id>.json`，
    通过对应的冻结 schema 校验（五个冻结 schema 之一，见
    [FREEZE_AND_ACQUISITION_BOUNDARY](FREEZE_AND_ACQUISITION_BOUNDARY.md)）。
-2. 登记 registry：`config/kit-registry.json` / `config/mcp-registry.json` 增一条。
-3. 预览并安装：`lifecycle plan --action install --scope kit|mcp …` →
+3. 实现真实 capability，并把生成器给出的 disabled entry 经人工评审后登记到
+   `config/kit-registry.json` / `config/mcp-registry.json`。
+4. 预览并安装：`lifecycle plan --action install --scope kit|mcp …` →
    `lifecycle install …`。
-4. 过门禁：`verify --profile Smoke` + `test --profile Smoke`（按风险升 Full）。
+5. 过门禁：`verify --profile Smoke` + `test --profile Smoke`（按风险升 Full）。
+
+MCP 脚手架只生成冻结结构、三个 profile 占位和 registry 建议，不生成业务 runtime，
+所以不能把“manifest 合规”误报成“component 已可运行”。完整步骤见
+[创作指引](../guides/AUTHORING.md)。
 
 效果：内核与 CLI **零改动**；新组件自动出现在 `list`/`status` JSON 里
 （数据变化，不是接口变化）；Agent 无需学任何新东西。
@@ -44,13 +51,16 @@ Status: Derived View（派生视图）
 
 ## 3. 路径②：新 external Skill（跨仓库登记）
 
-1. 上游仓库进入 Codex-Skills 的 `external/` **嵌套子模块**并 pin 到发布版本
+1. 在 AiCoding 仓库外的可写 Codex-Skills checkout/worktree 创作；可先用
+   `skill init <id> --out <external-path>` 生成结构合规但尚未批准的草稿。命令会拒绝
+   AiCoding 仓库和只读 `CodingKit/agents/skills` 内的输出。
+2. 上游仓库进入 Codex-Skills 的 `external/` **嵌套子模块**并 pin 到发布版本
    （不复制源码；Codex-Skills 侧登记 binding manifest）。
-2. AiCoding 侧把运行时名字登记进 full profile 的独立 Skill 清单，并把名字映射到
+3. AiCoding 侧把运行时名字登记进 full profile 的独立 Skill 清单，并把名字映射到
    含 `SKILL.md` 的具体目录（sourcePaths）。
-3. `lifecycle install|update --scope runtime-skill --runtime-profile full …` 暴露；
+4. `lifecycle install|update --scope runtime-skill --runtime-profile full …` 暴露；
    运行时审计拒绝同名 active Skill。
-4. 升级：解析上游最高稳定 semver tag，评审后前移 pin；卸载只删除目标精确匹配的
+5. 升级：解析上游最高稳定 semver tag，评审后前移 pin；卸载只删除目标精确匹配的
    junction；解除集成必须同时清掉两侧登记，不留孤儿链接。
 
 ## 4. 路径③：新领域 adapter（需 ADR）

@@ -8,96 +8,147 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/JiaxI2/AiCoding/internal/gitx"
+	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
 type FreshCloneReport struct {
-	SchemaVersion int              `json:"schemaVersion"`
-	Profile       string           `json:"profile"`
-	OK            bool             `json:"ok"`
-	SourceRoot    string           `json:"sourceRoot"`
-	TempRoot      string           `json:"tempRoot"`
-	CloneRoot     string           `json:"cloneRoot"`
-	KeptTemp      bool             `json:"keptTemp"`
-	Steps         []FreshCloneStep `json:"steps"`
-	Errors        []string         `json:"errors,omitempty"`
+	SchemaVersion    int              `json:"schemaVersion"`
+	Profile          string           `json:"profile"`
+	OK               bool             `json:"ok"`
+	SourceMode       string           `json:"sourceMode"`
+	SourceRoot       string           `json:"sourceRoot"`
+	SourceTreeOID    string           `json:"sourceTreeOID"`
+	TempRoot         string           `json:"tempRoot"`
+	CloneRoot        string           `json:"cloneRoot"`
+	MaterializedRoot string           `json:"materializedRoot,omitempty"`
+	ManifestPath     string           `json:"manifestPath,omitempty"`
+	SourceManifest   *SourceManifest  `json:"sourceManifest,omitempty"`
+	KeptTemp         bool             `json:"keptTemp"`
+	Steps            []FreshCloneStep `json:"steps"`
+	Errors           []string         `json:"errors,omitempty"`
 }
 
 type FreshCloneStep struct {
-	Name    string `json:"name"`
-	OK      bool   `json:"ok"`
-	Message string `json:"message"`
-	Output  string `json:"output,omitempty"`
+	Name      string `json:"name"`
+	OK        bool   `json:"ok"`
+	Message   string `json:"message"`
+	Output    string `json:"output,omitempty"`
+	ElapsedMS int64  `json:"elapsed_ms"`
 }
 
-func FreshClone(repo, profile string, keepTemp bool) FreshCloneReport {
-	profile = strings.Title(strings.ToLower(strings.TrimSpace(profile)))
-	if profile == "" {
-		profile = "Smoke"
-	}
-	tempRoot := filepath.Join(os.TempDir(), "aicoding-fresh-clone-"+time.Now().UTC().Format("20060102-150405")+"-"+randomSuffix())
-	cloneRoot := filepath.Join(tempRoot, "AiCoding")
-	report := FreshCloneReport{SchemaVersion: 1, Profile: profile, OK: true, SourceRoot: repo, TempRoot: tempRoot, CloneRoot: cloneRoot}
-	add := func(name string, ok bool, message string, output string) {
-		report.Steps = append(report.Steps, FreshCloneStep{Name: name, OK: ok, Message: message, Output: trimOutput(output)})
+func FreshClone(repo, profile string, keepTemp bool) (report FreshCloneReport) {
+	profile = normalizeKitProfile(profile)
+	report = FreshCloneReport{SchemaVersion: 1, Profile: profile, OK: true, SourceMode: "cloned", SourceRoot: repo}
+	add := func(name string, started time.Time, ok bool, message string, output string) {
+		report.Steps = append(report.Steps, FreshCloneStep{
+			Name: name, OK: ok, Message: message, Output: trimOutput(output), ElapsedMS: time.Since(started).Milliseconds(),
+		})
 		if !ok {
 			report.OK = false
 			report.Errors = append(report.Errors, name+": "+message)
 		}
 	}
-	if err := os.MkdirAll(tempRoot, 0o755); err != nil {
-		add("temp", false, err.Error(), "")
+	stepStarted := time.Now()
+	tempRoot, err := platform.CreateTempDir(repo, "fresh-clone")
+	report.TempRoot = tempRoot
+	report.CloneRoot = filepath.Join(tempRoot, "AiCoding")
+	if err != nil {
+		add("temp", stepStarted, false, err.Error(), "")
 		return report
 	}
+	add("temp", stepStarted, true, "created and registered temporary directory", "")
+	cloneRoot := report.CloneRoot
 	defer func() {
-		if report.OK && !keepTemp {
-			_ = os.RemoveAll(tempRoot)
-		} else {
+		started := time.Now()
+		switch {
+		case report.OK && !keepTemp:
+			if err := platform.ReleaseTempDir(repo, tempRoot, "fresh-clone"); err != nil {
+				report.KeptTemp = true
+				add("temp.release", started, false, err.Error(), "")
+				return
+			}
+			add("temp.release", started, true, "released and recorded temporary directory", "")
+		case keepTemp:
 			report.KeptTemp = true
+			if err := platform.RecordTempOutcome(repo, tempRoot, "fresh-clone", "investigating"); err != nil {
+				add("temp.ledger", started, false, err.Error(), "")
+				return
+			}
+			add("temp.ledger", started, true, "kept as investigating by explicit request", "")
+		default:
+			report.KeptTemp = true
+			if err := platform.RecordTempOutcome(repo, tempRoot, "fresh-clone", "failed"); err != nil {
+				add("temp.ledger", started, false, err.Error(), "")
+				return
+			}
+			add("temp.ledger", started, true, "failed evidence retained and registered", "")
 		}
 	}()
+	stepStarted = time.Now()
+	report.SourceTreeOID, err = gitx.TreeOID(repo, "HEAD")
+	if err != nil {
+		add("git.source-tree", stepStarted, false, err.Error(), "")
+		return report
+	}
+	add("git.source-tree", stepStarted, true, "captured source HEAD tree", "")
+	stepStarted = time.Now()
 	if out, err := runFresh("", "git", "clone", "--recurse-submodules", repo, cloneRoot); err != nil {
-		add("git.clone", false, err.Error(), out)
+		add("git.clone", stepStarted, false, err.Error(), out)
 		return report
 	} else {
-		add("git.clone", true, "cloned local repository", out)
+		add("git.clone", stepStarted, true, "cloned local repository", out)
 	}
+	stepStarted = time.Now()
 	if out, err := verifyFreshCloneSubmodules(cloneRoot); err != nil {
-		add("git.submodule", false, err.Error(), out)
+		add("git.submodule", stepStarted, false, err.Error(), out)
 		return report
 	} else {
-		add("git.submodule", true, "submodules verified", out)
+		add("git.submodule", stepStarted, true, "submodules verified", out)
 	}
+	stepStarted = time.Now()
 	if out, err := overlayWorkingTree(repo, cloneRoot); err != nil {
-		add("worktree.overlay", false, err.Error(), out)
+		add("worktree.overlay", stepStarted, false, err.Error(), out)
 		return report
 	} else {
-		add("worktree.overlay", true, "current worktree changes overlaid", out)
+		add("worktree.overlay", stepStarted, true, "current worktree changes overlaid", out)
 	}
 	bin := filepath.Join(cloneRoot, "bin", "aicoding.exe")
+	stepStarted = time.Now()
 	if err := os.MkdirAll(filepath.Dir(bin), 0o755); err != nil {
-		add("go.build.mkdir", false, err.Error(), "")
+		add("go.build.mkdir", stepStarted, false, err.Error(), "")
 		return report
 	}
+	stepStarted = time.Now()
 	if out, err := runFresh(cloneRoot, "go", "build", "-o", bin, "./cmd/aicoding"); err != nil {
-		add("go.build", false, err.Error(), out)
+		add("go.build", stepStarted, false, err.Error(), out)
 		return report
 	} else {
-		add("go.build", true, "built Go CLI", out)
+		add("go.build", stepStarted, true, "built Go CLI", out)
 	}
+	stepStarted = time.Now()
 	checks, err := freshCloneChecks(bin, profile)
 	if err != nil {
-		add("profile", false, err.Error(), "")
+		add("profile", stepStarted, false, err.Error(), "")
 		return report
 	}
 	for _, check := range checks {
+		stepStarted = time.Now()
 		out, err := runFresh(cloneRoot, check[0], check[1:]...)
 		name := "check." + filepath.Base(check[0]) + " " + strings.Join(check[1:], " ")
 		if err != nil {
-			add(name, false, err.Error(), out)
+			add(name, stepStarted, false, err.Error(), out)
 			return report
 		}
-		add(name, true, "passed", out)
+		add(name, stepStarted, true, "passed", out)
 	}
+	stepStarted = time.Now()
+	if err := recordFreshCloneBaseline(repo, report.SourceTreeOID); err != nil {
+		add("transport.baseline", stepStarted, false, err.Error(), "")
+		return report
+	}
+	add("transport.baseline", stepStarted, true, "recorded successful true-clone tree", "")
 	return report
 }
 
@@ -183,8 +234,6 @@ func trimOutput(s string) string {
 	}
 	return s
 }
-func randomSuffix() string { return fmt.Sprintf("%d", time.Now().UnixNano()%1000000) }
-
 func overlayWorkingTree(repo, cloneRoot string) (string, error) {
 	changed := []string{}
 	for _, args := range [][]string{

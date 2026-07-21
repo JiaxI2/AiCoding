@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="260" viewBox="0 0 1200 260" role="img" aria-labelledby="title desc">
+  <title id="title">AiCoding — Verifiable AI Engineering</title>
+  <desc id="desc">A restrained engineering diagram linking plan, check, proof, receipt, and reuse.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0L8 4L0 8Z" fill="#404040"/>
+    </marker>
+  </defs>
+  <rect x="1" y="1" width="1198" height="258" rx="12" fill="#ffffff" stroke="#404040" stroke-width="1"/>
+  <line x1="640" y1="30" x2="640" y2="230" stroke="#d9d9d9" stroke-width="1"/>
+
+  <g font-family="Arial, 'Microsoft YaHei', sans-serif">
+    <text x="70" y="50" fill="#666666" font-size="13" font-weight="700" letter-spacing="2.2">LOCAL · CONTENT-BOUND · AUDITABLE</text>
+    <text x="68" y="119" fill="#000000" font-size="62" font-weight="700" letter-spacing="-1.5">AiCoding</text>
+    <line x1="70" y1="139" x2="124" y2="139" stroke="#404040" stroke-width="3"/>
+    <text x="70" y="176" fill="#000000" font-size="21" font-weight="700" letter-spacing=".3">VERIFIABLE AI ENGINEERING</text>
+    <text x="70" y="207" fill="#666666" font-size="15">Evidence compounds. Decisions stay inspectable.</text>
+  </g>
+
+  <g fill="none" stroke="#404040" stroke-width="1.5" marker-end="url(#arrow)">
+    <path d="M796 89H838"/>
+    <path d="M954 89H996"/>
+    <path d="M1054 116V151"/>
+    <path d="M996 179H954"/>
+    <path d="M838 179H780C736 179 718 151 718 120"/>
+  </g>
+  <g font-family="Arial, 'Microsoft YaHei', sans-serif" text-anchor="middle">
+    <g fill="#ffffff" stroke="#404040" stroke-width="1">
+      <rect x="680" y="61" width="116" height="56" rx="9"/>
+      <rect x="838" y="61" width="116" height="56" rx="9"/>
+      <rect x="996" y="61" width="116" height="56" rx="9"/>
+      <rect x="838" y="151" width="116" height="56" rx="9"/>
+      <rect x="996" y="151" width="116" height="56" rx="9"/>
+    </g>
+    <g fill="#000000" font-size="12" font-weight="700" letter-spacing=".8">
+      <text x="738" y="94">PLAN</text>
+      <text x="896" y="94">CHECK</text>
+      <text x="1054" y="94">PROOF</text>
+      <text x="896" y="184">REUSE</text>
+      <text x="1054" y="184">RECEIPT</text>
+    </g>
+    <text x="896" y="229" fill="#666666" font-size="11" letter-spacing="1.4">CLOSED EVIDENCE LOOP</text>
+  </g>
+</svg>

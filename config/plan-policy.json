@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "sensitivePaths": [
+    { "pattern": "internal/cli/**", "reason": "frozen kernel" },
+    { "pattern": "internal/lifecycle/**", "reason": "frozen kernel" },
+    { "pattern": "internal/runner/**", "reason": "frozen kernel" },
+    { "pattern": "internal/report/**", "reason": "frozen kernel" },
+    { "pattern": "internal/registry/**", "reason": "frozen kernel" },
+    { "pattern": "internal/testengine/**", "reason": "frozen kernel" },
+    { "pattern": "config/schemas/**", "reason": "frozen schema" },
+    { "pattern": "docs/architecture/**", "reason": "architecture authority" },
+    { "pattern": "config/kit-registry.json", "reason": "kit activation" },
+    { "pattern": ".githooks/**", "reason": "hook execution boundary" }
+  ],
+  "exemptPaths": [
+    "docs/spec/**",
+    "docs/todolist/**"
+  ]
+}

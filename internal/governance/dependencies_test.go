@@ -2,9 +2,9 @@ package governance
 
 import (
 	"encoding/json"
+	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -103,15 +103,44 @@ func TestCheckDependenciesAllowsExternalProtocolVersion(t *testing.T) {
 	}
 }
 
+func TestReadmeBadgeLabelsRejectLowercaseInitial(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "README.md"), "[![govulncheck](https://img.shields.io/badge/Govulncheck-1.6.0-gray)](https://example.com)\n")
+	policy := dependencyPolicy{VersionVisibility: versionVisibility{
+		ReadmeBodyVersionPattern: `\b[0-9]+\.[0-9]+(?:\.[0-9]+)?\b`,
+		ReadmeFiles:              []string{"README.md"},
+	}}
+
+	errs := checkReadmeVersionBadges(repo, policy)
+
+	if !hasErrorContaining(errs, "README.md badge label must start with an uppercase ASCII letter: govulncheck") {
+		t.Fatalf("expected lowercase badge label error, got %#v", errs)
+	}
+}
+
+func TestReadmeBadgeLabelsAcceptUppercaseInitial(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "README.md"), "[![Govulncheck](https://img.shields.io/badge/Govulncheck-1.6.0-gray)](https://example.com)\n")
+	policy := dependencyPolicy{VersionVisibility: versionVisibility{
+		ReadmeBodyVersionPattern: `\b[0-9]+\.[0-9]+(?:\.[0-9]+)?\b`,
+		ReadmeFiles:              []string{"README.md"},
+	}}
+
+	if errs := checkReadmeVersionBadges(repo, policy); len(errs) != 0 {
+		t.Fatalf("expected uppercase badge label to pass, got %#v", errs)
+	}
+}
+
 func TestGoPackageBoundariesRejectReverseCoreDependency(t *testing.T) {
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "internal", "registry", "bad.go"), `package registry
 import _ "github.com/JiaxI2/AiCoding/internal/lifecycle"
 `)
-	errs := checkGoPackageBoundaries(repo, []goPackageBoundary{{
+	boundaries := []goPackageBoundary{{
 		Path:             "internal/registry",
 		ForbiddenImports: []string{"internal/lifecycle"},
-	}})
+	}}
+	errs := checkGoPackageBoundariesWithInventory(repo, boundaries, dependencyInventoryForTest(t, repo, "internal/registry"))
 	if !hasErrorContaining(errs, "imports forbidden package") {
 		t.Fatalf("expected orthogonal package boundary error, got %#v", errs)
 	}
@@ -122,10 +151,11 @@ func TestGoPackageBoundariesAllowLowerUtilityDependency(t *testing.T) {
 	mustWrite(t, filepath.Join(repo, "internal", "kit", "good.go"), `package kit
 import _ "github.com/JiaxI2/AiCoding/internal/registry"
 `)
-	errs := checkGoPackageBoundaries(repo, []goPackageBoundary{{
+	boundaries := []goPackageBoundary{{
 		Path:             "internal/kit",
 		ForbiddenImports: []string{"internal/lifecycle", "internal/mcpcontrol"},
-	}})
+	}}
+	errs := checkGoPackageBoundariesWithInventory(repo, boundaries, dependencyInventoryForTest(t, repo, "internal/kit"))
 	if len(errs) != 0 {
 		t.Fatalf("valid lower utility dependency was rejected: %#v", errs)
 	}
@@ -231,10 +261,35 @@ func TestCloneableSourcesRegistryRejectsUndeclaredFile(t *testing.T) {
 }
 
 func TestAcquisitionBoundaryRejectsMissingPolicy(t *testing.T) {
-	err := checkActivationManifestsURLFree(t.TempDir(), acquisitionBoundary{})
+	err := checkActivationManifestsURLFree(acquisitionBoundary{}, nil)
 	if !hasErrorContaining(err, "acquisitionBoundary policy is missing or incomplete") {
 		t.Fatalf("expected missing acquisition policy error, got %#v", err)
 	}
+}
+
+func TestCheckDependenciesWalksRepositoryOnce(t *testing.T) {
+	repo := dependencyFixture(t)
+	walks := 0
+	report := checkDependencies(repo, func(root string, walkFn fs.WalkDirFunc) error {
+		walks++
+		return filepath.WalkDir(root, walkFn)
+	})
+	if len(report.Errors) != 0 {
+		t.Fatalf("dependency fixture failed: %#v", report.Errors)
+	}
+	if walks != 1 {
+		t.Fatalf("dependency inventory WalkDir calls = %d, want 1", walks)
+	}
+	t.Logf("dependency inventory WalkDir calls=%d", walks)
+}
+
+func dependencyInventoryForTest(t *testing.T, repo string, roots ...string) *dependencyInventory {
+	t.Helper()
+	inventory, err := collectDependencyInventory(repo, roots, filepath.WalkDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return inventory
 }
 
 func dependencyFixture(t *testing.T) string {
@@ -366,13 +421,4 @@ func dependencyCheckByName(checks []DependencyCheck, name string) (DependencyChe
 		}
 	}
 	return DependencyCheck{}, false
-}
-
-func hasDependencyErrorContaining(errs []string, needle string) bool {
-	for _, err := range errs {
-		if strings.Contains(err, needle) {
-			return true
-		}
-	}
-	return false
 }

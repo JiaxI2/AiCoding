@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 2,
+  "id": "{{.ID}}",
+  "name": "{{.Name}}",
+  "version": "0.1.0",
+  "kind": [
+    "external-wrapper-kit"
+  ],
+  "mode": "external-cli",
+  "description": "Verifies the pinned external dependency boundary declared for {{.Name}}.",
+  "paths": {
+    "manifest": "{{.ManifestPath}}",
+    "boundary": "{{.BoundaryPath}}",
+    "workSpecExample": "{{.WorkSpecPath}}"
+  },
+  "commands": {
+    "verify": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "{{.ManifestPath}}",
+        "{{.BoundaryPath}}"
+      ],
+      "supportsJson": true
+    }
+  },
+  "skills": {
+    "members": []
+  },
+  "trust": {
+    "level": "third-party",
+    "source": "upstream declared in boundary card",
+    "thirdParty": true,
+    "updatePolicy": "pinned"
+  },
+  "profiles": {
+    "Smoke": {
+      "default": true,
+      "maxSeconds": 5
+    },
+    "Full": {
+      "explicit": true
+    },
+    "Release": {
+      "explicit": true
+    }
+  }
+}

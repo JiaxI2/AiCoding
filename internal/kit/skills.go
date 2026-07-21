@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -78,10 +79,7 @@ func VerifyCatalogSkills(repo string, snapshots []ManifestSnapshot, profile stri
 }
 
 func verifySkills(repo string, inputs []lifecycleInput, profile string) SkillVerifyReport {
-	profile = strings.Title(strings.ToLower(strings.TrimSpace(profile)))
-	if profile == "" {
-		profile = "Smoke"
-	}
+	profile = normalizeKitProfile(profile)
 	report := SkillVerifyReport{SchemaVersion: 1, Profile: profile, OK: true}
 	tasks := make([]runner.Task, 0, len(inputs))
 	for _, input := range inputs {
@@ -117,6 +115,20 @@ func verifySkills(repo string, inputs []lifecycleInput, profile string) SkillVer
 		}
 	}
 	return report
+}
+
+func normalizeKitProfile(profile string) string {
+	normalized := strings.ToLower(strings.TrimSpace(profile))
+	switch normalized {
+	case "", "smoke":
+		return "Smoke"
+	case "full":
+		return "Full"
+	case "release":
+		return "Release"
+	default:
+		return strings.ToUpper(normalized[:1]) + normalized[1:]
+	}
 }
 
 func verifyKitSkills(repo string, input lifecycleInput, profile string) SkillKitResult {
@@ -222,7 +234,11 @@ func readSkillDocument(path string) (skillDocument, []string) {
 		return skillDocument{Frontmatter: map[string]string{}}, []string{"missing SKILL.md"}
 	}
 	defer file.Close()
-	scanner := bufio.NewScanner(file)
+	return parseSkillDocument(file)
+}
+
+func parseSkillDocument(reader io.Reader) (skillDocument, []string) {
+	scanner := bufio.NewScanner(reader)
 	if !scanner.Scan() || strings.TrimSpace(scanner.Text()) != "---" {
 		return skillDocument{Frontmatter: map[string]string{}}, []string{"missing frontmatter"}
 	}

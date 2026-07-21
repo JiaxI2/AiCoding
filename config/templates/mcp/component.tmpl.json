@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "id": "{{.ID}}",
+  "name": "{{.Name}}",
+  "version": "0.1.0",
+  "description": "Provides {{.Name}} domain tools and resources over MCP stdio.",
+  "transport": "stdio",
+  "platforms": [],
+  "runtime": {
+    "kind": "python-venv",
+    "root": "CodingKit/tools/{{.ID}}",
+    "requirements": "requirements.txt",
+    "minimumPython": "3.10",
+    "pythonEnvVar": "{{.PythonEnvVar}}",
+    "module": "{{.Module}}",
+    "packageInstall": [
+      "-e",
+      "."
+    ],
+    "serverArgs": [
+      "-m",
+      "{{.Module}}"
+    ],
+    "env": {}
+  },
+  "codex": {
+    "serverName": "{{.ID}}",
+    "startupTimeoutSec": 30,
+    "toolTimeoutSec": 120
+  },
+  "doctor": {
+    "args": [
+      "-m",
+      "{{.Module}}",
+      "doctor",
+      "--json"
+    ]
+  },
+  "verify": {
+    "Smoke": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ]
+    ],
+    "Full": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ]
+    ],
+    "Release": [
+      [
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ]
+    ]
+  },
+  "security": {
+    "allowArbitraryShell": false,
+    "ownsWorkflowPrompts": false
+  },
+  "outputs": []
+}

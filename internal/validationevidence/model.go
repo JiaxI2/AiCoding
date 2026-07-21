@@ -83,7 +83,9 @@ type FingerprintSpec struct {
 type Fingerprint struct {
 	Identity             string `json:"identity"`
 	RepositoryID         string `json:"repositoryID"`
-	SubjectTreeOID       string `json:"subjectTreeOID"`
+	SubjectTreeOID       string `json:"subjectTreeOID,omitempty"`
+	Node                 string `json:"node,omitempty"`
+	NodeInputDigest      string `json:"nodeInputDigest,omitempty"`
 	Profile              string `json:"profile"`
 	ValidationPlanDigest string `json:"validationPlanDigest"`
 	EngineSemanticDigest string `json:"engineSemanticDigest"`

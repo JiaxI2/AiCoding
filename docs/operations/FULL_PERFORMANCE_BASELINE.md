@@ -138,6 +138,10 @@ hermetic clone。因此总重复工作下降，但不应表述为底层操作本
 EXP-001 真实 ZIP 耗时 758ms；FRESH-001 耗时 55,761ms，步骤包含成功的
 `git.clone`、`git.submodule: submodules verified`、overlay、Go build 与 release verify。
 
+> 上述 FRESH-001 是 TODO 0018 之前的历史基线。当前 Release 中同一 ID 已改为 REQUIRED 的
+> Git-object 物化验证，不再 clone；真实 clone 只由显式 `fresh-clone` 与每周/手动
+> `clean-clone-full` 保留。新旧证据用 `sourceMode=materialized|cloned` 区分，历史数字不改写。
+
 ### 8.1 阶段二后最慢 15 个 Full 用例
 
 取热测第 3 次报告：

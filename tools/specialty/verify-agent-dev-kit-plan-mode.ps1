@@ -32,6 +32,8 @@ function Has-AnyMarker([string]$Text, [string[]]$Markers) {
   return $false
 }
 
+# DEPRECATED(TODO-0004): compatibility-only sensitive-path detection. Remove
+# after one release cycle; the authority is `aicoding plan check`.
 function Get-GitChangedFiles([string]$Root) {
   $result = @()
   try {
@@ -48,6 +50,7 @@ function Get-GitChangedFiles([string]$Root) {
   return @($result)
 }
 
+# DEPRECATED(TODO-0004): compatibility-only matcher; do not add new patterns.
 function Match-AnyPath([string]$Path, [string[]]$Patterns) {
   $p = $Path -replace '\\','/'
   foreach ($raw in $Patterns) {
@@ -168,51 +171,31 @@ try {
     $warnings.Add(("中文优先轻量扫描发现文档提示项，请人工确认：{0}" -f ($languageWarnings.Count))) | Out-Null
   }
 
-  $needsPath = Join-Path $RepoRoot "docs/decisions/plan-mode-overlay/NEEDS_USER_DECISION.md"
-  $hasPendingDecision = Test-Path -LiteralPath $needsPath -PathType Leaf
-  Add-Check "decision.pending" ((-not $hasPendingDecision) -or $AllowPendingDecision) "检测到 docs/decisions/plan-mode-overlay/NEEDS_USER_DECISION.md，用户尚未选择技术路线，禁止继续实现。" @{ exists=$hasPendingDecision }
+  # DEPRECATED(TODO-0005): compatibility verifier delegates artifact ownership
+  # to the Go CLI. Remove this wrapper after one release cycle.
+  $cli = Join-Path $RepoRoot "bin/aicoding.exe"
+  $planVerification = $null
+  $planVerifyOK = $false
+  if (Test-Path -LiteralPath $cli -PathType Leaf) {
+    $capture = & $cli plan verify --repo-root $RepoRoot --json 2>&1
+    $planVerifyOK = ($LASTEXITCODE -eq 0)
+    try { $planVerification = ($capture | Out-String) | ConvertFrom-Json } catch {}
+  }
+  Add-Check "plan.verify" $planVerifyOK "Plan Mode per-plan 产物验证。" @{ result=$planVerification }
+
+  $specs = @()
+  if ($planVerification -and $planVerification.data.specs) { $specs = @($planVerification.data.specs) }
+  $pendingPlans = @($specs | Where-Object { $_.status -eq "needs-decision" })
+  $hasPendingDecision = ($pendingPlans.Count -gt 0)
+  Add-Check "decision.pending" ((-not $hasPendingDecision) -or $AllowPendingDecision) "检测到 needs-decision 计划，用户尚未选择技术路线。" @{ plans=@($pendingPlans.id) }
 
   $changed = @(Get-GitChangedFiles $RepoRoot)
   $sensitive = @()
-  $patterns = @()
-  if ($registry -and $registry.architectureSensitivePaths) { $patterns = @($registry.architectureSensitivePaths) }
-  foreach ($file in $changed) {
-    if (Match-AnyPath $file $patterns) { $sensitive += $file }
-  }
-
-  $decisionText = ""
-  foreach ($rel in @("docs/decisions/plan-mode-overlay/SELECTED_SOLUTION.md", ".aicoding/memory/DECISIONS.md")) {
-    $decisionText += "`n" + (Read-TextIfExists (Join-Path $RepoRoot ($rel -replace '/', [IO.Path]::DirectorySeparatorChar)))
-  }
-  foreach ($dirRel in @("docs/decisions", "docs/adr")) {
-    $dir = Join-Path $RepoRoot ($dirRel -replace '/', [IO.Path]::DirectorySeparatorChar)
-    if (Test-Path -LiteralPath $dir -PathType Container) {
-      Get-ChildItem -LiteralPath $dir -File -Filter "*.md" -ErrorAction SilentlyContinue | ForEach-Object { $decisionText += "`n" + (Get-Content -LiteralPath $_.FullName -Raw -Encoding UTF8) }
-    }
-  }
-  $selectedMarkers = if ($registry -and $registry.requiredMarkers.selectedDecision) { @($registry.requiredMarkers.selectedDecision) } else { @("Decision Status: Selected","Status: Accepted","Selected option:") }
-  $hasSelectedDecision = Has-AnyMarker $decisionText $selectedMarkers
-
-  $planText = Read-TextIfExists (Join-Path $RepoRoot "docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md")
-  $planMarkers = if ($registry -and $registry.requiredMarkers.approvedPlan) { @($registry.requiredMarkers.approvedPlan) } else { @("Plan Status: Approved","Status: Accepted") }
-  $hasPlan = -not [string]::IsNullOrWhiteSpace($planText)
-  $hasApprovedPlan = Has-AnyMarker $planText $planMarkers
-
-  $hasTasks = Test-Path -LiteralPath (Join-Path $RepoRoot "docs/decisions/plan-mode-overlay/TASKS.md") -PathType Leaf
-  $hasTrace = Test-Path -LiteralPath (Join-Path $RepoRoot "docs/decisions/plan-mode-overlay/TRACEABILITY.md") -PathType Leaf
-
-  if ($sensitive.Count -gt 0) {
-    Add-Check "architecture.decision" $hasSelectedDecision "检测到架构敏感文件变更，但未找到已接受的用户决策记录。" @{ sensitive=$sensitive }
-    Add-Check "implementation.plan" $hasPlan "架构敏感变更需要 docs/decisions/plan-mode-overlay/IMPLEMENTATION_PLAN.md。" @{ approved=$hasApprovedPlan }
-    Add-Check "implementation.tasks" $hasTasks "架构敏感变更需要 docs/decisions/plan-mode-overlay/TASKS.md。"
-    Add-Check "implementation.traceability" $hasTrace "架构敏感变更需要 docs/decisions/plan-mode-overlay/TRACEABILITY.md。"
-  } else {
-    Add-Check "architecture.changed" $true "未检测到架构敏感文件变更。" @{ changed=$changed }
-  }
-
-  if (@($changed | Where-Object { $_ -eq "docs/decisions/plan-mode-overlay/PRD_OPTIONS.md" }).Count -gt 0) {
-    Add-Check "options.selected" $hasSelectedDecision "PRD_OPTIONS 已变更，需要先记录用户选择的技术路线。"
-  }
+  $hasSelectedDecision = @($specs | Where-Object { -not [string]::IsNullOrWhiteSpace($_.decision) }).Count -gt 0
+  $hasPlan = ($specs.Count -gt 0)
+  $hasApprovedPlan = @($specs | Where-Object { $_.status -in @("approved","implemented","archived") }).Count -gt 0
+  $hasTasks = $true
+  $hasTrace = $true
 
   $ok = ($errors.Count -eq 0)
   $code = if ($ok) { "OK" } else { "PLAN_MODE_GATE_FAILED" }
@@ -228,6 +211,7 @@ try {
     hasApprovedPlan=$hasApprovedPlan
     hasTasks=$hasTasks
     hasTraceability=$hasTrace
+    planVerification=$planVerification
     languageFindings=$languageFindings
     errors=@($errors.ToArray())
   }) @($warnings.ToArray())

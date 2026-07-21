@@ -51,8 +51,11 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 	if len(args) >= 1 && args[0] == cstyle.DefaultSkillID {
 		return runCStyleCommand("skill "+cstyle.DefaultSkillID, cstyle.DefaultSkillID, args[1:], start)
 	}
+	if len(args) >= 1 && args[0] == "init" {
+		return runSkillInit(args[1:], start)
+	}
 	if len(args) < 1 || args[0] != "verify" {
-		return report.Result{}, usageErrorf("skill requires subcommand: verify or c99-standard-c")
+		return report.Result{}, usageErrorf("skill requires subcommand: init, verify, or c99-standard-c")
 	}
 	fs := newFlagSet("skill verify")
 	repoArg := fs.String("repo-root", "", "repository root")
@@ -73,7 +76,9 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 	}
 	selected, err := catalog.Select(*kitArg, *allArg)
 	if err != nil {
-		return report.Fail("skill verify", start, "kit selection failed", nil, err.Error()), err
+		res := report.Fail("skill verify", start, "kit selection failed", nil, err.Error())
+		res = report.WithDecision(res, report.CategoryUsage, "aicoding kit list --json")
+		return res, usageErrorf("%s", err)
 	}
 	res := kit.VerifyCatalogSkills(repo, selected, *profile)
 	reuseCheck := reuse.Verify(repo)
@@ -269,37 +274,4 @@ func runReleaseCommand(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, usageErrorf("unsupported release subcommand: %s", args[0])
 	}
 	return runTestProfile("release", args[1:], "release gate", start)
-}
-
-func selectedKits(repoArg, kitArg string, allArg bool) (string, []kit.RegistryKit, error) {
-	repo, err := platform.ResolveRepoRoot(repoArg)
-	if err != nil {
-		return "", nil, err
-	}
-	entries, err := kit.LoadRegistry(repo)
-	if err != nil {
-		return "", nil, err
-	}
-	selected, err := kit.SelectKits(entries, kitArg, allArg)
-	if err != nil {
-		return "", nil, err
-	}
-	return repo, selected, nil
-}
-
-func selectionMode(all bool) string {
-	if all {
-		return "all"
-	}
-	return "kit"
-}
-
-func lifecyclePlanErrors(plan kit.LifecyclePlan) []string {
-	errs := []string{}
-	for _, item := range plan.Kits {
-		if !item.OK {
-			errs = append(errs, item.ID+": "+item.Reason)
-		}
-	}
-	return errs
 }

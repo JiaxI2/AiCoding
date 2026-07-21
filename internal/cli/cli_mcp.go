@@ -12,9 +12,12 @@ import (
 
 func runMCP(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, usageErrorf("mcp requires subcommand: list, status, doctor, or verify")
+		return report.Result{}, usageErrorf("mcp requires subcommand: init, list, status, doctor, or verify")
 	}
 	sub := strings.ToLower(args[0])
+	if sub == "init" {
+		return runMCPInit(args[1:], start)
+	}
 	if !validChoice(sub, "list", "status", "doctor", "verify") {
 		return report.Result{}, usageErrorf("unsupported mcp subcommand: %s", sub)
 	}

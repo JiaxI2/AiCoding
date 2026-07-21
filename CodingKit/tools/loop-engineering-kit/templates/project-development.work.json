@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "example-project-feature",
+  "domain": "project-development",
+  "control": {
+    "trigger": "explicit",
+    "stop": {
+      "maxAttempts": 3,
+      "maxElapsedSeconds": 3600,
+      "maxTotalTokens": 300000,
+      "stallThreshold": 2,
+      "contextPressureThreshold": 80
+    },
+    "authority": {
+      "writeScope": {
+        "allow": ["src/**", "tests/**", "docs/**"],
+        "deny": [".git/**", "vendor/**"]
+      },
+      "requiredGates": ["full"],
+      "checkpoints": ["architecture-change", "merge"]
+    }
+  },
+  "goal": "Implement the requested feature without changing unrelated modules.",
+  "acceptance": [
+    "Project build passes",
+    "Relevant tests pass",
+    "No out-of-scope files are modified"
+  ]
+}

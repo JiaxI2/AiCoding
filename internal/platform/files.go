@@ -16,6 +16,22 @@ func ResolveRepoRoot(repoArg string) (string, error) {
 		}
 		return p, nil
 	}
+	// Most CLI and hook calls start at the repository root. Avoid a redundant
+	// Git process there; subdirectories and unusual layouts retain the existing
+	// authoritative rev-parse fallback.
+	if cwd, err := os.Getwd(); err == nil {
+		dotGit := filepath.Join(cwd, ".git")
+		if info, statErr := os.Stat(dotGit); statErr == nil {
+			validRoot := info.IsDir() && IsFile(filepath.Join(dotGit, "HEAD"))
+			if !info.IsDir() {
+				_, commonErr := gitx.CommonDir(cwd)
+				validRoot = commonErr == nil
+			}
+			if validRoot {
+				return filepath.Abs(cwd)
+			}
+		}
+	}
 	stdout, err := gitx.Run("", "rev-parse", "--show-toplevel")
 	if err != nil {
 		return stdout, err

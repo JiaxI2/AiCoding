@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loop-engineering.local/schemas/loop-work-spec.schema.json",
+  "title": "Loop Engineering WorkSpec",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "domain", "control", "goal", "acceptance"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "domain": {
+      "type": "string",
+      "enum": ["project-development", "repository-maintenance", "ci-repair", "performance-experiment", "documentation-maintenance", "architecture-evolution"]
+    },
+    "control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trigger", "stop", "authority"],
+      "properties": {
+        "trigger": {"enum": ["explicit", "scheduled", "agent-proposed"]},
+        "stop": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maxAttempts", "maxElapsedSeconds", "maxTotalTokens", "stallThreshold"],
+          "properties": {
+            "maxAttempts": {"type": "integer", "minimum": 1, "maximum": 50},
+            "maxElapsedSeconds": {"type": "integer", "minimum": 1},
+            "maxTotalTokens": {"type": "integer", "minimum": 1},
+            "stallThreshold": {"type": "integer", "minimum": 2},
+            "contextPressureThreshold": {"type": "number", "exclusiveMinimum": 0, "maximum": 100, "default": 80}
+          }
+        },
+        "authority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["writeScope", "requiredGates", "checkpoints"],
+          "properties": {
+            "writeScope": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["allow", "deny"],
+              "properties": {
+                "allow": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+                "deny": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+              }
+            },
+            "requiredGates": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+            "checkpoints": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+          }
+        }
+      }
+    },
+    "goal": {"type": "string", "minLength": 1},
+    "acceptance": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  }
+}

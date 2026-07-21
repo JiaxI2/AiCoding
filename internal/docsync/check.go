@@ -6,19 +6,26 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/JiaxI2/AiCoding/internal/capability"
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
 type CheckResult struct {
-	OK        bool     `json:"ok"`
-	Command   string   `json:"command"`
-	Mode      string   `json:"mode"`
-	Checked   []string `json:"checked"`
-	RiskFiles []string `json:"riskFiles"`
-	DocFiles  []string `json:"docFiles"`
-	Warnings  []string `json:"warnings"`
-	Errors    []string `json:"errors"`
+	OK        bool        `json:"ok"`
+	Command   string      `json:"command"`
+	Mode      string      `json:"mode"`
+	Checks    []CheckItem `json:"checks"`
+	Checked   []string    `json:"checked"`
+	RiskFiles []string    `json:"riskFiles"`
+	DocFiles  []string    `json:"docFiles"`
+	Warnings  []string    `json:"warnings"`
+	Errors    []string    `json:"errors"`
+}
+
+type CheckItem struct {
+	Name string `json:"name"`
+	OK   bool   `json:"ok"`
 }
 
 func Check(repo, mode string) CheckResult {
@@ -30,6 +37,7 @@ func Check(repo, mode string) CheckResult {
 		OK:        true,
 		Command:   "docsync " + mode,
 		Mode:      mode,
+		Checks:    []CheckItem{},
 		Checked:   []string{},
 		RiskFiles: []string{},
 		DocFiles:  []string{},
@@ -56,6 +64,15 @@ func Check(repo, mode string) CheckResult {
 	result.RiskFiles, result.DocFiles = classifyFiles(files)
 	result.Errors = append(result.Errors, errs...)
 	result.Errors = append(result.Errors, policyErrors(files)...)
+	if mode == "all" || mode == "ci" || mode == "release" {
+		statusErrors := architectureStatusErrors(repo)
+		result.Checks = append(result.Checks, CheckItem{Name: "architecture status headers", OK: len(statusErrors) == 0})
+		result.Errors = append(result.Errors, statusErrors...)
+	}
+	if checked, generatedErrors := capabilityGeneratedIndexErrors(repo); checked {
+		result.Checks = append(result.Checks, CheckItem{Name: "capability generated index", OK: len(generatedErrors) == 0})
+		result.Errors = append(result.Errors, generatedErrors...)
+	}
 	if mode == "ci" || mode == "release" {
 		result.Errors = append(result.Errors, requiredPathErrors(repo, []string{
 			"internal/docsync/docsync.go",
@@ -76,6 +93,70 @@ func Check(repo, mode string) CheckResult {
 	result.Warnings = compact(result.Warnings)
 	result.OK = len(result.Errors) == 0
 	return result
+}
+
+func capabilityGeneratedIndexErrors(repo string) (bool, []string) {
+	registryPath := filepath.Join(repo, filepath.FromSlash(capability.CatalogPath))
+	if _, err := os.Stat(registryPath); os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return true, []string{"capability generated index: " + err.Error()}
+	}
+	catalog, err := capability.Load(repo)
+	if err != nil {
+		return true, []string{"capability generated index: " + err.Error()}
+	}
+	readme, err := os.ReadFile(filepath.Join(repo, "README.md"))
+	if err != nil {
+		return true, []string{"capability generated index: " + err.Error()}
+	}
+	rendered, err := capability.RenderIndex(catalog, string(readme))
+	if err != nil {
+		return true, []string{"capability generated index: " + err.Error()}
+	}
+	errs := []string{}
+	if normalizeDocSyncNewlines(string(readme)) != normalizeDocSyncNewlines(rendered.README) {
+		errs = append(errs, "capability generated index: README.md is stale; run `aicoding capability index --write`")
+	}
+	document, err := os.ReadFile(filepath.Join(repo, filepath.FromSlash(capability.CapabilitiesPath)))
+	if err != nil || normalizeDocSyncNewlines(string(document)) != normalizeDocSyncNewlines(rendered.Document) {
+		errs = append(errs, "capability generated index: docs/CAPABILITIES.md is stale; run `aicoding capability index --write`")
+	}
+	return true, errs
+}
+
+func normalizeDocSyncNewlines(value string) string {
+	return strings.ReplaceAll(value, "\r\n", "\n")
+}
+
+func architectureStatusErrors(repo string) []string {
+	dir := filepath.Join(repo, "docs", "architecture")
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return []string{"architecture status check: " + err.Error()}
+	}
+	errs := []string{}
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".md" || strings.EqualFold(entry.Name(), "README.md") {
+			continue
+		}
+		raw, readErr := os.ReadFile(filepath.Join(dir, entry.Name()))
+		if readErr != nil {
+			errs = append(errs, "architecture status check: "+entry.Name()+": "+readErr.Error())
+			continue
+		}
+		found := false
+		for _, line := range strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n") {
+			if strings.HasPrefix(line, "Status: ") && strings.TrimSpace(strings.TrimPrefix(line, "Status: ")) != "" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			errs = append(errs, "architecture status check: docs/architecture/"+entry.Name()+" is missing a Status header")
+		}
+	}
+	return errs
 }
 
 func stagedFiles(repo string) ([]string, []string) {

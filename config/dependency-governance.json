@@ -126,6 +126,27 @@
         "displayVersion": "1.22+"
       },
       {
+        "label": "Go toolchain",
+        "imageFragment": "Go%20toolchain-1.26.5",
+        "target": "https://go.dev/doc/devel/release#go1.26.5",
+        "authority": "upstream-version",
+        "displayVersion": "1.26.5"
+      },
+      {
+        "label": "Staticcheck",
+        "imageFragment": "Staticcheck-2026.1",
+        "target": "https://github.com/dominikh/go-tools/releases/tag/2026.1",
+        "authority": "upstream-version",
+        "displayVersion": "2026.1"
+      },
+      {
+        "label": "Govulncheck",
+        "imageFragment": "Govulncheck-1.6.0",
+        "target": "https://go.googlesource.com/vuln/+/refs/tags/v1.6.0",
+        "authority": "upstream-version",
+        "displayVersion": "1.6.0"
+      },
+      {
         "label": "PowerShell",
         "imageFragment": "PowerShell-7%2B",
         "target": "https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0",
@@ -147,8 +168,8 @@
         "displayVersion": ""
       },
       {
-        "label": "clang-format",
-        "imageFragment": "clang--format-17.0.2",
+        "label": "Clang-format",
+        "imageFragment": "Clang--format-17.0.2",
         "target": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2",
         "authority": "upstream-version",
         "displayVersion": "17.0.2"
@@ -214,6 +235,13 @@
       },
       {
         "id": "release-governance-overlay-kit",
+        "layer": "platform",
+        "platformAgnostic": false,
+        "roots": [],
+        "dependsOn": []
+      },
+      {
+        "id": "loop-engineering-kit",
         "layer": "platform",
         "platformAgnostic": false,
         "roots": [],
@@ -304,6 +332,7 @@
       "internal"
     ],
     "allowedImporters": [
+      "internal/cache",
       "internal/cli",
       "internal/cstyle",
       "internal/docsync",
@@ -315,6 +344,7 @@
       "internal/repohealth",
       "internal/repoinit",
       "internal/tagpolicy",
+      "internal/testengine",
       "internal/validationevidence"
     ]
   },
@@ -324,12 +354,14 @@
       "forbiddenImports": [
         "internal/bootstrap",
         "internal/cache",
+        "internal/capability",
         "internal/cli",
         "internal/cstyle",
         "internal/docsync",
         "internal/governance",
         "internal/kit",
         "internal/lifecycle",
+        "internal/loopkit",
         "internal/mcpcontrol",
         "internal/platform",
         "internal/pwshregex",
@@ -350,9 +382,11 @@
     {
       "path": "internal/registry",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
+        "internal/loopkit",
         "internal/mcpcontrol",
         "internal/repocontext",
         "internal/repohealth",
@@ -362,11 +396,44 @@
       ]
     },
     {
+      "path": "internal/capability",
+      "forbiddenImports": [
+        "internal/adrreview",
+        "internal/bootstrap",
+        "internal/cache",
+        "internal/cli",
+        "internal/cstyle",
+        "internal/docsync",
+        "internal/gitx",
+        "internal/governance",
+        "internal/kit",
+        "internal/lifecycle",
+        "internal/loopkit",
+        "internal/mcpcontrol",
+        "internal/plan",
+        "internal/platform",
+        "internal/pwshregex",
+        "internal/releasegate",
+        "internal/repocontext",
+        "internal/report",
+        "internal/repohealth",
+        "internal/repoinit",
+        "internal/reuse",
+        "internal/runner",
+        "internal/tagpolicy",
+        "internal/testengine",
+        "internal/todolist",
+        "internal/validationevidence"
+      ]
+    },
+    {
       "path": "internal/runner",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
+        "internal/loopkit",
         "internal/mcpcontrol",
         "internal/repocontext",
         "internal/repohealth",
@@ -377,9 +444,11 @@
     {
       "path": "internal/report",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
+        "internal/loopkit",
         "internal/mcpcontrol",
         "internal/repocontext",
         "internal/repohealth",
@@ -390,6 +459,7 @@
     {
       "path": "internal/kit",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/lifecycle",
         "internal/mcpcontrol",
@@ -401,6 +471,7 @@
     {
       "path": "internal/mcpcontrol",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
@@ -412,6 +483,7 @@
     {
       "path": "internal/repocontext",
       "forbiddenImports": [
+        "internal/capability",
         "internal/cli",
         "internal/kit",
         "internal/lifecycle",
@@ -425,6 +497,7 @@
       "forbiddenImports": [
         "internal/bootstrap",
         "internal/cache",
+        "internal/capability",
         "internal/cli",
         "internal/cstyle",
         "internal/docsync",

@@ -1,0 +1,26 @@
+{
+  "number": 1,
+  "subjectTreeOID": "0123456789abcdef",
+  "tokenUsage": {
+    "input_tokens": 1000,
+    "cached_input_tokens": 500,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 200,
+    "reasoning_output_tokens": 100,
+    "total_tokens": 1200,
+    "context_tokens": 1200,
+    "context_window": 10000,
+    "context_remaining": 8800,
+    "context_used_percent": 12,
+    "updated_at": "2026-07-20T12:00:10Z"
+  },
+  "gateRefs": [
+    {
+      "profile": "project-test",
+      "validationIdentity": "sha256:example",
+      "receiptID": "receipt-example"
+    }
+  ],
+  "startedAt": "2026-07-20T12:00:00Z",
+  "endedAt": "2026-07-20T12:00:10Z"
+}

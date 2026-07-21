@@ -16,6 +16,32 @@ Status: Accepted and Frozen
 一句话：**Small Core · Fast Primitive · Low Cost · Stable Interface · Free Composition。**
 让 AiCoding 像 Git 一样，以极少而高质量的 Primitive 组合出丰富工作流，而非靠功能堆叠。
 
+## Primitive 依赖方向图
+
+这张图只回答五个 Primitive 各自做什么，以及依赖为什么只能由上层指向 Primitive。
+红色虚线是机器治理必须拒绝的反向 import。
+
+```mermaid
+flowchart TB
+  UP["Domain / Workflow / CLI<br/>组合与入口层"]
+  GX["gitx<br/>唯一 Git 事实边界"]
+  RG["registry<br/>detached snapshot + digest"]
+  RN["runner<br/>有界调度"]
+  RP["report<br/>唯一证据信封"]
+  PF["platform<br/>根、路径与资源生命周期"]
+  UP --> GX
+  UP --> RG
+  UP --> RN
+  UP --> RP
+  UP --> PF
+  GX -. "forbidden reverse import" .-> UP
+  RG -. "forbidden reverse import" .-> UP
+  RN -. "forbidden reverse import" .-> UP
+  RP -. "forbidden reverse import" .-> UP
+  PF -. "forbidden reverse import" .-> UP
+  linkStyle 5,6,7,8,9 stroke:#B42318,stroke-width:2px
+```
+
 ## 12 条约束
 
 ### 1. Primitive First
@@ -34,6 +60,12 @@ Git 操作、Token、Agent 推理轮数、Context 长度、工具调用、网络
 禁止：用全仓扫描解决局部问题、用全量解析解决增量问题、重复读取相同数据、重复生成相同
 结果、为少量数据构建巨大上下文、无意义调用 Agent/外部工具、为简单任务启动复杂 Workflow。
 **默认选执行成本最低的实现，而非实现最简单的方案。**
+
+CLI 延迟预算是接口契约，登记在唯一 typed command catalog 的 `LatencyClass`，不得另建
+平行预算文件：`fast` warm 中位数 <400ms，`standard` <1200ms，`work` 不设绝对上限但须
+支持已有的内容证据复用。命令变慢一档必须作为接口回退评审。`doctor perf` 对 fast/standard
+代表路径各执行 3 次取中位数，超过预算 1.5 倍 Warn、3 倍 Fail；环境或工具链主导的 work
+路径不能靠削减验证内容换取达标。
 
 ### 4. Fast Path First
 优先设计最快执行路径：增量、按需加载、缓存复用、局部处理、并行、零重复计算。只有 Fast

@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -52,6 +53,7 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 			message := "unknown command: " + requestedCommand
 			res := report.Fail(requestedCommand, start, message, nil, message)
 			res.ErrorKind = report.ErrorKindUsage
+			res = report.FinalizeDecision(res)
 			_ = report.WriteJSONTo(stdout, res)
 			return ExitUsage
 		}
@@ -103,15 +105,43 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 	case res.ErrorKind == "" && err != nil:
 		res.ErrorKind = report.ErrorKindExecution
 	}
+	res = report.FinalizeDecision(res)
 	if jsonRequested(commandArgs) {
 		_ = report.WriteJSONTo(stdout, res)
 	} else {
+		if res.Command == "kit describe" {
+			res.Data = kitDescribeTextRows(res.Data)
+		}
 		report.WriteTextTo(stdout, res)
 		if cmd == "codex" {
 			writeCodexUsageText(stdout, res)
 		}
 	}
 	return exitCodeFor(res, err)
+}
+
+type kitDescribeTextRow struct {
+	OK     bool
+	ID     string
+	Status string
+	Errors []string
+}
+
+func kitDescribeTextRows(data interface{}) interface{} {
+	views, ok := data.([]kit.PluginView)
+	if !ok {
+		return data
+	}
+	rows := make([]kitDescribeTextRow, 0, len(views))
+	for _, view := range views {
+		rows = append(rows, kitDescribeTextRow{
+			OK:     true,
+			ID:     view.ID,
+			Status: view.Quickstart.Command,
+			Errors: []string{},
+		})
+	}
+	return rows
 }
 
 func productVersion() string {
@@ -441,10 +471,10 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 }
 func runGovernance(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, usageErrorf("governance requires subcommand: lint, dependencies, layout, or reuse")
+		return report.Result{}, usageErrorf("governance requires subcommand: lint, dependencies, layout, reuse, or capabilities")
 	}
 	sub := args[0]
-	if !validChoice(sub, "lint", "dependencies", "layout", "reuse") {
+	if !validChoice(sub, "lint", "dependencies", "layout", "reuse", "capabilities") {
 		return report.Result{}, usageErrorf("unsupported governance subcommand: %s", sub)
 	}
 	fs := newFlagSet("governance " + sub)
@@ -471,6 +501,8 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 	case "reuse":
 		check := reuse.Verify(repo)
 		return report.Result{SchemaVersion: 1, Command: "governance reuse", OK: check.OK, Message: "reuse governance evidence gate", RepoRoot: repo, Data: check, Warnings: check.Warnings, Errors: check.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(check.Errors)
+	case "capabilities":
+		return runGovernanceCapabilities(repo, start)
 	default:
 		return report.Result{}, usageErrorf("unsupported governance subcommand: %s", sub)
 	}
@@ -535,8 +567,11 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, usageErrorf("kit requires subcommand")
 	}
 	sub := args[0]
-	if !validChoice(sub, "list", "describe", "doctor", "verify", "test") {
+	if !validChoice(sub, "list", "describe", "doctor", "verify", "test", "init") {
 		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
+	}
+	if sub == "init" {
+		return runKitInit(args[1:], start)
 	}
 	fs := newFlagSet("kit " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
@@ -623,7 +658,9 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		}
 		selected, err := catalog.Select(*kitArg, *allArg)
 		if err != nil {
-			return report.Fail("kit "+sub, start, "kit selection failed", nil, err.Error()), err
+			res := report.Fail("kit "+sub, start, "kit selection failed", nil, err.Error())
+			res = report.WithDecision(res, report.CategoryUsage, "aicoding kit list --json")
+			return res, usageErrorf("%s", err)
 		}
 		if strings.EqualFold(*profile, "Lifecycle") {
 			if sub != "verify" {
@@ -715,8 +752,8 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("doctor "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
 	if sub == "pwsh" {
-		calls, errs := repohealth.ScanPwsh(repo)
-		return report.Result{SchemaVersion: 1, Command: "doctor pwsh", OK: len(errs) == 0, Message: "PowerShell invocation inventory", RepoRoot: repo, Data: calls, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
+		inventory, errs := repohealth.InspectPwsh(repo)
+		return report.Result{SchemaVersion: 1, Command: "doctor pwsh", OK: len(errs) == 0, Message: "PowerShell invocation and retirement inventory", RepoRoot: repo, Data: inventory, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	}
 	if sub == "pwsh-budget" {
 		budget, errs := repohealth.ScanPwshBudget(repo)
@@ -725,22 +762,7 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 	if sub != "perf" {
 		return report.Result{}, usageErrorf("unsupported doctor subcommand: %s", sub)
 	}
-	checks := []map[string]interface{}{}
-	measure := func(name string, fn func() error) {
-		t0 := time.Now()
-		err := fn()
-		item := map[string]interface{}{"name": name, "elapsedMs": time.Since(t0).Milliseconds(), "ok": err == nil}
-		if err != nil {
-			item["error"] = err.Error()
-		}
-		checks = append(checks, item)
-	}
-	measure("git rev-parse", func() error { _, e := gitx.Run(repo, "rev-parse", "--show-toplevel"); return e })
-	measure("git diff cached names", func() error { _, e := gitx.StagedFiles(repo); return e })
-	measure("load kit registry", func() error { _, e := kit.LoadRegistry(repo); return e })
-	measure("governance lint", func() error { return report.BoolErr(governance.Lint(repo, "pre-commit", "")) })
-	measure("staged docsync lint", func() error { return report.BoolErr(docsync.LintStaged(repo)) })
-	return report.Result{SchemaVersion: 1, Command: "doctor perf", OK: true, Message: "performance probes", RepoRoot: repo, Data: checks, ElapsedMS: report.Elapsed(start)}, nil
+	return runLatencyDoctor(repo, start)
 }
 
 func runBootstrap(args []string, start time.Time) (report.Result, error) {
@@ -778,6 +800,18 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("cache " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
+	var scope *string
+	var keep *int
+	var dryRun *bool
+	var adopt *bool
+	var allRepos *bool
+	if sub == "clean" {
+		scope = fs.String("scope", "", "fast-path|test-results|validation-reports|temp|work-state")
+		keep = fs.Int("keep", 0, "number of newest test results or failed temp directories to retain")
+		dryRun = fs.Bool("dry-run", false, "list planned removals without deleting files")
+		adopt = fs.Bool("adopt", false, "adopt and remove unledgered aicoding-* temp directories")
+		allRepos = fs.Bool("all-repos", false, "include ledger entries created by other worktrees")
+	}
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
 		return report.Result{}, err
 	}
@@ -791,13 +825,25 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 		if err != nil {
 			return report.Fail("cache status", start, "cache status failed", status, err.Error()), err
 		}
-		return report.Result{SchemaVersion: 1, Command: "cache status", OK: true, Message: "fast path cache status", RepoRoot: repo, Data: status, ElapsedMS: report.Elapsed(start)}, nil
+		return report.Result{SchemaVersion: 1, Command: "cache status", OK: true, Message: "registered local artifact status", RepoRoot: repo, Data: status, ElapsedMS: report.Elapsed(start)}, nil
 	case "clean":
-		result, err := cache.Clean(repo)
+		selectedScope := cache.Scope(strings.ToLower(strings.TrimSpace(*scope)))
+		if selectedScope != "" && !cache.ValidScope(selectedScope) {
+			return report.Result{}, usageErrorf("unsupported cache scope: %s", *scope)
+		}
+		keepSet := false
+		fs.Visit(func(visited *flag.Flag) { keepSet = keepSet || visited.Name == "keep" })
+		if keepSet && *keep < 1 {
+			return report.Result{}, usageErrorf("cache clean --keep must be at least 1")
+		}
+		if (*adopt || *allRepos) && selectedScope != cache.ScopeTemp {
+			return report.Result{}, usageErrorf("cache clean --adopt/--all-repos require --scope temp")
+		}
+		result, err := cache.Clean(repo, cache.CleanOptions{Scope: selectedScope, Keep: *keep, DryRun: *dryRun, Adopt: *adopt, AllRepos: *allRepos})
 		if err != nil {
 			return report.Fail("cache clean", start, "cache clean failed", result, err.Error()), err
 		}
-		return report.Result{SchemaVersion: 1, Command: "cache clean", OK: true, Message: "fast path cache clean", RepoRoot: repo, Data: result, ElapsedMS: report.Elapsed(start)}, nil
+		return report.Result{SchemaVersion: 1, Command: "cache clean", OK: true, Message: "registered local artifact retention applied", RepoRoot: repo, Data: result, ElapsedMS: report.Elapsed(start)}, nil
 	default:
 		return report.Result{}, usageErrorf("unsupported cache subcommand: %s", sub)
 	}

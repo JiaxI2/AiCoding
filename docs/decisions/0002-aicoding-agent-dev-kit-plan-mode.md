@@ -4,6 +4,10 @@
 
 Accepted
 
+Superseded-by: [ADR 0009](0009-plan-mode-rework.md)。本文保留为初代 PowerShell overlay
+的历史决策；当前 Plan Mode 权威是 Go `internal/plan`、per-plan frontmatter、Git Tree
+批准绑定和 pre-commit 强制门禁。
+
 ## Context
 
 AiCoding Agent Dev Kit already supports requirement clarification, option matrix planning, Spec/TDD, sequential context loading, decision memory, progress monitoring, and quality gates.

@@ -25,10 +25,12 @@
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | GO-001 | 全仓 Go 单元测试 | `go test ./...` | 退出码 0 | REQUIRED |
-| GO-002 | Go race 检查 | `go test -race ./...` | 退出码 0；环境不支持 race 或历史包不兼容记 WARN | WARN |
+| GO-002 | Go race 检查 | Full：`go test -race <raceScope.packages>`；Release：`go test -race ./...` | 退出码 0；环境不支持 race 或历史包不兼容记 WARN；Release 必须保持全仓 | WARN |
 | GO-003 | Go vet 基础检查 | `go vet ./...` | 退出码 0 | WARN |
 | GO-004 | CLI 并发只读调用 | 并发运行 C99 status/templates/governance lint | 全部退出码 0，无 timeout | REQUIRED |
-| GO-005 | JSON envelope 稳定性 | 解析核心 CLI 输出 | JSON 可解析 | REQUIRED |
+| GO-005 | Staticcheck 静态分析 | `go run honnef.co/go/tools/cmd/staticcheck@v0.7.0 ./...` | 零告警；首个 release 失败记 WARN | WARN |
+| GO-006 | Go 漏洞扫描 | `go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...` | 无可达漏洞；仅可识别的网络失败记 WARN | REQUIRED |
+| GO-007 | 并发包 raceScope 登记 | AST 扫描全仓 `.go` 文件，并与 `config/impact-policy.json` 对账 | goroutine、channel 或 `sync` 所在包全部登记；漏登即 Full/Release 失败 | REQUIRED |
 
 ## 4. C99_SKILL：C 语言 skill 风格一致性
 
@@ -72,11 +74,14 @@
 |---|---|---|---|---|
 | EXP-001 | Release export zip | `bin/aicoding.exe export --all --zip --json` | 仅 Release 执行；生成 zip/manifest | REQUIRED |
 | EXP-002 | Full export manifest | 进程内 dry-run manifest 校验 | include 均匹配，outputName token 可解析，不生成 ZIP | REQUIRED |
-| FRESH-001 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | 仅 Release 执行；clone 内执行 `release verify` | WARN |
-| FRESH-003 | Full fresh-clone 契约 | 静态检查 `.gitmodules`、skills gitlink 与三个 profile 分支 | 不 clone，契约完整 | REQUIRED |
+| FRESH-001 | 物化源码 Release 验证 | testengine 私有 materialized leaf | 对验证主体 Tree 执行本地 `git archive` 并用 Go 标准库读取 tar 流，递归物化 pinned gitlink，源码树内无 `.git`/worktree-only 文件；重建 CLI 并执行 `release verify` | REQUIRED |
+| FRESH-003 | Full fresh-clone/物化契约 | 静态检查 `.gitmodules`、skills gitlink与三个 profile 分支 | 不 clone，契约完整 | REQUIRED |
+| FRESH-004 | 真 clone 传输面变化提示 | 比较 Git common-dir advisory baseline、当前 Tree 与未暂存路径 | `.gitmodules`、`.gitattributes`、`.githooks/**` 或 bootstrap 路径变化时 WARN 并建议显式 `fresh-clone`；不阻断 Release | WARN |
 
 定期 CI 不新增 Registry ID：每周/手动 `clean-clone-full` job 直接运行正式 leaf command
-`bin/aicoding.exe fresh-clone --profile Full --json`，在临时 clone 中执行 `go test ./...`。
+`bin/aicoding.exe fresh-clone --profile Full --json`，在临时真 clone 中执行 `go test ./...`。公共
+`fresh-clone --profile Smoke|Full|Release` 始终保持 `sourceMode=cloned`，成功后更新本地 advisory
+baseline；它不进入日常 Release Registry，也不创建第二种 Receipt。
 
 ## 8. README_DOCS：README 和命令文档治理
 
@@ -87,8 +92,15 @@
 | DOCS-003 | COMMANDS 命令矩阵 | 检查 `docs/COMMANDS.md` | 包含正式产品命令、领域命令和一个版本兼容表 | REQUIRED |
 | DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含唯一 test engine、共享 report 和 PowerShell boundary | REQUIRED |
 | DOCS-005 | C99 skill 文档 | 检查 `docs/guides/C99_STANDARD_C_SKILL.md` | 包含配置边界、C Kit 资产边界和统一 CLI 入口 | REQUIRED |
+| DOCS-006 | 架构图命令与节点预算 | 解析五个 Mermaid 载体与 `internal/cli/catalog.go` | 每个载体恰好一图、节点不超过 20、图内命令来自 typed catalog | REQUIRED |
 
-## 9. GIT_GOVERNANCE：Git 仓库治理
+## 9. CAPABILITY：平台能力目录
+
+| ID | 用例 | 方法 | 期望结果 | 严重级别 |
+|---|---|---|---|---|
+| CAP-001 | internal capability registry | `bin/aicoding.exe governance capabilities --json` | `internal/` 一级包无孤儿、公共入口存在、架构文档与生成索引同步 | REQUIRED |
+
+## 10. GIT_GOVERNANCE：Git 仓库治理
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
@@ -102,29 +114,29 @@
 | GIT-008 | repository layout | `bin/aicoding.exe governance layout --json` | 仓库 ownership 与 layout 规则通过 | REQUIRED |
 | GIT-009 | reuse governance | `bin/aicoding.exe governance reuse --json` | reuse evidence gate 通过 | REQUIRED |
 
-## 10. PWSH_BOUNDARY：PowerShell 边界
+## 11. PWSH_BOUNDARY：PowerShell 边界
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
-| PWSH-001 | PowerShell inventory | `bin/aicoding.exe doctor pwsh --json` | 输出当前 PS 文件清单 | WARN |
+| PWSH-001 | PowerShell inventory | `bin/aicoding.exe doctor pwsh --json` | 输出当前 PS 调用点与 `remainingScripts/thinShells/deprecated` 退役计数；计数只报告、不设门禁 | WARN |
 | PWSH-002 | PowerShell budget | `bin/aicoding.exe doctor pwsh-budget --json` | 不超预算，或输出超预算明细 | REQUIRED |
 | PWSH-003 | 默认入口不经 PS 编排 | 检查 Taskfile 是否存在 Go-native 默认路由 | doctor/verify/Smoke/Full/Release 均直达正式 Go CLI；允许变量和 Windows/Unix 路径分隔符 | REQUIRED |
-| HEALTH-001 | doctor performance probes | `bin/aicoding.exe doctor perf --json` | 核心本地探针可执行且输出 JSON | REQUIRED |
+| HEALTH-001 | typed command 延迟门禁 | `bin/aicoding.exe doctor perf --json` | fast/standard 注册命令各进程内实测 3 次取中位数；1.5× Warn、3× Fail | REQUIRED |
 
-## 11. REPO_CONTEXT：仓库上下文领域
+## 12. REPO_CONTEXT：仓库上下文领域
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | RC-001 | repo-context 扫描与结构验证 | `bin/aicoding.exe lifecycle verify --scope repo-context --json` | 事实快照可构建；已安装时 manifest 结构完整（未安装为空操作通过） | REQUIRED |
 | RC-002 | repo-context 生成计划 | `bin/aicoding.exe lifecycle plan --action install --scope repo-context --json`（Full/Release） | 生成计划可计算且不写盘 | REQUIRED |
 
-## 12. ADR_REVIEW：Primitive 宪法自评门禁
+## 13. ADR_REVIEW：Primitive 宪法自评门禁
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | ADR-001 | 新 Primitive ADR 含 §12 自评 | 静态检查 `docs/decisions/*.md`：声明 `PrimitiveReview: required` 的 ADR 必含 `## §12 Checklist 自评` 节（`internal/adrreview`） | 无缺口；缺失时报出具体 ADR 文件与修复指引 | REQUIRED |
 
-## 13. RELEASE_GATE：Release policy
+## 14. RELEASE_GATE：Release policy
 
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|

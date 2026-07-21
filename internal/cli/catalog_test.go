@@ -17,6 +17,9 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 			t.Fatalf("duplicate command id: %s", command.ID)
 		}
 		seen[command.ID] = true
+		if command.LatencyClass == "" {
+			t.Fatalf("command %s has no latency class", command.ID)
+		}
 		if commandRequiresSubcommand(command.Name) != command.RequiresSubcommand {
 			t.Fatalf("namespace contract drift for %s", command.ID)
 		}
@@ -33,6 +36,9 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 		"Formal product workflow:",
 		"aicoding lifecycle plan",
 		"aicoding validation check --profile Smoke|Full|Release --target HEAD|INDEX [--bind-alias]",
+		"aicoding validation explain --profile Smoke|Full|Release --target HEAD|INDEX",
+		"aicoding plan check (--staged | --paths PATH ...)",
+		"aicoding plan approve --id ID",
 		"aicoding powershell regex-lint --path PATH",
 	} {
 		if !strings.Contains(help.String(), expected) {
@@ -51,13 +57,27 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 		}
 	}
 	validationForms := 0
+	workForms := 0
+	planForms := 0
 	for _, form := range catalog.Help {
 		if form.Command == CommandValidation {
 			validationForms++
 		}
+		if form.Command == CommandWork {
+			workForms++
+		}
+		if form.Command == CommandPlan {
+			planForms++
+		}
 	}
-	if validationForms != 4 {
-		t.Fatalf("validation help form count = %d, want 4", validationForms)
+	if validationForms != 5 {
+		t.Fatalf("validation help form count = %d, want 5", validationForms)
+	}
+	if workForms != 4 {
+		t.Fatalf("work help form count = %d, want 4", workForms)
+	}
+	if planForms != 4 {
+		t.Fatalf("plan help form count = %d, want 4", planForms)
 	}
 }
 
@@ -75,12 +95,23 @@ func TestCommandCatalogSnapshotIsStableAndDetached(t *testing.T) {
 
 func TestCommandCatalogRejectsIncompleteRoutes(t *testing.T) {
 	_, err := newCommandCatalog(
-		[]commandRoute{{descriptor: CommandDescriptor{ID: "broken", Name: "broken"}}},
+		[]commandRoute{{descriptor: CommandDescriptor{ID: "broken", Name: "broken", LatencyClass: LatencyWork}}},
 		[]HelpSection{{ID: HelpUsage, Title: "Usage:"}},
 		[]HelpForm{{Command: "broken", Section: HelpUsage, Usage: "aicoding broken"}},
 	)
 	if err == nil {
 		t.Fatal("catalog accepted a command without a route")
+	}
+}
+
+func TestCommandCatalogRejectsMissingLatencyClass(t *testing.T) {
+	_, err := newCommandCatalog(
+		[]commandRoute{{descriptor: CommandDescriptor{ID: "broken", Name: "broken"}, handler: runBootstrap}},
+		[]HelpSection{{ID: HelpUsage, Title: "Usage:"}},
+		[]HelpForm{{Command: "broken", Section: HelpUsage, Usage: "aicoding broken"}},
+	)
+	if err == nil || !strings.Contains(err.Error(), "invalid latency class") {
+		t.Fatalf("catalog accepted a command without LatencyClass: %v", err)
 	}
 }
 

@@ -1,98 +1,150 @@
-# AiCoding
+<p align="center">
+  <img src="docs/assets/aicoding-banner-light.svg#gh-light-mode-only" width="100%" alt="AiCoding — Verifiable AI Engineering">
+  <img src="docs/assets/aicoding-banner-dark.svg#gh-dark-mode-only" width="100%" alt="AiCoding — Verifiable AI Engineering">
+</p>
 
-[![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=release)](https://github.com/JiaxI2/AiCoding/releases/latest)
-[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/go1.22)
-[![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.10/whatsnew/3.10.html)
-[![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/)
-[![clang-format](https://img.shields.io/badge/clang--format-17.0.2-5C2D91?logo=llvm&logoColor=white)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2)
-[![C UserStyle Kit](https://img.shields.io/badge/C%20UserStyle%20Kit-1.2.0-00599C?logo=c&logoColor=white)](docs/guides/C99_STANDARD_C_SKILL.md)
-[![License](https://img.shields.io/github/license/JiaxI2/AiCoding)](LICENSE)
+<p align="center"><a href="README_CN.md">中文</a> · <a href="README_EN.md">English</a></p>
 
-AiCoding 是本地 AI coding 工作流的平台集成、安装、治理和 CodingKit 资产仓库。它负责 kit 注册表、hook、验证入口、发布治理和 Go CLI 控制面，不拥有嵌入式 skill 源码。
+[![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=Release&color=526D82)](https://github.com/JiaxI2/AiCoding/releases/latest) [![CI](https://github.com/JiaxI2/AiCoding/actions/workflows/aicoding-ci.yml/badge.svg?branch=main)](https://github.com/JiaxI2/AiCoding/actions/workflows/aicoding-ci.yml) [![License](https://img.shields.io/github/license/JiaxI2/AiCoding?label=License&color=666666)](LICENSE) [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/go1.22) [![Go toolchain](https://img.shields.io/badge/Go%20toolchain-1.26.5-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/devel/release#go1.26.5) [![Staticcheck](https://img.shields.io/badge/Staticcheck-2026.1-59636E)](https://github.com/dominikh/go-tools/releases/tag/2026.1) [![Govulncheck](https://img.shields.io/badge/Govulncheck-1.6.0-59636E?logo=go&logoColor=white)](https://go.googlesource.com/vuln/+/refs/tags/v1.6.0) [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.10/whatsnew/3.10.html) [![Taskfile](https://img.shields.io/badge/Taskfile-optional-59636E?logo=task&logoColor=white)](https://taskfile.dev/) [![Clang-format](https://img.shields.io/badge/Clang--format-17.0.2-59636E?logo=llvm&logoColor=white)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2) [![C UserStyle Kit](https://img.shields.io/badge/C%20UserStyle%20Kit-1.2.0-404040?logo=c&logoColor=white)](docs/guides/C99_STANDARD_C_SKILL.md)
 
-[中文](README_CN.md) | [English](README_EN.md)
+AiCoding 是让 AI 编码工作流可验证、可复用、可审计的本地工程平台：同一 Git 内容完整验证约 150 秒，重复检查约 424 毫秒，每个绿灯都能追溯到它验证的内容。
 
-## 项目边界
+## 状态 / Status
 
-- 平台仓库：集成 CodingKit 资产、kit registry、本地 hook、Taskfile 路由、发布治理和 Go CLI 门禁。
-- 源码边界：权威 skill/plugin 源码位于 `CodingKit/agents/skills` 子模块和对应生成资产。
-- 运行边界：插件 runtime 状态通过安装、更新和验证流程管理，不直接改 Codex cache。
-- 发布边界：平台版本、kit/component 版本和 milestone tag 使用独立命名空间。
+面向 Windows 与自动化调用，所有正式入口都提供 JSON 结果；[CI](https://github.com/JiaxI2/AiCoding/actions/workflows/aicoding-ci.yml) 持续验证主线，[CHANGELOG](CHANGELOG.md) 与 [Releases](https://github.com/JiaxI2/AiCoding/releases) 记录可交付变化。
+
+## 一张图看懂
+
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFFFFF","primaryTextColor":"#000000","primaryBorderColor":"#404040","lineColor":"#404040","secondaryColor":"#F7F7F7","tertiaryColor":"#FFFFFF","clusterBkg":"#FAFAFA","clusterBorder":"#666666","fontFamily":"Arial, sans-serif"}}}%%
+graph TB
+  subgraph U["① 你 / Agent 从这里进"]
+    CLI["aicoding CLI<br/>单一控制面"]
+  end
+  subgraph P["② Product Workflow"]
+    PLAN["plan<br/>批准绑定内容"]
+    WORK["work<br/>迭代裁决"]
+    TEST["test --profile<br/>Smoke / Full / Release"]
+    LIFE["lifecycle<br/>声明式收敛"]
+    GOV["governance / docsync<br/>治理与文档"]
+  end
+  subgraph K["③ Kit"]
+    KITS["可安装、可分发的能力包<br/>kit list 可查"]
+  end
+  subgraph D["④ Domain Capability"]
+    VE["validationevidence<br/>内容寻址 Receipt"]
+    TE["testengine<br/>三档验证引擎"]
+    LK["loopkit<br/>停止裁决"]
+    PL["plan<br/>范围契约"]
+  end
+  subgraph R["⑤ Primitive"]
+    GX["gitx"]
+    RP["report"]
+    RN["runner"]
+    RG["registry"]
+  end
+  CLI --> PLAN
+  CLI --> WORK
+  CLI --> TEST
+  CLI --> LIFE
+  CLI --> GOV
+  LIFE --> KITS
+  PLAN --> PL
+  WORK --> LK
+  TEST --> TE
+  GOV --> RG
+  PL --> VE
+  LK --> VE
+  TE --> VE
+  VE --> GX
+  VE --> RP
+  TE --> RN
+  LK --> RN
+  PL --> RG
+  VE -. "内容不变即复用" .-> TEST
+  VE -. "证据即门禁" .-> PLAN
+```
+
+- **只有一个入口**：所有能力都从 aicoding CLI 进入，没有第二控制面。
+- **能力分五层**：上层组合下层，下层永不反向依赖。
+- **证据形成闭环**：验证结论绑定 Git 内容身份，同一内容可审计复用。
+
+## 快速开始 / Quick Start
+
+在递归包含子模块的 clean clone 根目录，用 PowerShell 逐行复制这三行：
+
+```powershell
+go run ./cmd/aicoding bootstrap --json && .\bin\aicoding.exe provision --json
+.\bin\aicoding.exe verify --profile Smoke --json
+.\bin\aicoding.exe test --profile Smoke --json
+```
+
+第一行会从源码构建未入仓的本地二进制并完成仓库初始化；随后你应看到 `ok: true`，最终测试摘要应为 `conclusion: PASS`、`fail: 0`。任一步失败，先运行 `.\bin\aicoding.exe doctor --all --json`，再到[命令矩阵](docs/COMMANDS.md)按错误类别定位。
+
+## 发展路线
+
+静态方向见[架构路线图](docs/architecture/07-roadmap.md)；活的 roadmap 可直接用 `.\bin\aicoding.exe todolist --json` 查询，机器与人看到的是同一队列。
+
+## 按角色进入
+
+| 我是谁 | 我要什么 | 从这里开始 |
+|---|---|---|
+| 新用户 | 跑通第一个绿灯并继续探索 | 上面的三行 → [命令矩阵](docs/COMMANDS.md) |
+| Agent / 自动化 | 稳定命令与 JSON 结果契约 | [命令矩阵](docs/COMMANDS.md) → [报告 schema](docs/operations/testing/REPORT_SCHEMA.md) |
+| 贡献者 | 改代码而不越过架构红线 | [架构必读路径](docs/architecture/README.md) → [贡献指南](CONTRIBUTING.md) |
+| Kit / 扩展作者 | 先确认 Skill、Kit、MCP、Hook 的权威归属，再进入创作流程 | [创作指引](docs/guides/AUTHORING.md) |
+
+## 内核与 Kit
+
+冻结的六模块内核给出稳定底座，内容寻址证据让结论绑定 Git 内容，裁决式 loop 只决定下一步而不再造执行器；三者分别由[核心架构](docs/architecture/AICODING_CORE_ARCHITECTURE.md)、[验证证据](docs/decisions/0007-validation-evidence.md)与[循环工程架构](docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md)约束。
+
+下表严格投影 `config/kit-registry.json` 当前全部 enabled Kit；能力句来自各 manifest，详情保持一行一链接。
+
+| Kit | 一句话核心能力 | 详情 |
+|---|---|---|
+| `aicoding-platform` | AiCoding platform integration, Codex plugin marketplace registration, CodingKit asset discovery, and submodule validation. | [Kit / Plugin 视图](docs/reference/KIT_PLUGIN_VIEW.md) |
+| `docsync-plus` | Semantic documentation drift detection kit for AiCoding repositories. | [DocSync Plus](docs/architecture/DOC_SYNC_PLUS_SPEC.md) |
+| `reuse-governance` | Declarative governance for independently integrated reusable modules. | [复用治理](docs/operations/THIRD_PARTY_REUSE_GOVERNANCE.md) |
+| `common-control-kit` | Reusable C99 control modules under CodingKit/modules/common/controller. | [控制模块](CodingKit/modules/common/controller/foc/README.md) |
+| `c-userstyle-kit` | First-party C99 style, comment, lint, host-compile, and behavior verification assets backed by the Huawei DKBA 2826-2011&#46;5 reference. | [C UserStyle Kit](docs/guides/C99_STANDARD_C_SKILL.md) |
+| `release-governance-overlay-kit` | Tag/release namespace governance, Taskfile entry, and performance-loop overlay for AiCoding. | [发布治理](docs/governance/RELEASE_GOVERNANCE_OVERLAY.md) |
+
+## 平台能力索引
+
+<!-- BEGIN GENERATED: CAPABILITIES -->
+
+> 此区由 `config/internal-capabilities.json` 生成（`sha256:9bc4958912fedd4f95a592d6588076cdeab4c39655eecbc97da829fab7e33d14`）。完整的 28 项能力见 [能力索引](docs/CAPABILITIES.md)。
+
+| 正式工作流 | 核心职责 | 公共入口 | 架构 |
+|---|---|---|---|
+| `bootstrap` Bootstrap | 检查并构建 AiCoding Go CLI 的最小本地启动路径。 | `aicoding bootstrap` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+| `cli` Typed CLI Control Plane | 拥有 typed command catalog、参数解析、帮助、JSON stdout 与退出码。 | `aicoding --help` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+| `lifecycle` Lifecycle Composition | 以统一 adapter catalog 编排 Kit、MCP、runtime Skill 与 repo-context 生命周期。 | `aicoding lifecycle plan`<br>`aicoding lifecycle status`<br>`aicoding lifecycle verify` | [文档](docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md) |
+| `release-gate` Release Gate | 执行发布结构验证并组合正式 Release 门禁。 | `aicoding release verify`<br>`aicoding release gate` | [文档](docs/governance/RELEASE_POLICY.md) |
+| `repo-health` Repository Health | 聚合产品 doctor 与确定性 verify 检查。 | `aicoding doctor --all`<br>`aicoding verify` | [文档](docs/architecture/01-system-architecture.md) |
+| `repo-init` Repository Provisioning | 幂等初始化 Git 本地设置、Hook、状态根与文档骨架。 | `aicoding provision` | [文档](docs/decisions/0005-repo-init.md) |
+| `test-engine` Global Test Engine | 拥有 Smoke、Full、Release 测试注册、执行、超时与报告。 | `aicoding test` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+
+<!-- END GENERATED: CAPABILITIES -->
+
+## 为什么这个仓库越用越值钱
+
+- **地基复利**：冻结内核只接受向上组合，新能力不推倒旧边界（[愿景与四象限](docs/architecture/00-vision.md)）。
+- **证据复利**：同一内容完整验证一次，之后可跨 worktree 在约 424 毫秒内复用（[实测基线](docs/operations/VALIDATION_EVIDENCE_BUDGET.md)）。
+- **能力复利**：loop、plan、验证证据和 Kit 生命周期共享既有 Primitive，而不是各建一套事实源（[Primitive Constitution](docs/architecture/PRIMITIVE_CONSTITUTION.md)）。
+- **知识复利**：四象限中的每类不确定性都有对应沉淀位置，经验会变成下一次工作的输入（[愿景 §3](docs/architecture/00-vision.md)）。
 
 ## 当前架构
 
-Go CLI 是唯一正式产品控制面。产品工作流固定为 `bootstrap` → `lifecycle` →
-`doctor --all` / `verify --profile` → `test --profile` → `release verify|gate`。
-领域级 hook、governance、DocSync、Skill、MCP、export 和 fresh-clone 命令仍作为该控制面下的
-子命令或专项诊断存在，不再形成第二套产品入口。
+`Go CLI` 是唯一正式产品入口：`lifecycle` 管理能力，`doctor --all` / `verify --profile` / `test --profile` 产生分级结论，`release verify|gate` 守住发布。Taskfile 只做短路由，PowerShell/Python 只保留专项边界。完整分层见[架构阅读路径](docs/architecture/README.md)。
 
-Taskfile 只做短路由，业务逻辑在 Go 的 `internal/*` 包中。PowerShell/Python 只保留专项质量、安全、计划模式（Plan Mode）、外部 skill、tag planning / overlay compatibility 和硬件/工具链专项流程。
+## Git 工作流 / Git Workflow
 
-## Git Governance Standard
+仓库遵循 [Git Governance Standard](docs/governance/RELEASE_POLICY.md)：commit type 为 `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`；分支映射为 `main`, `develop`, `feature`, `test`, `release`, `hotfix`；Release typed notes 按主类型汇总并由[发布说明门禁](.github/RELEASE_TEMPLATE.md)验证。
 
-AiCoding 使用仓库内置 Git Governance Standard。
+## 仓库导航 / Repository Navigation
 
-- commit type taxonomy：`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`。
-- branch naming and environment mapping：`main`, `develop`, `feature`, `test`, `release`, `hotfix`。
-- Issue managed lifecycle：使用结构化表单、`type/area/priority/status/resolution` label 轴和人工确认的关闭证据；不按 stale 时间自动关闭。
-- Release typed notes：发布说明按主类型汇总，并由 `.github/RELEASE_TEMPLATE.md` 和 `bin/aicoding.exe verify release-notes --json` 验证。
-
-## 快速开始
-
-```powershell
-go run ./cmd/aicoding bootstrap --json
-bin\aicoding.exe lifecycle plan --action install --scope all --runtime-profile runtime --json
-bin\aicoding.exe doctor --all --json
-bin\aicoding.exe verify --profile Smoke --json
-bin\aicoding.exe test --profile Smoke --json
-```
-
-## 常用入口
-
-| 场景 | 命令 | 说明 |
-|---|---|---|
-| 初始化 | `go run ./cmd/aicoding bootstrap --json` | 构建 `bin/aicoding.exe` |
-| 生命周期计划 | `bin\aicoding.exe lifecycle plan --action install --scope kit --all --json` | `--scope` 始终显式；跨域使用 `--scope all` |
-| 产品诊断 | `task doctor` | 路由到 `doctor --all` |
-| 产品验证 | `task verify` | 路由到 `verify --profile Smoke` |
-| Smoke / Full / Release | `task smoke` / `task full` / `task release` | 路由到唯一 `test --profile` 引擎 |
-| 最近测试报告 | `bin\aicoding.exe test latest` | 查看最近一次官方测试摘要 |
-
-## 架构图
-
-```text
-User / Agent
-  -> Go CLI
-     -> lifecycle -> Kit / MCP / runtime Skill
-     -> doctor / verify -> shared report schema
-     -> test profiles -> one test engine / content evidence
-     -> hooks -> governed commit / push gates
-     -> release -> verify / gate
-  -> Taskfile / CI -> short routes to Go CLI
-  -> specialty tools -> quality / safety / Plan Mode / toolchain
-```
-
-## 文档索引
-
-| 主题 | 文档 |
-|---|---|
-| 架构总览 | [docs/ARCHITECTURE_OVERVIEW.md](docs/ARCHITECTURE_OVERVIEW.md) |
-| 命令矩阵 | [docs/COMMANDS.md](docs/COMMANDS.md) |
-| C99 / C UserStyle Kit | [docs/guides/C99_STANDARD_C_SKILL.md](docs/guides/C99_STANDARD_C_SKILL.md) |
-| 官方测试 | [docs/operations/testing/GLOBAL_TEST_PLAN.md](docs/operations/testing/GLOBAL_TEST_PLAN.md) |
-| PowerShell 当前边界 | [docs/architecture/POWERSHELL_BOUNDARY.md](docs/architecture/POWERSHELL_BOUNDARY.md) |
-| Issue governance | [docs/governance/ISSUE_GOVERNANCE.md](docs/governance/ISSUE_GOVERNANCE.md) |
-| Release governance overlay | [docs/governance/RELEASE_GOVERNANCE_OVERLAY.md](docs/governance/RELEASE_GOVERNANCE_OVERLAY.md) |
-| Tag policy | [docs/governance/TAGGING_POLICY.md](docs/governance/TAGGING_POLICY.md) |
-| Release policy | [docs/governance/RELEASE_POLICY.md](docs/governance/RELEASE_POLICY.md) |
-
-## Tag 规则摘要
-
-- 平台发布 tag：`vMAJOR.MINOR.PATCH`。
-- Kit/component 发布 tag：`kit/<kit-id>/vMAJOR.MINOR.PATCH`。
-- Milestone tag：`milestone/YYYY.MM.DD-<name>`。
-- 不移动、不覆盖、不复用已经绑定 release 的 immutable tag。
+面向人的主题入口在 [docs/README.md](docs/README.md)，下面的目录地图由机器配置生成。
 
 <!-- AICODING:REPOSITORY_MAP:START -->
 ## Repository map
@@ -122,3 +174,7 @@ User / Agent
 | 维护专项工具 | `tools` | — |
 | 维护 Skill 权威源码 | `CodingKit/agents/skills` | — |
 <!-- AICODING:REPOSITORY_MAP:END -->
+
+## Star History
+
+[在 Star History 查看项目趋势](https://www.star-history.com/?repos=JiaxI2%2FAiCoding&type=date&legend=top-left)。

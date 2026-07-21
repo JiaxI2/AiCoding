@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "{{.ID}}-implementation",
+  "domain": "project-development",
+  "control": {
+    "trigger": "explicit",
+    "stop": {
+      "maxAttempts": 3,
+      "maxElapsedSeconds": 3600,
+      "maxTotalTokens": 300000,
+      "stallThreshold": 2,
+      "contextPressureThreshold": 80
+    },
+    "authority": {
+      "writeScope": {
+        "allow": [
+          "{{.ManifestPath}}",
+          "config/kit-registry.json",
+          "{{.WorkSpecRoot}}/**",
+          "{{.BoundaryPath}}"
+        ],
+        "deny": [
+          ".git/**",
+          "vendor/**"
+        ]
+      },
+      "requiredGates": [
+        "full"
+      ],
+      "checkpoints": [
+        "architecture-change",
+        "merge"
+      ]
+    }
+  },
+  "goal": "Implement {{.Name}} without changing unrelated Kit or platform domains.",
+  "acceptance": [
+    "Kit Lifecycle verification passes",
+    "Relevant tests pass",
+    "No out-of-scope files are modified"
+  ]
+}

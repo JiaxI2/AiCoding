@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "id": "loop-engineering-kit",
+  "name": "Loop Engineering Kit",
+  "version": "0.1.0",
+  "kind": [
+    "go-capability-kit",
+    "bounded-work-adjudicator"
+  ],
+  "mode": "go-builtin",
+  "description": "Deterministic bounded-work contracts and transition decisions without an execution loop or a second evidence authority.",
+  "paths": {
+    "implementation": "internal/loopkit",
+    "schemas": "config/schemas",
+    "templates": "CodingKit/tools/loop-engineering-kit/templates",
+    "architecture": "docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md"
+  },
+  "commands": {
+    "status": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "internal/loopkit",
+        "config/schemas/loop-work-spec.schema.json",
+        "config/schemas/loop-attempt.schema.json",
+        "docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md"
+      ],
+      "supportsJson": true
+    },
+    "verify": {
+      "type": "builtin-check",
+      "requiredPaths": [
+        "internal/loopkit/controlmode/controlmode.go",
+        "internal/loopkit/gateref/gateref.go",
+        "internal/loopkit/transition/transition.go",
+        "internal/loopkit/workspec/workspec.go",
+        "internal/loopkit/workstate/store.go",
+        "internal/cli/work.go",
+        "config/schemas/loop-work-spec.schema.json",
+        "config/schemas/loop-attempt.schema.json",
+        "config/schemas/loop-profile.schema.json",
+        "CodingKit/tools/loop-engineering-kit/templates/project-development.work.json",
+        "CodingKit/tools/loop-engineering-kit/templates/repository-maintenance.work.json",
+        "docs/decisions/0008-loop-engineering-kit.md"
+      ],
+      "supportsJson": true
+    },
+    "test": {
+      "type": "go-composed",
+      "steps": [
+        "verify"
+      ]
+    },
+    "install": {
+      "type": "unsupported",
+      "reason": "Loop Engineering is a repository-owned Go capability and has no runtime install action."
+    },
+    "update": {
+      "type": "unsupported",
+      "reason": "Loop Engineering changes are reviewed repository commits, not lifecycle updates."
+    },
+    "uninstall": {
+      "type": "unsupported",
+      "reason": "Loop Engineering is versioned repository content and is not removed through lifecycle state."
+    }
+  }
+}

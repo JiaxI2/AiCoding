@@ -25,6 +25,26 @@ type validationCheckData struct {
 	CommitAliasBound bool                             `json:"commitAliasBound,omitempty"`
 }
 
+type validationFingerprintChange struct {
+	Field string `json:"field"`
+	Old   string `json:"old"`
+	New   string `json:"new"`
+}
+
+type validationExplainData struct {
+	Profile            string                         `json:"profile"`
+	Target             validationevidence.Target      `json:"target"`
+	Subject            validationevidence.Subject     `json:"subject"`
+	Fingerprint        validationevidence.Fingerprint `json:"fingerprint"`
+	Decision           string                         `json:"decision"`
+	CheckCode          validationevidence.ErrorCode   `json:"checkCode"`
+	CheckReason        string                         `json:"checkReason"`
+	ReferenceIdentity  string                         `json:"referenceIdentity,omitempty"`
+	ReferenceSelection string                         `json:"referenceSelection,omitempty"`
+	Changed            []validationFingerprintChange  `json:"changed"`
+	Unchanged          []string                       `json:"unchanged"`
+}
+
 type validationListData struct {
 	Profile      string                       `json:"profile,omitempty"`
 	ReceiptCount int                          `json:"receiptCount"`
@@ -44,13 +64,15 @@ type validationErrorData struct {
 
 func runValidation(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
-		return report.Result{}, usageErrorf("validation requires subcommand: status, check, list or clean")
+		return report.Result{}, usageErrorf("validation requires subcommand: status, check, explain, list or clean")
 	}
 	switch strings.ToLower(args[0]) {
 	case "status":
 		return runValidationStatus(args[1:], start)
 	case "check":
 		return runValidationCheck(args[1:], start)
+	case "explain":
+		return runValidationExplain(args[1:], start)
 	case "list":
 		return runValidationList(args[1:], start)
 	case "clean":
@@ -58,6 +80,110 @@ func runValidation(args []string, start time.Time) (report.Result, error) {
 	default:
 		return report.Result{}, usageErrorf("unsupported validation subcommand: %s", args[0])
 	}
+}
+
+func runValidationExplain(args []string, start time.Time) (report.Result, error) {
+	fs := newFlagSet("validation explain")
+	repoArg := fs.String("repo-root", "", "repository root")
+	profileArg := fs.String("profile", "", "Smoke, Full or Release")
+	targetArg := fs.String("target", "", "HEAD or INDEX")
+	_ = fs.Bool("json", false, "json output")
+	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
+	profile, _, err := normalizeTestProfile(*profileArg)
+	if err != nil {
+		return report.Result{}, err
+	}
+	target, err := normalizeValidationTarget(*targetArg)
+	if err != nil {
+		return report.Result{}, err
+	}
+	repo, store, err := openValidationRepository(*repoArg)
+	if err != nil {
+		return validationFailure("validation explain", repo, start, "cannot open validation evidence", err)
+	}
+	subject, err := store.Capture(target)
+	if err != nil {
+		return validationFailure("validation explain", repo, start, "cannot capture validation subject", err)
+	}
+	spec, err := testengine.EvidenceSpec(validationTestConfig(repo, profile))
+	if err != nil {
+		return validationFailure("validation explain", repo, start, "cannot compute validation semantics", err)
+	}
+	fingerprint, err := store.Fingerprint(subject, spec)
+	if err != nil {
+		return validationFailure("validation explain", repo, start, "cannot compute validation identity", err)
+	}
+	check := store.Check(subject, fingerprint)
+	decision := "miss"
+	var reference *validationevidence.Receipt
+	referenceSelection := ""
+	if check.Hit {
+		decision = "hit"
+		reference = check.Receipt
+		referenceSelection = "exact matching Receipt; diagnostic only"
+	} else {
+		receipts, listErr := store.List(profile)
+		if listErr != nil {
+			return validationFailure("validation explain", repo, start, "cannot read diagnostic Receipt reference", listErr)
+		}
+		if len(receipts) > 0 {
+			reference = &receipts[0]
+			referenceSelection = "latest same-profile Receipt by receipt-file mtime; diagnostic only"
+		}
+	}
+	changed := []validationFingerprintChange{}
+	unchanged := []string{}
+	referenceIdentity := ""
+	if reference != nil {
+		referenceIdentity = reference.ValidationIdentity
+		changed, unchanged = compareValidationFingerprints(reference.Fingerprint, fingerprint)
+	}
+	data := validationExplainData{
+		Profile: profile, Target: target, Subject: subject, Fingerprint: fingerprint,
+		Decision: decision, CheckCode: check.Code, CheckReason: check.Reason,
+		ReferenceIdentity: referenceIdentity, ReferenceSelection: referenceSelection,
+		Changed: changed, Unchanged: unchanged,
+	}
+	return report.Result{
+		SchemaVersion: report.SchemaVersion,
+		Command:       "validation explain",
+		OK:            true,
+		Message:       "validation Receipt explanation",
+		RepoRoot:      repo,
+		InputDigest:   fingerprint.Identity,
+		Data:          data,
+		ElapsedMS:     report.Elapsed(start),
+	}, nil
+}
+
+func compareValidationFingerprints(oldFingerprint, newFingerprint validationevidence.Fingerprint) ([]validationFingerprintChange, []string) {
+	type fingerprintField struct {
+		name string
+		old  string
+		new  string
+	}
+	fields := []fingerprintField{
+		{name: "repositoryID", old: oldFingerprint.RepositoryID, new: newFingerprint.RepositoryID},
+		{name: "subjectTreeOID", old: oldFingerprint.SubjectTreeOID, new: newFingerprint.SubjectTreeOID},
+		{name: "profile", old: oldFingerprint.Profile, new: newFingerprint.Profile},
+		{name: "validationPlanDigest", old: oldFingerprint.ValidationPlanDigest, new: newFingerprint.ValidationPlanDigest},
+		{name: "engineSemanticDigest", old: oldFingerprint.EngineSemanticDigest, new: newFingerprint.EngineSemanticDigest},
+		{name: "configDigest", old: oldFingerprint.ConfigDigest, new: newFingerprint.ConfigDigest},
+		{name: "toolchainDigest", old: oldFingerprint.ToolchainDigest, new: newFingerprint.ToolchainDigest},
+		{name: "optionsDigest", old: oldFingerprint.OptionsDigest, new: newFingerprint.OptionsDigest},
+	}
+	changed := make([]validationFingerprintChange, 0, len(fields))
+	unchanged := make([]string, 0, len(fields))
+	for _, field := range fields {
+		if field.old == field.new {
+			unchanged = append(unchanged, field.name)
+			continue
+		}
+		changed = append(changed, validationFingerprintChange{Field: field.name, Old: field.old, New: field.new})
+	}
+	return changed, unchanged
 }
 
 func runValidationStatus(args []string, start time.Time) (report.Result, error) {
@@ -160,6 +286,15 @@ func runValidationCheck(args []string, start time.Time) (report.Result, error) {
 	}
 	if !result.OK {
 		result.ErrorKind = report.ErrorKindValidation
+		switch decision.Code {
+		case validationevidence.CodeReceiptMiss, validationevidence.CodeReceiptInvalid:
+			result = report.WithDecision(result, report.CategoryEvidenceMissing,
+				"aicoding test --profile "+displayTestProfile(profile)+" --reuse off --json")
+		case validationevidence.CodeStoreError:
+			result = report.WithDecision(result, report.CategoryInternal, "aicoding validation status --json")
+		default:
+			result = report.WithDecision(result, report.CategoryValidation, "aicoding validation explain --profile "+displayTestProfile(profile)+" --target "+string(target)+" --json")
+		}
 	}
 	return result, report.BoolErr(errs)
 }
@@ -252,7 +387,7 @@ func normalizeValidationTarget(value string) (validationevidence.Target, error) 
 	case string(validationevidence.TargetIndex):
 		return validationevidence.TargetIndex, nil
 	case "":
-		return "", usageErrorf("validation check requires --target HEAD|INDEX")
+		return "", usageErrorf("validation requires --target HEAD|INDEX")
 	default:
 		return "", usageErrorf("unsupported validation target: %s", value)
 	}

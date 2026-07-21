@@ -1,16 +1,17 @@
 package cli
 
 import (
+	"context"
 	"io"
 	"os"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/repocontext"
 	"github.com/JiaxI2/AiCoding/internal/report"
+	"github.com/JiaxI2/AiCoding/internal/runner"
 	"github.com/JiaxI2/AiCoding/internal/testengine"
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
@@ -95,30 +96,25 @@ func refreshHeadValidationAliases(repo string) validationAliasRefresh {
 		refresh.Errors = append(refresh.Errors, err.Error())
 		return refresh
 	}
-	var commitOID string
-	var treeOID string
-	var commitErr error
-	var treeErr error
-	var wait sync.WaitGroup
-	wait.Add(2)
-	go func() {
-		defer wait.Done()
-		commitOID, commitErr = gitx.HeadCommit(repo)
-	}()
-	go func() {
-		defer wait.Done()
-		treeOID, treeErr = gitx.TreeOID(repo, "HEAD")
-	}()
-	wait.Wait()
-	if commitErr != nil || treeErr != nil {
-		if commitErr != nil {
-			refresh.Errors = append(refresh.Errors, commitErr.Error())
-		}
-		if treeErr != nil {
-			refresh.Errors = append(refresh.Errors, treeErr.Error())
-		}
+	tasks := []runner.Task{
+		{ID: "head-commit", Action: "git.head-commit", Group: "validation-alias", Run: func(context.Context) runner.TaskResult {
+			value, taskErr := gitx.HeadCommit(repo)
+			return stringTaskResult("head-commit", value, taskErr)
+		}},
+		{ID: "head-tree", Action: "git.tree-oid", Group: "validation-alias", Run: func(context.Context) runner.TaskResult {
+			value, taskErr := gitx.TreeOID(repo, "HEAD")
+			return stringTaskResult("head-tree", value, taskErr)
+		}},
+	}
+	results := runner.Run(context.Background(), tasks, runner.Options{MaxParallel: 2})
+	for _, result := range results {
+		refresh.Errors = append(refresh.Errors, result.Errors...)
+	}
+	if len(refresh.Errors) != 0 {
 		return refresh
 	}
+	commitOID, _ := results[0].Data.(string)
+	treeOID, _ := results[1].Data.(string)
 	refresh.CommitOID = commitOID
 	refresh.TreeOID = treeOID
 	subject := validationevidence.Subject{
@@ -148,4 +144,12 @@ func refreshHeadValidationAliases(repo string) validationAliasRefresh {
 		refresh.Bound++
 	}
 	return refresh
+}
+
+func stringTaskResult(id, value string, err error) runner.TaskResult {
+	result := runner.TaskResult{ID: id, OK: err == nil, Data: value}
+	if err != nil {
+		result.Errors = []string{err.Error()}
+	}
+	return result
 }

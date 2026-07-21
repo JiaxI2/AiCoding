@@ -1,0 +1,64 @@
+---
+name: {{.ID}}
+description: Provides a repeatable {{.Name}} workflow. Use when the user needs the {{.Name}} process executed consistently.
+---
+
+# {{.Name}}
+
+## Skill Type
+
+`consistent-workflow` (default scaffold classification; change it only after the authoring gate supports another type).
+
+## When to use
+
+Use this skill for repeated {{.Name}} work that benefits from a stable, reviewable procedure.
+
+## Workflow
+
+1. Confirm the requested outcome and constraints.
+2. Execute the smallest ordered workflow that satisfies the request.
+3. Validate the observable result and report remaining human decisions.
+
+## Workflow Contract
+
+Trigger: the user explicitly requests {{.Name}} work.
+
+Inputs: the user request, relevant files, target runtime, and applicable project policy.
+
+Steps:
+
+1. Follow the ordered steps in the Workflow section.
+2. Stop when a declared constraint or blocking gate fails.
+
+Exit criteria: the requested result exists, declared checks pass, and unresolved risks are explicit.
+
+Validation: run the checks in the Verification section and record their results.
+
+Blocking Hook: select a CLI, lint, Hook, or CI gate before approving this draft for repeated use.
+
+## Verification
+
+- Run the deterministic CLI or test checks owned by the target repository.
+- Forward-test a realistic request when this skill changes a user-visible workflow.
+- Record the commands, results, and any manual review that remains.
+
+## Constraints
+
+- Keep frontmatter limited to `name` and `description` unless the target runtime documents more keys.
+- Keep executable policy in CLI, lint, Hook, or CI gates instead of duplicating it as prose.
+- Do not assume Claude-only commands or browser-only review flows exist.
+- Treat this scaffold as a draft until an owner approves its workflow and gates.
+
+## Gate Rules
+
+- CLI checker: not selected by the scaffold; choose a deterministic command before release.
+- Hook or CI gate: not wired automatically; record the approved enforcement point or skip rationale.
+- MCP tool library: none required by default; document any required tools or the CLI/manual substitute.
+- Human confirmation: an owner must approve the workflow, automated gates, and manual review scope.
+
+## Human Confirmation
+
+- Owner/确认人: not yet assigned.
+- Accepted gates: pending review.
+- Manual review scope: pending review.
+- Decision: not approved; draft.

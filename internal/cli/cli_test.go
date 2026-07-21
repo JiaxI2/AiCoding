@@ -1,8 +1,10 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/cache"
 	"github.com/JiaxI2/AiCoding/internal/cstyle"
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/report"
@@ -149,7 +152,7 @@ func writeIssueGovernanceFixture(t *testing.T, repo string) {
 		t.Fatal(err)
 	}
 	mustWrite(t, filepath.Join(repo, ".github", "issue-labels.json"), string(manifest))
-	mustWrite(t, filepath.Join(repo, ".github", "workflows", "issue-governance.yml"), "name: Issue governance\nopened\nreopened\nlabeled\nclosed\npermissions:\n  issues: write\nmanifest: .github/issue-labels.json\nuses: actions/github-script@v9\n")
+	mustWrite(t, filepath.Join(repo, ".github", "workflows", "issue-governance.yml"), "name: Issue governance\nopened\nreopened\nlabeled\nclosed\npermissions:\n  issues: write\nmanifest: .github/issue-labels.json\nuses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9\n")
 }
 
 func mustWrite(t *testing.T, path, content string) {
@@ -175,10 +178,40 @@ func TestMainSwitchRoutesNewCommands(t *testing.T) {
 	}
 }
 
+func TestRunCacheCleanParsesRetentionFlags(t *testing.T) {
+	repo := t.TempDir()
+	for index := 0; index < 8; index++ {
+		mustWrite(t, filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index), "summary.json"), `{"conclusion":"PASS"}`)
+		path := filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index), "summary.json")
+		stamp := time.Date(2026, 7, 21, 0, index, 0, 0, time.UTC)
+		if err := os.Chtimes(path, stamp, stamp); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	result, err := runCache([]string{"clean", "--scope", "test-results", "--keep", "5", "--dry-run", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !result.OK {
+		t.Fatalf("cache clean dry-run: result=%#v err=%v", result, err)
+	}
+	cleanResult, ok := result.Data.(cache.CleanResult)
+	if !ok || !cleanResult.DryRun || cleanResult.Scope != "test-results" || cleanResult.PlannedCount != 3 || cleanResult.RemovedCount != 0 {
+		t.Fatalf("unexpected cache clean data: %#v", result.Data)
+	}
+	if _, err := runCache([]string{"clean", "--scope", "unknown", "--repo-root", repo}, time.Now()); err == nil {
+		t.Fatal("unknown cache scope was accepted")
+	}
+	if _, err := runCache([]string{"clean", "--keep", "0", "--repo-root", repo}, time.Now()); err == nil {
+		t.Fatal("zero cache keep was accepted")
+	}
+	if _, err := runCache([]string{"clean", "--adopt", "--repo-root", repo}, time.Now()); err == nil {
+		t.Fatal("temp adoption without an explicit temp scope was accepted")
+	}
+}
+
 func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 	for _, name := range []string{
 		"test", "docsync", "skill", "lifecycle", "export",
-		"fresh-clone", "release", "codex",
+		"fresh-clone", "release", "codex", "work", "plan",
 	} {
 		route, ok := commands.lookup(name)
 		if !ok || route.handler == nil {
@@ -198,6 +231,16 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		"aicoding codex usage run",
 		"aicoding skill c99-standard-c status",
 		"aicoding skill c99-standard-c verify",
+		"aicoding work validate --file SPEC.json",
+		"aicoding work record --file SPEC.json --attempt ATTEMPT.json",
+		"aicoding plan check (--staged | --paths PATH ...)",
+		"aicoding plan verify",
+		"aicoding plan status [--id ID | --all]",
+		"aicoding plan approve --id ID",
+		"aicoding cache clean [--scope fast-path|test-results|validation-reports|temp|work-state] [--keep N] [--dry-run] [--adopt] [--all-repos]",
+		"aicoding kit init ID [--external] [--dry-run]",
+		"aicoding skill init ID [--out PATH] [--dry-run]",
+		"aicoding mcp init ID [--out PATH] [--dry-run]",
 	} {
 		if !strings.Contains(help.String(), usage) {
 			t.Fatalf("catalog help is missing %q", usage)
@@ -235,6 +278,27 @@ func TestKitDescribeProjectsSelectedAndAllKitsWithoutWrites(t *testing.T) {
 	}
 }
 
+func TestKitDescribeTextUsesExistingReportRenderer(t *testing.T) {
+	repo, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	code := Execute([]string{"kit", "describe", "--kit", "aicoding-platform", "--repo-root", repo}, &stdout, &stderr)
+	if code != ExitSuccess {
+		t.Fatalf("kit describe text failed with %d: %s", code, stderr.String())
+	}
+	for _, want := range []string{
+		"[OK] aicoding-platform",
+		"aicoding lifecycle status --scope kit --kit aicoding-platform --json",
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("kit describe text is missing %q:\n%s", want, stdout.String())
+		}
+	}
+}
+
 func TestKitDescribeRejectsInvalidSelectionAndScopesWithState(t *testing.T) {
 	repo, err := filepath.Abs(filepath.Join("..", ".."))
 	if err != nil {
@@ -255,6 +319,55 @@ func TestKitDescribeRejectsInvalidSelectionAndScopesWithState(t *testing.T) {
 	missing, runErr := runKit([]string{"describe", "--kit", "does-not-exist", "--repo-root", repo, "--json"}, time.Now())
 	if runErr == nil || missing.OK || missing.ErrorKind != report.ErrorKindValidation || !strings.Contains(runErr.Error(), "no kit matched") {
 		t.Fatalf("unknown kit did not return a validation error: res=%#v err=%v", missing, runErr)
+	}
+}
+
+func TestKitInitCLIProducesLifecycleValidScaffold(t *testing.T) {
+	repo := t.TempDir()
+	writeGoControlFixture(t, repo)
+
+	dryRun, err := runKit([]string{"init", "tmp-kit", "--dry-run", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !dryRun.OK {
+		t.Fatalf("kit init dry-run failed: result=%#v err=%v", dryRun, err)
+	}
+	if _, err := os.Stat(filepath.Join(repo, "config", "kits", "tmp-kit.json")); !os.IsNotExist(err) {
+		t.Fatalf("kit init dry-run wrote a manifest: %v", err)
+	}
+
+	initialized, err := runKit([]string{"init", "tmp-kit", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !initialized.OK {
+		t.Fatalf("kit init failed: result=%#v err=%v", initialized, err)
+	}
+	verified, err := runKit([]string{"verify", "--kit", "tmp-kit", "--profile", "Lifecycle", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !verified.OK {
+		t.Fatalf("generated Kit failed Lifecycle without edits: result=%#v err=%v", verified, err)
+	}
+	governed, err := runGovernance([]string{"dependencies", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !governed.OK {
+		t.Fatalf("generated Kit failed dependency governance without edits: result=%#v err=%v", governed, err)
+	}
+	listed, err := runKit([]string{"list", "--repo-root", repo, "--json"}, time.Now())
+	views, ok := listed.Data.([]kit.View)
+	if err != nil || !listed.OK || !ok {
+		t.Fatalf("kit list failed: result=%#v err=%v", listed, err)
+	}
+	foundDisabled := false
+	for _, view := range views {
+		if view.ID == "tmp-kit" {
+			foundDisabled = !view.Enabled
+		}
+	}
+	if !foundDisabled {
+		t.Fatalf("kit list did not expose tmp-kit as disabled: %#v", views)
+	}
+
+	duplicate, duplicateErr := runKit([]string{"init", "tmp-kit", "--repo-root", repo, "--json"}, time.Now())
+	if duplicateErr == nil || duplicate.OK || duplicate.ErrorKind != report.ErrorKindValidation {
+		t.Fatalf("duplicate init was not a validation failure: result=%#v err=%v", duplicate, duplicateErr)
+	}
+	reserved, reservedErr := runKit([]string{"init", "aicoding-foo", "--repo-root", repo, "--json"}, time.Now())
+	if reservedErr == nil || reserved.OK || !strings.Contains(strings.Join(reserved.Errors, " "), "reserved aicoding-") {
+		t.Fatalf("reserved namespace was not rejected: result=%#v err=%v", reserved, reservedErr)
 	}
 }
 
@@ -432,6 +545,28 @@ func TestRunTestProfileWrapsRepoTester(t *testing.T) {
 	}
 }
 
+func TestGlobalTestReportExposesObservabilitySummary(t *testing.T) {
+	cacheHitRatio := 0.0
+	standard := globalTestStandardReport("test --profile Full", "full", t.TempDir(), 12, testengine.Report{
+		ExecutionMode: "executed",
+		Summary: testengine.Summary{
+			Profile: "full", Conclusion: "PASS",
+			SlowestCases:         []testengine.SlowestCase{{ID: "GO-001", DurationMS: 9}},
+			CacheHitRatio:        &cacheHitRatio,
+			ReceiptInvalidReason: "VALIDATION_RECEIPT_MISS: no reusable Receipt exists",
+		},
+	})
+	if got := standard.Summary["cache_hit_ratio"]; got != 0.0 {
+		t.Fatalf("cache_hit_ratio = %#v", got)
+	}
+	if got := standard.Summary["receipt_invalid_reason"]; got != "VALIDATION_RECEIPT_MISS: no reusable Receipt exists" {
+		t.Fatalf("receipt_invalid_reason = %#v", got)
+	}
+	if got, ok := standard.Summary["slowest_cases"].([]testengine.SlowestCase); !ok || len(got) != 1 || got[0].ID != "GO-001" {
+		t.Fatalf("slowest_cases = %#v", standard.Summary["slowest_cases"])
+	}
+}
+
 func TestCanonicalTestCommandsRouteDirectlyToEngine(t *testing.T) {
 	repo := t.TempDir()
 	installPassingTestEngine(t)
@@ -571,7 +706,7 @@ func writeGoControlFixture(t *testing.T, repo string) {
 	mustWrite(t, filepath.Join(repo, "internal", "docsync", "docsync.go"), "package docsync\n")
 	mustWrite(t, filepath.Join(repo, "internal", "docsync", "check.go"), "package docsync\n")
 	mustWrite(t, filepath.Join(repo, "docs", "COMMANDS.md"), "# Commands\n")
-	mustWrite(t, filepath.Join(repo, "docs", "architecture", "DOC_SYNC_PLUS_SPEC.md"), "# DocSync Spec\n")
+	mustWrite(t, filepath.Join(repo, "docs", "architecture", "DOC_SYNC_PLUS_SPEC.md"), "# DocSync Spec\n\nStatus: Accepted and Frozen\n")
 	mustWrite(t, filepath.Join(repo, "docs", "operations", "DOC_SYNC_PLUS_VALIDATION_PLAN.md"), "# DocSync Validation\n")
 	mustWrite(t, filepath.Join(repo, "docs", "operations", "THIRD_PARTY_REUSE_GOVERNANCE.md"), "DocSync\n")
 	mustWrite(t, filepath.Join(repo, "config", "codex-kit.json"), minimalCodexKitConfig())

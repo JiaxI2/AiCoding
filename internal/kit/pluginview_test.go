@@ -68,6 +68,22 @@ func TestCatalogPluginViewsAreCompleteDetachedAndDeterministic(t *testing.T) {
 		if !reflect.DeepEqual(view.Skills, wantSkills) {
 			t.Fatalf("%s skills did not reuse the manifest parser", view.ID)
 		}
+		if view.Quickstart.Purpose != manifest.Description {
+			t.Fatalf("%s quickstart purpose did not follow the manifest description", view.ID)
+		}
+		wantCommand := "aicoding lifecycle status --scope kit --kit " + view.ID + " --json"
+		if view.Quickstart.Command != wantCommand {
+			t.Fatalf("%s quickstart command = %q, want %q", view.ID, view.Quickstart.Command, wantCommand)
+		}
+		if len(view.Quickstart.Skills) != len(wantSkills) {
+			t.Fatalf("%s quickstart skills = %d, want %d", view.ID, len(view.Quickstart.Skills), len(wantSkills))
+		}
+		for skillIndex, skill := range wantSkills {
+			quickstartSkill := view.Quickstart.Skills[skillIndex]
+			if quickstartSkill.ID != skill.ID || quickstartSkill.Description != skill.Description {
+				t.Fatalf("%s quickstart skill did not follow manifest skill %s", view.ID, skill.ID)
+			}
+		}
 		for _, operation := range view.Operations {
 			if effect, exists := actionEffects[operation.Name]; exists && operation.Effect != effect {
 				t.Fatalf("%s operation %s effect = %s, adapter = %s", view.ID, operation.Name, operation.Effect, effect)

@@ -115,15 +115,15 @@ func verifyBySkill(
 
 	if !directoryExists(paths.Root) {
 		result.ElapsedMS = time.Since(started).Milliseconds()
-		return result, fmt.Errorf("C Kit root not found: %s", result.KitRoot)
+		return result, fmt.Errorf("c kit root not found: %s", result.KitRoot)
 	}
 	if !fileExists(paths.Config) {
 		result.ElapsedMS = time.Since(started).Milliseconds()
-		return result, fmt.Errorf("C Kit config not found: %s", result.Config)
+		return result, fmt.Errorf("c kit config not found: %s", result.Config)
 	}
 	if !fileExists(targetPath) {
 		result.ElapsedMS = time.Since(started).Milliseconds()
-		return result, fmt.Errorf("C Kit verify target not found: %s", result.Target)
+		return result, fmt.Errorf("c kit verify target not found: %s", result.Target)
 	}
 
 	args := []string{
@@ -137,7 +137,7 @@ func verifyBySkill(
 		overlayPath := resolveRepoRelativePath(repoRoot, overlay)
 		if !fileExists(overlayPath) {
 			result.ElapsedMS = time.Since(started).Milliseconds()
-			return result, fmt.Errorf("C Kit overlay not found: %s", relativeRepoPath(repoRoot, overlayPath))
+			return result, fmt.Errorf("c kit overlay not found: %s", relativeRepoPath(repoRoot, overlayPath))
 		}
 		result.Overlays = append(result.Overlays, relativeRepoPath(repoRoot, overlayPath))
 		args = append(args, "--overlay", overlayPath)
@@ -152,41 +152,41 @@ func verifyBySkill(
 	result.Stderr = strings.TrimSpace(string(stderr))
 	result.ElapsedMS = time.Since(started).Milliseconds()
 	if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		return result, fmt.Errorf("C Kit verify timed out after %s", kitVerifyTimeout)
+		return result, fmt.Errorf("c kit verify timed out after %s", kitVerifyTimeout)
 	}
 
 	payload, decodeErr := decodeVerifyPayload(stdout)
 	if decodeErr != nil {
 		if result.Stderr != "" {
-			return result, fmt.Errorf("invalid C Kit verify JSON: %w; stderr: %s", decodeErr, result.Stderr)
+			return result, fmt.Errorf("invalid c kit verify JSON: %w; stderr: %s", decodeErr, result.Stderr)
 		}
-		return result, fmt.Errorf("invalid C Kit verify JSON: %w", decodeErr)
+		return result, fmt.Errorf("invalid c kit verify JSON: %w", decodeErr)
 	}
 	result.Payload = payload
 
 	schema, schemaOK := payload["schema"].(string)
 	if !schemaOK || schema != verifyPayloadSchema {
-		return result, fmt.Errorf("C Kit verify JSON schema must be %q", verifyPayloadSchema)
+		return result, fmt.Errorf("c kit verify JSON schema must be %q", verifyPayloadSchema)
 	}
 	payloadProfile, profileOK := payload["profile"].(string)
 	if !profileOK || payloadProfile != result.Profile {
-		return result, fmt.Errorf("C Kit verify JSON profile must match requested profile %q", result.Profile)
+		return result, fmt.Errorf("c kit verify JSON profile must match requested profile %q", result.Profile)
 	}
 	ok, okType := payload["ok"].(bool)
 	if !okType {
-		return result, errors.New("C Kit verify JSON field ok must be boolean")
+		return result, errors.New("c kit verify JSON field ok must be boolean")
 	}
 	if !ok {
 		if result.Stderr != "" {
-			return result, fmt.Errorf("C Kit verify reported ok=false: %s", result.Stderr)
+			return result, fmt.Errorf("c kit verify reported ok=false: %s", result.Stderr)
 		}
-		return result, errors.New("C Kit verify reported ok=false")
+		return result, errors.New("c kit verify reported ok=false")
 	}
 	if runErr != nil {
 		if result.Stderr != "" {
-			return result, fmt.Errorf("C Kit verify process failed: %w: %s", runErr, result.Stderr)
+			return result, fmt.Errorf("c kit verify process failed: %w: %s", runErr, result.Stderr)
 		}
-		return result, fmt.Errorf("C Kit verify process failed: %w", runErr)
+		return result, fmt.Errorf("c kit verify process failed: %w", runErr)
 	}
 	return result, nil
 }

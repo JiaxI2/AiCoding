@@ -1,3 +1,18 @@
+---
+id: c-userstyle-kit-1-2-0
+status: archived
+scope:
+  - CodingKit/tools/c-userstyle-kit/**
+  - internal/cstyle/**
+  - config/kits/c-userstyle-kit.json
+  - docs/guides/C99_STANDARD_C_SKILL.md
+approvedTree: ""
+decision: docs/spec/c-userstyle-kit-1-2-0/DECISION.md
+gates:
+  - profile: full
+  - profile: release
+---
+
 # 计划模式会话：C UserStyle Kit 1.2.0 集成
 
 Mode: Plan

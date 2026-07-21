@@ -3,6 +3,7 @@ package testengine
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -44,6 +45,9 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	if first.ExecutionMode != "executed" || !first.Reusable || first.ReceiptID == "" || first.ValidationIdentity == "" || executions != 1 {
 		t.Fatalf("first execution did not create evidence: %#v executions=%d", first, executions)
 	}
+	if first.Summary.CacheHitRatio == nil || *first.Summary.CacheHitRatio != 0 {
+		t.Fatalf("executed cache hit ratio = %#v", first.Summary.CacheHitRatio)
+	}
 	store, err := validationevidence.Open(repo)
 	if err != nil {
 		t.Fatal(err)
@@ -69,6 +73,9 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	}
 	if reused.ExecutionMode != "reused" || reused.ReceiptID != first.ReceiptID || reused.Summary.Conclusion != "PASS" || executions != 1 {
 		t.Fatalf("auto reuse did not short-circuit: %#v executions=%d", reused, executions)
+	}
+	if reused.Summary.CacheHitRatio == nil || *reused.Summary.CacheHitRatio != 1 {
+		t.Fatalf("reused cache hit ratio = %#v", reused.Summary.CacheHitRatio)
 	}
 	loaded, err := Load(auto.Out)
 	if err != nil || loaded.ExecutionMode != "reused" || loaded.ReceiptID != first.ReceiptID {
@@ -106,6 +113,255 @@ func TestRunCreatesReusesForcesAndAuditsReceipt(t *testing.T) {
 	}
 	if drifted.Summary.Conclusion != "PASS_WITH_WARNINGS" || drifted.ReceiptID != "" || drifted.Reusable || drifted.ValidationCode != validationevidence.CodeReuseAuditMismatch || executions != 4 {
 		t.Fatalf("status drift replaced or claimed the existing Receipt: %#v executions=%d", drifted, executions)
+	}
+}
+
+func TestAutoMissReportsReceiptInvalidReason(t *testing.T) {
+	repo := newEngineEvidenceRepo(t)
+	originalExecute := executeTestCases
+	defer func() { executeTestCases = originalExecute }()
+	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
+		return syntheticResults(cfg, tests, false)
+	}
+
+	cfg := evidenceRunConfig(t, repo)
+	cfg.Out = filepath.Join(t.TempDir(), "auto-miss")
+	cfg.Reuse = ReuseAuto
+	report, err := Run(context.Background(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.CacheHitRatio == nil || *report.Summary.CacheHitRatio != 0 {
+		t.Fatalf("auto miss cache hit ratio = %#v", report.Summary.CacheHitRatio)
+	}
+	wantPrefix := string(validationevidence.CodeReceiptMiss) + ":"
+	if !strings.HasPrefix(report.Summary.ReceiptInvalidReason, wantPrefix) {
+		t.Fatalf("receipt invalid reason = %q, want prefix %q", report.Summary.ReceiptInvalidReason, wantPrefix)
+	}
+}
+
+func TestNodeReceiptsReuseExpectedDomainsWithOneTreeListing(t *testing.T) {
+	repo := newEngineEvidenceRepo(t)
+	originalExecute := executeTestCases
+	originalList := listValidationTreeEntries
+	defer func() {
+		executeTestCases = originalExecute
+		listValidationTreeEntries = originalList
+	}()
+	batches := [][]string{}
+	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
+		ids := make([]string, 0, len(tests))
+		for _, testCase := range tests {
+			ids = append(ids, testCase.ID)
+		}
+		batches = append(batches, ids)
+		return syntheticResults(cfg, tests, false)
+	}
+	treeListings := 0
+	listValidationTreeEntries = func(repo, tree string) ([]gitx.TreeEntry, error) {
+		treeListings++
+		return originalList(repo, tree)
+	}
+
+	base := evidenceRunConfig(t, repo)
+	base.Profile = ProfileFull
+	base.Out = filepath.Join(t.TempDir(), "seed")
+	seed, err := Run(context.Background(), base)
+	if err != nil || seed.Summary.Conclusion != "PASS" {
+		t.Fatalf("seed run = %#v, %v", seed, err)
+	}
+
+	writeEngineEvidenceFile(t, repo, "README.md", "docs change\n")
+	mustEngineGit(t, repo, "add", "README.md")
+	mustEngineGit(t, repo, "commit", "-m", "docs change")
+	docs := base
+	docs.Out = filepath.Join(t.TempDir(), "docs")
+	docs.Reuse = ReuseAuto
+	docsReport, err := Run(context.Background(), docs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(batches) != 2 {
+		t.Fatalf("docs run execution batches = %d, want 2 total", len(batches))
+	}
+	docsExecuted := stringSet(batches[1])
+	for _, id := range []string{"DOC-001", "GIT-002", "ENV-001"} {
+		if !docsExecuted[id] {
+			t.Fatalf("docs change did not execute invalidated case %s: %v", id, batches[1])
+		}
+	}
+	for _, id := range []string{"GO-001", "LIFE-001"} {
+		if docsExecuted[id] {
+			t.Fatalf("docs change unnecessarily executed cached case %s: %v", id, batches[1])
+		}
+	}
+	assertNodeReuseReason(t, docsReport, "GO-001", nodeGo)
+	assertNodeReuseReason(t, docsReport, "LIFE-001", nodeLifecycleReadonly)
+	assertFractionalNodeHit(t, docsReport)
+
+	writeEngineEvidenceFile(t, repo, "internal/example/example.go", "package example\n")
+	mustEngineGit(t, repo, "add", "internal/example/example.go")
+	mustEngineGit(t, repo, "commit", "-m", "go change")
+	goChange := base
+	goChange.Out = filepath.Join(t.TempDir(), "go")
+	goChange.Reuse = ReuseAuto
+	goReport, err := Run(context.Background(), goChange)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(batches) != 3 {
+		t.Fatalf("Go run execution batches = %d, want 3 total", len(batches))
+	}
+	goExecuted := stringSet(batches[2])
+	if !goExecuted["GO-001"] {
+		t.Fatalf("Go change reused the go node: %v", batches[2])
+	}
+	if goExecuted["DOC-001"] {
+		t.Fatalf("unrelated Go change invalidated docsync: %v", batches[2])
+	}
+	assertNodeReuseReason(t, goReport, "DOC-001", nodeDocSync)
+	assertFractionalNodeHit(t, goReport)
+	if treeListings != 3 {
+		t.Fatalf("node input collection used %d tree listings, want one per executed clean tree", treeListings)
+	}
+
+	writeEngineEvidenceFile(t, repo, "untracked.txt", "dirty\n")
+	dirty := base
+	dirty.Out = filepath.Join(t.TempDir(), "dirty")
+	dirty.Reuse = ReuseAuto
+	dirty.AllowDirty = true
+	dirtyReport, err := Run(context.Background(), dirty)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if treeListings != 3 {
+		t.Fatalf("dirty execution performed a node tree listing: %d", treeListings)
+	}
+	if dirtyReport.Reusable || dirtyReport.SubjectMode != validationevidence.SubjectDirty || dirtyReport.Summary.CacheHitRatio == nil || *dirtyReport.Summary.CacheHitRatio != 0 {
+		t.Fatalf("dirty execution reused or published node evidence: %#v", dirtyReport)
+	}
+	if len(batches) != 4 || !stringSet(batches[3])["GO-001"] || !stringSet(batches[3])["DOC-001"] {
+		t.Fatalf("dirty execution did not run the full registry: %v", batches)
+	}
+}
+
+func TestVerifyReuseFailsOnCorruptNodeReceipt(t *testing.T) {
+	repo := newEngineEvidenceRepo(t)
+	originalExecute := executeTestCases
+	defer func() { executeTestCases = originalExecute }()
+	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
+		return syntheticResults(cfg, tests, false)
+	}
+	cfg := evidenceRunConfig(t, repo)
+	cfg.Profile = ProfileFull
+	cfg.Out = filepath.Join(t.TempDir(), "seed")
+	if report, err := Run(context.Background(), cfg); err != nil || report.Summary.Conclusion != "PASS" {
+		t.Fatalf("seed run = %#v, %v", report, err)
+	}
+	path := nodeReceiptTestPath(t, repo, cfg, nodeGo)
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var receipt map[string]any
+	if err := json.Unmarshal(raw, &receipt); err != nil {
+		t.Fatal(err)
+	}
+	receipt["resultsDigest"] = "sha256:" + strings.Repeat("0", 64)
+	raw, err = json.Marshal(receipt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	audit := cfg
+	audit.Out = filepath.Join(t.TempDir(), "audit")
+	audit.VerifyReuse = true
+	report, err := Run(context.Background(), audit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.Conclusion != "FAIL" || report.ValidationCode != validationevidence.CodeReuseAuditMismatch || report.Reusable {
+		t.Fatalf("corrupt node Receipt passed audit: %#v", report)
+	}
+	found := false
+	for _, result := range report.Results {
+		if result.ID == "EVIDENCE-NODE-GO" && result.Status == Fail && strings.Contains(result.Reason, string(validationevidence.CodeReceiptInvalid)) {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("node corruption did not produce a go audit failure: %#v", report.Results)
+	}
+}
+
+func TestFailedNodeDoesNotPublishReceipt(t *testing.T) {
+	repo := newEngineEvidenceRepo(t)
+	originalExecute := executeTestCases
+	defer func() { executeTestCases = originalExecute }()
+	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
+		results := syntheticResults(cfg, tests, false)
+		for index := range results {
+			if results[index].ID == "GO-001" {
+				results[index].Status = Fail
+				results[index].ExitCode = 1
+				results[index].Reason = "injected go failure"
+			}
+		}
+		return results
+	}
+	cfg := evidenceRunConfig(t, repo)
+	cfg.Profile = ProfileFull
+	cfg.Out = filepath.Join(t.TempDir(), "failed")
+	report, err := Run(context.Background(), cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.Conclusion != "FAIL" || report.ReceiptID != "" {
+		t.Fatalf("failed node produced whole evidence: %#v", report)
+	}
+	if path := nodeReceiptTestPath(t, repo, cfg, nodeGo); pathExists(path) {
+		t.Fatalf("failed go node produced a Receipt: %s", path)
+	}
+}
+
+func TestRegistryNodeAssignmentsRemainConservative(t *testing.T) {
+	cfg := evidenceRunConfig(t, newEngineEvidenceRepo(t))
+	found := map[string]TestCase{}
+	for _, testCase := range Registry(cfg) {
+		found[testCase.ID] = testCase
+	}
+	for _, item := range []struct {
+		id   string
+		node string
+	}{
+		{"GO-001", nodeGo}, {"GO-006", nodeGo}, {"DOC-001", nodeDocSync}, {"DOC-004", nodeDocSync},
+		{"GIT-002", nodeGovernance}, {"GIT-009", nodeGovernance}, {"LIFE-001", nodeLifecycleReadonly},
+		{"LIFE-007", nodeLifecycleReadonly}, {"RC-001", nodeLifecycleReadonly}, {"RC-002", nodeLifecycleReadonly},
+	} {
+		if found[item.id].Node != item.node {
+			t.Fatalf("%s node = %q, want %q", item.id, found[item.id].Node, item.node)
+		}
+	}
+	for _, id := range []string{"ENV-001", "GO-007", "DOC-003", "GIT-001"} {
+		if node, err := validationNode(found[id].Node); err != nil || node != nodeRepo {
+			t.Fatalf("unmarked case %s does not fail closed to repo: %q, %v", id, node, err)
+		}
+	}
+	for _, check := range []struct {
+		node string
+		path string
+		want bool
+	}{
+		{nodeGo, "README.md", false}, {nodeLifecycleReadonly, "README.md", false},
+		{nodeDocSync, "README.md", true}, {nodeGovernance, "README.md", true},
+		{nodeGo, "internal/example/example.go", true}, {nodeDocSync, "internal/example/example.go", false},
+	} {
+		if got := validationNodeOwnsPath(check.node, check.path); got != check.want {
+			t.Fatalf("node path ownership %s %s = %v, want %v", check.node, check.path, got, check.want)
+		}
 	}
 }
 
@@ -358,4 +614,85 @@ func testSnapshotDigest(t *testing.T, value string) string {
 		t.Fatal(err)
 	}
 	return snapshot.Digest()
+}
+
+func writeEngineEvidenceFile(t *testing.T, repo, relative, content string) {
+	t.Helper()
+	path := filepath.Join(repo, filepath.FromSlash(relative))
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func stringSet(values []string) map[string]bool {
+	set := make(map[string]bool, len(values))
+	for _, value := range values {
+		set[value] = true
+	}
+	return set
+}
+
+func assertNodeReuseReason(t *testing.T, report Report, id, node string) {
+	t.Helper()
+	for _, result := range report.Results {
+		if result.ID == id {
+			if result.Reason != "reused-from-node:"+node {
+				t.Fatalf("%s reason = %q, want node %s", id, result.Reason, node)
+			}
+			return
+		}
+	}
+	t.Fatalf("report is missing %s", id)
+}
+
+func assertFractionalNodeHit(t *testing.T, report Report) {
+	t.Helper()
+	if report.ExecutionMode != "executed" || report.Summary.CacheHitRatio == nil || *report.Summary.CacheHitRatio <= 0 || *report.Summary.CacheHitRatio >= 1 {
+		t.Fatalf("node reuse did not report a fractional executed hit: %#v", report)
+	}
+}
+
+func nodeReceiptTestPath(t *testing.T, repo string, cfg Config, node string) string {
+	t.Helper()
+	store, err := validationevidence.Open(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	subject, err := store.Capture(validationevidence.TargetHead)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec, err := EvidenceSpec(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	whole, err := store.Fingerprint(subject, spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := gitx.TreeEntries(repo, subject.TreeOID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inputDigest, err := validationNodeInputDigest(node, entries)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fingerprint, err := store.DeriveNodeFingerprint(whole, node, inputDigest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	commonDir, err := gitx.CommonDir(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return filepath.Join(commonDir, "aicoding", "validation", "receipts", cfg.Profile, "nodes", node, strings.TrimPrefix(fingerprint.Identity, "sha256:")+".json")
+}
+
+func pathExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }

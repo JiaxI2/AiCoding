@@ -179,6 +179,8 @@ For an actual release, also test real Marketplace registration, real plugin inst
   `release-gate` seed/audit runs pass and the separate promotion change cites all three run URLs.
 - Repository hooks may only call the prebuilt Go CLI. They must not run tests/builds, modify the
   worktree, stash/reset/checkout, or invoke a recursive push.
+- Plan Mode path triggering is owned by `bin\aicoding.exe plan check` and `config/plan-policy.json`;
+  the TODO 0004 pre-commit integration is warning-only until approval binding is implemented.
 - These rules do not authorize Profile inheritance or Plan Mode integration; both remain outside
   ADR 0007 phase 2.
 

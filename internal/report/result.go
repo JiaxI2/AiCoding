@@ -19,11 +19,27 @@ const (
 	ErrorKindValidation = "validation"
 )
 
+type Category string
+
+const (
+	CategoryNone            Category = "none"
+	CategoryUsage           Category = "usage"
+	CategoryValidation      Category = "validation"
+	CategoryTransient       Category = "transient"
+	CategoryToolchain       Category = "toolchain"
+	CategoryEvidenceMissing Category = "evidence-missing"
+	CategoryConflict        Category = "conflict"
+	CategoryInternal        Category = "internal"
+)
+
 type Result struct {
 	SchemaVersion int         `json:"schemaVersion"`
 	Command       string      `json:"command"`
 	OK            bool        `json:"ok"`
 	ErrorKind     string      `json:"errorKind,omitempty"`
+	Category      Category    `json:"category"`
+	Retryable     bool        `json:"retryable"`
+	NextAction    string      `json:"nextAction,omitempty"`
 	Message       string      `json:"message,omitempty"`
 	RepoRoot      string      `json:"repoRoot,omitempty"`
 	InputDigest   string      `json:"inputDigest,omitempty"`
@@ -33,6 +49,73 @@ type Result struct {
 	Warnings      []string    `json:"warnings,omitempty"`
 	Errors        []string    `json:"errors,omitempty"`
 	ElapsedMS     int64       `json:"elapsedMs"`
+}
+
+func ValidCategory(category Category) bool {
+	switch category {
+	case CategoryNone, CategoryUsage, CategoryValidation, CategoryTransient,
+		CategoryToolchain, CategoryEvidenceMissing, CategoryConflict, CategoryInternal:
+		return true
+	default:
+		return false
+	}
+}
+
+func WithDecision(result Result, category Category, nextAction string) Result {
+	result.Category = category
+	result.NextAction = strings.TrimSpace(nextAction)
+	result.Retryable = category == CategoryTransient || category == CategoryConflict
+	return result
+}
+
+// FinalizeDecision makes every emitted Result self-contained for a machine
+// consumer. Invalid or contradictory categories fail closed as internal errors.
+func FinalizeDecision(result Result) Result {
+	if result.OK {
+		if result.Category != "" && result.Category != CategoryNone {
+			return invalidDecision(result, "successful result used failure category "+string(result.Category))
+		}
+		result.Category = CategoryNone
+		result.Retryable = false
+		result.NextAction = ""
+		return result
+	}
+	if result.Category == "" {
+		switch result.ErrorKind {
+		case ErrorKindUsage:
+			result.Category = CategoryUsage
+		case ErrorKindValidation:
+			result.Category = CategoryValidation
+		default:
+			result.Category = CategoryInternal
+		}
+	}
+	if !ValidCategory(result.Category) || result.Category == CategoryNone {
+		return invalidDecision(result, "invalid failure category "+string(result.Category))
+	}
+	result.Retryable = result.Category == CategoryTransient || result.Category == CategoryConflict
+	if strings.TrimSpace(result.NextAction) == "" {
+		switch result.Category {
+		case CategoryUsage:
+			result.NextAction = "aicoding --help"
+		default:
+			result.NextAction = "aicoding doctor --all --json"
+		}
+	}
+	return result
+}
+
+func invalidDecision(result Result, message string) Result {
+	result.OK = false
+	result.ErrorKind = ErrorKindExecution
+	result.Category = CategoryInternal
+	result.Retryable = false
+	result.NextAction = "aicoding doctor --all --json"
+	result.Errors = append(result.Errors, message)
+	if result.Message == "" {
+		result.Message = "invalid structured result decision"
+	}
+	return result
 }
 
 type ValidationError struct {

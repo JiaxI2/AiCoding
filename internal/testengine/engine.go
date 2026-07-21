@@ -21,6 +21,7 @@ import (
 
 	"github.com/JiaxI2/AiCoding/internal/adrreview"
 	"github.com/JiaxI2/AiCoding/internal/bootstrap"
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
@@ -47,6 +48,9 @@ const (
 
 	ReuseOff  ReuseMode = "off"
 	ReuseAuto ReuseMode = "auto"
+
+	staticcheckCommand = "honnef.co/go/tools/cmd/staticcheck@v0.7.0"
+	govulncheckCommand = "golang.org/x/vuln/cmd/govulncheck@v1.6.0"
 )
 
 type Config struct {
@@ -67,17 +71,19 @@ type Config struct {
 }
 
 type TestCase struct {
-	ID           string
-	Category     string
-	Title        string
-	Severity     Severity
-	Profiles     []Profile
-	Kind         string // command, static, concurrent
-	Command      []string
-	TimeoutKind  string // normal, long
-	ExpectJSON   bool
-	OptionalPath string
-	Note         string
+	ID                 string
+	Category           string
+	Title              string
+	Node               string
+	Severity           Severity
+	Profiles           []Profile
+	Kind               string // command, static, concurrent, materialized
+	Command            []string
+	TimeoutKind        string // normal, long
+	ExpectJSON         bool
+	OptionalPath       string
+	NetworkFailureWarn bool
+	Note               string
 }
 
 type Result struct {
@@ -87,6 +93,10 @@ type Result struct {
 	Status     Status   `json:"status"`
 	Severity   Severity `json:"severity"`
 	DurationMS int64    `json:"duration_ms"`
+	QueueMS    *int64   `json:"queue_ms,omitempty"`
+	SetupMS    *int64   `json:"setup_ms,omitempty"`
+	ExecuteMS  *int64   `json:"execute_ms,omitempty"`
+	PersistMS  *int64   `json:"persist_ms,omitempty"`
 	ExitCode   int      `json:"exit_code"`
 	TimedOut   bool     `json:"timed_out"`
 	JSONValid  bool     `json:"json_valid"`
@@ -98,18 +108,26 @@ type Result struct {
 	Profile    Profile  `json:"profile"`
 }
 
+type SlowestCase struct {
+	ID         string `json:"id"`
+	DurationMS int64  `json:"duration_ms"`
+}
+
 type Summary struct {
-	Repo       string  `json:"repo"`
-	Profile    Profile `json:"profile"`
-	StartedAt  string  `json:"started_at"`
-	EndedAt    string  `json:"ended_at"`
-	DurationMS int64   `json:"duration_ms"`
-	Total      int     `json:"total"`
-	Pass       int     `json:"pass"`
-	Fail       int     `json:"fail"`
-	Warn       int     `json:"warn"`
-	Skip       int     `json:"skip"`
-	Conclusion string  `json:"conclusion"`
+	Repo                 string        `json:"repo"`
+	Profile              Profile       `json:"profile"`
+	StartedAt            string        `json:"started_at"`
+	EndedAt              string        `json:"ended_at"`
+	DurationMS           int64         `json:"duration_ms"`
+	Total                int           `json:"total"`
+	Pass                 int           `json:"pass"`
+	Fail                 int           `json:"fail"`
+	Warn                 int           `json:"warn"`
+	Skip                 int           `json:"skip"`
+	Conclusion           string        `json:"conclusion"`
+	SlowestCases         []SlowestCase `json:"slowest_cases,omitempty"`
+	CacheHitRatio        *float64      `json:"cache_hit_ratio,omitempty"`
+	ReceiptInvalidReason string        `json:"receipt_invalid_reason,omitempty"`
 }
 
 type Report struct {
@@ -282,6 +300,7 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 			if ctx.Err() != nil {
 				return reused, ctx.Err()
 			}
+			_ = retainSuccessfulTestResults(cfg.Repo, reused)
 			return reused, nil
 		}
 		reuseDecision.Hit = false
@@ -292,38 +311,69 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 	if err := os.MkdirAll(filepath.Join(cfg.Out, "logs"), 0o755); err != nil {
 		return Report{}, fmt.Errorf("create output directory: %w", err)
 	}
-	results := executeTestCases(ctx, cfg, testCases)
+	nodePlan, err := buildNodeEvidencePlan(evidenceStore, startSubject, startFingerprint, cfg, testCases, shouldCheck)
+	if err != nil {
+		return Report{}, fmt.Errorf("prepare node validation evidence: %w", err)
+	}
+	var results []Result
+	executionMode := "executed"
+	if cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force {
+		results = executeWithNodeReuse(ctx, cfg, testCases, nodePlan)
+		if nodePlan.selectedCount > 0 && nodePlan.hitCount == nodePlan.selectedCount {
+			executionMode = "reused"
+		}
+	} else {
+		results = executeTestCases(ctx, cfg, testCases)
+	}
 	statusDigest, err := resultStatusDigest(cfg, testCases, results)
 	if err != nil {
 		return Report{}, fmt.Errorf("digest validation result statuses: %w", err)
 	}
 	summary := summarize(cfg, start, time.Now(), results)
+	if cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force && nodePlan.selectedCount > 0 {
+		cacheHitRatio := float64(nodePlan.hitCount) / float64(nodePlan.selectedCount)
+		summary.CacheHitRatio = &cacheHitRatio
+	}
+	if shouldCheck && !reuseDecision.Hit && reuseDecision.Code != "" {
+		summary.ReceiptInvalidReason = string(reuseDecision.Code) + ": " + reuseDecision.Reason
+	}
+	if invalidReason := nodePlan.invalidReason(); invalidReason != "" {
+		summary.ReceiptInvalidReason = appendReceiptInvalidReason(summary.ReceiptInvalidReason, invalidReason)
+	}
 	testReport := Report{
-		ExecutionMode:      "executed",
+		ExecutionMode:      executionMode,
 		ValidationIdentity: startFingerprint.Identity,
 		ResultsDigest:      statusDigest,
 		SubjectTreeOID:     startSubject.TreeOID,
 		SubjectMode:        startSubject.Mode,
-		CheckDurationMS:    reuseDecision.CheckDurationMS,
+		CheckDurationMS:    reuseDecision.CheckDurationMS + nodePlan.checkDurationMS,
 		Summary:            summary,
 		Results:            results,
 	}
+	auditFailures := []Result{}
 	if cfg.VerifyReuse && reuseDecision.Hit && (evidenceConclusion(testReport) != reuseDecision.Receipt.Conclusion || testReport.ResultsDigest != reuseDecision.Receipt.ResultsDigest) {
-		testReport.Results = append(testReport.Results, Result{
+		auditFailures = append(auditFailures, Result{
 			ID: "EVIDENCE-001", Category: "VALIDATION_EVIDENCE", Title: "Receipt 复用审计",
 			Severity: Required, Status: Fail, ExitCode: 1,
 			Reason: "executed per-case statuses do not match the reusable Receipt", Profile: cfg.Profile,
 		})
+	}
+	if cfg.VerifyReuse {
+		auditFailures = append(auditFailures, nodePlan.auditFailures(cfg, results)...)
+	}
+	if len(auditFailures) > 0 {
+		testReport.Results = append(testReport.Results, auditFailures...)
 		testReport.Summary = summarize(cfg, start, time.Now(), testReport.Results)
 		testReport.ValidationCode = validationevidence.CodeReuseAuditMismatch
 	}
-	finalizeEvidence(ctx, cfg, testCases, evidenceStore, startSubject, startFingerprint, reuseDecision, &testReport)
+	finalizeEvidence(ctx, cfg, testCases, evidenceStore, startSubject, startFingerprint, reuseDecision, nodePlan, &testReport)
 	if err := Write(cfg.Out, testReport); err != nil {
 		return testReport, err
 	}
 	if ctx.Err() != nil {
 		return testReport, ctx.Err()
 	}
+	_ = retainSuccessfulTestResults(cfg.Repo, testReport)
 	return testReport, nil
 }
 
@@ -337,6 +387,7 @@ func ExitCode(testReport Report, err error) int {
 func runAll(ctx context.Context, cfg Config, tests []TestCase) []Result {
 	var results []Result
 	for _, tc := range tests {
+		queueStarted := time.Now()
 		if err := ctx.Err(); err != nil {
 			results = append(results, Result{
 				ID: "ENGINE-001", Category: "TEST_ENGINE", Title: "overall test timeout",
@@ -363,15 +414,19 @@ func runAll(ctx context.Context, cfg Config, tests []TestCase) []Result {
 			continue
 		}
 
+		queueElapsed := time.Since(queueStarted)
 		var r Result
 		switch tc.Kind {
 		case "static":
 			r = runStatic(cfg, tc)
 		case "concurrent":
 			r = runConcurrent(ctx, cfg, tc)
+		case "materialized":
+			r = runMaterialized(ctx, cfg, tc)
 		default:
 			r = runCommand(ctx, cfg, tc)
 		}
+		addQueueTiming(&r, queueElapsed)
 		results = append(results, r)
 	}
 	return results
@@ -389,10 +444,13 @@ func Registry(cfg Config) []TestCase {
 		{ID: "BOOT-002", Category: "BOOTSTRAP", Title: "CLI bootstrap 基础可用", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "bootstrap", "--no-build", "--json"}, ExpectJSON: true},
 		{ID: "BOOT-003", Category: "BOOTSTRAP", Title: "bootstrap 前置条件完整", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
-		{ID: "GO-001", Category: "GO", Title: "全仓 Go 单元测试", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "test", "./..."}, TimeoutKind: "long"},
-		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "test", "-race", "./..."}, TimeoutKind: "long"},
-		{ID: "GO-003", Category: "GO", Title: "go vet 基础检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "vet", "./..."}, TimeoutKind: "long"},
-		{ID: "GO-004", Category: "GO", Title: "CLI 并发只读调用", Severity: Required, Profiles: []string{"full", "release"}, Kind: "concurrent", TimeoutKind: "normal", ExpectJSON: true},
+		{ID: "GO-001", Category: "GO", Title: "全仓 Go 单元测试", Node: nodeGo, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "test", "./..."}, TimeoutKind: "long"},
+		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: raceTestCommand(cfg), TimeoutKind: "long"},
+		{ID: "GO-003", Category: "GO", Title: "go vet 基础检查", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "vet", "./..."}, TimeoutKind: "long"},
+		{ID: "GO-004", Category: "GO", Title: "CLI 并发只读调用", Node: nodeGo, Severity: Required, Profiles: []string{"full", "release"}, Kind: "concurrent", TimeoutKind: "normal", ExpectJSON: true},
+		{ID: "GO-005", Category: "GO", Title: "Staticcheck 静态分析", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", staticcheckCommand, "./..."}, TimeoutKind: "long", Note: "WarnOnly for one release before promotion to Required"},
+		{ID: "GO-006", Category: "GO", Title: "Go 漏洞扫描", Node: nodeGo, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", govulncheckCommand, "./..."}, TimeoutKind: "long", NetworkFailureWarn: true},
+		{ID: "GO-007", Category: "GO", Title: "并发包 raceScope 登记", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
 
 		{ID: "C99-001", Category: "C99_SKILL", Title: "C99 skill status", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "status", "--json"}, ExpectJSON: true},
 		{ID: "C99-002", Category: "C99_SKILL", Title: "C99 注释模板校验", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "templates", "--json"}, ExpectJSON: true},
@@ -404,49 +462,55 @@ func Registry(cfg Config) []TestCase {
 		{ID: "C99-008", Category: "C99_SKILL", Title: "C Kit 资产与参考完整性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "SKILL-001", Category: "SKILL", Title: "全部启用 Skill Smoke 验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "verify", "--all", "--profile", "Smoke", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
-		{ID: "DOC-001", Category: "DOCSYNC", Title: "DocSync CI", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "docsync", "ci", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "DOC-002", Category: "DOCSYNC", Title: "DocSync all", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "docsync", "all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "DOC-001", Category: "DOCSYNC", Title: "DocSync CI", Node: nodeDocSync, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "docsync", "ci", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "DOC-002", Category: "DOCSYNC", Title: "DocSync all", Node: nodeDocSync, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "docsync", "all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "DOC-003", Category: "DOCSYNC", Title: "DocSync release", Severity: Required, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "docsync", "release", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "DOC-004", Category: "DOCSYNC", Title: "文档索引一致性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "DOC-004", Category: "DOCSYNC", Title: "文档索引一致性", Node: nodeDocSync, Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
-		{ID: "LIFE-001", Category: "LIFECYCLE", Title: "kit registry 结构", Severity: Required, Profiles: allProfiles(), Kind: "static"},
-		{ID: "LIFE-002", Category: "LIFECYCLE", Title: "kit manifest 存在性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
-		{ID: "LIFE-003", Category: "LIFECYCLE", Title: "lifecycle install plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-004", Category: "LIFECYCLE", Title: "lifecycle update plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "update", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-005", Category: "LIFECYCLE", Title: "lifecycle uninstall plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "uninstall", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-006", Category: "LIFECYCLE", Title: "lifecycle rollback 只读契约", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "rollback", "--scope", "kit", "--help"}},
-		{ID: "LIFE-007", Category: "LIFECYCLE", Title: "kit lifecycle 结构验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "kit", "verify", "--all", "--profile", "Lifecycle", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-001", Category: "LIFECYCLE", Title: "kit registry 结构", Node: nodeLifecycleReadonly, Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "LIFE-002", Category: "LIFECYCLE", Title: "kit manifest 存在性", Node: nodeLifecycleReadonly, Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "LIFE-003", Category: "LIFECYCLE", Title: "lifecycle install plan", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-004", Category: "LIFECYCLE", Title: "lifecycle update plan", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "update", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-005", Category: "LIFECYCLE", Title: "lifecycle uninstall plan", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "uninstall", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-006", Category: "LIFECYCLE", Title: "lifecycle rollback 只读契约", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "rollback", "--scope", "kit", "--help"}},
+		{ID: "LIFE-007", Category: "LIFECYCLE", Title: "kit lifecycle 结构验证", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "kit", "verify", "--all", "--profile", "Lifecycle", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
 		{ID: "MCP-001", Category: "MCP", Title: "MCP registry inventory", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "mcp", "list", "--json"}, ExpectJSON: true},
 
 		{ID: "EXP-001", Category: "EXPORT", Title: "export zip", Severity: Required, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "export", "--all", "--zip", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "EXP-002", Category: "EXPORT", Title: "export manifest 静态验证", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
-		{ID: "FRESH-001", Category: "FRESH_CLONE", Title: "fresh-clone Release", Severity: WarnOnly, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "fresh-clone", "--profile", "Release", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "FRESH-001", Category: "FRESH_CLONE", Title: "物化源码 Release 验证", Severity: Required, Profiles: []string{"release"}, Kind: "materialized", TimeoutKind: "long", ExpectJSON: true},
 		{ID: "FRESH-003", Category: "FRESH_CLONE", Title: "fresh-clone 契约静态验证", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
+		{ID: "FRESH-004", Category: "FRESH_CLONE", Title: "真 clone 传输面变化提示", Severity: WarnOnly, Profiles: []string{"release"}, Kind: "static"},
 
 		{ID: "DOCS-001", Category: "README_DOCS", Title: "README 三件套", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-002", Category: "README_DOCS", Title: "README 架构声明", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-003", Category: "README_DOCS", Title: "COMMANDS 命令矩阵", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-004", Category: "README_DOCS", Title: "Fast Path 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-005", Category: "README_DOCS", Title: "C99 skill 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "DOCS-006", Category: "README_DOCS", Title: "架构图命令与节点预算", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "CAP-001", Category: "CAPABILITY", Title: "internal capability registry", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "capabilities", "--json"}, ExpectJSON: true},
+		{ID: "FREEZE-001", Category: "FREEZE", Title: "冻结 schema 文件存在", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-002", Category: "FREEZE", Title: "report Result 权威唯一", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-003", Category: "FREEZE", Title: "validation Receipt 权威唯一", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
 		{ID: "GIT-001", Category: "GIT_GOVERNANCE", Title: "工作区状态", Severity: WarnOnly, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"git", "status", "--short"}},
-		{ID: "GIT-002", Category: "GIT_GOVERNANCE", Title: "hooks verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "hooks", "--json"}, ExpectJSON: true},
-		{ID: "GIT-003", Category: "GIT_GOVERNANCE", Title: "repo-text verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "repo-text", "--json"}, ExpectJSON: true},
-		{ID: "GIT-004", Category: "GIT_GOVERNANCE", Title: "release-notes verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "release-notes", "--json"}, ExpectJSON: true},
-		{ID: "GIT-005", Category: "GIT_GOVERNANCE", Title: "governance lint", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "lint", "--json"}, ExpectJSON: true},
-		{ID: "GIT-006", Category: "GIT_GOVERNANCE", Title: "tag audit", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "tag", "audit", "--json"}, ExpectJSON: true},
-		{ID: "GIT-007", Category: "GIT_GOVERNANCE", Title: ".gitattributes 策略", Severity: Required, Profiles: allProfiles(), Kind: "static"},
-		{ID: "GIT-008", Category: "GIT_GOVERNANCE", Title: "repository layout", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "layout", "--json"}, ExpectJSON: true},
-		{ID: "GIT-009", Category: "GIT_GOVERNANCE", Title: "reuse governance", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "reuse", "--json"}, ExpectJSON: true},
+		{ID: "GIT-002", Category: "GIT_GOVERNANCE", Title: "hooks verify", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "hooks", "--json"}, ExpectJSON: true},
+		{ID: "GIT-003", Category: "GIT_GOVERNANCE", Title: "repo-text verify", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "repo-text", "--json"}, ExpectJSON: true},
+		{ID: "GIT-004", Category: "GIT_GOVERNANCE", Title: "release-notes verify", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "release-notes", "--json"}, ExpectJSON: true},
+		{ID: "GIT-005", Category: "GIT_GOVERNANCE", Title: "governance lint", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "lint", "--json"}, ExpectJSON: true},
+		{ID: "GIT-006", Category: "GIT_GOVERNANCE", Title: "tag audit", Node: nodeGovernance, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "tag", "audit", "--json"}, ExpectJSON: true},
+		{ID: "GIT-007", Category: "GIT_GOVERNANCE", Title: ".gitattributes 策略", Node: nodeGovernance, Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "GIT-008", Category: "GIT_GOVERNANCE", Title: "repository layout", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "layout", "--json"}, ExpectJSON: true},
+		{ID: "GIT-009", Category: "GIT_GOVERNANCE", Title: "reuse governance", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "reuse", "--json"}, ExpectJSON: true},
 
 		{ID: "PWSH-001", Category: "PWSH_BOUNDARY", Title: "PowerShell inventory", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "doctor", "pwsh", "--json"}, ExpectJSON: true},
 		{ID: "PWSH-002", Category: "PWSH_BOUNDARY", Title: "PowerShell budget", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "doctor", "pwsh-budget", "--json"}, ExpectJSON: true},
 		{ID: "PWSH-003", Category: "PWSH_BOUNDARY", Title: "默认入口不经 PowerShell 编排", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "HEALTH-001", Category: "REPO_HEALTH", Title: "doctor performance probes", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "doctor", "perf", "--json"}, ExpectJSON: true},
 
-		{ID: "RC-001", Category: "REPO_CONTEXT", Title: "repo-context 扫描与结构验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "verify", "--scope", "repo-context", "--json"}, ExpectJSON: true},
-		{ID: "RC-002", Category: "REPO_CONTEXT", Title: "repo-context 生成计划", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "repo-context", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "RC-001", Category: "REPO_CONTEXT", Title: "repo-context 扫描与结构验证", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "verify", "--scope", "repo-context", "--json"}, ExpectJSON: true},
+		{ID: "RC-002", Category: "REPO_CONTEXT", Title: "repo-context 生成计划", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "repo-context", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
 		{ID: "ADR-001", Category: "ADR_REVIEW", Title: "新 Primitive ADR 含 §12 自评", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
@@ -493,8 +557,33 @@ func timeoutFor(cfg Config, tc TestCase) time.Duration {
 	return cfg.Timeout
 }
 
+func setResultTiming(r *Result, queue, setup, execute, persist time.Duration) {
+	queueMS := queue.Milliseconds()
+	setupMS := setup.Milliseconds()
+	executeMS := execute.Milliseconds()
+	persistMS := persist.Milliseconds()
+	r.QueueMS = &queueMS
+	r.SetupMS = &setupMS
+	r.ExecuteMS = &executeMS
+	r.PersistMS = &persistMS
+	r.DurationMS = queueMS + setupMS + executeMS + persistMS
+}
+
+func addQueueTiming(r *Result, queue time.Duration) {
+	queueMS := queue.Milliseconds()
+	r.QueueMS = &queueMS
+	r.DurationMS += queueMS
+}
+
+func timingValue(value *int64) int64 {
+	if value == nil {
+		return 0
+	}
+	return *value
+}
+
 func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
-	start := time.Now()
+	setupStarted := time.Now()
 	r := Result{
 		ID: tc.ID, Category: tc.Category, Title: tc.Title, Severity: tc.Severity,
 		Command: strings.Join(tc.Command, " "), Profile: cfg.Profile, ExitCode: -1,
@@ -503,6 +592,7 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	if len(tc.Command) == 0 {
 		r.Status = Fail
 		r.Reason = "empty command"
+		setResultTiming(&r, 0, time.Since(setupStarted), 0, 0)
 		return r
 	}
 
@@ -516,18 +606,15 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
+	setupElapsed := time.Since(setupStarted)
+	executeStarted := time.Now()
 	err := cmd.Run()
-	r.DurationMS = time.Since(start).Milliseconds()
+	executeElapsed := time.Since(executeStarted)
+	persistStarted := time.Now()
 	if ctx.Err() == context.DeadlineExceeded {
 		r.TimedOut = true
 	}
 	r.ExitCode = commandExitCode(err)
-
-	stdoutFile, stderrFile, metaFile := writeLogs(cfg, tc.ID, stdout.Bytes(), stderr.Bytes(), r, err)
-	r.StdoutFile = stdoutFile
-	r.StderrFile = stderrFile
-	r.MetaFile = metaFile
-
 	r.JSONValid = true
 	if tc.ExpectJSON && !cfg.NoJSONCheck {
 		r.JSONValid = validJSONFromOutput(stdout.String())
@@ -536,10 +623,7 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	if err == nil && !r.TimedOut && (!tc.ExpectJSON || cfg.NoJSONCheck || r.JSONValid) {
 		r.Status = Pass
 		r.Reason = "command passed"
-		return r
-	}
-
-	if r.TimedOut {
+	} else if r.TimedOut {
 		r.Reason = "command timed out"
 	} else if tc.ExpectJSON && !cfg.NoJSONCheck && !r.JSONValid {
 		r.Reason = "command output is not valid JSON"
@@ -548,17 +632,105 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	} else {
 		r.Reason = "command failed"
 	}
-
-	if tc.Severity == Required || cfg.Strict {
-		r.Status = Fail
-	} else {
+	if r.Status == "" && tc.NetworkFailureWarn && isNetworkFailure(stdout.String()+"\n"+stderr.String()) {
 		r.Status = Warn
+		r.Reason = "network-dependent command failed: " + err.Error()
 	}
+	if r.Status == "" {
+		if tc.Severity == Required || cfg.Strict {
+			r.Status = Fail
+		} else {
+			r.Status = Warn
+		}
+	}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
+	stdoutFile, stderrFile, metaFile := writeLogs(cfg, tc.ID, stdout.Bytes(), stderr.Bytes(), r, err)
+	r.StdoutFile = stdoutFile
+	r.StderrFile = stderrFile
+	r.MetaFile = metaFile
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
 	return r
 }
 
+func runMaterialized(parent context.Context, cfg Config, tc TestCase) Result {
+	setupStarted := time.Now()
+	r := Result{
+		ID: tc.ID, Category: tc.Category, Title: tc.Title, Severity: tc.Severity,
+		Command: "git archive validation subject + release verify", Profile: cfg.Profile, ExitCode: -1,
+	}
+	ctx, cancel := context.WithTimeout(parent, timeoutFor(cfg, tc))
+	defer cancel()
+	treeOID, err := gitx.WriteTree(cfg.Repo)
+	setupElapsed := time.Since(setupStarted)
+	if err != nil {
+		r.Status = Fail
+		r.Reason = "cannot resolve validation subject tree: " + err.Error()
+		setResultTiming(&r, 0, setupElapsed, 0, 0)
+		return r
+	}
+
+	executeStarted := time.Now()
+	materialized := kit.MaterializeRelease(ctx, cfg.Repo, treeOID)
+	executeElapsed := time.Since(executeStarted)
+	persistStarted := time.Now()
+	payload, marshalErr := json.MarshalIndent(materialized, "", "  ")
+	if marshalErr == nil {
+		payload = append(payload, '\n')
+	}
+	r.TimedOut = ctx.Err() == context.DeadlineExceeded
+	r.JSONValid = marshalErr == nil
+	if materialized.OK && !r.TimedOut && marshalErr == nil {
+		r.Status = Pass
+		r.ExitCode = 0
+		r.Reason = "sourceMode=materialized Release verification passed"
+	} else {
+		r.ExitCode = 1
+		switch {
+		case r.TimedOut:
+			r.Reason = "materialized Release verification timed out"
+		case marshalErr != nil:
+			r.Reason = "materialized report encoding failed: " + marshalErr.Error()
+		case len(materialized.Errors) > 0:
+			r.Reason = strings.Join(materialized.Errors, "; ")
+		default:
+			r.Reason = "materialized Release verification failed"
+		}
+		if tc.Severity == Required || cfg.Strict {
+			r.Status = Fail
+		} else {
+			r.Status = Warn
+		}
+	}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
+	stdoutFile, stderrFile, metaFile := writeLogs(cfg, tc.ID, payload, nil, r, marshalErr)
+	r.StdoutFile = stdoutFile
+	r.StderrFile = stderrFile
+	r.MetaFile = metaFile
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
+	return r
+}
+
+func isNetworkFailure(output string) bool {
+	output = strings.ToLower(output)
+	for _, marker := range []string{
+		"dial tcp",
+		"no such host",
+		"temporary failure in name resolution",
+		"tls handshake timeout",
+		"i/o timeout",
+		"connection reset by peer",
+		"connection refused",
+		"proxyconnect tcp",
+	} {
+		if strings.Contains(output, marker) {
+			return true
+		}
+	}
+	return false
+}
+
 func runConcurrent(parent context.Context, cfg Config, tc TestCase) Result {
-	start := time.Now()
+	setupStarted := time.Now()
 	bin := aicodingBin(cfg.Repo)
 	commands := [][]string{
 		{bin, "skill", "c99-standard-c", "status", "--json"},
@@ -580,6 +752,8 @@ func runConcurrent(parent context.Context, cfg Config, tc TestCase) Result {
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, workers)
 
+	setupElapsed := time.Since(setupStarted)
+	executeStarted := time.Now()
 	for i := 0; i < cfg.Concurrency; i++ {
 		cmdSpec := commands[i%len(commands)]
 		wg.Add(1)
@@ -615,41 +789,46 @@ func runConcurrent(parent context.Context, cfg Config, tc TestCase) Result {
 		}(i, cmdSpec)
 	}
 	wg.Wait()
+	executeElapsed := time.Since(executeStarted)
+	persistStarted := time.Now()
 
 	r := Result{
 		ID: tc.ID, Category: tc.Category, Title: tc.Title, Severity: tc.Severity,
-		Status: Pass, DurationMS: time.Since(start).Milliseconds(), ExitCode: 0,
+		Status: Pass, ExitCode: 0,
 		TimedOut: timedOut > 0, JSONValid: invalidJSON == 0,
 		Command: "concurrent read-only CLI calls x" + strconv.Itoa(cfg.Concurrency),
 		Profile: cfg.Profile,
 	}
+	if failed == 0 && timedOut == 0 && invalidJSON == 0 {
+		r.Reason = "all concurrent read-only calls passed"
+	} else {
+		r.Reason = fmt.Sprintf("failed=%d timeout=%d invalid_json=%d", failed, timedOut, invalidJSON)
+		if tc.Severity == Required || cfg.Strict {
+			r.Status = Fail
+		} else {
+			r.Status = Warn
+		}
+	}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
 	out := []byte(strings.Join(details, "\n"))
 	stdoutFile, stderrFile, metaFile := writeLogs(cfg, tc.ID, out, nil, r, nil)
 	r.StdoutFile = stdoutFile
 	r.StderrFile = stderrFile
 	r.MetaFile = metaFile
-
-	if failed == 0 && timedOut == 0 && invalidJSON == 0 {
-		r.Reason = "all concurrent read-only calls passed"
-		return r
-	}
-	r.Reason = fmt.Sprintf("failed=%d timeout=%d invalid_json=%d", failed, timedOut, invalidJSON)
-	if tc.Severity == Required || cfg.Strict {
-		r.Status = Fail
-	} else {
-		r.Status = Warn
-	}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
 	return r
 }
 
 func runStatic(cfg Config, tc TestCase) Result {
-	start := time.Now()
+	setupStarted := time.Now()
 	r := Result{
 		ID: tc.ID, Category: tc.Category, Title: tc.Title, Severity: tc.Severity,
 		Status: Pass, ExitCode: 0, JSONValid: true, Profile: cfg.Profile,
 	}
 
 	var err error
+	setupElapsed := time.Since(setupStarted)
+	executeStarted := time.Now()
 	switch tc.ID {
 	case "ENV-001":
 		err = requirePaths(cfg.Repo, ".git", "go.mod", "README.md")
@@ -657,6 +836,8 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = checkGoMod(cfg.Repo)
 	case "BOOT-003":
 		err = checkBootstrapPrerequisites(cfg.Repo)
+	case "GO-007":
+		err = checkRaceScope(cfg.Repo)
 	case "C99-005":
 		err = requirePaths(cfg.Repo,
 			"config/skills/c99-standard-c/skill.json",
@@ -683,6 +864,12 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = checkExportDefinitions(cfg.Repo)
 	case "FRESH-003":
 		err = kit.CheckFreshCloneContract(cfg.Repo)
+	case "FRESH-004":
+		var treeOID string
+		treeOID, err = gitx.WriteTree(cfg.Repo)
+		if err == nil {
+			err = kit.CheckFreshCloneTransportDrift(cfg.Repo, treeOID)
+		}
 	case "DOC-004":
 		err = checkDocIndex(cfg.Repo)
 	case "LIFE-001":
@@ -699,6 +886,14 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"Go CLI", "Doctor", "Verify", "test engine", "DocSync", "PowerShell Boundary"})
 	case "DOCS-005":
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/guides/C99_STANDARD_C_SKILL.md"), []string{"config/skills/c99-standard-c", "skill c99-standard-c", "fmt", "check", "templates"})
+	case "DOCS-006":
+		err = checkArchitectureDiagrams(cfg.Repo)
+	case "FREEZE-001":
+		err = checkFrozenSchemas(cfg.Repo)
+	case "FREEZE-002":
+		err = checkUniqueProductionType(cfg.Repo, "internal/report", "Result")
+	case "FREEZE-003":
+		err = checkUniqueProductionType(cfg.Repo, "internal/validationevidence", "Receipt")
 	case "GIT-007":
 		err = checkGitAttributes(cfg.Repo)
 	case "PWSH-003":
@@ -711,7 +906,8 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = errors.New("static check not implemented")
 	}
 
-	r.DurationMS = time.Since(start).Milliseconds()
+	executeElapsed := time.Since(executeStarted)
+	persistStarted := time.Now()
 	if err != nil {
 		r.Reason = err.Error()
 		if tc.Severity == Required || cfg.Strict {
@@ -722,11 +918,17 @@ func runStatic(cfg Config, tc TestCase) Result {
 	} else {
 		r.Reason = "static check passed"
 	}
-	meta := map[string]any{"id": tc.ID, "status": r.Status, "reason": r.Reason}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
+	meta := map[string]any{
+		"id": tc.ID, "status": r.Status, "reason": r.Reason,
+		"queue_ms": timingValue(r.QueueMS), "setup_ms": timingValue(r.SetupMS),
+		"execute_ms": timingValue(r.ExecuteMS), "persist_ms": timingValue(r.PersistMS),
+	}
 	metaBytes, _ := json.MarshalIndent(meta, "", "  ")
 	_, _, metaFile := writeLogs(cfg, tc.ID, []byte(r.Reason), nil, r, nil)
 	_ = os.WriteFile(filepath.Join(cfg.Out, metaFile), metaBytes, 0o644)
 	r.MetaFile = metaFile
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
 	return r
 }
 
@@ -793,13 +995,13 @@ func checkCStyleKitAssets(repo string) error {
 	}
 
 	if kitManifest.ID != "c-userstyle-kit" || skillConfig.Kit.ID != kitManifest.ID {
-		return fmt.Errorf("C Kit id mismatch: manifest=%q skill=%q", kitManifest.ID, skillConfig.Kit.ID)
+		return fmt.Errorf("c kit id mismatch: manifest=%q skill=%q", kitManifest.ID, skillConfig.Kit.ID)
 	}
 	if kitManifest.Version != expectedVersion || assetManifest.Version != expectedVersion || skillConfig.Kit.Version != expectedVersion {
-		return fmt.Errorf("C Kit version mismatch: kit=%q asset=%q skill=%q expected=%q", kitManifest.Version, assetManifest.Version, skillConfig.Kit.Version, expectedVersion)
+		return fmt.Errorf("c kit version mismatch: kit=%q asset=%q skill=%q expected=%q", kitManifest.Version, assetManifest.Version, skillConfig.Kit.Version, expectedVersion)
 	}
 	if skillConfig.Kit.Root != "CodingKit/tools/c-userstyle-kit" {
-		return fmt.Errorf("unexpected C Kit root: %q", skillConfig.Kit.Root)
+		return fmt.Errorf("unexpected c kit root: %q", skillConfig.Kit.Root)
 	}
 	return nil
 }
@@ -1156,7 +1358,7 @@ func checkTaskfileGoRoutes(repo string) error {
 		}
 	}
 	if len(missing) > 0 {
-		return fmt.Errorf("Taskfile missing Go-native default routes: %s", strings.Join(missing, ", "))
+		return fmt.Errorf("taskfile missing Go-native default routes: %s", strings.Join(missing, ", "))
 	}
 	return nil
 }
@@ -1223,6 +1425,10 @@ func writeLogs(cfg Config, id string, stdout []byte, stderr []byte, r Result, ru
 		"exit_code":   r.ExitCode,
 		"timed_out":   r.TimedOut,
 		"duration_ms": r.DurationMS,
+		"queue_ms":    timingValue(r.QueueMS),
+		"setup_ms":    timingValue(r.SetupMS),
+		"execute_ms":  timingValue(r.ExecuteMS),
+		"persist_ms":  timingValue(r.PersistMS),
 		"run_error":   "",
 	}
 	if runErr != nil {
@@ -1235,14 +1441,17 @@ func writeLogs(cfg Config, id string, stdout []byte, stderr []byte, r Result, ru
 }
 
 func summarize(cfg Config, start, end time.Time, results []Result) Summary {
+	cacheHitRatio := 0.0
 	s := Summary{
-		Repo:       cfg.Repo,
-		Profile:    cfg.Profile,
-		StartedAt:  start.Format(time.RFC3339),
-		EndedAt:    end.Format(time.RFC3339),
-		DurationMS: end.Sub(start).Milliseconds(),
-		Total:      len(results),
+		Repo:          cfg.Repo,
+		Profile:       cfg.Profile,
+		StartedAt:     start.Format(time.RFC3339),
+		EndedAt:       end.Format(time.RFC3339),
+		DurationMS:    end.Sub(start).Milliseconds(),
+		Total:         len(results),
+		CacheHitRatio: &cacheHitRatio,
 	}
+	slowest := make([]SlowestCase, 0, len(results))
 	for _, r := range results {
 		switch r.Status {
 		case Pass:
@@ -1254,7 +1463,20 @@ func summarize(cfg Config, start, end time.Time, results []Result) Summary {
 		case Skip:
 			s.Skip++
 		}
+		if r.Status != Skip {
+			slowest = append(slowest, SlowestCase{ID: r.ID, DurationMS: r.DurationMS})
+		}
 	}
+	sort.Slice(slowest, func(i, j int) bool {
+		if slowest[i].DurationMS == slowest[j].DurationMS {
+			return slowest[i].ID < slowest[j].ID
+		}
+		return slowest[i].DurationMS > slowest[j].DurationMS
+	})
+	if len(slowest) > 5 {
+		slowest = slowest[:5]
+	}
+	s.SlowestCases = slowest
 	if s.Fail > 0 {
 		s.Conclusion = "FAIL"
 	} else if s.Warn > 0 {
@@ -1306,6 +1528,12 @@ func writeMarkdown(path string, report Report) error {
 	b.WriteString(fmt.Sprintf("| WARN | %d |\n", s.Warn))
 	b.WriteString(fmt.Sprintf("| SKIP | %d |\n", s.Skip))
 	b.WriteString(fmt.Sprintf("| Conclusion | **%s** |\n", s.Conclusion))
+	if s.CacheHitRatio != nil {
+		b.WriteString(fmt.Sprintf("| Cache hit ratio | %.3f |\n", *s.CacheHitRatio))
+	}
+	if s.ReceiptInvalidReason != "" {
+		b.WriteString(fmt.Sprintf("| Receipt invalid reason | %s |\n", mdEscape(s.ReceiptInvalidReason)))
+	}
 
 	writeStatusSection(&b, "Failed Cases", report.Results, Fail)
 	writeStatusSection(&b, "Warning Cases", report.Results, Warn)
@@ -1315,7 +1543,7 @@ func writeMarkdown(path string, report Report) error {
 	cats := categories(report.Results)
 	for _, cat := range cats {
 		b.WriteString("### " + cat + "\n\n")
-		b.WriteString("| ID | Status | Severity | Duration ms | Reason | Logs |\n|---|---|---|---:|---|---|\n")
+		b.WriteString("| ID | Status | Severity | Duration ms | Queue | Setup | Execute | Persist | Reason | Logs |\n|---|---|---|---:|---:|---:|---:|---:|---|---|\n")
 		for _, r := range report.Results {
 			if r.Category != cat {
 				continue
@@ -1330,8 +1558,10 @@ func writeMarkdown(path string, report Report) error {
 				}
 				logs += fmt.Sprintf("[%s](%s)", "stderr", r.StderrFile)
 			}
-			b.WriteString(fmt.Sprintf("| %s | %s | %s | %d | %s | %s |\n",
-				r.ID, r.Status, r.Severity, r.DurationMS, mdEscape(r.Reason), logs))
+			b.WriteString(fmt.Sprintf("| %s | %s | %s | %d | %d | %d | %d | %d | %s | %s |\n",
+				r.ID, r.Status, r.Severity, r.DurationMS,
+				timingValue(r.QueueMS), timingValue(r.SetupMS), timingValue(r.ExecuteMS), timingValue(r.PersistMS),
+				mdEscape(r.Reason), logs))
 		}
 		b.WriteString("\n")
 	}

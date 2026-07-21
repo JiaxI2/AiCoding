@@ -59,6 +59,9 @@
     "documentation": [
       "docs"
     ],
+    "plan-artifact": [
+      "docs/spec"
+    ],
     "test-fixture": [
       "testdata"
     ],

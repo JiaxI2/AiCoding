@@ -1,5 +1,7 @@
 # PowerShell Boundary
 
+Status: Accepted and Frozen
+
 本文档只描述当前 main 的 PowerShell 保留边界。默认控制面是 Go CLI；Taskfile 只做路由；PowerShell 不承载 Smoke、CI、Full、Release gate、DocSync、skill verify、lifecycle、export 或 fresh-clone 的默认编排。
 
 ## 默认入口
@@ -35,6 +37,12 @@ bin\aicoding.exe doctor pwsh-budget --json
 ```
 
 `doctor pwsh-budget` 用于确认 PowerShell 调用仍限制在上述专项类别内。
+
+2026-07-22 的冻结面复核记录为 22 个 `tools/specialty/**/*.ps1`：20 个顶层专项入口与
+2 个嵌套 AEF Hook 薄壳；顶层计数中 `thinShells=2`、`deprecated=2`。可执行职责全部属于
+上表六类，或处于 ADR/独立 Retirement Plan 已登记的 release 退役窗口。计数是只读观测，
+不是归零 KPI；默认 Taskfile/CI profile 仍只调用 Go CLI。详细逐文件裁决见
+[TODO 0002](../todolist/0002-powershell-specialty-convergence.md)。
 
 ## 禁止事项
 
