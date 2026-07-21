@@ -34,7 +34,7 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 		}
 		seen[testCase.ID] = true
 	}
-	for _, id := range []string{"ENV-001", "GO-001", "GO-005", "GO-006", "GO-007", "GIT-009", "EXP-002", "FRESH-001", "FRESH-003", "DOCS-006", "REL-002"} {
+	for _, id := range []string{"ENV-001", "GO-001", "GO-005", "GO-006", "GO-007", "GIT-009", "EXP-002", "FRESH-001", "FRESH-003", "FRESH-004", "DOCS-006", "REL-002"} {
 		if !seen[id] {
 			t.Fatalf("registry is missing %s", id)
 		}
@@ -129,13 +129,20 @@ func TestRegistryKeepsHermeticAndZipChecksInRelease(t *testing.T) {
 			release[testCase.ID] = testCase
 		}
 	}
-	for _, id := range []string{"EXP-001", "FRESH-001"} {
-		if _, exists := full[id]; exists {
-			t.Fatalf("Full still contains expensive command case %s", id)
-		}
-		if testCase, exists := release[id]; !exists || testCase.Kind != "command" {
-			t.Fatalf("Release lost expensive command case %s: %#v", id, testCase)
-		}
+	if _, exists := full["EXP-001"]; exists {
+		t.Fatal("Full still contains Release ZIP")
+	}
+	if testCase := release["EXP-001"]; testCase.Kind != "command" {
+		t.Fatalf("Release lost ZIP command: %#v", testCase)
+	}
+	if _, exists := full["FRESH-001"]; exists {
+		t.Fatal("Full contains Release materialization")
+	}
+	if testCase := release["FRESH-001"]; testCase.Kind != "materialized" || testCase.Severity != Required || len(testCase.Command) != 0 {
+		t.Fatalf("Release materialization is not a private required leaf: %#v", testCase)
+	}
+	if testCase := release["FRESH-004"]; testCase.Kind != "static" || testCase.Severity != WarnOnly {
+		t.Fatalf("Release transport drift advisory is not warning-only: %#v", testCase)
 	}
 	for _, id := range []string{"EXP-002", "FRESH-003"} {
 		if testCase, exists := full[id]; !exists || testCase.Kind != "static" {
@@ -145,8 +152,8 @@ func TestRegistryKeepsHermeticAndZipChecksInRelease(t *testing.T) {
 	if !containsString(release["EXP-001"].Command, "--zip") {
 		t.Fatalf("Release export is not a real ZIP command: %#v", release["EXP-001"])
 	}
-	if !containsString(release["FRESH-001"].Command, "Release") {
-		t.Fatalf("Release fresh clone uses the wrong profile: %#v", release["FRESH-001"])
+	if strings.Contains(strings.ToLower(strings.Join(release["FRESH-001"].Command, " ")), "clone") {
+		t.Fatalf("Release materialization still invokes clone: %#v", release["FRESH-001"])
 	}
 }
 

@@ -9,19 +9,25 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
 type FreshCloneReport struct {
-	SchemaVersion int              `json:"schemaVersion"`
-	Profile       string           `json:"profile"`
-	OK            bool             `json:"ok"`
-	SourceRoot    string           `json:"sourceRoot"`
-	TempRoot      string           `json:"tempRoot"`
-	CloneRoot     string           `json:"cloneRoot"`
-	KeptTemp      bool             `json:"keptTemp"`
-	Steps         []FreshCloneStep `json:"steps"`
-	Errors        []string         `json:"errors,omitempty"`
+	SchemaVersion    int              `json:"schemaVersion"`
+	Profile          string           `json:"profile"`
+	OK               bool             `json:"ok"`
+	SourceMode       string           `json:"sourceMode"`
+	SourceRoot       string           `json:"sourceRoot"`
+	SourceTreeOID    string           `json:"sourceTreeOID"`
+	TempRoot         string           `json:"tempRoot"`
+	CloneRoot        string           `json:"cloneRoot"`
+	MaterializedRoot string           `json:"materializedRoot,omitempty"`
+	ManifestPath     string           `json:"manifestPath,omitempty"`
+	SourceManifest   *SourceManifest  `json:"sourceManifest,omitempty"`
+	KeptTemp         bool             `json:"keptTemp"`
+	Steps            []FreshCloneStep `json:"steps"`
+	Errors           []string         `json:"errors,omitempty"`
 }
 
 type FreshCloneStep struct {
@@ -34,7 +40,7 @@ type FreshCloneStep struct {
 
 func FreshClone(repo, profile string, keepTemp bool) (report FreshCloneReport) {
 	profile = normalizeKitProfile(profile)
-	report = FreshCloneReport{SchemaVersion: 1, Profile: profile, OK: true, SourceRoot: repo}
+	report = FreshCloneReport{SchemaVersion: 1, Profile: profile, OK: true, SourceMode: "cloned", SourceRoot: repo}
 	add := func(name string, started time.Time, ok bool, message string, output string) {
 		report.Steps = append(report.Steps, FreshCloneStep{
 			Name: name, OK: ok, Message: message, Output: trimOutput(output), ElapsedMS: time.Since(started).Milliseconds(),
@@ -80,6 +86,13 @@ func FreshClone(repo, profile string, keepTemp bool) (report FreshCloneReport) {
 			add("temp.ledger", started, true, "failed evidence retained and registered", "")
 		}
 	}()
+	stepStarted = time.Now()
+	report.SourceTreeOID, err = gitx.TreeOID(repo, "HEAD")
+	if err != nil {
+		add("git.source-tree", stepStarted, false, err.Error(), "")
+		return report
+	}
+	add("git.source-tree", stepStarted, true, "captured source HEAD tree", "")
 	stepStarted = time.Now()
 	if out, err := runFresh("", "git", "clone", "--recurse-submodules", repo, cloneRoot); err != nil {
 		add("git.clone", stepStarted, false, err.Error(), out)
@@ -130,6 +143,12 @@ func FreshClone(repo, profile string, keepTemp bool) (report FreshCloneReport) {
 		}
 		add(name, stepStarted, true, "passed", out)
 	}
+	stepStarted = time.Now()
+	if err := recordFreshCloneBaseline(repo, report.SourceTreeOID); err != nil {
+		add("transport.baseline", stepStarted, false, err.Error(), "")
+		return report
+	}
+	add("transport.baseline", stepStarted, true, "recorded successful true-clone tree", "")
 	return report
 }
 

@@ -68,7 +68,7 @@ func TestFreshCloneFailureRetainsRegisteredEvidence(t *testing.T) {
 		t.Skipf("git unavailable: %v: %s", err, output)
 	}
 	report := FreshClone(repo, "Smoke", false)
-	if report.OK || !report.KeptTemp || report.TempRoot == "" {
+	if report.OK || !report.KeptTemp || report.TempRoot == "" || report.SourceMode != "cloned" {
 		t.Fatalf("fresh-clone failure was not retained: %#v", report)
 	}
 	t.Cleanup(func() { _ = platform.ReleaseTempDir(repo, report.TempRoot, "fresh-clone") })

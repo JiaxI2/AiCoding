@@ -139,9 +139,35 @@ Receipt 提供状态的用例数。新鲜执行、`--reuse off`、`--force` 和 
 
 实际执行的用例包含 `queue_ms`、`setup_ms`、`execute_ms`、`persist_ms`，四段之和等于
 `duration_ms`；未被 profile 选中的旧式/SKIP 结果省略这四个加法字段。当前串行调度下
-`queue_ms` 通常为 `0`，保留该字段是为了让后续调度改造有可比基线。`fresh-clone` 的
-`data.steps[*].elapsed_ms` 始终存在（包括小于 1 ms 时的 `0`），用于拆分 clone、submodule、
-overlay、build 与 profile verify。
+`queue_ms` 通常为 `0`，保留该字段是为了让后续调度改造有可比基线。显式 `fresh-clone` 与
+Release 的 FRESH-001 共用既有 `FreshCloneReport` 数据形状；`data.steps[*].elapsed_ms` 始终存在
+（包括小于 1 ms 时的 `0`）。`sourceMode=cloned` 只表示公共命令执行真实 clone/submodule/
+overlay/build/profile verify；`sourceMode=materialized` 表示 FRESH-001 从 Git 对象本地物化、
+build 并执行 `release verify`，步骤中不得出现 `git.clone`。FRESH-001 的该 JSON 保存在其
+`stdout_file`。
+
+materialized 报告额外内嵌并在运行期间写出源码树外的 `source-manifest.json`：
+
+```json
+{
+  "sourceMode": "materialized",
+  "sourceTreeOID": "<validation-subject-tree>",
+  "sourceManifest": {
+    "schemaVersion": 1,
+    "sourceMode": "materialized",
+    "sourceIdentity": "sha256:<superproject-tree-and-recursive-gitlinks>",
+    "superprojectTreeOID": "<tree>",
+    "submodules": [
+      {"path": "CodingKit/agents/skills", "commitOID": "<commit>", "treeOID": "<tree>"}
+    ],
+    "fileCount": 123
+  }
+}
+```
+
+`sourceIdentity` 只由 superproject Tree 以及排序后的递归 submodule path/commit/tree 组成；
+不含临时路径、时间或工作区文件。manifest 位于源码根之外，因此物化源码文件集严格等于这些
+Git 对象的 blob 集；成功后临时目录按现有 ledger 释放，但内嵌报告继续保留身份与计数证据。
 
 `executionMode` 只使用 `executed` 或 `reused`：只要任一选中用例真实执行就是 `executed`；整树
 命中或全部选中用例均由节点 Receipt 提供时才是 `reused`。复用不引入新的测试结论，

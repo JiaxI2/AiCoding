@@ -15,7 +15,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
 
-const evidenceImplVersion = 5
+const evidenceImplVersion = 6
 
 var executeTestCases = runAll
 

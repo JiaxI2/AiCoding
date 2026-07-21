@@ -21,6 +21,7 @@ import (
 
 	"github.com/JiaxI2/AiCoding/internal/adrreview"
 	"github.com/JiaxI2/AiCoding/internal/bootstrap"
+	"github.com/JiaxI2/AiCoding/internal/gitx"
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
@@ -76,7 +77,7 @@ type TestCase struct {
 	Node               string
 	Severity           Severity
 	Profiles           []Profile
-	Kind               string // command, static, concurrent
+	Kind               string // command, static, concurrent, materialized
 	Command            []string
 	TimeoutKind        string // normal, long
 	ExpectJSON         bool
@@ -420,6 +421,8 @@ func runAll(ctx context.Context, cfg Config, tests []TestCase) []Result {
 			r = runStatic(cfg, tc)
 		case "concurrent":
 			r = runConcurrent(ctx, cfg, tc)
+		case "materialized":
+			r = runMaterialized(ctx, cfg, tc)
 		default:
 			r = runCommand(ctx, cfg, tc)
 		}
@@ -476,8 +479,9 @@ func Registry(cfg Config) []TestCase {
 
 		{ID: "EXP-001", Category: "EXPORT", Title: "export zip", Severity: Required, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "export", "--all", "--zip", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "EXP-002", Category: "EXPORT", Title: "export manifest 静态验证", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
-		{ID: "FRESH-001", Category: "FRESH_CLONE", Title: "fresh-clone Release", Severity: WarnOnly, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "fresh-clone", "--profile", "Release", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "FRESH-001", Category: "FRESH_CLONE", Title: "物化源码 Release 验证", Severity: Required, Profiles: []string{"release"}, Kind: "materialized", TimeoutKind: "long", ExpectJSON: true},
 		{ID: "FRESH-003", Category: "FRESH_CLONE", Title: "fresh-clone 契约静态验证", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
+		{ID: "FRESH-004", Category: "FRESH_CLONE", Title: "真 clone 传输面变化提示", Severity: WarnOnly, Profiles: []string{"release"}, Kind: "static"},
 
 		{ID: "DOCS-001", Category: "README_DOCS", Title: "README 三件套", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-002", Category: "README_DOCS", Title: "README 架构声明", Severity: Required, Profiles: allProfiles(), Kind: "static"},
@@ -648,6 +652,64 @@ func runCommand(parent context.Context, cfg Config, tc TestCase) Result {
 	return r
 }
 
+func runMaterialized(parent context.Context, cfg Config, tc TestCase) Result {
+	setupStarted := time.Now()
+	r := Result{
+		ID: tc.ID, Category: tc.Category, Title: tc.Title, Severity: tc.Severity,
+		Command: "git archive validation subject + release verify", Profile: cfg.Profile, ExitCode: -1,
+	}
+	ctx, cancel := context.WithTimeout(parent, timeoutFor(cfg, tc))
+	defer cancel()
+	treeOID, err := gitx.WriteTree(cfg.Repo)
+	setupElapsed := time.Since(setupStarted)
+	if err != nil {
+		r.Status = Fail
+		r.Reason = "cannot resolve validation subject tree: " + err.Error()
+		setResultTiming(&r, 0, setupElapsed, 0, 0)
+		return r
+	}
+
+	executeStarted := time.Now()
+	materialized := kit.MaterializeRelease(ctx, cfg.Repo, treeOID)
+	executeElapsed := time.Since(executeStarted)
+	persistStarted := time.Now()
+	payload, marshalErr := json.MarshalIndent(materialized, "", "  ")
+	if marshalErr == nil {
+		payload = append(payload, '\n')
+	}
+	r.TimedOut = ctx.Err() == context.DeadlineExceeded
+	r.JSONValid = marshalErr == nil
+	if materialized.OK && !r.TimedOut && marshalErr == nil {
+		r.Status = Pass
+		r.ExitCode = 0
+		r.Reason = "sourceMode=materialized Release verification passed"
+	} else {
+		r.ExitCode = 1
+		switch {
+		case r.TimedOut:
+			r.Reason = "materialized Release verification timed out"
+		case marshalErr != nil:
+			r.Reason = "materialized report encoding failed: " + marshalErr.Error()
+		case len(materialized.Errors) > 0:
+			r.Reason = strings.Join(materialized.Errors, "; ")
+		default:
+			r.Reason = "materialized Release verification failed"
+		}
+		if tc.Severity == Required || cfg.Strict {
+			r.Status = Fail
+		} else {
+			r.Status = Warn
+		}
+	}
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
+	stdoutFile, stderrFile, metaFile := writeLogs(cfg, tc.ID, payload, nil, r, marshalErr)
+	r.StdoutFile = stdoutFile
+	r.StderrFile = stderrFile
+	r.MetaFile = metaFile
+	setResultTiming(&r, 0, setupElapsed, executeElapsed, time.Since(persistStarted))
+	return r
+}
+
 func isNetworkFailure(output string) bool {
 	output = strings.ToLower(output)
 	for _, marker := range []string{
@@ -802,6 +864,12 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = checkExportDefinitions(cfg.Repo)
 	case "FRESH-003":
 		err = kit.CheckFreshCloneContract(cfg.Repo)
+	case "FRESH-004":
+		var treeOID string
+		treeOID, err = gitx.WriteTree(cfg.Repo)
+		if err == nil {
+			err = kit.CheckFreshCloneTransportDrift(cfg.Repo, treeOID)
+		}
 	case "DOC-004":
 		err = checkDocIndex(cfg.Repo)
 	case "LIFE-001":

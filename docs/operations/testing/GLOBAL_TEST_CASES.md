@@ -74,11 +74,14 @@
 |---|---|---|---|---|
 | EXP-001 | Release export zip | `bin/aicoding.exe export --all --zip --json` | 仅 Release 执行；生成 zip/manifest | REQUIRED |
 | EXP-002 | Full export manifest | 进程内 dry-run manifest 校验 | include 均匹配，outputName token 可解析，不生成 ZIP | REQUIRED |
-| FRESH-001 | fresh-clone Release | `bin/aicoding.exe fresh-clone --profile Release --json` | 仅 Release 执行；clone 内执行 `release verify`；成功临时目录登记后释放，失败现场登记为 `failed` 后保留 | WARN |
-| FRESH-003 | Full fresh-clone 契约 | 静态检查 `.gitmodules`、skills gitlink 与三个 profile 分支 | 不 clone，契约完整 | REQUIRED |
+| FRESH-001 | 物化源码 Release 验证 | testengine 私有 materialized leaf | 对验证主体 Tree 执行本地 `git archive` 并用 Go 标准库读取 tar 流，递归物化 pinned gitlink，源码树内无 `.git`/worktree-only 文件；重建 CLI 并执行 `release verify` | REQUIRED |
+| FRESH-003 | Full fresh-clone/物化契约 | 静态检查 `.gitmodules`、skills gitlink与三个 profile 分支 | 不 clone，契约完整 | REQUIRED |
+| FRESH-004 | 真 clone 传输面变化提示 | 比较 Git common-dir advisory baseline、当前 Tree 与未暂存路径 | `.gitmodules`、`.gitattributes`、`.githooks/**` 或 bootstrap 路径变化时 WARN 并建议显式 `fresh-clone`；不阻断 Release | WARN |
 
 定期 CI 不新增 Registry ID：每周/手动 `clean-clone-full` job 直接运行正式 leaf command
-`bin/aicoding.exe fresh-clone --profile Full --json`，在临时 clone 中执行 `go test ./...`。
+`bin/aicoding.exe fresh-clone --profile Full --json`，在临时真 clone 中执行 `go test ./...`。公共
+`fresh-clone --profile Smoke|Full|Release` 始终保持 `sourceMode=cloned`，成功后更新本地 advisory
+baseline；它不进入日常 Release Registry，也不创建第二种 Receipt。
 
 ## 8. README_DOCS：README 和命令文档治理
 

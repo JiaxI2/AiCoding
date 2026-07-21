@@ -1,11 +1,50 @@
 package gitx
 
 import (
+	"archive/tar"
+	"bytes"
+	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestArchiveStreamsTrackedTreeOnly(t *testing.T) {
+	repo := newGitRepo(t)
+	writeGitFile(t, repo, "tracked.txt", "tracked\n")
+	mustGit(t, repo, "add", "tracked.txt")
+	mustGit(t, repo, "commit", "-m", "initial")
+	writeGitFile(t, repo, "untracked.txt", "untracked\n")
+
+	var archive bytes.Buffer
+	if err := Archive(context.Background(), repo, "HEAD", &archive); err != nil {
+		t.Fatal(err)
+	}
+	reader := tar.NewReader(bytes.NewReader(archive.Bytes()))
+	files := map[string]string{}
+	for {
+		header, err := reader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if header.Typeflag != tar.TypeReg {
+			continue
+		}
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			t.Fatal(err)
+		}
+		files[filepath.ToSlash(header.Name)] = strings.ReplaceAll(string(content), "\r\n", "\n")
+	}
+	if files["tracked.txt"] != "tracked\n" || files["untracked.txt"] != "" {
+		t.Fatalf("archive files = %#v", files)
+	}
+}
 
 func TestContentIdentityPrimitives(t *testing.T) {
 	repo := newGitRepo(t)

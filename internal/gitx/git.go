@@ -3,6 +3,7 @@ package gitx
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -52,6 +53,29 @@ func Run(repo string, args ...string) (string, error) {
 		return stdout.String(), fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(stderr.String()))
 	}
 	return stdout.String(), nil
+}
+
+// Archive streams one Git tree or commit as a tar archive without reading
+// worktree files. The caller owns extraction and destination lifecycle.
+func Archive(ctx context.Context, repo, rev string, destination io.Writer) error {
+	rev = strings.TrimSpace(rev)
+	if rev == "" {
+		return fmt.Errorf("git archive revision is empty")
+	}
+	if destination == nil {
+		return fmt.Errorf("git archive destination is nil")
+	}
+	cmd := exec.CommandContext(ctx, "git", "archive", "--format=tar", rev)
+	if repo != "" {
+		cmd.Dir = repo
+	}
+	var stderr bytes.Buffer
+	cmd.Stdout = destination
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("git archive %s: %w: %s", rev, err, strings.TrimSpace(stderr.String()))
+	}
+	return nil
 }
 
 // ParsePushUpdates parses Git's four-field pre-push stdin protocol without

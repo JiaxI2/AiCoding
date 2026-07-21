@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "raceScope": {
     "packages": [
+      "internal/kit",
       "internal/mcpcontrol",
       "internal/report/tokenusage",
       "internal/runner",
