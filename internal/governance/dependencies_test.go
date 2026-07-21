@@ -102,6 +102,34 @@ func TestCheckDependenciesAllowsExternalProtocolVersion(t *testing.T) {
 	}
 }
 
+func TestReadmeBadgeLabelsRejectLowercaseInitial(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "README.md"), "[![govulncheck](https://img.shields.io/badge/Govulncheck-1.6.0-gray)](https://example.com)\n")
+	policy := dependencyPolicy{VersionVisibility: versionVisibility{
+		ReadmeBodyVersionPattern: `\b[0-9]+\.[0-9]+(?:\.[0-9]+)?\b`,
+		ReadmeFiles:              []string{"README.md"},
+	}}
+
+	errs := checkReadmeVersionBadges(repo, policy)
+
+	if !hasErrorContaining(errs, "README.md badge label must start with an uppercase ASCII letter: govulncheck") {
+		t.Fatalf("expected lowercase badge label error, got %#v", errs)
+	}
+}
+
+func TestReadmeBadgeLabelsAcceptUppercaseInitial(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "README.md"), "[![Govulncheck](https://img.shields.io/badge/Govulncheck-1.6.0-gray)](https://example.com)\n")
+	policy := dependencyPolicy{VersionVisibility: versionVisibility{
+		ReadmeBodyVersionPattern: `\b[0-9]+\.[0-9]+(?:\.[0-9]+)?\b`,
+		ReadmeFiles:              []string{"README.md"},
+	}}
+
+	if errs := checkReadmeVersionBadges(repo, policy); len(errs) != 0 {
+		t.Fatalf("expected uppercase badge label to pass, got %#v", errs)
+	}
+}
+
 func TestGoPackageBoundariesRejectReverseCoreDependency(t *testing.T) {
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "internal", "registry", "bad.go"), `package registry

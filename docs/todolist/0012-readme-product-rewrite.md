@@ -1,6 +1,6 @@
 # TODO 0012: README 产品化重写（用户 30 秒看懂，3 分钟跑通）
 
-Status: Planned
+Status: Done
 Verify: 新 README 通过 .github/repository-governance.toml 的 required_sections 校验，且"快速开始"三条命令在干净 clone 上逐条可执行
 
 > 产品经理视角的病根：现在的 README 是**维护者写给自己看的**。第一句

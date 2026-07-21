@@ -1222,6 +1222,11 @@ func checkReadmeVersionBadges(repo string, policy dependencyPolicy) []string {
 		return []string{"invalid README body version pattern: " + err.Error()}
 	}
 	errs := []string{}
+	for _, badge := range policy.VersionVisibility.ReadmeBadges {
+		if !readmeBadgeInitialExpression.MatchString(badge.Label) {
+			errs = append(errs, badge.Label+" badge label must start with an uppercase ASCII letter")
+		}
+	}
 	var baseline []string
 	for _, rel := range policy.VersionVisibility.ReadmeFiles {
 		data, readErr := os.ReadFile(platform.RepoPath(repo, rel))
@@ -1239,6 +1244,11 @@ func checkReadmeVersionBadges(repo string, policy dependencyPolicy) []string {
 			}
 			if bodyVersionPattern.MatchString(line) {
 				errs = append(errs, fmt.Sprintf("%s exposes a version outside a badge at line %d", rel, index+1))
+			}
+		}
+		for _, label := range readmeBadgeLabels(badgeLines) {
+			if !readmeBadgeInitialExpression.MatchString(label) {
+				errs = append(errs, rel+" badge label must start with an uppercase ASCII letter: "+label)
 			}
 		}
 		if baseline == nil {
@@ -1302,6 +1312,19 @@ func checkReadmeVersionBadges(repo string, policy dependencyPolicy) []string {
 		}
 	}
 	return errs
+}
+
+var readmeBadgeLabelExpression = regexp.MustCompile(`\[!\[([^]]+)\]\(`)
+var readmeBadgeInitialExpression = regexp.MustCompile(`^[A-Z]`)
+
+func readmeBadgeLabels(lines []string) []string {
+	labels := []string{}
+	for _, line := range lines {
+		for _, match := range readmeBadgeLabelExpression.FindAllStringSubmatch(line, -1) {
+			labels = append(labels, match[1])
+		}
+	}
+	return labels
 }
 
 func findBadgeLine(lines []string, label string) string {

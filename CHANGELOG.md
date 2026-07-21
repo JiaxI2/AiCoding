@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(readme)**: 将 README 三件套重写为 30 秒价值说明、三行 clean-clone 快速开始、角色分流、网状证据闭环、与 enabled kit 注册表一致的能力橱窗及可追溯复利叙事；明/暗 banner 与 Mermaid 采用 `gia-workflow.svg` 同源的黑白灰 Visio 工程图语言，非官方徽章收敛为中性色，徽章标题首字母大写由配置登记、测试与治理门禁强制；Star History 使用单仓库 Metadata Read-only Token 在页面生成的 `sealed_token` 明/暗 embed URL，不入仓原始凭据。 / Reframes the README trio as a product entry with an executable three-line quick start, persona routes, graph-first evidence loop, registry-aligned kit showcase, and traceable compounding story; adopts the restrained monochrome Visio language of `gia-workflow.svg`, machine-enforces capitalized badge labels, and embeds Star History through page-generated sealed URLs backed by a single-repository Metadata Read-only token without storing the raw credential.
+
 - **feat(provision)**: `aicoding provision` 现从 `config/templates/provision` 放置最小 SDD 文档骨架（hub/architecture/decisions/spec/todolist），每个既有路径严格 kept、绝不覆盖；报告新增 `docsSkeleton` 与逐资源 created/kept action，本地 marker schema 升至 2 并加入 `aicoding.docsSkeleton=1`。二次执行不重写 Git config 或骨架内容。 / Extends provision with an embedded, non-overwriting SDD documentation skeleton, explicit created/kept actions, and a git-native docs-skeleton marker while preserving byte-stable idempotence.
 
 - **feat(cache)**: 将 `cache status|clean` 扩展为 fast-path、test-results、validation-reports 与 work-state 四类本地生成物的统一观测面；`clean` 支持 scope/keep/dry-run，默认保留最近 5 份测试结果及全部 FAIL、仅删除无 Receipt/alias 引用的验证报告，并拒绝清理审计型 work-state。成功测试写入后自动执行保留策略，失败运行不清理；`doctor --all` 在测试结果超过 20 份或 50MB 时只告警、不自动删除。 / Expands cache status and retention across four registered local-artifact scopes, preserves failed and referenced evidence, applies keep-last-five only after successful tests, and adds a warning-only doctor bloat check.

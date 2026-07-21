@@ -140,8 +140,8 @@
         "displayVersion": "2026.1"
       },
       {
-        "label": "govulncheck",
-        "imageFragment": "govulncheck-1.6.0",
+        "label": "Govulncheck",
+        "imageFragment": "Govulncheck-1.6.0",
         "target": "https://go.googlesource.com/vuln/+/refs/tags/v1.6.0",
         "authority": "upstream-version",
         "displayVersion": "1.6.0"
@@ -168,8 +168,8 @@
         "displayVersion": ""
       },
       {
-        "label": "clang-format",
-        "imageFragment": "clang--format-17.0.2",
+        "label": "Clang-format",
+        "imageFragment": "Clang--format-17.0.2",
         "target": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2",
         "authority": "upstream-version",
         "displayVersion": "17.0.2"
