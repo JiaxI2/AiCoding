@@ -87,7 +87,8 @@ Verify: 新 README 通过 .github/repository-governance.toml 的 required_sectio
      c) **Star History（owner 决策：现在没 star 也要挂，做成标准）**——
         `star-history.com` 自动 SVG 放**文末独立小节**，不占首屏；
         首屏徽章区只放 shields 类。理由：挂链本身是标准的一部分，
-        增长曲线是仓库自己的事，且公开后零改动即生效。
+        增长曲线是仓库自己的事，且公开后零改动即生效。只允许无凭据公开端点；
+        禁止在 embed 中携带 token、credential、auth 等会过期的访问凭据。
      d) 徽章之后紧跟一句话定位——徽章负责"这仓库有多能打"，
         首句负责"这仓库对你有什么用"，两者各司其职、互不挤占。
 2. **3 分钟层**：快速开始压缩到 **3 步**（高星共识铁律：Quick Start ≤3 步、复制即跑）：

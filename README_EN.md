@@ -120,8 +120,8 @@ The repository follows its [Git Governance Standard](docs/governance/RELEASE_POL
 
 <a href="https://www.star-history.com/?repos=JiaxI2%2FAiCoding&type=date&legend=top-left">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&theme=dark&legend=top-left&sealed_token=cYCLcUDDC2taPIy56cwbcdHM07uJjknjW64NTV1pCAihGJ6Jv2QLIrDj6blxI9_Qt6JYOqA9ciwwXXBE45GT1kOhpPg7ghDjl1b7Bn3-IqEdrgKJwMoc1MG65gcK_coW2NAH_B2neEPyiVzsTfwM7psU6QzMzmSuhrvQbY9fvDgPr3T0DT5KA3QLh8Dd">
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&legend=top-left&sealed_token=cYCLcUDDC2taPIy56cwbcdHM07uJjknjW64NTV1pCAihGJ6Jv2QLIrDj6blxI9_Qt6JYOqA9ciwwXXBE45GT1kOhpPg7ghDjl1b7Bn3-IqEdrgKJwMoc1MG65gcK_coW2NAH_B2neEPyiVzsTfwM7psU6QzMzmSuhrvQbY9fvDgPr3T0DT5KA3QLh8Dd">
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&legend=top-left&sealed_token=cYCLcUDDC2taPIy56cwbcdHM07uJjknjW64NTV1pCAihGJ6Jv2QLIrDj6blxI9_Qt6JYOqA9ciwwXXBE45GT1kOhpPg7ghDjl1b7Bn3-IqEdrgKJwMoc1MG65gcK_coW2NAH_B2neEPyiVzsTfwM7psU6QzMzmSuhrvQbY9fvDgPr3T0DT5KA3QLh8Dd">
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&theme=dark&legend=top-left">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&legend=top-left">
+    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&legend=top-left">
   </picture>
 </a>
