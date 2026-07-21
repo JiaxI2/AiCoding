@@ -73,6 +73,7 @@ type TestCase struct {
 	ID                 string
 	Category           string
 	Title              string
+	Node               string
 	Severity           Severity
 	Profiles           []Profile
 	Kind               string // command, static, concurrent
@@ -309,35 +310,62 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 	if err := os.MkdirAll(filepath.Join(cfg.Out, "logs"), 0o755); err != nil {
 		return Report{}, fmt.Errorf("create output directory: %w", err)
 	}
-	results := executeTestCases(ctx, cfg, testCases)
+	nodePlan, err := buildNodeEvidencePlan(evidenceStore, startSubject, startFingerprint, cfg, testCases, shouldCheck)
+	if err != nil {
+		return Report{}, fmt.Errorf("prepare node validation evidence: %w", err)
+	}
+	var results []Result
+	executionMode := "executed"
+	if cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force {
+		results = executeWithNodeReuse(ctx, cfg, testCases, nodePlan)
+		if nodePlan.selectedCount > 0 && nodePlan.hitCount == nodePlan.selectedCount {
+			executionMode = "reused"
+		}
+	} else {
+		results = executeTestCases(ctx, cfg, testCases)
+	}
 	statusDigest, err := resultStatusDigest(cfg, testCases, results)
 	if err != nil {
 		return Report{}, fmt.Errorf("digest validation result statuses: %w", err)
 	}
 	summary := summarize(cfg, start, time.Now(), results)
+	if cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force && nodePlan.selectedCount > 0 {
+		cacheHitRatio := float64(nodePlan.hitCount) / float64(nodePlan.selectedCount)
+		summary.CacheHitRatio = &cacheHitRatio
+	}
 	if shouldCheck && !reuseDecision.Hit && reuseDecision.Code != "" {
 		summary.ReceiptInvalidReason = string(reuseDecision.Code) + ": " + reuseDecision.Reason
 	}
+	if invalidReason := nodePlan.invalidReason(); invalidReason != "" {
+		summary.ReceiptInvalidReason = appendReceiptInvalidReason(summary.ReceiptInvalidReason, invalidReason)
+	}
 	testReport := Report{
-		ExecutionMode:      "executed",
+		ExecutionMode:      executionMode,
 		ValidationIdentity: startFingerprint.Identity,
 		ResultsDigest:      statusDigest,
 		SubjectTreeOID:     startSubject.TreeOID,
 		SubjectMode:        startSubject.Mode,
-		CheckDurationMS:    reuseDecision.CheckDurationMS,
+		CheckDurationMS:    reuseDecision.CheckDurationMS + nodePlan.checkDurationMS,
 		Summary:            summary,
 		Results:            results,
 	}
+	auditFailures := []Result{}
 	if cfg.VerifyReuse && reuseDecision.Hit && (evidenceConclusion(testReport) != reuseDecision.Receipt.Conclusion || testReport.ResultsDigest != reuseDecision.Receipt.ResultsDigest) {
-		testReport.Results = append(testReport.Results, Result{
+		auditFailures = append(auditFailures, Result{
 			ID: "EVIDENCE-001", Category: "VALIDATION_EVIDENCE", Title: "Receipt 复用审计",
 			Severity: Required, Status: Fail, ExitCode: 1,
 			Reason: "executed per-case statuses do not match the reusable Receipt", Profile: cfg.Profile,
 		})
+	}
+	if cfg.VerifyReuse {
+		auditFailures = append(auditFailures, nodePlan.auditFailures(cfg, results)...)
+	}
+	if len(auditFailures) > 0 {
+		testReport.Results = append(testReport.Results, auditFailures...)
 		testReport.Summary = summarize(cfg, start, time.Now(), testReport.Results)
 		testReport.ValidationCode = validationevidence.CodeReuseAuditMismatch
 	}
-	finalizeEvidence(ctx, cfg, testCases, evidenceStore, startSubject, startFingerprint, reuseDecision, &testReport)
+	finalizeEvidence(ctx, cfg, testCases, evidenceStore, startSubject, startFingerprint, reuseDecision, nodePlan, &testReport)
 	if err := Write(cfg.Out, testReport); err != nil {
 		return testReport, err
 	}
@@ -413,12 +441,12 @@ func Registry(cfg Config) []TestCase {
 		{ID: "BOOT-002", Category: "BOOTSTRAP", Title: "CLI bootstrap 基础可用", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "bootstrap", "--no-build", "--json"}, ExpectJSON: true},
 		{ID: "BOOT-003", Category: "BOOTSTRAP", Title: "bootstrap 前置条件完整", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
-		{ID: "GO-001", Category: "GO", Title: "全仓 Go 单元测试", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "test", "./..."}, TimeoutKind: "long"},
-		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: raceTestCommand(cfg), TimeoutKind: "long"},
-		{ID: "GO-003", Category: "GO", Title: "go vet 基础检查", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "vet", "./..."}, TimeoutKind: "long"},
-		{ID: "GO-004", Category: "GO", Title: "CLI 并发只读调用", Severity: Required, Profiles: []string{"full", "release"}, Kind: "concurrent", TimeoutKind: "normal", ExpectJSON: true},
-		{ID: "GO-005", Category: "GO", Title: "Staticcheck 静态分析", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", staticcheckCommand, "./..."}, TimeoutKind: "long", Note: "WarnOnly for one release before promotion to Required"},
-		{ID: "GO-006", Category: "GO", Title: "Go 漏洞扫描", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", govulncheckCommand, "./..."}, TimeoutKind: "long", NetworkFailureWarn: true},
+		{ID: "GO-001", Category: "GO", Title: "全仓 Go 单元测试", Node: nodeGo, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"go", "test", "./..."}, TimeoutKind: "long"},
+		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: raceTestCommand(cfg), TimeoutKind: "long"},
+		{ID: "GO-003", Category: "GO", Title: "go vet 基础检查", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "vet", "./..."}, TimeoutKind: "long"},
+		{ID: "GO-004", Category: "GO", Title: "CLI 并发只读调用", Node: nodeGo, Severity: Required, Profiles: []string{"full", "release"}, Kind: "concurrent", TimeoutKind: "normal", ExpectJSON: true},
+		{ID: "GO-005", Category: "GO", Title: "Staticcheck 静态分析", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", staticcheckCommand, "./..."}, TimeoutKind: "long", Note: "WarnOnly for one release before promotion to Required"},
+		{ID: "GO-006", Category: "GO", Title: "Go 漏洞扫描", Node: nodeGo, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", govulncheckCommand, "./..."}, TimeoutKind: "long", NetworkFailureWarn: true},
 		{ID: "GO-007", Category: "GO", Title: "并发包 raceScope 登记", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
 
 		{ID: "C99-001", Category: "C99_SKILL", Title: "C99 skill status", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "status", "--json"}, ExpectJSON: true},
@@ -431,18 +459,18 @@ func Registry(cfg Config) []TestCase {
 		{ID: "C99-008", Category: "C99_SKILL", Title: "C Kit 资产与参考完整性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "SKILL-001", Category: "SKILL", Title: "全部启用 Skill Smoke 验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "verify", "--all", "--profile", "Smoke", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
-		{ID: "DOC-001", Category: "DOCSYNC", Title: "DocSync CI", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "docsync", "ci", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "DOC-002", Category: "DOCSYNC", Title: "DocSync all", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "docsync", "all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "DOC-001", Category: "DOCSYNC", Title: "DocSync CI", Node: nodeDocSync, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "docsync", "ci", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "DOC-002", Category: "DOCSYNC", Title: "DocSync all", Node: nodeDocSync, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "docsync", "all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "DOC-003", Category: "DOCSYNC", Title: "DocSync release", Severity: Required, Profiles: []string{"release"}, Kind: "command", Command: []string{bin, "docsync", "release", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "DOC-004", Category: "DOCSYNC", Title: "文档索引一致性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "DOC-004", Category: "DOCSYNC", Title: "文档索引一致性", Node: nodeDocSync, Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
-		{ID: "LIFE-001", Category: "LIFECYCLE", Title: "kit registry 结构", Severity: Required, Profiles: allProfiles(), Kind: "static"},
-		{ID: "LIFE-002", Category: "LIFECYCLE", Title: "kit manifest 存在性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
-		{ID: "LIFE-003", Category: "LIFECYCLE", Title: "lifecycle install plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-004", Category: "LIFECYCLE", Title: "lifecycle update plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "update", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-005", Category: "LIFECYCLE", Title: "lifecycle uninstall plan", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "uninstall", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
-		{ID: "LIFE-006", Category: "LIFECYCLE", Title: "lifecycle rollback 只读契约", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "rollback", "--scope", "kit", "--help"}},
-		{ID: "LIFE-007", Category: "LIFECYCLE", Title: "kit lifecycle 结构验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "kit", "verify", "--all", "--profile", "Lifecycle", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-001", Category: "LIFECYCLE", Title: "kit registry 结构", Node: nodeLifecycleReadonly, Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "LIFE-002", Category: "LIFECYCLE", Title: "kit manifest 存在性", Node: nodeLifecycleReadonly, Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "LIFE-003", Category: "LIFECYCLE", Title: "lifecycle install plan", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-004", Category: "LIFECYCLE", Title: "lifecycle update plan", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "update", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-005", Category: "LIFECYCLE", Title: "lifecycle uninstall plan", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "uninstall", "--scope", "kit", "--all", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "LIFE-006", Category: "LIFECYCLE", Title: "lifecycle rollback 只读契约", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "rollback", "--scope", "kit", "--help"}},
+		{ID: "LIFE-007", Category: "LIFECYCLE", Title: "kit lifecycle 结构验证", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "kit", "verify", "--all", "--profile", "Lifecycle", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
 		{ID: "MCP-001", Category: "MCP", Title: "MCP registry inventory", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "mcp", "list", "--json"}, ExpectJSON: true},
 
@@ -463,22 +491,22 @@ func Registry(cfg Config) []TestCase {
 		{ID: "FREEZE-003", Category: "FREEZE", Title: "validation Receipt 权威唯一", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
 		{ID: "GIT-001", Category: "GIT_GOVERNANCE", Title: "工作区状态", Severity: WarnOnly, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"git", "status", "--short"}},
-		{ID: "GIT-002", Category: "GIT_GOVERNANCE", Title: "hooks verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "hooks", "--json"}, ExpectJSON: true},
-		{ID: "GIT-003", Category: "GIT_GOVERNANCE", Title: "repo-text verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "repo-text", "--json"}, ExpectJSON: true},
-		{ID: "GIT-004", Category: "GIT_GOVERNANCE", Title: "release-notes verify", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "release-notes", "--json"}, ExpectJSON: true},
-		{ID: "GIT-005", Category: "GIT_GOVERNANCE", Title: "governance lint", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "lint", "--json"}, ExpectJSON: true},
-		{ID: "GIT-006", Category: "GIT_GOVERNANCE", Title: "tag audit", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "tag", "audit", "--json"}, ExpectJSON: true},
-		{ID: "GIT-007", Category: "GIT_GOVERNANCE", Title: ".gitattributes 策略", Severity: Required, Profiles: allProfiles(), Kind: "static"},
-		{ID: "GIT-008", Category: "GIT_GOVERNANCE", Title: "repository layout", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "layout", "--json"}, ExpectJSON: true},
-		{ID: "GIT-009", Category: "GIT_GOVERNANCE", Title: "reuse governance", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "reuse", "--json"}, ExpectJSON: true},
+		{ID: "GIT-002", Category: "GIT_GOVERNANCE", Title: "hooks verify", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "hooks", "--json"}, ExpectJSON: true},
+		{ID: "GIT-003", Category: "GIT_GOVERNANCE", Title: "repo-text verify", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "repo-text", "--json"}, ExpectJSON: true},
+		{ID: "GIT-004", Category: "GIT_GOVERNANCE", Title: "release-notes verify", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "release-notes", "--json"}, ExpectJSON: true},
+		{ID: "GIT-005", Category: "GIT_GOVERNANCE", Title: "governance lint", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "lint", "--json"}, ExpectJSON: true},
+		{ID: "GIT-006", Category: "GIT_GOVERNANCE", Title: "tag audit", Node: nodeGovernance, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "tag", "audit", "--json"}, ExpectJSON: true},
+		{ID: "GIT-007", Category: "GIT_GOVERNANCE", Title: ".gitattributes 策略", Node: nodeGovernance, Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "GIT-008", Category: "GIT_GOVERNANCE", Title: "repository layout", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "layout", "--json"}, ExpectJSON: true},
+		{ID: "GIT-009", Category: "GIT_GOVERNANCE", Title: "reuse governance", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "reuse", "--json"}, ExpectJSON: true},
 
 		{ID: "PWSH-001", Category: "PWSH_BOUNDARY", Title: "PowerShell inventory", Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "doctor", "pwsh", "--json"}, ExpectJSON: true},
 		{ID: "PWSH-002", Category: "PWSH_BOUNDARY", Title: "PowerShell budget", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "doctor", "pwsh-budget", "--json"}, ExpectJSON: true},
 		{ID: "PWSH-003", Category: "PWSH_BOUNDARY", Title: "默认入口不经 PowerShell 编排", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "HEALTH-001", Category: "REPO_HEALTH", Title: "doctor performance probes", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "doctor", "perf", "--json"}, ExpectJSON: true},
 
-		{ID: "RC-001", Category: "REPO_CONTEXT", Title: "repo-context 扫描与结构验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "verify", "--scope", "repo-context", "--json"}, ExpectJSON: true},
-		{ID: "RC-002", Category: "REPO_CONTEXT", Title: "repo-context 生成计划", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "repo-context", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "RC-001", Category: "REPO_CONTEXT", Title: "repo-context 扫描与结构验证", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "verify", "--scope", "repo-context", "--json"}, ExpectJSON: true},
+		{ID: "RC-002", Category: "REPO_CONTEXT", Title: "repo-context 生成计划", Node: nodeLifecycleReadonly, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "lifecycle", "plan", "--action", "install", "--scope", "repo-context", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
 		{ID: "ADR-001", Category: "ADR_REVIEW", Title: "新 Primitive ADR 含 §12 自评", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 

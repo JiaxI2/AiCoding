@@ -344,6 +344,7 @@
       "internal/repohealth",
       "internal/repoinit",
       "internal/tagpolicy",
+      "internal/testengine",
       "internal/validationevidence"
     ]
   },

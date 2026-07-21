@@ -91,6 +91,33 @@ func TestTreeOIDRejectsEmptyRevision(t *testing.T) {
 	}
 }
 
+func TestTreeEntriesReturnsTrackedObjectsWithoutWorktreeFiles(t *testing.T) {
+	repo := newGitRepo(t)
+	writeGitFile(t, repo, "z.txt", "z\n")
+	writeGitFile(t, repo, "nested/a.go", "package nested\n")
+	mustGit(t, repo, "add", ".")
+	mustGit(t, repo, "commit", "-m", "tree")
+	tree, err := TreeOID(repo, "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := TreeEntries(repo, tree)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 2 || entries[0].Path != "nested/a.go" || entries[1].Path != "z.txt" {
+		t.Fatalf("tree entries = %#v", entries)
+	}
+	for _, entry := range entries {
+		if entry.Mode != "100644" || entry.Type != "blob" || len(entry.OID) != 40 {
+			t.Fatalf("invalid tree entry = %#v", entry)
+		}
+	}
+	if _, err := TreeEntries(repo, ""); err == nil {
+		t.Fatal("TreeEntries accepted an empty tree")
+	}
+}
+
 func TestParsePushUpdates(t *testing.T) {
 	zero := strings.Repeat("0", 40)
 	local := strings.Repeat("a", 40)

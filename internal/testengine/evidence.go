@@ -15,7 +15,7 @@ import (
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
 
-const evidenceImplVersion = 4
+const evidenceImplVersion = 5
 
 var executeTestCases = runAll
 
@@ -25,6 +25,7 @@ var captureValidationSubject = func(repository validationevidence.Repository) (v
 
 type normalizedTestCase struct {
 	ID                 string   `json:"id"`
+	Node               string   `json:"node"`
 	Kind               string   `json:"kind"`
 	Command            []string `json:"command,omitempty"`
 	Severity           Severity `json:"severity"`
@@ -98,8 +99,12 @@ func RegistryDigest(cfg Config) (string, error) {
 		for index := range command {
 			command[index] = normalizeEvidenceCommand(cfg.Repo, command[index])
 		}
+		node, err := validationNode(testCase.Node)
+		if err != nil {
+			return "", fmt.Errorf("test case %s: %w", testCase.ID, err)
+		}
 		selected = append(selected, normalizedTestCase{
-			ID: testCase.ID, Kind: testCase.Kind, Command: command, Severity: testCase.Severity,
+			ID: testCase.ID, Node: node, Kind: testCase.Kind, Command: command, Severity: testCase.Severity,
 			TimeoutKind: testCase.TimeoutKind, ExpectJSON: testCase.ExpectJSON, OptionalPath: filepath.ToSlash(testCase.OptionalPath),
 			NetworkFailureWarn: testCase.NetworkFailureWarn,
 		})
@@ -163,6 +168,7 @@ func finalizeEvidence(
 	startSubject validationevidence.Subject,
 	startFingerprint validationevidence.Fingerprint,
 	decision validationevidence.ReuseDecision,
+	nodes nodeEvidencePlan,
 	report *Report,
 ) {
 	if report.ValidationCode == validationevidence.CodeReuseAuditMismatch {
@@ -195,6 +201,9 @@ func finalizeEvidence(
 		report.ValidationCode = validationevidence.CodeContentChangedDuringRun
 		report.ReusableReason = "validation content or semantics changed during execution"
 		return
+	}
+	if nodeErrors := nodes.publish(store, startSubject, report.Results); len(nodeErrors) > 0 {
+		report.Summary.ReceiptInvalidReason = appendReceiptInvalidReason(report.Summary.ReceiptInvalidReason, strings.Join(nodeErrors, "; "))
 	}
 	reusable, reason, code := receiptEligible(cfg, testCases, report.Results, startSubject)
 	if !reusable {

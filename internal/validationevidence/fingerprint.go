@@ -81,6 +81,32 @@ func (r Repository) Fingerprint(subject Subject, spec FingerprintSpec) (Fingerpr
 	return fingerprint, nil
 }
 
+// DeriveNodeFingerprint replaces the whole-tree identity input with one
+// testengine-owned node digest while preserving all validation semantics.
+func (r Repository) DeriveNodeFingerprint(base Fingerprint, node, inputDigest string) (Fingerprint, error) {
+	node = strings.ToLower(strings.TrimSpace(node))
+	if base.RepositoryID != r.repositoryID || base.Node != "" || !validFingerprint(base) {
+		return Fingerprint{}, fingerprintError("base fingerprint is not a whole-tree identity for this repository")
+	}
+	if !validNodeName(node) {
+		return Fingerprint{}, fingerprintError("node name is invalid")
+	}
+	if !validDigest(inputDigest) {
+		return Fingerprint{}, fingerprintError("node input digest is invalid")
+	}
+	fingerprint := base
+	fingerprint.Identity = ""
+	fingerprint.SubjectTreeOID = ""
+	fingerprint.Node = node
+	fingerprint.NodeInputDigest = inputDigest
+	payload, err := json.Marshal(fingerprint)
+	if err != nil {
+		return Fingerprint{}, fingerprintError(err.Error())
+	}
+	fingerprint.Identity = digestBytes(payload)
+	return fingerprint, nil
+}
+
 func (r Repository) configDigest(paths []string) (string, error) {
 	entries := make([]configEntry, 0, len(paths))
 	seen := make(map[string]struct{}, len(paths))

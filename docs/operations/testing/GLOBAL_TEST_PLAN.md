@@ -26,6 +26,7 @@
 - **CI 失败可诊断**：GitHub Actions 的 Smoke 与 `release-gate` 无论结论如何均上传本次 `test-results/` artifact，保留逐用例原始输出。
 - **验证绑定内容**：成功运行可把 PASS 结论绑定到 Git Tree 与验证语义；commit message amend 不失效，tracked/untracked/submodule 脏状态 fail-closed。
 - **复用可审计**：默认保持 `--reuse off`；`--reuse auto` 只显式启用。main 远端 `release-gate` 连续 3 次完成 off seed + `--verify-reuse` audit，并在独立切换提交引用三次 run URL 后，才允许晋级默认值。workflow 已接线不等于已跑绿。
+- **节点复用是私有加速层**：整树 Receipt miss 后可按 Registry 节点复用；节点 Receipt 不进入 alias、push gate 或公共 CLI 列表，整树 Receipt 仍是唯一外部凭证。
 - **工具链安全**：Full/Release 固定运行 Staticcheck v0.7.0 与 govulncheck v1.6.0；真实漏洞保持 REQUIRED，只有可识别的网络访问失败可降级为 WARN。
 - **race 降频不降级**：Full 的 GO-002 只跑 `impact-policy.json` 登记的并发包，GO-007 以 AST 门禁阻断漏登；Release 与每周 schedule 仍跑全仓 race。
 - **数据化输出**：统计总用例、通过、失败、告警、跳过、总耗时、各命令耗时。
@@ -62,11 +63,27 @@
 | `reason` | 判定原因 |
 | `json_valid` | 是否成功解析 JSON 输出 |
 | `profile` | smoke/full/release/manual |
+| `TestCase.Node` | Registry 内部节点名；空值保守归一为 `repo`，不新增报告 schema 字段 |
 | `executionMode` | `executed` 或 `reused`；不是新的结论状态 |
 | `validationIdentity` | Tree、profile、plan、engine、config、toolchain、options 的内容身份 |
 | `resultsDigest` | 当前 profile 选中用例的排序 `(id,status)` 摘要；Receipt 与审计逐用例核对 |
 | `reusable` | 本次报告能否生成或继续引用 PASS Receipt |
 | `reusableReason` | 不可复用的稳定原因，例如 dirty 或执行期间内容漂移 |
+
+### 4.1 节点 Receipt 分组
+
+| 节点 | Registry 用例 | 输入范围与失效语义 |
+|---|---|---|
+| `go` | GO-001…006 | `*.go`、`go.mod`、`go.sum`、任意 `testdata/`；Go 输入变化即失效 |
+| `docsync` | DOC-001/002/004 | 根 README/CHANGELOG、`docs/`、DocSync/Test Registry/报告/CLI 实现及 DocSync kit 配置 |
+| `governance` | GIT-002…009 | Go、根文档、`.github/`、`docs/`、`config/` 与根治理文件 |
+| `lifecycle-readonly` | LIFE-001…007、RC-001/002 | Go、`config/`、`CodingKit/` 与 `Taskfile.yml` |
+| `repo` | 所有未标注用例 | 全部 tracked Tree entry；任何变化都失效 |
+
+路径集合允许重叠，优先保证不出现静默假 PASS。每个可复用主体只执行一次
+`git ls-tree -r -z --full-tree`，再从 mode/type/OID/path 批量派生所有节点摘要，不读取工作区文件。
+dirty subject 完全禁用节点查询与发布。`--reuse off` 不查询节点，但成功执行后可发布 PASS 节点
+Receipt；`--reuse auto` 可部分复用；`--verify-reuse` 始终真实执行并逐节点核对，失败节点永不缓存。
 
 ## 5. 通过标准
 

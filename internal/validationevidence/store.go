@@ -17,6 +17,22 @@ var reportNames = []string{"report.md", "results.json", "summary.json"}
 // Put atomically retains PASS evidence. Existing evidence for the same identity
 // stays immutable; concurrent writers converge on the first complete report.
 func (r Repository) Put(receipt Receipt, reports ReportBundle) (Receipt, error) {
+	if receipt.Fingerprint.Node != "" {
+		return Receipt{}, fingerprintError("whole-tree Receipt cannot use a node fingerprint")
+	}
+	return r.put(receipt, reports)
+}
+
+// PutNode atomically retains private node evidence in the same fail-closed
+// store without exposing it through List or commit aliases.
+func (r Repository) PutNode(receipt Receipt, reports ReportBundle) (Receipt, error) {
+	if receipt.Fingerprint.Node == "" {
+		return Receipt{}, fingerprintError("node Receipt requires a node fingerprint")
+	}
+	return r.put(receipt, reports)
+}
+
+func (r Repository) put(receipt Receipt, reports ReportBundle) (Receipt, error) {
 	if !validFingerprint(receipt.Fingerprint) || receipt.Fingerprint.RepositoryID != r.repositoryID || receipt.ValidationIdentity != receipt.Fingerprint.Identity {
 		return Receipt{}, fingerprintError("receipt fingerprint does not match its validation identity")
 	}
@@ -31,13 +47,14 @@ func (r Repository) Put(receipt Receipt, reports ReportBundle) (Receipt, error) 
 	}
 	r.putMu.Lock()
 	defer r.putMu.Unlock()
-	if existing, _, err := r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity); err == nil {
+	node := receipt.Fingerprint.Node
+	if existing, _, err := r.readStoredReceipt(receipt.Fingerprint.Profile, node, receipt.ValidationIdentity); err == nil {
 		if existing.ResultsDigest != receipt.ResultsDigest {
 			return Receipt{}, &Error{Code: CodeReuseAuditMismatch, Message: "executed per-case statuses do not match the existing Receipt", RequiredAction: "run with --verify-reuse and investigate the changed case statuses"}
 		}
 		return existing, nil
 	}
-	artifacts, err := r.writeReportDir(receipt.ValidationIdentity, reports)
+	artifacts, err := r.writeReportDir(receipt.ValidationIdentity, node, reports)
 	if err != nil {
 		return Receipt{}, err
 	}
@@ -50,10 +67,14 @@ func (r Repository) Put(receipt Receipt, reports ReportBundle) (Receipt, error) 
 		return Receipt{}, &Error{Code: CodeStoreError, Message: err.Error(), RequiredAction: "rerun validation"}
 	}
 	encoded = append(encoded, '\n')
-	if err := atomicWriteFile(r.receiptPath(receipt.Fingerprint.Profile, receipt.ValidationIdentity), encoded); err != nil {
+	path := r.receiptPath(receipt.Fingerprint.Profile, receipt.ValidationIdentity)
+	if node != "" {
+		path = r.nodeReceiptPath(receipt.Fingerprint.Profile, node, receipt.ValidationIdentity)
+	}
+	if err := atomicWriteFile(path, encoded); err != nil {
 		return Receipt{}, &Error{Code: CodeStoreError, Message: fmt.Sprintf("write Receipt: %v", err), RequiredAction: "check Git common-dir permissions and rerun validation"}
 	}
-	stored, _, err := r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity)
+	stored, _, err := r.readStoredReceipt(receipt.Fingerprint.Profile, node, receipt.ValidationIdentity)
 	return stored, err
 }
 
@@ -122,6 +143,11 @@ func (r Repository) Clean(profile string) (int, error) {
 		if err := r.cleanAliasDir(selected); err != nil {
 			return removed, err
 		}
+		nodeRemoved, err := r.cleanNodeReceipts(selected)
+		if err != nil {
+			return removed, err
+		}
+		removed += nodeRemoved
 		dir := filepath.Join(r.root, "receipts", selected)
 		entries, err := os.ReadDir(dir)
 		if os.IsNotExist(err) {
@@ -149,6 +175,46 @@ func (r Repository) Clean(profile string) (int, error) {
 	return removed, nil
 }
 
+func (r Repository) cleanNodeReceipts(profile string) (int, error) {
+	root := filepath.Join(r.root, "receipts", profile, "nodes")
+	nodes, err := os.ReadDir(root)
+	if os.IsNotExist(err) {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, &Error{Code: CodeStoreError, Message: err.Error(), RequiredAction: "check validation store permissions"}
+	}
+	removed := 0
+	for _, nodeEntry := range nodes {
+		node := nodeEntry.Name()
+		if !nodeEntry.IsDir() || !validNodeName(node) {
+			continue
+		}
+		dir := filepath.Join(root, node)
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return removed, &Error{Code: CodeStoreError, Message: err.Error(), RequiredAction: "check validation store permissions"}
+		}
+		for _, entry := range entries {
+			if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+				continue
+			}
+			hexID := strings.TrimSuffix(entry.Name(), ".json")
+			if !validHexDigest(hexID) {
+				continue
+			}
+			if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil && !os.IsNotExist(err) {
+				return removed, &Error{Code: CodeStoreError, Message: err.Error(), RequiredAction: "retry validation clean"}
+			}
+			removed++
+			r.removeReportDirFor("sha256:"+hexID, node)
+		}
+		_ = os.Remove(dir)
+	}
+	_ = os.Remove(root)
+	return removed, nil
+}
+
 func (r Repository) cleanAliasDir(profile string) error {
 	dir := filepath.Join(r.root, "aliases", profile)
 	entries, err := os.ReadDir(dir)
@@ -171,26 +237,38 @@ func (r Repository) cleanAliasDir(profile string) error {
 }
 
 func (r Repository) readReceipt(profile, identity string) (Receipt, ReportBundle, error) {
+	return r.readStoredReceipt(profile, "", identity)
+}
+
+func (r Repository) readNodeReceipt(profile, node, identity string) (Receipt, ReportBundle, error) {
+	return r.readStoredReceipt(profile, node, identity)
+}
+
+func (r Repository) readStoredReceipt(profile, node, identity string) (Receipt, ReportBundle, error) {
 	var receipt Receipt
-	if !validProfile(profile) || !validDigest(identity) {
+	if !validProfile(profile) || !validDigest(identity) || node != "" && !validNodeName(node) {
 		return receipt, ReportBundle{}, invalidReceipt("validation identity is invalid")
 	}
-	raw, err := os.ReadFile(r.receiptPath(profile, identity))
+	path := r.receiptPath(profile, identity)
+	if node != "" {
+		path = r.nodeReceiptPath(profile, node, identity)
+	}
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return receipt, ReportBundle{}, err
 	}
 	if err := json.Unmarshal(raw, &receipt); err != nil {
 		return Receipt{}, ReportBundle{}, invalidReceipt("Receipt JSON is invalid")
 	}
-	bundle, err := r.validateReceipt(receipt, identity, profile)
+	bundle, err := r.validateReceipt(receipt, identity, profile, node)
 	if err != nil {
 		return Receipt{}, ReportBundle{}, err
 	}
 	return receipt, bundle, nil
 }
 
-func (r Repository) validateReceipt(receipt Receipt, identity, profile string) (ReportBundle, error) {
-	if receipt.SchemaVersion != receiptSchemaVersion || receipt.ValidationIdentity != identity || receipt.Fingerprint.Profile != profile || receipt.Fingerprint.RepositoryID != r.repositoryID || !validFingerprint(receipt.Fingerprint) || !validDigest(receipt.ResultsDigest) {
+func (r Repository) validateReceipt(receipt Receipt, identity, profile, node string) (ReportBundle, error) {
+	if receipt.SchemaVersion != receiptSchemaVersion || receipt.ValidationIdentity != identity || receipt.Fingerprint.Profile != profile || receipt.Fingerprint.Node != node || receipt.Fingerprint.RepositoryID != r.repositoryID || !validFingerprint(receipt.Fingerprint) || !validDigest(receipt.ResultsDigest) {
 		return ReportBundle{}, invalidReceipt("Receipt identity or schema is invalid")
 	}
 	if receipt.ReceiptID != receiptDigest(receipt) {
@@ -199,7 +277,7 @@ func (r Repository) validateReceipt(receipt Receipt, identity, profile string) (
 	if receipt.Conclusion != "PASS" || !receipt.Reusable || !receipt.Scope.IgnoredFilesOutOfScope {
 		return ReportBundle{}, invalidReceipt("Receipt is not reusable PASS evidence")
 	}
-	bundle, actual, err := r.readReportBundle(identity)
+	bundle, actual, err := r.readReportBundleFor(identity, node)
 	if err != nil {
 		return ReportBundle{}, invalidReceipt(err.Error())
 	}
@@ -209,7 +287,7 @@ func (r Repository) validateReceipt(receipt Receipt, identity, profile string) (
 	return bundle, nil
 }
 
-func (r Repository) writeReportDir(identity string, reports ReportBundle) ([]ReportArtifact, error) {
+func (r Repository) writeReportDir(identity, node string, reports ReportBundle) ([]ReportArtifact, error) {
 	contents := map[string][]byte{
 		"results.json": reports.ResultsJSON,
 		"summary.json": reports.SummaryJSON,
@@ -220,8 +298,8 @@ func (r Repository) writeReportDir(identity string, reports ReportBundle) ([]Rep
 			return nil, &Error{Code: CodeStoreError, Message: name + " is empty", RequiredAction: "write the complete test report before the Receipt"}
 		}
 	}
-	finalDir := r.reportDir(identity)
-	if artifacts, err := r.readReportArtifacts(identity); err == nil {
+	finalDir := r.reportDirFor(identity, node)
+	if artifacts, err := r.readReportArtifacts(identity, node); err == nil {
 		return artifacts, nil
 	}
 	if err := os.MkdirAll(filepath.Dir(finalDir), 0o755); err != nil {
@@ -240,7 +318,7 @@ func (r Repository) writeReportDir(identity string, reports ReportBundle) ([]Rep
 		artifacts = append(artifacts, ReportArtifact{Name: name, Digest: digestBytes(contents[name])})
 	}
 	if err := os.Rename(tempDir, finalDir); err != nil {
-		if existing, readErr := r.readReportArtifacts(identity); readErr == nil {
+		if existing, readErr := r.readReportArtifacts(identity, node); readErr == nil {
 			return existing, nil
 		}
 		return nil, &Error{Code: CodeStoreError, Message: fmt.Sprintf("publish report: %v", err), RequiredAction: "retry validation"}
@@ -248,13 +326,13 @@ func (r Repository) writeReportDir(identity string, reports ReportBundle) ([]Rep
 	return artifacts, nil
 }
 
-func (r Repository) readReportArtifacts(identity string) ([]ReportArtifact, error) {
-	_, artifacts, err := r.readReportBundle(identity)
+func (r Repository) readReportArtifacts(identity, node string) ([]ReportArtifact, error) {
+	_, artifacts, err := r.readReportBundleFor(identity, node)
 	return artifacts, err
 }
 
-func (r Repository) readReportBundle(identity string) (ReportBundle, []ReportArtifact, error) {
-	dir := r.reportDir(identity)
+func (r Repository) readReportBundleFor(identity, node string) (ReportBundle, []ReportArtifact, error) {
+	dir := r.reportDirFor(identity, node)
 	bundle := ReportBundle{}
 	artifacts := make([]ReportArtifact, 0, len(reportNames))
 	for _, name := range reportNames {
@@ -276,7 +354,11 @@ func (r Repository) readReportBundle(identity string) (ReportBundle, []ReportArt
 }
 
 func (r Repository) removeReportDir(identity string) {
-	dir := r.reportDir(identity)
+	r.removeReportDirFor(identity, "")
+}
+
+func (r Repository) removeReportDirFor(identity, node string) {
+	dir := r.reportDirFor(identity, node)
 	for _, name := range reportNames {
 		_ = os.Remove(filepath.Join(dir, name))
 	}
@@ -313,8 +395,23 @@ func (r Repository) receiptPath(profile, identity string) string {
 	return filepath.Join(r.root, "receipts", profile, digestHex(identity)+".json")
 }
 
+func (r Repository) nodeReceiptPath(profile, node, identity string) string {
+	return filepath.Join(r.root, "receipts", profile, "nodes", node, digestHex(identity)+".json")
+}
+
 func (r Repository) reportDir(identity string) string {
 	return filepath.Join(r.root, "reports", digestHex(identity))
+}
+
+func (r Repository) nodeReportDir(identity string) string {
+	return filepath.Join(r.root, "node-reports", digestHex(identity))
+}
+
+func (r Repository) reportDirFor(identity, node string) string {
+	if node != "" {
+		return r.nodeReportDir(identity)
+	}
+	return r.reportDir(identity)
 }
 
 func receiptDigest(receipt Receipt) string {
@@ -336,7 +433,14 @@ func sameArtifacts(a, b []ReportArtifact) bool {
 }
 
 func validFingerprint(fingerprint Fingerprint) bool {
-	if !validDigest(fingerprint.Identity) || !validDigest(fingerprint.RepositoryID) || !validTreeOID(fingerprint.SubjectTreeOID) || !validProfile(fingerprint.Profile) {
+	if !validDigest(fingerprint.Identity) || !validDigest(fingerprint.RepositoryID) || !validProfile(fingerprint.Profile) {
+		return false
+	}
+	if fingerprint.Node == "" {
+		if !validTreeOID(fingerprint.SubjectTreeOID) || fingerprint.NodeInputDigest != "" {
+			return false
+		}
+	} else if fingerprint.SubjectTreeOID != "" || !validNodeName(fingerprint.Node) || !validDigest(fingerprint.NodeInputDigest) {
 		return false
 	}
 	for _, digest := range []string{fingerprint.ValidationPlanDigest, fingerprint.EngineSemanticDigest, fingerprint.ConfigDigest, fingerprint.ToolchainDigest, fingerprint.OptionsDigest} {
@@ -348,6 +452,19 @@ func validFingerprint(fingerprint Fingerprint) bool {
 	copy.Identity = ""
 	payload, _ := json.Marshal(copy)
 	return fingerprint.Identity == digestBytes(payload)
+}
+
+func validNodeName(node string) bool {
+	if len(node) < 1 || len(node) > 32 {
+		return false
+	}
+	for index, char := range node {
+		if char >= 'a' && char <= 'z' || char >= '0' && char <= '9' && index > 0 || (char == '-' || char == '_') && index > 0 {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func validProfile(profile string) bool {

@@ -32,6 +32,14 @@ type PushUpdate struct {
 	RemoteOID string `json:"remoteOID"`
 }
 
+// TreeEntry is one tracked object from a recursive Git tree listing.
+type TreeEntry struct {
+	Mode string `json:"mode"`
+	Type string `json:"type"`
+	OID  string `json:"oid"`
+	Path string `json:"path"`
+}
+
 func Run(repo string, args ...string) (string, error) {
 	cmd := exec.Command("git", args...)
 	if repo != "" {
@@ -140,6 +148,38 @@ func TreeOID(repo, rev string) (string, error) {
 		return "", fmt.Errorf("git tree revision is empty")
 	}
 	return runOID(repo, "rev-parse", rev+"^{tree}")
+}
+
+// TreeEntries returns every tracked blob and gitlink in one deterministic
+// ls-tree invocation. File content is never read from the worktree.
+func TreeEntries(repo, tree string) ([]TreeEntry, error) {
+	tree = strings.TrimSpace(tree)
+	if tree == "" {
+		return nil, fmt.Errorf("git tree object id is empty")
+	}
+	out, err := Run(repo, "ls-tree", "-r", "-z", "--full-tree", tree)
+	if err != nil {
+		return nil, err
+	}
+	entries := make([]TreeEntry, 0)
+	for _, record := range strings.Split(out, "\x00") {
+		if record == "" {
+			continue
+		}
+		tab := strings.IndexByte(record, '\t')
+		if tab < 1 || tab == len(record)-1 {
+			return nil, fmt.Errorf("parse git ls-tree record %q", record)
+		}
+		metadata := strings.Fields(record[:tab])
+		if len(metadata) != 3 || !validObjectID(metadata[2]) {
+			return nil, fmt.Errorf("parse git ls-tree metadata %q", record[:tab])
+		}
+		entries = append(entries, TreeEntry{
+			Mode: metadata[0], Type: metadata[1], OID: strings.ToLower(metadata[2]), Path: record[tab+1:],
+		})
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Path < entries[j].Path })
+	return entries, nil
 }
 
 // WriteTree writes the current index as a Git tree object and returns its OID.

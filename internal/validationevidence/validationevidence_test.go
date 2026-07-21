@@ -21,7 +21,7 @@ func TestPackageBoundaryAndPublicAPIRemainSmall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	exported := make([]string, 0, 11)
+	exported := make([]string, 0, 14)
 	for _, path := range files {
 		if strings.HasSuffix(path, "_test.go") {
 			continue
@@ -48,10 +48,10 @@ func TestPackageBoundaryAndPublicAPIRemainSmall(t *testing.T) {
 		}
 	}
 	sort.Strings(exported)
-	if len(exported) > 11 {
-		t.Fatalf("validationevidence public API grew beyond 10 operations plus Error(): %v", exported)
+	if len(exported) > 14 {
+		t.Fatalf("validationevidence public API grew beyond 13 operations plus Error(): %v", exported)
 	}
-	for _, required := range []string{"BindCommit", "Capture", "Check", "Clean", "Fingerprint", "GatePush", "List", "LoadPolicy", "Open", "Put"} {
+	for _, required := range []string{"BindCommit", "Capture", "Check", "CheckNode", "Clean", "DeriveNodeFingerprint", "Fingerprint", "GatePush", "List", "LoadPolicy", "Open", "Put", "PutNode"} {
 		index := sort.SearchStrings(exported, required)
 		if index == len(exported) || exported[index] != required {
 			t.Fatalf("validationevidence public API is missing %s: %v", required, exported)
@@ -266,6 +266,131 @@ func TestDirtyAndChangedContentInvalidateReuse(t *testing.T) {
 	}
 	if changedFingerprint.Identity == fingerprint.Identity || store.Check(indexSubject, changedFingerprint).Hit {
 		t.Fatal("changed tracked content reused the previous Receipt")
+	}
+}
+
+func TestNodeReceiptReusesAcrossWholeTreesButNotDirtySubjects(t *testing.T) {
+	repo := newEvidenceRepo(t)
+	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
+	mustEvidenceGit(t, repo, "add", "tracked.txt")
+	mustEvidenceGit(t, repo, "commit", "-m", "initial")
+	store, firstSubject, firstWhole := evidenceFixture(t, repo, TargetHead)
+	inputDigest := fixtureDigest("go-node-input")
+	firstNode, err := store.DeriveNodeFingerprint(firstWhole, "go", inputDigest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	putNodeFixture(t, store, firstNode)
+	if decision := store.CheckNode(firstSubject, firstNode); !decision.Hit || decision.Receipt == nil || decision.Receipt.Fingerprint.SubjectTreeOID != "" {
+		t.Fatalf("fresh node Receipt did not hit: %#v", decision)
+	}
+
+	listed, err := store.List("smoke")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listed) != 0 {
+		t.Fatalf("private node Receipt leaked through List: %#v", listed)
+	}
+	if _, err := os.Stat(store.nodeReportDir(firstNode.Identity)); err != nil {
+		t.Fatalf("private node report was not retained separately: %v", err)
+	}
+	if err := store.BindCommit("HEAD", Receipt{ValidationIdentity: firstNode.Identity, Fingerprint: firstNode}); err == nil {
+		t.Fatal("BindCommit accepted private node evidence")
+	}
+
+	writeEvidenceFile(t, repo, "tracked.txt", "two\n")
+	mustEvidenceGit(t, repo, "commit", "-am", "unrelated tree change")
+	_, secondSubject, secondWhole := evidenceFixture(t, repo, TargetHead)
+	secondNode, err := store.DeriveNodeFingerprint(secondWhole, "go", inputDigest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if secondWhole.Identity == firstWhole.Identity || secondNode.Identity != firstNode.Identity {
+		t.Fatalf("node identity did not isolate its input: whole=%s/%s node=%s/%s", firstWhole.Identity, secondWhole.Identity, firstNode.Identity, secondNode.Identity)
+	}
+	if decision := store.CheckNode(secondSubject, secondNode); !decision.Hit {
+		t.Fatalf("unchanged node input did not reuse across whole trees: %#v", decision)
+	}
+
+	writeEvidenceFile(t, repo, "untracked.txt", "dirty\n")
+	dirtySubject, err := store.Capture(TargetHead)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if decision := store.CheckNode(dirtySubject, secondNode); decision.Hit || decision.Code != CodeSubjectNotReusable {
+		t.Fatalf("dirty subject reused node evidence: %#v", decision)
+	}
+	changedNode, err := store.DeriveNodeFingerprint(secondWhole, "go", fixtureDigest("changed-go-input"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changedNode.Identity == secondNode.Identity {
+		t.Fatal("changed node input did not change node identity")
+	}
+}
+
+func TestNodeReceiptTamperFailsClosedAndCleanRepairsStore(t *testing.T) {
+	repo := newEvidenceRepo(t)
+	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
+	mustEvidenceGit(t, repo, "add", "tracked.txt")
+	mustEvidenceGit(t, repo, "commit", "-m", "initial")
+	store, subject, whole := evidenceFixture(t, repo, TargetHead)
+	node, err := store.DeriveNodeFingerprint(whole, "docsync", fixtureDigest("docs-node-input"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	putNodeFixture(t, store, node)
+	if err := os.WriteFile(filepath.Join(store.nodeReportDir(node.Identity), "report.md"), []byte("tampered"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if decision := store.CheckNode(subject, node); decision.Hit || decision.Code != CodeReceiptInvalid {
+		t.Fatalf("tampered node report did not fail closed: %#v", decision)
+	}
+	removed, err := store.Clean("smoke")
+	if err != nil || removed != 1 {
+		t.Fatalf("Clean(smoke) removed %d node Receipts: %v", removed, err)
+	}
+	if _, err := os.Stat(store.nodeReportDir(node.Identity)); !os.IsNotExist(err) {
+		t.Fatalf("node report survived profile clean: %v", err)
+	}
+	if decision := store.CheckNode(subject, node); decision.Hit || decision.Code != CodeReceiptMiss {
+		t.Fatalf("cleaned node evidence remained reusable: %#v", decision)
+	}
+	putNodeFixture(t, store, node)
+	path := store.nodeReceiptPath(node.Profile, node.Node, node.Identity)
+	if err := os.WriteFile(path, []byte("{corrupt"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if decision := store.CheckNode(subject, node); decision.Hit || decision.Code != CodeReceiptInvalid {
+		t.Fatalf("corrupt node Receipt did not fail closed: %#v", decision)
+	}
+	if removed, err := store.Clean("smoke"); err != nil || removed != 1 {
+		t.Fatalf("clean did not repair corrupt node Receipt: removed=%d err=%v", removed, err)
+	}
+}
+
+func TestWholeAndNodeStoreOperationsRejectWrongFingerprintKind(t *testing.T) {
+	repo := newEvidenceRepo(t)
+	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
+	mustEvidenceGit(t, repo, "add", "tracked.txt")
+	mustEvidenceGit(t, repo, "commit", "-m", "initial")
+	store, _, whole := evidenceFixture(t, repo, TargetHead)
+	node, err := store.DeriveNodeFingerprint(whole, "repo", fixtureDigest("repo-node-input"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wholeReceipt := Receipt{ValidationIdentity: whole.Identity, Fingerprint: whole, Conclusion: "PASS", ResultsDigest: fixtureDigest("results"), Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}
+	nodeReceipt := Receipt{ValidationIdentity: node.Identity, Fingerprint: node, Conclusion: "PASS", ResultsDigest: fixtureDigest("results"), Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}
+	if _, err := store.Put(nodeReceipt, fixtureReports()); err == nil {
+		t.Fatal("Put accepted a node fingerprint")
+	}
+	if _, err := store.PutNode(wholeReceipt, fixtureReports()); err == nil {
+		t.Fatal("PutNode accepted a whole-tree fingerprint")
+	}
+	nodeReceipt.Conclusion = "FAIL"
+	if _, err := store.PutNode(nodeReceipt, fixtureReports()); err == nil {
+		t.Fatal("PutNode cached a failing result")
 	}
 }
 
@@ -620,6 +745,15 @@ func fixtureReports() ReportBundle {
 func putFixture(t *testing.T, store Repository, fingerprint Fingerprint) Receipt {
 	t.Helper()
 	receipt, err := store.Put(Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "PASS", ResultsDigest: fixtureDigest("results"), Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}, fixtureReports())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return receipt
+}
+
+func putNodeFixture(t *testing.T, store Repository, fingerprint Fingerprint) Receipt {
+	t.Helper()
+	receipt, err := store.PutNode(Receipt{ValidationIdentity: fingerprint.Identity, Fingerprint: fingerprint, Conclusion: "PASS", ResultsDigest: fixtureDigest("node-results"), Reusable: true, Scope: Scope{IgnoredFilesOutOfScope: true}}, fixtureReports())
 	if err != nil {
 		t.Fatal(err)
 	}

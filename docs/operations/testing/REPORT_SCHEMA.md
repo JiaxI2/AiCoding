@@ -93,8 +93,10 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 ```
 
 `slowest_cases` 是本次非 SKIP 用例按 `duration_ms` 降序（同耗时按 ID）排列的 Top 5。
-节点级 Receipt 落地前，`cache_hit_ratio` 是整体值：新鲜执行为 `0`，整份 Receipt 复用为
-`1`。`receipt_invalid_reason` 只在请求复用但 Receipt miss/invalid 时出现。
+`cache_hit_ratio` 按当前 profile 选中的 TestCase 计权：分母是选中用例数，分子是由整树或节点
+Receipt 提供状态的用例数。新鲜执行、`--reuse off`、`--force` 和 `--verify-reuse` 为 `0`；整树
+命中为 `1`；节点部分命中为 `reused cases / selected cases` 的小数。
+`receipt_invalid_reason` 只在请求复用但整树或节点 Receipt miss/invalid 时出现。
 
 ## 2. 测试 `results.json`
 
@@ -141,11 +143,18 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 `data.steps[*].elapsed_ms` 始终存在（包括小于 1 ms 时的 `0`），用于拆分 clone、submodule、
 overlay、build 与 profile verify。
 
-`executionMode` 只使用 `executed` 或 `reused`；复用不引入新的测试结论，`conclusion` 仍使用
-既有 `PASS`、`PASS_WITH_WARNINGS`、`FAIL`。`receiptID` 仅在存在完整可复用 PASS Receipt 时
-出现。`subjectMode` 使用 `head`、`index`、`dirty`；`dirty` 永远不能生成 Receipt。
+`executionMode` 只使用 `executed` 或 `reused`：只要任一选中用例真实执行就是 `executed`；整树
+命中或全部选中用例均由节点 Receipt 提供时才是 `reused`。复用不引入新的测试结论，
+`conclusion` 仍使用既有 `PASS`、`PASS_WITH_WARNINGS`、`FAIL`。`receiptID` 只指向聚合后的完整
+PASS 整树 Receipt；节点 Receipt 不通过报告、alias 或 push gate 暴露。`subjectMode` 使用
+`head`、`index`、`dirty`；`dirty` 永远不能生成 Receipt。
 `validationCode` 是可选的稳定机器码，用于表达命中、主体不可复用、执行期内容漂移、存储错误
 或复用审计不一致；调用者不能靠解析 `reusableReason` 文本做分支。
+
+节点命中的 Result 保持 Registry 顺序和原 `id/category/title/severity/command/profile`，状态来自
+完整性校验后的节点私有报告，`reason` 固定为 `reused-from-node:<node>`；其
+`duration_ms/exit_code` 为 `0`，不伪造 queue/setup/execute/persist 或 stdout/stderr/meta 路径。
+部分命中与真实执行结果合并后，仍由同一 summary、`resultsDigest` 和整树 Receipt 聚合。
 
 `resultsDigest` 对当前 profile 选中的 TestCase `(id,status)` 排序后生成，不包含耗时、日志路径或
 其他 profile 的未选用例。Receipt schema v2 固定保存该摘要；复用读取会从留存报告重新计算，

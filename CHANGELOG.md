@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(validationevidence)**: 完成 TODO 0017：在唯一 Test Registry 内以 `go`、`docsync`、`governance`、`lifecycle-readonly` 四个粗粒度节点和保守 `repo` 默认域实现私有节点 Receipt；单次 `git ls-tree` 从 tracked OID 派生输入，不读工作区文件。整树 Receipt 仍是 alias/push gate/报告的唯一外部凭证，默认复用仍为 off；README-only 探针复用 15/63 个 Full 用例，墙钟由 `244897 ms` 降到 `12853 ms`（94.8%），Go-only 反向失效与手工篡改审计均通过。 / Completes TODO 0017 with four coarse private node Receipts plus a conservative repo fallback, one tracked-tree listing, unchanged whole-Receipt authority and reuse-off default, a 94.8% README-only Full reduction, correct Go invalidation, and fail-closed tamper auditing.
+
 - **docs(architecture)**: 完成 TODO 0025：以 README 五层总图和 Primitive、Domain Capability、Kit、Product Workflow 四张分层 Mermaid 图替换重复/线性表达；新增 DOCS-006，从既有 typed command catalog AST 校验图内命令并强制每个载体恰好一图、节点不超过 20。五图由 Mermaid CLI 真实渲染，链接审计 286/286 通过；同时修正两条既有 TODO 相对链接，并将已返回 500 的无凭据 Star History 图片降为仍可达的页面入口。 / Completes TODO 0025 with one five-layer overview and four bounded Mermaid views, a typed-catalog-backed DOCS-006 command and node-budget gate, real rendering evidence, a clean link audit, and removal of the broken anonymous Star History image embed while preserving its page link.
 
 - **feat(capability)**: 完成 TODO 0023：以 `config/internal-capabilities.json` 唯一登记 28 个 `internal/` 一级包，新增只读 `capability list/describe` 与受限 `index --write`，从 typed HelpForm 校验公共入口；`governance capabilities` 阻断孤儿包、缺文档和 stable 无验证，DocSync 阻断 README/`docs/CAPABILITIES.md` 确定性生成区漂移，并由 CAP-001 纳入唯一测试引擎。 / Completes TODO 0023 with one internal-capability registry, typed-catalog-backed discovery, deterministic whitespace-clean index generation, orphan and documentation governance, DocSync drift detection, and the CAP-001 global gate.

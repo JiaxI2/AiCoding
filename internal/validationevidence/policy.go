@@ -94,7 +94,7 @@ func (r Repository) BindCommit(commitOID string, receipt Receipt) error {
 		commitOID = resolved
 	}
 	commitOID = strings.ToLower(strings.TrimSpace(commitOID))
-	if !validTreeOID(commitOID) || !validFingerprint(receipt.Fingerprint) || receipt.ValidationIdentity != receipt.Fingerprint.Identity || receipt.Fingerprint.RepositoryID != r.repositoryID {
+	if !validTreeOID(commitOID) || receipt.Fingerprint.Node != "" || !validFingerprint(receipt.Fingerprint) || receipt.ValidationIdentity != receipt.Fingerprint.Identity || receipt.Fingerprint.RepositoryID != r.repositoryID {
 		return fingerprintError("commit alias identity is invalid")
 	}
 	stored, _, err := r.readReceipt(receipt.Fingerprint.Profile, receipt.ValidationIdentity)
