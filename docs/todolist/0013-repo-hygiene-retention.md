@@ -1,6 +1,6 @@
 # TODO 0013: 仓库卫生（保留策略 + 统一清理面，扩展现有 cache 域）
 
-Status: Planned
+Status: Done
 Verify: bin/aicoding.exe cache status --json 列出全部生成物类别及大小；cache clean --scope test-results 后保留最近 N 份且失败报告不被删
 
 > 实测欠账（2026-07-20，主仓库 F:\Study\AI\AiCoding）：

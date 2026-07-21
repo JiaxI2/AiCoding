@@ -298,6 +298,7 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 			if ctx.Err() != nil {
 				return reused, ctx.Err()
 			}
+			_ = retainSuccessfulTestResults(cfg.Repo, reused)
 			return reused, nil
 		}
 		reuseDecision.Hit = false
@@ -343,6 +344,7 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 	if ctx.Err() != nil {
 		return testReport, ctx.Err()
 	}
+	_ = retainSuccessfulTestResults(cfg.Repo, testReport)
 	return testReport, nil
 }
 

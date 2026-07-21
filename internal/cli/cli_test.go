@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/cache"
 	"github.com/JiaxI2/AiCoding/internal/cstyle"
 	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/report"
@@ -175,6 +177,33 @@ func TestMainSwitchRoutesNewCommands(t *testing.T) {
 	}
 }
 
+func TestRunCacheCleanParsesRetentionFlags(t *testing.T) {
+	repo := t.TempDir()
+	for index := 0; index < 8; index++ {
+		mustWrite(t, filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index), "summary.json"), `{"conclusion":"PASS"}`)
+		path := filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index), "summary.json")
+		stamp := time.Date(2026, 7, 21, 0, index, 0, 0, time.UTC)
+		if err := os.Chtimes(path, stamp, stamp); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	result, err := runCache([]string{"clean", "--scope", "test-results", "--keep", "5", "--dry-run", "--repo-root", repo, "--json"}, time.Now())
+	if err != nil || !result.OK {
+		t.Fatalf("cache clean dry-run: result=%#v err=%v", result, err)
+	}
+	cleanResult, ok := result.Data.(cache.CleanResult)
+	if !ok || !cleanResult.DryRun || cleanResult.Scope != "test-results" || cleanResult.PlannedCount != 3 || cleanResult.RemovedCount != 0 {
+		t.Fatalf("unexpected cache clean data: %#v", result.Data)
+	}
+	if _, err := runCache([]string{"clean", "--scope", "unknown", "--repo-root", repo}, time.Now()); err == nil {
+		t.Fatal("unknown cache scope was accepted")
+	}
+	if _, err := runCache([]string{"clean", "--keep", "0", "--repo-root", repo}, time.Now()); err == nil {
+		t.Fatal("zero cache keep was accepted")
+	}
+}
+
 func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 	for _, name := range []string{
 		"test", "docsync", "skill", "lifecycle", "export",
@@ -204,6 +233,7 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		"aicoding plan verify",
 		"aicoding plan status [--id ID | --all]",
 		"aicoding plan approve --id ID",
+		"aicoding cache clean [--scope fast-path|test-results|validation-reports|work-state] [--keep N] [--dry-run]",
 	} {
 		if !strings.Contains(help.String(), usage) {
 			t.Fatalf("catalog help is missing %q", usage)

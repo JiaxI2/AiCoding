@@ -28,6 +28,7 @@ func TestProductVerifyDoesNotOwnTestOrReleaseExecution(t *testing.T) {
 		"CheckDependencies(",
 		"DoctorRegistry(",
 		"ScopeRuntimeSkill",
+		"cache.Status(",
 	} {
 		if !strings.Contains(text, required) {
 			t.Fatalf("product verification is missing static boundary %q", required)

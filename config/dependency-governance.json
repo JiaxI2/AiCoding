@@ -332,6 +332,7 @@
       "internal"
     ],
     "allowedImporters": [
+      "internal/cache",
       "internal/cli",
       "internal/cstyle",
       "internal/docsync",

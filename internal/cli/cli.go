@@ -778,6 +778,14 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("cache " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
+	var scope *string
+	var keep *int
+	var dryRun *bool
+	if sub == "clean" {
+		scope = fs.String("scope", "", "fast-path|test-results|validation-reports|work-state")
+		keep = fs.Int("keep", cache.DefaultTestResultKeep, "number of newest test result directories to retain")
+		dryRun = fs.Bool("dry-run", false, "list planned removals without deleting files")
+	}
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
 		return report.Result{}, err
 	}
@@ -791,13 +799,20 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 		if err != nil {
 			return report.Fail("cache status", start, "cache status failed", status, err.Error()), err
 		}
-		return report.Result{SchemaVersion: 1, Command: "cache status", OK: true, Message: "fast path cache status", RepoRoot: repo, Data: status, ElapsedMS: report.Elapsed(start)}, nil
+		return report.Result{SchemaVersion: 1, Command: "cache status", OK: true, Message: "registered local artifact status", RepoRoot: repo, Data: status, ElapsedMS: report.Elapsed(start)}, nil
 	case "clean":
-		result, err := cache.Clean(repo)
+		selectedScope := cache.Scope(strings.ToLower(strings.TrimSpace(*scope)))
+		if selectedScope != "" && !cache.ValidScope(selectedScope) {
+			return report.Result{}, usageErrorf("unsupported cache scope: %s", *scope)
+		}
+		if *keep < 1 {
+			return report.Result{}, usageErrorf("cache clean --keep must be at least 1")
+		}
+		result, err := cache.Clean(repo, cache.CleanOptions{Scope: selectedScope, Keep: *keep, DryRun: *dryRun})
 		if err != nil {
 			return report.Fail("cache clean", start, "cache clean failed", result, err.Error()), err
 		}
-		return report.Result{SchemaVersion: 1, Command: "cache clean", OK: true, Message: "fast path cache clean", RepoRoot: repo, Data: result, ElapsedMS: report.Elapsed(start)}, nil
+		return report.Result{SchemaVersion: 1, Command: "cache clean", OK: true, Message: "registered local artifact retention applied", RepoRoot: repo, Data: result, ElapsedMS: report.Elapsed(start)}, nil
 	default:
 		return report.Result{}, usageErrorf("unsupported cache subcommand: %s", sub)
 	}

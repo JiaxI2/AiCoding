@@ -462,6 +462,60 @@ func TestRunCanceledContextStillWritesFailureReport(t *testing.T) {
 	}
 }
 
+func TestSuccessfulTestResultRetentionKeepsLatestFive(t *testing.T) {
+	repo := t.TempDir()
+	for index := 0; index < 8; index++ {
+		dir := filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index))
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		testReport := Report{Summary: Summary{Conclusion: "PASS"}}
+		if err := Write(dir, testReport); err != nil {
+			t.Fatal(err)
+		}
+		stamp := time.Date(2026, 7, 21, 0, index, 0, 0, time.UTC)
+		if err := os.Chtimes(filepath.Join(dir, "summary.json"), stamp, stamp); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := retainSuccessfulTestResults(repo, Report{Summary: Summary{Conclusion: "PASS"}}); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := os.ReadDir(filepath.Join(repo, "test-results"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 5 {
+		t.Fatalf("retained result count = %d, want 5", len(entries))
+	}
+	if _, err := os.Stat(filepath.Join(repo, "test-results", "aicoding-global-test-07")); err != nil {
+		t.Fatalf("latest result was removed: %v", err)
+	}
+}
+
+func TestFailedRunDoesNotTriggerTestResultRetention(t *testing.T) {
+	repo := t.TempDir()
+	for index := 0; index < 8; index++ {
+		dir := filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index))
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := Write(dir, Report{Summary: Summary{Conclusion: "PASS"}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := retainSuccessfulTestResults(repo, Report{Summary: Summary{Conclusion: "FAIL", Fail: 1}}); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := os.ReadDir(filepath.Join(repo, "test-results"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 8 {
+		t.Fatalf("failed run triggered retention: retained %d, want 8", len(entries))
+	}
+}
+
 func TestExecuteRejectsInvalidProfile(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

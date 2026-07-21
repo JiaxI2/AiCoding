@@ -79,6 +79,27 @@ Release 仍执行真实 `export --zip` 与一次 `fresh-clone --profile Release`
 Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 versioned cache
 是可删除的临时数据，不再由当前 `cache status|clean` 管理。
 
+## 本地生成物观测与保留
+
+`cache` 是仓库内本地生成物的唯一观测/清理面，只扫描以下四个注册根，不遍历无关目录：
+
+| scope | 路径 | `clean` 策略 |
+|---|---|---|
+| `fast-path` | `.aicoding/cache/fast-path` | 全部删除，可重新生成。 |
+| `test-results` | `test-results/aicoding-global-test-*` | 保留最近 N 份（默认 5）并额外保留全部 FAIL 或无法判定结论的证据。 |
+| `validation-reports` | `<git-common-dir>/aicoding/validation/reports/*` | 仅删除没有 Receipt 或 commit alias 引用的报告；完整性读取复用 Validation Evidence store。 |
+| `work-state` | `.aicoding/state/work/*` | 只报告大小；审计轨迹（尤其 `attempts.jsonl`）不允许由 cache 清理。 |
+
+```powershell
+bin\aicoding.exe cache status --json
+bin\aicoding.exe cache clean [--scope fast-path|test-results|validation-reports|work-state] [--keep 5] [--dry-run] --json
+```
+
+不指定 `--scope` 时应用全部可清 scope 的默认策略，但跳过 `work-state`；`--dry-run`
+只返回计划删除清单和预计释放字节，零落盘。成功的 `test --profile ...` 在报告写入完成后自动对
+`test-results` 应用 keep-last-5；失败或取消的运行不触发清理。`doctor --all` 的
+`doctor.cache-bloat` 在测试结果超过 20 份或 50MB 时给出 warning 和显式 clean 命令，绝不代替用户清理。
+
 ## Validation Evidence
 
 Validation Evidence 把一次完整 PASS 测试绑定到 Git Tree 和验证语义。当前

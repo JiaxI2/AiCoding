@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/cache"
 	"github.com/JiaxI2/AiCoding/internal/docsync"
 	"github.com/JiaxI2/AiCoding/internal/governance"
 	"github.com/JiaxI2/AiCoding/internal/kit"
@@ -73,6 +74,13 @@ func DoctorAll(ctx context.Context, repo string, opts ProductOptions) []report.C
 			Scope:  lifecyclecontrol.ScopeRepoContext,
 		})
 		return result, result.Warnings, result.Errors
+	}))
+	checks = append(checks, productCheck("doctor.cache-bloat", "CACHE", func() (interface{}, []string, []string) {
+		status, err := cache.Status(repo)
+		if err != nil {
+			return status, nil, []string{err.Error()}
+		}
+		return status, cache.BloatWarnings(status), nil
 	}))
 	checks = append(checks, productCheck("doctor.pwsh-budget", "POWERSHELL", func() (interface{}, []string, []string) {
 		budget, errorsFound := ScanPwshBudget(repo)

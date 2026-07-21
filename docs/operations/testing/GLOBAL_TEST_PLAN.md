@@ -22,6 +22,7 @@
 - **优先非破坏性测试**：默认只跑 plan/check/gate/export，不直接修改用户全局状态。
 - **rollback 只读验证**：测试 profile 只运行 `lifecycle rollback --scope kit --help`，不读取或应用本地 rollback snapshot。
 - **结果可追溯**：每个用例保留原始 stdout/stderr、耗时、退出码、判定依据。
+- **证据保留有界且不毁证**：成功运行写入报告后自动保留最近 5 份，并额外保留全部 FAIL；失败或取消的运行不触发清理。validation report 只有在无 Receipt/alias 引用时才可清理。
 - **CI 失败可诊断**：GitHub Actions 的 Smoke 与 `release-gate` 无论结论如何均上传本次 `test-results/` artifact，保留逐用例原始输出。
 - **验证绑定内容**：成功运行可把 PASS 结论绑定到 Git Tree 与验证语义；commit message amend 不失效，tracked/untracked/submodule 脏状态 fail-closed。
 - **复用可审计**：默认保持 `--reuse off`；`--reuse auto` 只显式启用。main 远端 `release-gate` 连续 3 次完成 off seed + `--verify-reuse` audit，并在独立切换提交引用三次 run URL 后，才允许晋级默认值。workflow 已接线不等于已跑绿。
@@ -117,6 +118,7 @@
 | lifecycle install/update/uninstall 可能改用户状态 | 默认只执行 plan |
 | `.exe` 仅 Windows | Linux/macOS 自动查找 `bin/aicoding` |
 | 子模块未初始化 | bootstrap/governance/docsync 可能失败，报告中保留证据 |
+| 本地测试报告持续累积 | `doctor.cache-bloat` 只告警；`cache clean --scope test-results --dry-run` 先审计清单，FAIL 永不自动删除 |
 
 ## 7. 用户检查重点
 
