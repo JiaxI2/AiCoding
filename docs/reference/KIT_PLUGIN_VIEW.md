@@ -7,23 +7,38 @@ registry、生命周期、动态 Go plugin ABI 或控制面。生产者如何把
 [Plugin SDK](../architecture/06-plugin-sdk.md)；快速入门与维护要求见
 [Kit 管理标准](KIT_MANAGEMENT_STANDARD.md)。本文只规定消费者如何查看已经登记的能力。
 
-```text
-Kit Catalog Snapshot
-+ Kit Manifest
-+ Skill Metadata / SKILL.md headings
-+ Static Adapter Catalog
-= Kit Plugin View
-```
+这张图回答 Kit 交付单元如何投影为只读视图，以及它与 `internal/kit` 实现域的边界。
+Kit 事实来自 registry/manifest；八动词与 owned state 仍由内部实现域负责。
 
-执行链保持不变：
-
-```text
-User / Agent
-  -> Go CLI
-     -> registry / lifecycle / governance
-        -> Static Adapter
-           -> Kit / domain-owned state
-              -> report.Result
+```mermaid
+flowchart LR
+  subgraph K["Kit delivery unit"]
+    REG["kit-registry"]
+    MAN["kit manifest"]
+    CMD["commands"]
+    SKILL["skills"]
+  end
+  subgraph V["Read-only projection"]
+    VIEW["PluginView"]
+    CLI["aicoding kit describe"]
+  end
+  subgraph I["Internal implementation domain"]
+    LIFE["lifecycle<br/>plan · install · update · uninstall<br/>status · doctor · verify · rollback"]
+    DOMAIN["internal/kit adapter"]
+    STATE["kit-owned state"]
+  end
+  REG --> MAN
+  MAN --> CMD
+  MAN --> SKILL
+  REG --> VIEW
+  MAN --> VIEW
+  CMD --> VIEW
+  SKILL --> VIEW
+  STATE -. "explicit --with-state" .-> VIEW
+  VIEW --> CLI
+  MAN --> LIFE
+  LIFE --> DOMAIN
+  DOMAIN --> STATE
 ```
 
 禁止新增 `plugin.yaml`、Plugin Registry、Workflow Registry、权限数据库、第二 Report Schema

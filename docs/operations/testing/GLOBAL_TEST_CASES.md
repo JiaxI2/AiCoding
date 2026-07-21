@@ -89,6 +89,7 @@
 | DOCS-003 | COMMANDS 命令矩阵 | 检查 `docs/COMMANDS.md` | 包含正式产品命令、领域命令和一个版本兼容表 | REQUIRED |
 | DOCS-004 | 命令控制面文档 | 检查 `docs/COMMANDS.md` | 包含唯一 test engine、共享 report 和 PowerShell boundary | REQUIRED |
 | DOCS-005 | C99 skill 文档 | 检查 `docs/guides/C99_STANDARD_C_SKILL.md` | 包含配置边界、C Kit 资产边界和统一 CLI 入口 | REQUIRED |
+| DOCS-006 | 架构图命令与节点预算 | 解析五个 Mermaid 载体与 `internal/cli/catalog.go` | 每个载体恰好一图、节点不超过 20、图内命令来自 typed catalog | REQUIRED |
 
 ## 9. CAPABILITY：平台能力目录
 

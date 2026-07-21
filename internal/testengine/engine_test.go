@@ -34,7 +34,7 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 		}
 		seen[testCase.ID] = true
 	}
-	for _, id := range []string{"ENV-001", "GO-001", "GO-005", "GO-006", "GO-007", "GIT-009", "EXP-002", "FRESH-001", "FRESH-003", "REL-002"} {
+	for _, id := range []string{"ENV-001", "GO-001", "GO-005", "GO-006", "GO-007", "GIT-009", "EXP-002", "FRESH-001", "FRESH-003", "DOCS-006", "REL-002"} {
 		if !seen[id] {
 			t.Fatalf("registry is missing %s", id)
 		}

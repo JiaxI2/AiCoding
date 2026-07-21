@@ -16,6 +16,32 @@ Status: Accepted and Frozen
 一句话：**Small Core · Fast Primitive · Low Cost · Stable Interface · Free Composition。**
 让 AiCoding 像 Git 一样，以极少而高质量的 Primitive 组合出丰富工作流，而非靠功能堆叠。
 
+## Primitive 依赖方向图
+
+这张图只回答五个 Primitive 各自做什么，以及依赖为什么只能由上层指向 Primitive。
+红色虚线是机器治理必须拒绝的反向 import。
+
+```mermaid
+flowchart TB
+  UP["Domain / Workflow / CLI<br/>组合与入口层"]
+  GX["gitx<br/>唯一 Git 事实边界"]
+  RG["registry<br/>detached snapshot + digest"]
+  RN["runner<br/>有界调度"]
+  RP["report<br/>唯一证据信封"]
+  PF["platform<br/>根、路径与资源生命周期"]
+  UP --> GX
+  UP --> RG
+  UP --> RN
+  UP --> RP
+  UP --> PF
+  GX -. "forbidden reverse import" .-> UP
+  RG -. "forbidden reverse import" .-> UP
+  RN -. "forbidden reverse import" .-> UP
+  RP -. "forbidden reverse import" .-> UP
+  PF -. "forbidden reverse import" .-> UP
+  linkStyle 5,6,7,8,9 stroke:#B42318,stroke-width:2px
+```
+
 ## 12 条约束
 
 ### 1. Primitive First

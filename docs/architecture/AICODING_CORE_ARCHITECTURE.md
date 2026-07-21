@@ -56,20 +56,45 @@ manifest、领域实现和契约测试，不扩大内核权力。架构阶段在
 
 ## 3. 闭环
 
+这张图区分六个冻结模块（粗实线）与四个可扩展领域（虚线框）；领域只通过稳定值对象
+接入，不把业务语义反向塞进内核。
+
 ```mermaid
-flowchart LR
-    A["User / Agent / Skill"] --> C["Typed Command Catalog"]
-    C --> L["Lifecycle Control Plane"]
-    L --> AC["Static Adapter Catalog"]
-    AC --> S["Domain Catalog Snapshot"]
-    S --> P["ExecutionPlan"]
-    P --> AD["Domain Adapter"]
-    AD --> D["Kit / MCP / Runtime Skill"]
-    D --> ST["Domain-owned State"]
-    D --> R["Result Evidence"]
-    S -. "inputDigest" .-> R
-    P -. "planDigest" .-> R
-    AC -. "catalogDigest" .-> R
+flowchart TB
+  subgraph F["Frozen six-module contract"]
+    SNAP["snapshot<br/>registry facts + digest"]
+    INTENT["plan<br/>ExecutionPlan intent"]
+    RUN["runner<br/>timeout + bounded order"]
+    ADAPTER["adapter catalog<br/>domain translation"]
+    REPORT["report<br/>Result evidence"]
+    STATE["state<br/>domain-owned only"]
+  end
+  subgraph E["Extension domains"]
+    KIT["kit"]
+    MCP["mcpcontrol"]
+    REPO["repocontext"]
+    CAP["capability"]
+  end
+  SNAP --> INTENT
+  INTENT --> RUN
+  RUN --> ADAPTER
+  ADAPTER -.-> KIT
+  ADAPTER -.-> MCP
+  ADAPTER -.-> REPO
+  ADAPTER -.-> CAP
+  KIT --> STATE
+  MCP --> STATE
+  REPO --> STATE
+  CAP --> REPORT
+  KIT --> REPORT
+  MCP --> REPORT
+  REPO --> REPORT
+  SNAP -. "inputDigest" .-> REPORT
+  INTENT -. "planDigest" .-> REPORT
+  classDef frozen fill:#FFFFFF,stroke:#111111,stroke-width:3px
+  classDef extension fill:#F7F7F7,stroke:#666666,stroke-width:2px,stroke-dasharray:5 5
+  class SNAP,INTENT,RUN,ADAPTER,REPORT,STATE frozen
+  class KIT,MCP,REPO,CAP extension
 ```
 
 一次正式生命周期调用完成以下闭环：

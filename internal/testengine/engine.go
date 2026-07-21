@@ -456,6 +456,7 @@ func Registry(cfg Config) []TestCase {
 		{ID: "DOCS-003", Category: "README_DOCS", Title: "COMMANDS 命令矩阵", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-004", Category: "README_DOCS", Title: "Fast Path 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "DOCS-005", Category: "README_DOCS", Title: "C99 skill 文档", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "DOCS-006", Category: "README_DOCS", Title: "架构图命令与节点预算", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "CAP-001", Category: "CAPABILITY", Title: "internal capability registry", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "governance", "capabilities", "--json"}, ExpectJSON: true},
 		{ID: "FREEZE-001", Category: "FREEZE", Title: "冻结 schema 文件存在", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "FREEZE-002", Category: "FREEZE", Title: "report Result 权威唯一", Severity: Required, Profiles: allProfiles(), Kind: "static"},
@@ -789,6 +790,8 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/COMMANDS.md"), []string{"Go CLI", "Doctor", "Verify", "test engine", "DocSync", "PowerShell Boundary"})
 	case "DOCS-005":
 		err = fileContainsAll(filepath.Join(cfg.Repo, "docs/guides/C99_STANDARD_C_SKILL.md"), []string{"config/skills/c99-standard-c", "skill c99-standard-c", "fmt", "check", "templates"})
+	case "DOCS-006":
+		err = checkArchitectureDiagrams(cfg.Repo)
 	case "FREEZE-001":
 		err = checkFrozenSchemas(cfg.Repo)
 	case "FREEZE-002":

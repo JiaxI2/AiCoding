@@ -96,7 +96,7 @@ Verify: 新 README 通过 .github/repository-governance.toml 的 required_sectio
    每步加一行"你会看到什么"（期望输出摘要），失败时第一句指向 `doctor --all`。
    其余命令一律链 `docs/COMMANDS.md`，不在 README 展开。
 2b. **发展路线露出**（修复"一眼没有发展前景"的病根——**不是没有 roadmap，是没露出来**）：
-   快速开始之后两行：链 [07-roadmap](docs/architecture/07-roadmap.md)，
+   快速开始之后两行：链 [07-roadmap](../architecture/07-roadmap.md)，
    并写明"活的 roadmap 可机器查询：`aicoding todolist --json`"——
    可执行的 roadmap 强于静态文字，这个差异点要说出来。
 3. **Persona 路径**（按角色分流，链接到既有权威文档，不复制内容）：
@@ -135,7 +135,7 @@ Verify: 新 README 通过 .github/repository-governance.toml 的 required_sectio
    若节名调整则同步改 governance toml 并过 `governance lint`）。
 7. **复利仓库一节**（owner 决策：AiCoding 专属吹点，**不进通用治理标准**）：
    在 Kit 橱窗之后加"为什么这个仓库越用越值钱"短节（≤8 行），吹的是已有事实：
-   - 地基只进不出（[00-vision §3](docs/architecture/00-vision.md) 四象限：已知的已知=冻结内核，
+   - 地基只进不出（[00-vision §3](../architecture/00-vision.md) 四象限：已知的已知=冻结内核，
      一切新能力站在它上面，从不推倒重来）；
    - 证据复利（Receipt 内容寻址：同一内容验证一次，此后 0.4s 复用，跨 worktree 共享）；
    - 能力复利（每个新 Kit 与既有 Primitive 自由组合——loop 复用 evidence，plan 复用 gitx，

@@ -39,6 +39,27 @@ Smoke/Full/Release 测试 Registry、timeout、runner、report 和 exit code；`
 测试 profile 对 rollback 只执行 `lifecycle rollback --scope kit --help` 的只读契约检查，不会应用
 本地 rollback snapshot。
 
+### 一次真实开发闭环
+
+这张图按真实运行条件排列：`plan approve` 只接受 clean HEAD，pre-commit 在 commit 对象写入前裁决，
+pre-push 则校验 exact local OID 的 Release Receipt。0021 的 `change verify` 尚未存在，当前图只使用 typed catalog 中已经公开的 `verify`。
+
+```mermaid
+flowchart LR
+  CLEAN["Clean HEAD"]
+  APPROVE["aicoding plan approve<br/>绑定 approvedTree"]
+  CHECK["aicoding plan check<br/>裁决 scope coverage"]
+  EDIT["修改 scope 内代码"]
+  VERIFY["aicoding verify --profile Smoke<br/>确定性仓库契约"]
+  PRE["aicoding hook pre-commit<br/>裁决 staged paths"]
+  COMMIT["git commit"]
+  RELEASE["aicoding test --profile Release<br/>产生内容 Receipt"]
+  PUSH["git push"]
+  GATE["aicoding hook pre-push<br/>校验 exact local OID"]
+  REMOTE["远端 ref 更新"]
+  CLEAN --> APPROVE --> CHECK --> EDIT --> VERIFY --> PRE --> COMMIT --> RELEASE --> PUSH --> GATE --> REMOTE
+```
+
 ## 命令契约固化
 
 顶层 command ID、名称/alias、是否要求 subcommand、handler、延迟等级和 `aicoding --help` form

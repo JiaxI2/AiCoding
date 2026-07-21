@@ -1,6 +1,6 @@
 # TODO 0025: 架构图体系（README 总图 + 四张分层图）
 
-Status: Planned
+Status: Done
 Verify: README 总图与 docs/architecture/ 四张分层图全部为 Mermaid 源码、GitHub 原生渲染、lychee 链接全通；每张图节点数 ≤20
 
 > 来源：owner "当前 README 那张图我根本看不懂"。
@@ -127,3 +127,22 @@ bin\aicoding.exe test --profile Full --json  # 含 DOCS-006
 DOCS-006 负例被抓；每图 ≤20 节点；README 总图与四张分层图无内容重复
 （总图只画层与闭环，细节全在分层图）。
 
+## 六、执行裁决与证据（2026-07-21）
+
+执行时按真实运行条件修正了草案时序：`plan approve` 只接受 clean HEAD，因此批准必须发生在
+编辑之前；TODO 0021 的 `change verify` 尚未实现，本项不提前虚构命令，使用现有
+`verify --profile Smoke`。五张图均为手写 Mermaid 源码，没有新增 SVG/PNG 或图生成器。
+
+| 验证 | 实际结果 |
+|---|---|
+| 五图职责 | README 只画单一入口、五层与证据回边；Primitive 图画依赖方向；Core 图区分六个冻结模块与四个扩展域；Kit 图区分交付投影与 `internal/kit`；Commands 图按 clean approve、staged gate、commit、Release Receipt、pre-push exact OID 排列。 |
+| DOCS-006 | 唯一 test engine 新增 required static case；直接用 Go AST 读取 `internal/cli/catalog.go` 的 `CommandDescriptor` name/alias，不复制第二命令表，也不导入 `internal/cli`。每个载体必须恰好一个 Mermaid block、显式节点数为 1..20、图内 `aicoding xxx` 顶层命令必须存在。 |
+| 单测 | `go test ./internal/testengine -count=1` 通过；包含 typed catalog 正例、未知命令文件/行号、21 节点超限、真实仓库集成与 Registry 登记测试。 |
+| 未知命令负例 | 临时将 Commands 图改为 `aicoding nonexistent` 后，`TestRepositoryArchitectureDiagrams` 按预期失败：`docs/COMMANDS.md:53: diagram command "aicoding nonexistent" is absent from internal/cli typed catalog`；恢复后转绿。 |
+| 节点预算 | README / Primitive / Core / Kit / Commands 分别为 `15 / 6 / 10 / 9 / 11` 个显式节点，五个载体均恰好一个 Mermaid block。 |
+| 真实渲染 | `@mermaid-js/mermaid-cli 11.12.0` 使用本机 Edge 150 分别渲染五个 Markdown；每个输入恰好产生一个 SVG，大小依次为 `44168 / 22548 / 34035 / 28760 / 23756` bytes，产物仅在系统临时目录，仓库零图片新增。 |
+| 链接审计 | 首轮暴露 TODO 0012 两条既有相对路径错误及匿名 Star History 图片端点 500；修正路径并保留页面链接、移除失效图片后，`lychee --config lychee.toml README.md docs/` 为 `286 OK / 0 Errors`。 |
+| DocSync | `bin\aicoding.exe docsync all --json` 返回 `ok=true`、`warnings=[]`、`errors=[]`。 |
+| Full | `bin\aicoding.exe test --profile Full --reuse off --allow-dirty --json` 为 `66 total / 63 pass / 0 fail / 0 warn / 3 skip`，`duration_ms=181172`；DOCS-006 单项 PASS（4ms）。dirty subject 明确不可复用，未伪装 Receipt。 |
+
+本项实现、负例、节点预算、真实渲染、链接、DocSync 与 Full 均已通过，状态翻为 Done。

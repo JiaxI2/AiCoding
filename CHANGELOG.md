@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 完成 TODO 0025：以 README 五层总图和 Primitive、Domain Capability、Kit、Product Workflow 四张分层 Mermaid 图替换重复/线性表达；新增 DOCS-006，从既有 typed command catalog AST 校验图内命令并强制每个载体恰好一图、节点不超过 20。五图由 Mermaid CLI 真实渲染，链接审计 286/286 通过；同时修正两条既有 TODO 相对链接，并将已返回 500 的无凭据 Star History 图片降为仍可达的页面入口。 / Completes TODO 0025 with one five-layer overview and four bounded Mermaid views, a typed-catalog-backed DOCS-006 command and node-budget gate, real rendering evidence, a clean link audit, and removal of the broken anonymous Star History image embed while preserving its page link.
+
 - **feat(capability)**: 完成 TODO 0023：以 `config/internal-capabilities.json` 唯一登记 28 个 `internal/` 一级包，新增只读 `capability list/describe` 与受限 `index --write`，从 typed HelpForm 校验公共入口；`governance capabilities` 阻断孤儿包、缺文档和 stable 无验证，DocSync 阻断 README/`docs/CAPABILITIES.md` 确定性生成区漂移，并由 CAP-001 纳入唯一测试引擎。 / Completes TODO 0023 with one internal-capability registry, typed-catalog-backed discovery, deterministic whitespace-clean index generation, orphan and documentation governance, DocSync drift detection, and the CAP-001 global gate.
 
 - **docs(plan)**: 在 clean worktree 上重新批准 Loop Engineering backlog plan，将扩展后的 scope 绑定到 tree `6cedb32a413b59c1764424bf21f2db6f24840d4b`，后续 capability 实现重新受内容绑定约束。 / Reapproves the expanded backlog plan on a clean worktree and binds subsequent capability work to tree `6cedb32a413b59c1764424bf21f2db6f24840d4b`.
