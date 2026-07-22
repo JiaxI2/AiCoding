@@ -143,6 +143,16 @@ jobs:
           go-version: '1.26.5'
           cache: true
 
+      - name: Report effective Go version
+        shell: pwsh
+        run: |
+          $match = [regex]::Match((Get-Content go.mod -Raw), '(?m)^toolchain\s+(go\S+)\s*$')
+          if (-not $match.Success) { throw 'go.mod has no toolchain directive' }
+          $expected = $match.Groups[1].Value
+          $actual = (go env GOVERSION).Trim()
+          go version
+          if ($actual -ne $expected) { throw "effective Go version $actual does not match go.mod toolchain $expected" }
+
       - name: Build Go CLI
         shell: cmd
         run: go build -o bin/aicoding.exe ./cmd/aicoding

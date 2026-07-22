@@ -330,6 +330,27 @@ func TestScheduledCISeedsAndAuditsReleaseBeforeDefaultPromotion(t *testing.T) {
 	}
 }
 
+func TestScheduledCIIncludesDoctorPerfEvidenceOnlyForExplicitEvents(t *testing.T) {
+	data, err := os.ReadFile(filepath.Join("..", "..", ".github", "workflows", "aicoding-ci.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	workflow := string(data)
+	for _, required := range []string{
+		"scheduled-doctor-perf:",
+		"if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'",
+		"doctor perf --json",
+		"name: doctor-perf-evidence",
+	} {
+		if !strings.Contains(workflow, required) {
+			t.Fatalf("scheduled CI is missing doctor perf contract %q", required)
+		}
+	}
+	if got := strings.Count(workflow, "doctor perf --json"); got != 1 {
+		t.Fatalf("doctor perf command count = %d, want 1", got)
+	}
+}
+
 func TestCIPinsEffectiveGoVersionAndEveryActionBySHA(t *testing.T) {
 	workflowPaths := []string{
 		filepath.Join("..", "..", ".github", "workflows", "aicoding-ci.yml"),
@@ -352,14 +373,14 @@ func TestCIPinsEffectiveGoVersionAndEveryActionBySHA(t *testing.T) {
 		t.Fatal(err)
 	}
 	workflow := string(data)
-	if got := strings.Count(workflow, "go-version: '1.26.5'"); got != 3 {
-		t.Fatalf("setup-go explicit go-version count = %d, want 3", got)
+	if got := strings.Count(workflow, "go-version: '1.26.5'"); got != 4 {
+		t.Fatalf("setup-go explicit go-version count = %d, want 4", got)
 	}
 	if strings.Contains(workflow, "go-version-file:") {
 		t.Fatal("CI still uses go-version-file even though setup-go reads the go directive instead of the toolchain directive")
 	}
-	if got := strings.Count(workflow, "go version"); got != 3 {
-		t.Fatalf("effective Go version log count = %d, want 3", got)
+	if got := strings.Count(workflow, "go version"); got != 4 {
+		t.Fatalf("effective Go version log count = %d, want 4", got)
 	}
 }
 
