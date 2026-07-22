@@ -3,7 +3,7 @@
 Status: Done
 Verify: go test ./internal/loopkit/... ./internal/cli/... 且 bin/aicoding.exe kit verify --all --profile Lifecycle --json 通过
 
-> 架构权威：[LOOP_ENGINEERING_ARCHITECTURE.md](../architecture/LOOP_ENGINEERING_ARCHITECTURE.md)（已随本项提交，Status: Proposed）。
+> 架构权威：[LOOP_ENGINEERING_ARCHITECTURE.md](../../architecture/LOOP_ENGINEERING_ARCHITECTURE.md)（已随本项提交，Status: Proposed）。
 > 定位一句话：**有界迭代工作的裁决者（adjudicator），不是执行器**。唯一新增 Primitive 是
 > 转移决策函数 `Decide`；observe/verify 复用 validationevidence，act 永远归 Agent。
 

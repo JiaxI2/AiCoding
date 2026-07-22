@@ -9,7 +9,7 @@ Verify: go test ./internal/testengine/... -run TestRegistryHasPrimitiveChecklist
 
 ## 背景
 
-[Primitive 宪法](../architecture/PRIMITIVE_CONSTITUTION.md) §12 约定：每个新 Primitive/新领域
+[Primitive 宪法](../../architecture/PRIMITIVE_CONSTITUTION.md) §12 约定：每个新 Primitive/新领域
 的 ADR 必须包含"§12 Checklist 自评"小节。这是**可机器化的存在性检查**（不是判断质量，只查
 是否写了自评），因此适合登记为唯一测试 Registry 的一个 leaf gate，而不是靠人工评审记得。
 

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(todolist)**: 执行 TODO 0029 的队列归档阶段：先以真实 nested probe 证明 `internal/todolist` 只读顶层，再用 `git mv` 将 27 个 Done 文件移入 `docs/todolist/done/`；活跃视图由 `31 total / 27 Done / 4 Planned` 收敛为 `4 total / 4 Planned`，文件正文与 Git 历史保留，layout/DocSync 无需新增白名单。 / Archives 27 completed todo files with Git history preserved after a real non-recursive queue probe, reducing the active view from 31 items to four planned items without changing the todolist primitive or broadening layout policy.
+
 - **refactor(pathpolicy)**: 完成 TODO 0028：新增仅依赖 stdlib、只有 `Compile/Match/Validate` 三个公开函数的确定性路径 Primitive，Plan、TestEngine change impact 与 Validation Evidence 改走同一冻结 glob 方言；六份 policy 配置以 checked-in schema 形成 6/6 闭合，DocSync 与 dependency governance 对未知字段共同 fail-closed。配置文件与既有裁决语义不变，重构前后固定 staged 输入的 `plan check` / `change verify` JSON 将以剔除时长字段后的字节相等作为最终硬判据。 / Completes TODO 0028 with one stdlib-only three-function path-policy primitive shared by Plan, TestEngine impact selection, and Validation Evidence, plus six-of-six checked-in policy schemas enforced by DocSync and dependency governance while preserving existing configuration and decision semantics.
 
 - **docs(plan)**: 在 clean `feature/convergence` tree 上批准 `pathpolicy-consolidation`，将 TODO 0028 的冻结 schema、三消费方、Primitive/ADR 与 DocSync 实现范围绑定到 Git Tree `cd05a49e32c019d47e348e426809c160916b70a4`。 / Approves the bounded TODO 0028 path-policy plan on a clean tree and binds its frozen-schema, consumer, primitive/ADR, and DocSync scope to Git Tree `cd05a49e32c019d47e348e426809c160916b70a4`.

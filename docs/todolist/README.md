@@ -31,3 +31,7 @@ Verify: <绿灯命令>        # 能证明"已完成"的可执行命令（如 go 
 
 `Planned` →（开始）`In-Progress` →（`Verify` 命令绿灯）`Done`。
 "绿灯"由该项声明的 `Verify` 命令证明，而不是口头声明——与仓库其它门禁一致。
+
+`Done` 是完成时的短暂状态：下一批 todo 入仓时，用 `git mv` 将已完成文件移入
+`docs/todolist/done/`，保留文件名、正文与 Git 历史。`todolist` Primitive 只读本目录顶层，
+不会递归 `done/`；因此命令输出始终是活跃队列，归档仍可按原文件名查询。

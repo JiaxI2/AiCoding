@@ -42,7 +42,7 @@ bin\aicoding.exe doctor pwsh-budget --json
 2 个嵌套 AEF Hook 薄壳；顶层计数中 `thinShells=2`、`deprecated=2`。可执行职责全部属于
 上表六类，或处于 ADR/独立 Retirement Plan 已登记的 release 退役窗口。计数是只读观测，
 不是归零 KPI；默认 Taskfile/CI profile 仍只调用 Go CLI。详细逐文件裁决见
-[TODO 0002](../todolist/0002-powershell-specialty-convergence.md)。
+[TODO 0002](../todolist/done/0002-powershell-specialty-convergence.md)。
 
 ## 禁止事项
 
