@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 在 clean main tree 上批准 TODO 0035 的 `config-schema-closure` 计划并绑定 `approvedTree=b25979f874f8dadeceb5c2bbc1673d9af329319b`；后续实现只能在登记的 config、DocSync、dependencies、证据与同步文档范围内产生漂移。 / Approves the bounded config-schema-closure plan on a clean main tree and binds implementation to the registered config, DocSync, dependency-governance, evidence, and synchronized-documentation scope.
+
 - **docs(plan)**: 为 TODO 0035 建立窄范围 config schema 闭合计划：全部 checked-in 配置由唯一 binding table 或有理由的精确排除覆盖，全部 schema 由 binding/standalone 反向登记；`governance dependencies` 复用既有 inventory，数据库、第三方 validator、集中加载器与消费方解码变更均排除。 / Adds a bounded plan for bidirectional config/schema closure using the existing dependency inventory, one binding authority, and reasoned exact exclusions while ruling out databases, third-party validators, centralized loading, and consumer-decoder changes.
 
 - **docs(todolist)**: 登记 TODO 0035 的 config schema 闭合工作：以实测 34 个非 schema 配置与 19 个既有 schema 为基线，保留现有专门校验并补齐严格 schema、唯一 binding table、standalone 反向登记及 `governance dependencies` 完备性检查；数据库与集中式加载框架明确不在范围内。 / Registers TODO 0035 to close the measured configuration/schema surface with strict schemas, one binding table, explicit standalone reverse registration, and dependency-governance completeness while preserving specialized validators and excluding databases or a centralized loader.

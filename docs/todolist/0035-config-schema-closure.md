@@ -71,6 +71,11 @@ Receipt List / `--verify-reuse` 的实测延迟显著退化，或出现跨仓库
 5. 审计后目标为新增 exclusion 配置在内的 35/35 配置绑定；若实施时枚举变化，以实测 N/N
    为准并在本条目留下差异。
 
+## 实施证据
+
+- Plan Mode：`config-schema-closure` 已在 clean main tree 上批准，
+  `approvedTree=b25979f874f8dadeceb5c2bbc1673d9af329319b`。
+
 ## 真跑负例
 
 - 新绑定配置注入 `"illegal": true`：schema closure 非零并指出 `$` 路径。

@@ -1,7 +1,7 @@
 ---
 id: config-schema-closure
-status: draft
-approvedTree: ""
+status: approved
+approvedTree: "b25979f874f8dadeceb5c2bbc1673d9af329319b"
 scope:
   - config/**
   - internal/docsync/**
