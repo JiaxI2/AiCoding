@@ -14,13 +14,19 @@ import (
 
 const architectureDiagramNodeBudget = 20
 
+type architectureDiagramDocument struct {
+	path  string
+	count int
+}
+
 var (
-	architectureDiagramDocuments = []string{
-		"README.md",
-		"docs/architecture/PRIMITIVE_CONSTITUTION.md",
-		"docs/architecture/AICODING_CORE_ARCHITECTURE.md",
-		"docs/reference/KIT_PLUGIN_VIEW.md",
-		"docs/COMMANDS.md",
+	architectureDiagramDocuments = []architectureDiagramDocument{
+		{path: "README.md", count: 1},
+		{path: "docs/architecture/PRIMITIVE_CONSTITUTION.md", count: 1},
+		{path: "docs/architecture/AICODING_CORE_ARCHITECTURE.md", count: 1},
+		{path: "docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md", count: 2},
+		{path: "docs/reference/KIT_PLUGIN_VIEW.md", count: 1},
+		{path: "docs/COMMANDS.md", count: 1},
 	}
 	diagramCommandPattern = regexp.MustCompile(`\baicoding(?:\.exe)?[ \t]+([a-z][a-z0-9-]*)\b`)
 	diagramNodePattern    = regexp.MustCompile(`(?m)^\s*([A-Za-z][A-Za-z0-9_]*)\s*(?:\[|\(|\{)`)
@@ -37,7 +43,8 @@ func checkArchitectureDiagrams(repo string) error {
 		return err
 	}
 
-	for _, rel := range architectureDiagramDocuments {
+	for _, document := range architectureDiagramDocuments {
+		rel := document.path
 		path := filepath.Join(repo, filepath.FromSlash(rel))
 		data, readErr := os.ReadFile(path)
 		if readErr != nil {
@@ -47,11 +54,13 @@ func checkArchitectureDiagrams(repo string) error {
 		if parseErr != nil {
 			return fmt.Errorf("%s: %w", rel, parseErr)
 		}
-		if len(diagrams) != 1 {
-			return fmt.Errorf("%s: expected exactly one Mermaid diagram, found %d", rel, len(diagrams))
+		if len(diagrams) != document.count {
+			return fmt.Errorf("%s: expected exactly %d Mermaid diagram(s), found %d", rel, document.count, len(diagrams))
 		}
-		if err := checkMermaidDiagram(rel, diagrams[0], commands); err != nil {
-			return err
+		for _, diagram := range diagrams {
+			if err := checkMermaidDiagram(rel, diagram, commands); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

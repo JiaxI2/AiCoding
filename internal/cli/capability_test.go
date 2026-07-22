@@ -44,8 +44,15 @@ func TestCapabilityCLIListsDescribesAndGeneratesIndexes(t *testing.T) {
 	}
 
 	described, err := runCapability([]string{"describe", "--id", "alpha", "--repo-root", repo, "--json"}, start)
-	if err != nil || !described.OK || described.Data.(capabilitydomain.Capability).ID != "alpha" {
+	if err != nil || !described.OK {
 		t.Fatalf("capability describe = %#v, err = %v", described, err)
+	}
+	detail, ok := described.Data.(capabilitydomain.Capability)
+	if !ok || detail.ID != "alpha" || detail.Quickstart == nil || detail.Activation == nil {
+		t.Fatalf("capability describe = %#v", described)
+	}
+	if detail.Quickstart.Steps[0] != "aicoding capability list --json" || detail.Activation.Kind != "cli-entry" {
+		t.Fatalf("capability describe usage closure = %#v", detail)
 	}
 	invalid, err := runCapability([]string{"list", "--type", "unknown", "--repo-root", repo}, start)
 	if err == nil || invalid.ErrorKind != "validation" {
@@ -116,6 +123,12 @@ func capabilityCLICatalog(publicEntry string) string {
       "summary": "alpha capability",
       "publicEntries": ["` + publicEntry + `"],
       "architectureDoc": "docs/architecture/alpha.md",
+      "quickstart": {"steps": ["aicoding capability list --json"]},
+      "activation": {
+        "kind": "cli-entry",
+        "note": "already available",
+        "agentUsage": "aicoding capability list --json"
+      },
       "verification": ["go test ./internal/alpha/..."]
     }
   ]

@@ -32,6 +32,8 @@
           "items": { "type": "string", "pattern": "^aicoding(?: |$)" }
         },
         "architectureDoc": { "type": "string", "minLength": 1 },
+        "quickstart": { "$ref": "#/$defs/quickstart" },
+        "activation": { "$ref": "#/$defs/activation" },
         "verification": {
           "type": "array",
           "uniqueItems": true,
@@ -48,6 +50,30 @@
           "then": { "required": ["verification"] }
         }
       ]
+    },
+    "quickstart": {
+      "type": "object",
+      "required": ["steps"],
+      "additionalProperties": false,
+      "properties": {
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^aicoding " }
+        },
+        "exampleInput": { "type": "string", "minLength": 1 }
+      }
+    },
+    "activation": {
+      "type": "object",
+      "required": ["kind", "note", "agentUsage"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["cli-entry", "kit-install"] },
+        "note": { "type": "string", "minLength": 1 },
+        "agentUsage": { "type": "string", "pattern": "^aicoding " }
+      }
     }
   }
 }

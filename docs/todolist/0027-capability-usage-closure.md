@@ -1,6 +1,6 @@
 # TODO 0027: 能力使用闭环（describe 一次答清"是什么/怎么用/怎么进 agent/怎么验证"）
 
-Status: Planned
+Status: Done
 Verify: bin/aicoding.exe capability describe --id loop-engineering --json 一次输出：架构图链接 + 3 行 quickstart + activation 状态与命令 + 验证命令；且 README 生成区可点达
 
 > 来源：owner "loopkit 我到现在看不见架构图，也不知道怎么把它弄到 agent 中使用。"

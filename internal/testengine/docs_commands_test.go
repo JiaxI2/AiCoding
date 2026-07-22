@@ -16,13 +16,13 @@ func TestArchitectureDiagramsAcceptTypedCatalogCommands(t *testing.T) {
 
 func TestArchitectureDiagramsRejectUnknownCommandWithLocation(t *testing.T) {
 	repo := architectureDiagramFixture(t)
-	writeArchitectureFixtureFile(t, repo, "README.md", "```mermaid\nflowchart LR\n  BAD[\"aicoding nonexistent\"]\n```\n")
+	writeArchitectureFixtureFile(t, repo, "docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md", "```mermaid\nflowchart LR\n  BAD[\"aicoding nonexistent\"]\n```\n\n```mermaid\nflowchart LR\n  OK[\"aicoding verify\"]\n```\n")
 
 	err := checkArchitectureDiagrams(repo)
 	if err == nil {
 		t.Fatal("unknown diagram command must fail")
 	}
-	for _, want := range []string{"README.md:3", "aicoding nonexistent", "typed catalog"} {
+	for _, want := range []string{"LOOP_ENGINEERING_ARCHITECTURE.md:3", "aicoding nonexistent", "typed catalog"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("error %q does not contain %q", err, want)
 		}
@@ -71,8 +71,9 @@ type CommandDescriptor struct {
 	Aliases []string
 }
 `)
-	for _, rel := range architectureDiagramDocuments {
-		writeArchitectureFixtureFile(t, repo, rel, "```mermaid\nflowchart LR\n  OK[\"aicoding verify\"]\n```\n")
+	for _, document := range architectureDiagramDocuments {
+		content := strings.Repeat("```mermaid\nflowchart LR\n  OK[\"aicoding verify\"]\n```\n", document.count)
+		writeArchitectureFixtureFile(t, repo, document.path, content)
 	}
 	return repo
 }

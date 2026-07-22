@@ -105,6 +105,26 @@ AiCoding：   Agent      ──▶  validationevidence  概率 ▶ 确定
         runner      单次任务集执行（无迭代语义）
 ```
 
+GitHub 可渲染的同构视图如下；实线是一次尝试闭环，虚线只标注职责边界：
+
+```mermaid
+flowchart TB
+  TODO["todolist"]
+  SPEC["WorkSpec"]
+  NEXT["aicoding work next"]
+  EVIDENCE["validationevidence"]
+  AGENT["Agent 执行一次尝试"]
+  TEST["testengine"]
+  RECORD["aicoding work record"]
+  LOG["attempts.jsonl"]
+  LIFE["lifecycle 声明式收敛"]
+  RUNNER["runner 单次任务集"]
+  TODO --> SPEC --> NEXT --> AGENT --> TEST --> RECORD --> LOG --> NEXT
+  TEST --> EVIDENCE --> NEXT
+  LIFE -. "目标已知" .-> SPEC
+  RUNNER -. "无迭代语义" .-> AGENT
+```
+
 ### 与 lifecycle 的边界判据
 
 > **目标状态能被声明的，用 lifecycle；只能被验证的，才用 loop。**
@@ -141,6 +161,31 @@ loop 不知道目标长什么样，只能通过门禁经验性地发现自己到
               │   ▼        │
               │ record ◀───┘
               └───┘
+```
+
+GitHub 可渲染的状态机如下；所有停止与 checkpoint 都是具名结果，不会被折叠成模糊失败：
+
+```mermaid
+flowchart TB
+  PRE["出发前置 fail-closed"]
+  DECIDE["aicoding work next"]
+  CONTINUE["continue"]
+  CHECKPOINT["checkpoint"]
+  SATISFIED["stop-satisfied"]
+  BUDGET["stop-budget"]
+  STALLED["stop-stalled"]
+  VIOLATION["stop-violation"]
+  AGENT["Agent 执行"]
+  HUMAN["人工裁决"]
+  RECORD["aicoding work record"]
+  END["具名终止"]
+  PRE --> DECIDE
+  DECIDE --> CONTINUE --> AGENT --> RECORD --> DECIDE
+  DECIDE --> CHECKPOINT --> HUMAN --> RECORD
+  DECIDE --> SATISFIED --> END
+  DECIDE --> BUDGET --> END
+  DECIDE --> STALLED --> END
+  DECIDE --> VIOLATION --> END
 ```
 
 ### 五个具名终止态

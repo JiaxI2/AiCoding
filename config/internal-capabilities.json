@@ -21,6 +21,14 @@
       "summary": "检查并构建 AiCoding Go CLI 的最小本地启动路径。",
       "publicEntries": ["aicoding bootstrap"],
       "architectureDoc": "docs/architecture/AICODING_CORE_ARCHITECTURE.md",
+      "quickstart": {
+        "steps": ["aicoding bootstrap --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding bootstrap --json"
+      },
       "verification": ["go test ./internal/bootstrap/..."]
     },
     {
@@ -30,8 +38,16 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "观测并按证据保护规则回收已注册的本地生成物与临时资源。",
-      "publicEntries": ["aicoding cache status", "aicoding cache clean"],
+      "publicEntries": ["aicoding cache status","aicoding cache clean"],
       "architectureDoc": "docs/architecture/01-system-architecture.md",
+      "quickstart": {
+        "steps": ["aicoding cache status --json","aicoding cache clean --scope temp --dry-run --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding cache status --json"
+      },
       "verification": ["go test ./internal/cache/..."]
     },
     {
@@ -41,8 +57,16 @@
       "type": "domain-capability",
       "status": "beta",
       "summary": "把 internal 包投影为可查询、可生成且可治理的单一能力目录。",
-      "publicEntries": ["aicoding capability list", "aicoding capability describe", "aicoding capability index"],
+      "publicEntries": ["aicoding capability list","aicoding capability describe","aicoding capability index"],
       "architectureDoc": "docs/architecture/01-system-architecture.md",
+      "quickstart": {
+        "steps": ["aicoding capability list --json","aicoding capability describe --id capability --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding capability list --json"
+      },
       "verification": ["go test ./internal/capability/..."]
     },
     {
@@ -54,6 +78,14 @@
       "summary": "拥有 typed command catalog、参数解析、帮助、JSON stdout 与退出码。",
       "publicEntries": ["aicoding --help"],
       "architectureDoc": "docs/architecture/AICODING_CORE_ARCHITECTURE.md",
+      "quickstart": {
+        "steps": ["aicoding --help"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding --help"
+      },
       "verification": ["go test ./internal/cli/..."]
     },
     {
@@ -63,8 +95,16 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "统一 C99 风格、注释、格式化与宿主验证入口。",
-      "publicEntries": ["aicoding skill c99-standard-c check", "aicoding skill c99-standard-c verify"],
+      "publicEntries": ["aicoding skill c99-standard-c check","aicoding skill c99-standard-c verify"],
       "architectureDoc": "docs/architecture/C_USERSTYLE_KIT_ARCHITECTURE.md",
+      "quickstart": {
+        "steps": ["aicoding skill c99-standard-c status --json","aicoding skill c99-standard-c verify --profile fast --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding skill c99-standard-c status --json"
+      },
       "verification": ["go test ./internal/cstyle/..."]
     },
     {
@@ -76,6 +116,14 @@
       "summary": "检测源码、配置与权威文档之间的同步漂移。",
       "publicEntries": ["aicoding docsync all"],
       "architectureDoc": "docs/architecture/DOC_SYNC_PLUS_SPEC.md",
+      "quickstart": {
+        "steps": ["aicoding docsync all --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding docsync all --json"
+      },
       "verification": ["go test ./internal/docsync/..."]
     },
     {
@@ -95,8 +143,16 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "执行提交、依赖方向、目录布局与能力孤儿门禁。",
-      "publicEntries": ["aicoding governance lint", "aicoding governance dependencies", "aicoding governance layout", "aicoding governance capabilities"],
+      "publicEntries": ["aicoding governance lint","aicoding governance dependencies","aicoding governance layout","aicoding governance capabilities"],
       "architectureDoc": "docs/architecture/GRAPH_FIRST.md",
+      "quickstart": {
+        "steps": ["aicoding governance capabilities --json","aicoding governance dependencies --json","aicoding governance layout --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding governance capabilities --json"
+      },
       "verification": ["go test ./internal/governance/..."]
     },
     {
@@ -106,8 +162,16 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "加载、投影、验证并脚手架化 Kit 能力。",
-      "publicEntries": ["aicoding kit list", "aicoding kit describe", "aicoding kit init", "aicoding kit verify"],
+      "publicEntries": ["aicoding kit list","aicoding kit describe","aicoding kit init","aicoding kit verify"],
       "architectureDoc": "docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md",
+      "quickstart": {
+        "steps": ["aicoding kit list --json","aicoding kit describe --all --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding kit list --json"
+      },
       "verification": ["go test ./internal/kit/..."]
     },
     {
@@ -117,8 +181,16 @@
       "type": "product-workflow",
       "status": "stable",
       "summary": "以统一 adapter catalog 编排 Kit、MCP、runtime Skill 与 repo-context 生命周期。",
-      "publicEntries": ["aicoding lifecycle plan", "aicoding lifecycle status", "aicoding lifecycle verify"],
+      "publicEntries": ["aicoding lifecycle plan","aicoding lifecycle status","aicoding lifecycle verify"],
       "architectureDoc": "docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md",
+      "quickstart": {
+        "steps": ["aicoding lifecycle status --scope all --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding lifecycle status --scope all --json"
+      },
       "verification": ["go test ./internal/lifecycle/..."]
     },
     {
@@ -128,8 +200,17 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "校验有界 WorkSpec、裁决下一步并追加记录尝试，不执行循环。",
-      "publicEntries": ["aicoding work validate", "aicoding work next", "aicoding work status", "aicoding work record"],
+      "publicEntries": ["aicoding work validate","aicoding work next","aicoding work status","aicoding work record"],
       "architectureDoc": "docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md",
+      "quickstart": {
+        "steps": ["aicoding work validate --file testdata/loopkit/examples/project-development.work.json --json","aicoding work next --file testdata/loopkit/examples/project-development.work.json --json","aicoding work status --file testdata/loopkit/examples/project-development.work.json --json"],
+        "exampleInput": "testdata/loopkit/examples/project-development.work.json"
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "work 系列命令已在 typed catalog，Agent 直接调用即可，无需 install；loop-engineering-kit 的可选打包状态不影响这些命令。",
+        "agentUsage": "aicoding work next --file testdata/loopkit/examples/project-development.work.json --json"
+      },
       "verification": ["go test ./internal/loopkit/..."]
     },
     {
@@ -139,8 +220,16 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "读取 MCP 注册表并执行状态、诊断、验证与生命周期动作。",
-      "publicEntries": ["aicoding mcp list", "aicoding mcp status", "aicoding mcp doctor", "aicoding mcp verify"],
+      "publicEntries": ["aicoding mcp list","aicoding mcp status","aicoding mcp doctor","aicoding mcp verify"],
       "architectureDoc": "docs/architecture/MCP_CONTROL_PLANE.md",
+      "quickstart": {
+        "steps": ["aicoding mcp list --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding mcp list --json"
+      },
       "verification": ["go test ./internal/mcpcontrol/..."]
     },
     {
@@ -150,8 +239,16 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "校验计划产物、批准绑定与 Git Tree 漂移。",
-      "publicEntries": ["aicoding plan check", "aicoding plan verify", "aicoding plan status", "aicoding plan approve"],
+      "publicEntries": ["aicoding plan check","aicoding plan verify","aicoding plan status","aicoding plan approve"],
       "architectureDoc": "docs/architecture/PLAN_MODE_ARCHITECTURE.md",
+      "quickstart": {
+        "steps": ["aicoding plan check --paths README.md --json","aicoding plan status --all --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding plan check --paths README.md --json"
+      },
       "verification": ["go test ./internal/plan/..."]
     },
     {
@@ -173,6 +270,14 @@
       "summary": "对 PowerShell 正则高风险写法执行 Go-native 快速检查。",
       "publicEntries": ["aicoding powershell regex-lint"],
       "architectureDoc": "docs/architecture/POWERSHELL_BOUNDARY.md",
+      "quickstart": {
+        "steps": ["aicoding powershell regex-lint --staged --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding powershell regex-lint --staged --json"
+      },
       "verification": ["go test ./internal/pwshregex/..."]
     },
     {
@@ -192,8 +297,16 @@
       "type": "product-workflow",
       "status": "stable",
       "summary": "执行发布结构验证并组合正式 Release 门禁。",
-      "publicEntries": ["aicoding release verify", "aicoding release gate"],
+      "publicEntries": ["aicoding release verify","aicoding release gate"],
       "architectureDoc": "docs/governance/RELEASE_POLICY.md",
+      "quickstart": {
+        "steps": ["aicoding release verify --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding release verify --json"
+      },
       "verification": ["go test ./internal/releasegate/..."]
     },
     {
@@ -205,6 +318,14 @@
       "summary": "构建并同步仓库事实快照，供生命周期只读使用。",
       "publicEntries": ["aicoding lifecycle status"],
       "architectureDoc": "docs/architecture/02-context-architecture.md",
+      "quickstart": {
+        "steps": ["aicoding lifecycle status --scope repo-context --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding lifecycle status --scope repo-context --json"
+      },
       "verification": ["go test ./internal/repocontext/..."]
     },
     {
@@ -214,8 +335,16 @@
       "type": "product-workflow",
       "status": "stable",
       "summary": "聚合产品 doctor 与确定性 verify 检查。",
-      "publicEntries": ["aicoding doctor --all", "aicoding verify"],
+      "publicEntries": ["aicoding doctor --all","aicoding verify"],
       "architectureDoc": "docs/architecture/01-system-architecture.md",
+      "quickstart": {
+        "steps": ["aicoding doctor --all --json","aicoding verify --profile Smoke --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding doctor --all --json"
+      },
       "verification": ["go test ./internal/repohealth/..."]
     },
     {
@@ -227,6 +356,14 @@
       "summary": "幂等初始化 Git 本地设置、Hook、状态根与文档骨架。",
       "publicEntries": ["aicoding provision"],
       "architectureDoc": "docs/decisions/0005-repo-init.md",
+      "quickstart": {
+        "steps": ["aicoding provision --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding provision --json"
+      },
       "verification": ["go test ./internal/repoinit/..."]
     },
     {
@@ -248,6 +385,14 @@
       "summary": "验证可复用模块边界与既有复用证据。",
       "publicEntries": ["aicoding governance reuse"],
       "architectureDoc": "docs/architecture/GIT_REUSE_BOUNDARY.md",
+      "quickstart": {
+        "steps": ["aicoding governance reuse --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding governance reuse --json"
+      },
       "verification": ["go test ./internal/reuse/..."]
     },
     {
@@ -269,6 +414,14 @@
       "summary": "只读审计 Git tag 命名空间与发布标签策略。",
       "publicEntries": ["aicoding tag audit"],
       "architectureDoc": "docs/governance/TAGGING_POLICY.md",
+      "quickstart": {
+        "steps": ["aicoding tag audit --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding tag audit --json"
+      },
       "verification": ["go test ./internal/tagpolicy/..."]
     },
     {
@@ -280,6 +433,14 @@
       "summary": "拥有 Smoke、Full、Release 测试注册、执行、超时与报告。",
       "publicEntries": ["aicoding test"],
       "architectureDoc": "docs/architecture/AICODING_CORE_ARCHITECTURE.md",
+      "quickstart": {
+        "steps": ["aicoding test --profile Smoke --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding test --profile Smoke --json"
+      },
       "verification": ["go test ./internal/testengine/..."]
     },
     {
@@ -291,6 +452,14 @@
       "summary": "只读投影 docs/todolist 的状态、标题与验证入口。",
       "publicEntries": ["aicoding todolist"],
       "architectureDoc": "docs/decisions/0004-todolist-primitive.md",
+      "quickstart": {
+        "steps": ["aicoding todolist --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding todolist --json"
+      },
       "verification": ["go test ./internal/todolist/..."]
     },
     {
@@ -300,8 +469,16 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "把测试结论绑定到 Git 内容身份，同一内容可审计复用。",
-      "publicEntries": ["aicoding validation status", "aicoding validation check", "aicoding validation explain", "aicoding validation list"],
+      "publicEntries": ["aicoding validation status","aicoding validation check","aicoding validation explain","aicoding validation list"],
       "architectureDoc": "docs/decisions/0007-validation-evidence.md",
+      "quickstart": {
+        "steps": ["aicoding validation status --json","aicoding validation list --json"]
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "命令已在 typed catalog，Agent 直接调用即可，无需单独 install。",
+        "agentUsage": "aicoding validation status --json"
+      },
       "verification": ["go test ./internal/validationevidence/..."]
     }
   ]

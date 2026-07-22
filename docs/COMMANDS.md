@@ -74,8 +74,11 @@ namespace 判断中分别维护字符串列表。
 
 `config/internal-capabilities.json` 是 `internal/` 一级包的唯一能力目录，不是第二套命令
 catalog。公共入口反向校验上面的 typed HelpForm；`capability list`/`describe` 只读查询，
-`capability index --write` 只写 README 生成区和 `docs/CAPABILITIES.md`。`docsync` 阻断手改
-生成区，`governance capabilities` 阻断未登记包、缺失架构文档、失效公共入口和 stable 无验证。
+`describe` 从同一条目一次返回 summary、architectureDoc、quickstart、activation、verification
+和当前 status。`activation.kind=cli-entry` 表示命令已经可供 Agent 直接调用、无需 install；
+`kit-install` 才表示需要 lifecycle install。`capability index --write` 只写 README 生成区和
+`docs/CAPABILITIES.md`。`docsync` 阻断手改生成区，`governance capabilities` 阻断未登记包、
+缺失架构文档、失效公共入口、stable 无验证，以及 stable 公共能力缺 quickstart/activation。
 
 延迟等级也是命令契约：`fast` 的 warm 中位数预算为 400ms，覆盖只读查询；`standard`
 预算为 1200ms，覆盖 `doctor --all`、`lifecycle status --scope all`、

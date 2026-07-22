@@ -33,6 +33,15 @@ func TestLoadListAndDescribeReturnDetachedSortedViews(t *testing.T) {
       "summary": "alpha capability",
       "publicEntries": ["aicoding alpha list"],
       "architectureDoc": "docs/architecture/alpha.md",
+      "quickstart": {
+        "steps": ["aicoding alpha list --json"],
+        "exampleInput": "testdata/alpha.json"
+      },
+      "activation": {
+        "kind": "cli-entry",
+        "note": "already available",
+        "agentUsage": "aicoding alpha list --json"
+      },
       "verification": ["go test ./internal/alpha/..."]
     }
   ]
@@ -54,12 +63,17 @@ func TestLoadListAndDescribeReturnDetachedSortedViews(t *testing.T) {
 		t.Fatalf("filtered list = %#v, err = %v", selected, err)
 	}
 	selected[0].PublicEntries[0] = "mutated"
+	selected[0].Quickstart.Steps[0] = "mutated"
+	selected[0].Activation.Note = "mutated"
 	described, err := Describe(catalog, "alpha")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if described.PublicEntries[0] != "aicoding alpha list" {
 		t.Fatalf("catalog leaked mutable slice: %#v", described.PublicEntries)
+	}
+	if described.Quickstart.Steps[0] != "aicoding alpha list --json" || described.Activation.Note != "already available" {
+		t.Fatalf("catalog leaked nested usage fields: %#v %#v", described.Quickstart, described.Activation)
 	}
 	if _, err := List(catalog, "unknown", ""); err == nil {
 		t.Fatal("unknown type filter should fail")
@@ -118,6 +132,42 @@ func TestVerifyReportsOrphansMissingEvidenceAndInvalidEntries(t *testing.T) {
 	assertCapabilityTestValue(t, result.StableWithoutVerification, "alpha")
 }
 
+func TestVerifyRejectsStablePublicCapabilityWithoutUsageClosure(t *testing.T) {
+	repo := t.TempDir()
+	writeCapabilityTestFile(t, repo, "internal/alpha/alpha.go", "package alpha\n")
+	writeCapabilityTestFile(t, repo, "docs/architecture/alpha.md", "# Alpha\n")
+	writeCapabilityTestFile(t, repo, CatalogPath, `{
+  "schemaVersion": 1,
+  "name": "test capabilities",
+  "capabilities": [{
+    "id": "alpha",
+    "package": "internal/alpha",
+    "name": "Alpha",
+    "type": "domain-capability",
+    "status": "stable",
+    "summary": "alpha capability",
+    "publicEntries": ["aicoding alpha list"],
+    "architectureDoc": "docs/architecture/alpha.md",
+    "verification": ["go test ./internal/alpha/..."]
+  }]
+}`)
+	catalog, err := Load(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result := Verify(repo, catalog, VerifyOptions{PublicEntryExists: func(string) bool { return true }})
+	if result.OK {
+		t.Fatal("stable public capability without quickstart and activation must fail")
+	}
+	assertCapabilityTestValue(t, result.StablePublicWithoutQuickstart, "alpha")
+	assertCapabilityTestValue(t, result.StablePublicWithoutActivation, "alpha")
+	if !containsCapabilityTestSubstring(result.Errors, "stable public capability has no quickstart: alpha") ||
+		!containsCapabilityTestSubstring(result.Errors, "stable public capability has no activation: alpha") {
+		t.Fatalf("usage closure errors = %#v", result.Errors)
+	}
+}
+
 func TestRenderIndexAndGeneratedVerification(t *testing.T) {
 	repo := t.TempDir()
 	writeCapabilityTestFile(t, repo, "internal/alpha/alpha.go", "package alpha\n")
@@ -135,6 +185,12 @@ func TestRenderIndexAndGeneratedVerification(t *testing.T) {
       "summary": "alpha capability",
       "publicEntries": ["aicoding alpha"],
       "architectureDoc": "docs/architecture/alpha.md",
+      "quickstart": {"steps": ["aicoding alpha --json"]},
+      "activation": {
+        "kind": "cli-entry",
+        "note": "already available",
+        "agentUsage": "aicoding alpha --json"
+      },
       "verification": ["go test ./internal/alpha/..."]
     }
   ]
@@ -156,6 +212,11 @@ func TestRenderIndexAndGeneratedVerification(t *testing.T) {
 	}
 	if first != second {
 		t.Fatal("rendering the generated index should be deterministic")
+	}
+	for _, want := range []string{"docs/CAPABILITIES.md#capability-alpha", "aicoding alpha --json", "cli-entry", "capability describe --id alpha"} {
+		if !strings.Contains(first.README+first.Document, want) {
+			t.Fatalf("generated usage closure missing %q", want)
+		}
 	}
 	writeCapabilityTestFile(t, repo, readmePath, first.README)
 	writeCapabilityTestFile(t, repo, CapabilitiesPath, first.Document)

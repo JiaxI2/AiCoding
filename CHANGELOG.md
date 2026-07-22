@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(capability)**: 完成 TODO 0027：capability registry 向后兼容地增加可选 `quickstart`/`activation`，22 个公共能力全部形成“是什么、架构、怎么用、怎么进 Agent、怎么验证、当前状态”闭环；Loop Engineering 明确为 typed CLI 已可用且无需 install，并提供三步可执行示例。README/`docs/CAPABILITIES.md` 继续确定性生成，Loop 文档补两张 ≤20 节点 Mermaid，DOCS-006 逐图校验命令。缺 quickstart、不存在 Mermaid 命令、手改生成区三条真实负例均被阻断；链接审计 350/350，Full `67 total / 63 pass / 0 fail / 4 skip`。 / Completes TODO 0027 with registry-backed quickstart and activation for all public capabilities, executable Loop Engineering guidance, generated deep links, two governed Mermaid diagrams, three fail-closed negative cases, clean links, and a passing Full profile.
+
 - **docs(plan)**: 在 clean worktree 上批准 TODO 0027 的能力使用闭环计划，并绑定 Git Tree `46ed2ff852a078beedebd23b34df8ac70afa0a57`；实现只允许在登记 scope 内产生漂移，Full Receipt 仍由既有 Validation Evidence 权威签发。 / Approves the TODO 0027 capability-usage plan on a clean worktree and binds its bounded implementation scope to Git Tree `46ed2ff852a078beedebd23b34df8ac70afa0a57`.
 
 - **docs(plan)**: 为 TODO 0027 建立独立 Plan Mode 范围，覆盖 capability registry/schema、describe 与生成投影、Loop Engineering 双 Mermaid、DOCS-006 和 Full 门禁；低风险标签不绕过冻结 schema、测试引擎与架构文档的既有敏感路径纪律。 / Adds a bounded Plan Mode scope for TODO 0027 across the capability registry, generated usage projection, Loop Engineering diagrams, DOCS-006, and the Full gate.

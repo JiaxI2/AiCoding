@@ -113,17 +113,32 @@ go run ./cmd/aicoding bootstrap --json && .\bin\aicoding.exe provision --json
 
 <!-- BEGIN GENERATED: CAPABILITIES -->
 
-> 此区由 `config/internal-capabilities.json` 生成（`sha256:9bc4958912fedd4f95a592d6588076cdeab4c39655eecbc97da829fab7e33d14`）。完整的 28 项能力见 [能力索引](docs/CAPABILITIES.md)。
+> 此区由 `config/internal-capabilities.json` 生成（`sha256:b2fe8d65542fc1e1188d3989843f2f026174e36dc2f36ae0146a8d22d4ac102d`）。完整的 28 项能力见 [能力索引](docs/CAPABILITIES.md)。
 
-| 正式工作流 | 核心职责 | 公共入口 | 架构 |
-|---|---|---|---|
-| `bootstrap` Bootstrap | 检查并构建 AiCoding Go CLI 的最小本地启动路径。 | `aicoding bootstrap` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
-| `cli` Typed CLI Control Plane | 拥有 typed command catalog、参数解析、帮助、JSON stdout 与退出码。 | `aicoding --help` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
-| `lifecycle` Lifecycle Composition | 以统一 adapter catalog 编排 Kit、MCP、runtime Skill 与 repo-context 生命周期。 | `aicoding lifecycle plan`<br>`aicoding lifecycle status`<br>`aicoding lifecycle verify` | [文档](docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md) |
-| `release-gate` Release Gate | 执行发布结构验证并组合正式 Release 门禁。 | `aicoding release verify`<br>`aicoding release gate` | [文档](docs/governance/RELEASE_POLICY.md) |
-| `repo-health` Repository Health | 聚合产品 doctor 与确定性 verify 检查。 | `aicoding doctor --all`<br>`aicoding verify` | [文档](docs/architecture/01-system-architecture.md) |
-| `repo-init` Repository Provisioning | 幂等初始化 Git 本地设置、Hook、状态根与文档骨架。 | `aicoding provision` | [文档](docs/decisions/0005-repo-init.md) |
-| `test-engine` Global Test Engine | 拥有 Smoke、Full、Release 测试注册、执行、超时与报告。 | `aicoding test` | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+| 可直接使用的能力 | 核心职责 | 快速入口 | 使用闭环 | 架构 |
+|---|---|---|---|---|
+| `bootstrap` Bootstrap | 检查并构建 AiCoding Go CLI 的最小本地启动路径。 | `aicoding bootstrap` | [describe](docs/CAPABILITIES.md#capability-bootstrap) | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+| `c-style` C99 Style Control | 统一 C99 风格、注释、格式化与宿主验证入口。 | `aicoding skill c99-standard-c check` | [describe](docs/CAPABILITIES.md#capability-c-style) | [文档](docs/architecture/C_USERSTYLE_KIT_ARCHITECTURE.md) |
+| `cache` Local Artifact Retention | 观测并按证据保护规则回收已注册的本地生成物与临时资源。 | `aicoding cache status` | [describe](docs/CAPABILITIES.md#capability-cache) | [文档](docs/architecture/01-system-architecture.md) |
+| `capability` Capability Discoverability | 把 internal 包投影为可查询、可生成且可治理的单一能力目录。 | `aicoding capability list` | [describe](docs/CAPABILITIES.md#capability-capability) | [文档](docs/architecture/01-system-architecture.md) |
+| `cli` Typed CLI Control Plane | 拥有 typed command catalog、参数解析、帮助、JSON stdout 与退出码。 | `aicoding --help` | [describe](docs/CAPABILITIES.md#capability-cli) | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+| `docsync` DocSync | 检测源码、配置与权威文档之间的同步漂移。 | `aicoding docsync all` | [describe](docs/CAPABILITIES.md#capability-docsync) | [文档](docs/architecture/DOC_SYNC_PLUS_SPEC.md) |
+| `governance` Repository Governance | 执行提交、依赖方向、目录布局与能力孤儿门禁。 | `aicoding governance lint` | [describe](docs/CAPABILITIES.md#capability-governance) | [文档](docs/architecture/GRAPH_FIRST.md) |
+| `kit` Kit Management | 加载、投影、验证并脚手架化 Kit 能力。 | `aicoding kit list` | [describe](docs/CAPABILITIES.md#capability-kit) | [文档](docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md) |
+| `lifecycle` Lifecycle Composition | 以统一 adapter catalog 编排 Kit、MCP、runtime Skill 与 repo-context 生命周期。 | `aicoding lifecycle plan` | [describe](docs/CAPABILITIES.md#capability-lifecycle) | [文档](docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md) |
+| `loop-engineering` Loop Engineering | 校验有界 WorkSpec、裁决下一步并追加记录尝试，不执行循环。 | `aicoding work validate` | [describe](docs/CAPABILITIES.md#capability-loop-engineering) | [文档](docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md) |
+| `mcp-control` MCP Control Plane | 读取 MCP 注册表并执行状态、诊断、验证与生命周期动作。 | `aicoding mcp list` | [describe](docs/CAPABILITIES.md#capability-mcp-control) | [文档](docs/architecture/MCP_CONTROL_PLANE.md) |
+| `plan-mode` Plan Mode | 校验计划产物、批准绑定与 Git Tree 漂移。 | `aicoding plan check` | [describe](docs/CAPABILITIES.md#capability-plan-mode) | [文档](docs/architecture/PLAN_MODE_ARCHITECTURE.md) |
+| `powershell-regex` PowerShell Regex Lint | 对 PowerShell 正则高风险写法执行 Go-native 快速检查。 | `aicoding powershell regex-lint` | [describe](docs/CAPABILITIES.md#capability-powershell-regex) | [文档](docs/architecture/POWERSHELL_BOUNDARY.md) |
+| `release-gate` Release Gate | 执行发布结构验证并组合正式 Release 门禁。 | `aicoding release verify` | [describe](docs/CAPABILITIES.md#capability-release-gate) | [文档](docs/governance/RELEASE_POLICY.md) |
+| `repo-context` Repository Context | 构建并同步仓库事实快照，供生命周期只读使用。 | `aicoding lifecycle status` | [describe](docs/CAPABILITIES.md#capability-repo-context) | [文档](docs/architecture/02-context-architecture.md) |
+| `repo-health` Repository Health | 聚合产品 doctor 与确定性 verify 检查。 | `aicoding doctor --all` | [describe](docs/CAPABILITIES.md#capability-repo-health) | [文档](docs/architecture/01-system-architecture.md) |
+| `repo-init` Repository Provisioning | 幂等初始化 Git 本地设置、Hook、状态根与文档骨架。 | `aicoding provision` | [describe](docs/CAPABILITIES.md#capability-repo-init) | [文档](docs/decisions/0005-repo-init.md) |
+| `reuse-governance` Reuse Governance | 验证可复用模块边界与既有复用证据。 | `aicoding governance reuse` | [describe](docs/CAPABILITIES.md#capability-reuse-governance) | [文档](docs/architecture/GIT_REUSE_BOUNDARY.md) |
+| `tag-policy` Tag Policy | 只读审计 Git tag 命名空间与发布标签策略。 | `aicoding tag audit` | [describe](docs/CAPABILITIES.md#capability-tag-policy) | [文档](docs/governance/TAGGING_POLICY.md) |
+| `test-engine` Global Test Engine | 拥有 Smoke、Full、Release 测试注册、执行、超时与报告。 | `aicoding test` | [describe](docs/CAPABILITIES.md#capability-test-engine) | [文档](docs/architecture/AICODING_CORE_ARCHITECTURE.md) |
+| `todolist` Todolist Projection | 只读投影 docs/todolist 的状态、标题与验证入口。 | `aicoding todolist` | [describe](docs/CAPABILITIES.md#capability-todolist) | [文档](docs/decisions/0004-todolist-primitive.md) |
+| `validation-evidence` Validation Evidence | 把测试结论绑定到 Git 内容身份，同一内容可审计复用。 | `aicoding validation status` | [describe](docs/CAPABILITIES.md#capability-validation-evidence) | [文档](docs/decisions/0007-validation-evidence.md) |
 
 <!-- END GENERATED: CAPABILITIES -->
 
