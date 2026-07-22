@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 在 clean worktree 上批准 TODO 0027 的能力使用闭环计划，并绑定 Git Tree `46ed2ff852a078beedebd23b34df8ac70afa0a57`；实现只允许在登记 scope 内产生漂移，Full Receipt 仍由既有 Validation Evidence 权威签发。 / Approves the TODO 0027 capability-usage plan on a clean worktree and binds its bounded implementation scope to Git Tree `46ed2ff852a078beedebd23b34df8ac70afa0a57`.
+
 - **docs(plan)**: 为 TODO 0027 建立独立 Plan Mode 范围，覆盖 capability registry/schema、describe 与生成投影、Loop Engineering 双 Mermaid、DOCS-006 和 Full 门禁；低风险标签不绕过冻结 schema、测试引擎与架构文档的既有敏感路径纪律。 / Adds a bounded Plan Mode scope for TODO 0027 across the capability registry, generated usage projection, Loop Engineering diagrams, DOCS-006, and the Full gate.
 
 - **docs(todolist)**: 从外部 staging 仅导入 TODO 0026（内容钉死的 pinned 引用注册）与 TODO 0027（能力使用闭环），保持 Planned，并固定本批执行顺序为 `0027 → 0026 → 复利方向草稿`；`FORWARD_PLAN` 与草稿均未作为 todo 入仓。 / Imports only TODO 0026 and 0027 from external staging, keeps both Planned, records the required execution order, and excludes the forward plan and compounding draft from the todo directory.

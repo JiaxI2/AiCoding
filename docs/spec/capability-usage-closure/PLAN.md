@@ -1,6 +1,6 @@
 ---
 id: capability-usage-closure
-status: draft
+status: approved
 scope:
   - config/internal-capabilities.json
   - config/schemas/internal-capabilities.schema.json
@@ -14,7 +14,7 @@ scope:
   - README.md
   - CHANGELOG.md
   - docs/todolist/0027-capability-usage-closure.md
-approvedTree: ""
+approvedTree: "46ed2ff852a078beedebd23b34df8ac70afa0a57"
 gates:
   - profile: full
 ---
@@ -40,4 +40,3 @@ Loop Engineering 架构图共同回答“是什么、怎么用、怎么进 Agent
 
 完成前运行 capability/governance/docsync/testengine 局部测试、三条真实负例、按 describe
 quickstart 执行 `work validate/next`，再运行 Full profile、链接检查与 `git diff --check`。
-
