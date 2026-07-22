@@ -102,9 +102,9 @@ bin\aicoding.exe test --profile Smoke --json
 - Phase 1 提交：`2a8b49af12386787eb8db112da66cf736882cb84`。
 - 满足窗口的稳定版：`v1.1.0`；`git merge-base --is-ancestor 2a8b49a v1.1.0`
   返回 `0`，证明该正式 tag 包含 Phase 1，之后另有 `v1.2.0-rc.1`。
-- Phase 2 实现提交：本计划状态变为 Completed 且删除脚本的同一提交；使用
-  `git log -1 -- tools/specialty/verify-codex-kit.ps1` 可定位其 commit，避免在 commit
-  内容中建立不可能稳定的自引用哈希。最终交付报告同时列出该提交的完整 SHA。
+- Phase 2 实现提交：`ff4948148f9d28b9a42873cbe46179e383f76853`；该提交同时把本计划
+  状态改为 Completed、删除脚本并收敛其活跃引用。精确 SHA 由紧随其后的证据提交回填，
+  避免在实现 commit 内容中建立不可能稳定的自引用哈希。
 - 删除严格限于 `tools/specialty/verify-codex-kit.ps1`；当前态 Full 说明中的兼容包装段落与
   `aicoding-platform` export manifest 中仅匹配该脚本的 include 同步移除，历史 CHANGELOG、
   已完成 todo、架构 Traceability 与本计划保留。
