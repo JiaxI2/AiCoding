@@ -355,6 +355,17 @@ https://github.com/JiaxI2/AiCoding/actions/runs/29900035150 @ 9890b667bfdc54ef5f
 全量审计，并上传 `release-gate-evidence`。它证明 v1 身份方案，但 ADR 0007 §5 规定 fingerprint
 算法契约换域必须重置计数，因此不进入 v2 的晋级轨道。
 
-v2 当前计数：**0/3**。后续三次均须来自 main，且每次仍先 `--reuse off` 冷种子、再
-`--verify-reuse` 全量审计；凑满 3/3 后另开独立评审提交，当前默认值继续保持
-`--reuse off`。
+v2 当前计数：**1/3**:
+https://github.com/JiaxI2/AiCoding/actions/runs/29916523297 @ 41eefac7a67ac1473a5b9cf7cfc6548ca7372027 PASS
+
+该次正式 main workflow dispatch 的 release-gate 先以 `--reuse off` 完成冷种子，再以
+`--verify-reuse` 完成全量审计并上传 `release-gate-evidence`。两次均针对 Tree
+`529ef271c491c717202a19b10fa7127a36d83c73`，复用审计返回
+`VALIDATION_RECEIPT_HIT`，且与冷种子共用 Receipt
+`sha256:f19b6a93718fad2fbc02f6ac1893bea5db0798779e41cc568b6033baa106d1be`。
+两次 profile 均为 `71 total / 69 pass / 0 fail / 2 warn / 0 skip`；`ENV-004` 的 CI
+环境未安装 Task 与 `FRESH-004` 的无 Release fresh-clone 基线均保持 advisory，workflow
+及 release-gate job 的最终 conclusion 均为 `success`。
+
+后续两次仍须来自 main，且每次仍先 `--reuse off` 冷种子、再 `--verify-reuse` 全量审计；
+凑满 3/3 后另开独立评审提交，当前默认值继续保持 `--reuse off`。
