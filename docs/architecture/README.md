@@ -28,6 +28,7 @@ Status: Accepted
 
 ## 派生视图（不定义契约，可不读）
 
+- [COMPOUNDING_KNOWLEDGE.md](COMPOUNDING_KNOWLEDGE.md)：复利知识架构方向草稿；保持 Draft，落地前须由 ADR 回答开放问题。
 - [00-vision.md](00-vision.md) 至 [07-roadmap.md](07-roadmap.md) 的编号系列；
 - [ARCHITECTURE_HANDBOOK.md](ARCHITECTURE_HANDBOOK.md)；
 - [MCP_CONTROL_PLANE.md](MCP_CONTROL_PLANE.md)（MCP 主题权威仍是 `CLI_MCP_CONTROL_PLANE.md`）。
