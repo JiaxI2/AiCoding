@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 在 clean `feature/convergence` tree 上批准 `backlog-archival-hygiene`，将 TODO 0029 的 doctor PowerShell data 字段、冻结 CLI report schema、四个退役标记与文档同步范围绑定到 Git Tree `883dff773fd0bf97afb430a35a593d2607c2ffbf`。 / Approves the bounded TODO 0029 retirement-visibility plan on a clean tree and binds its repohealth, frozen report-schema, wrapper-marker, and documentation scope to Git Tree `883dff773fd0bf97afb430a35a593d2607c2ffbf`.
+
 - **docs(plan)**: 为 TODO 0029 剩余的 `doctor pwsh` 退役窗口显性化建立窄 Plan，覆盖 repohealth、冻结 CLI report schema、typed HelpForm 回归、COMMANDS/报告契约、四个已知兼容壳头标记与 todo 自归档；保持既有 20/2/2 计数且 unspecified 只报告不设门禁。 / Adds a bounded plan for TODO 0029's remaining PowerShell retirement visibility across repohealth, the frozen CLI report schema, typed-help regression, command/report docs, four known wrapper markers, and final todo self-archival while preserving count-only semantics.
 
 - **docs(todolist)**: 执行 TODO 0029 的队列归档阶段：先以真实 nested probe 证明 `internal/todolist` 只读顶层，再用 `git mv` 将 27 个 Done 文件移入 `docs/todolist/done/`；活跃视图由 `31 total / 27 Done / 4 Planned` 收敛为 `4 total / 4 Planned`，文件正文与 Git 历史保留，layout/DocSync 无需新增白名单。 / Archives 27 completed todo files with Git history preserved after a real non-recursive queue probe, reducing the active view from 31 items to four planned items without changing the todolist primitive or broadening layout policy.

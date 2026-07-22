@@ -1,7 +1,7 @@
 ---
 id: backlog-archival-hygiene
-status: draft
-approvedTree: ""
+status: approved
+approvedTree: "883dff773fd0bf97afb430a35a593d2607c2ffbf"
 scope:
   - internal/repohealth/**
   - internal/cli/catalog_test.go
