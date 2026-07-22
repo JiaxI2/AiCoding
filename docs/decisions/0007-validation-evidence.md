@@ -128,7 +128,10 @@ push tree 继续复用既有通用 `gitx.TreeOID(repo, rev)`，不复制 `RefTre
    完整执行并比对 `resultsDigest`；
 3. 切换提交或 PR 必须引用这 3 次 run URL；本地运行和“workflow 已接线”不能替代远端证据。
 
-toolchain 变更不重置 `release-gate` 三次绿灯计数；`--verify-reuse` 审计逻辑与具体 toolchain 无关。
+普通 toolchain 版本变化不重置 `release-gate` 三次绿灯计数；`--verify-reuse` 审计逻辑与具体
+Go/Git 版本无关。若 fingerprint 算法契约本身变化（包括 digest 域、语义输入集合或规范化
+规则变化），既有绿灯只证明旧身份方案，必须保留为历史证据但退出当前晋级计数，新身份方案
+从 0/3 重新累计。`toolchainDigest.v1` → `toolchainDigest.v2` 属于后者。
 
 将来若已晋级，任一次 audit mismatch、Receipt 完整性失败或 `release-gate` 失败，回滚触发条件
 即成立：默认值立即退回 `off`，调查完成并重新累计 3 次连续绿灯后才能再次晋级。

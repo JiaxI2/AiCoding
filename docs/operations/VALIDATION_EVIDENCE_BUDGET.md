@@ -327,20 +327,29 @@ FRESH leaf，不把本轮完整 Release 的 Go 负载混入结论。
 - 原始失败与最终报告保存在本地 ignored
   `test-results/0018-materialization-20260722/`；失败不会发布成功 Receipt。
 
-## 12. 已知限制：跨 shell 的 toolchain 身份偏严
+## 12. 已解决的历史限制：跨 shell 的 toolchain 身份偏严
 
-当前 `toolchainDigest` 把 Go/Git 可执行文件的绝对路径与 mtime 一并计入身份。同一台机器上，
+`toolchainDigest.v1` 把 Go/Git 可执行文件的绝对路径与 mtime 一并计入身份。同一台机器上，
 Git Bash 的 `/usr/bin/git` 与 PowerShell 解析到的 `cmd/git.exe` 会产生不同 toolchain 身份，
 即使 Tree 等其余身份字段完全相同，两边的 Receipt 仍不能互相复用。
 
-本轮把“开发者交互 shell 与自动化环境的 Receipt 不互认”记录为预期偏严的已知限制，
-不修改实现、不放宽完整性检查。候选改进是让 `toolchainDigest` 只绑定工具版本语义，
-把绝对路径与 mtime 降为 toolchain probe cache 的本地缓存键；该调整须另行设计、验证和评审。
+以上原限制描述保留为历史。TODO 0032 以 `toolchainDigest.v2` 解决：Receipt 身份只绑定显式
+域/算法版本、规范化后的 `go version` / `git --version` 与平台/架构；解析后的绝对路径、
+size、mtime 只作为本地 probe cache 键。任一键变化均重探，但版本语义未变时 digest 不变；
+probe 失败或版本输出不可解析仍 fail-closed，损坏 cache 不提供身份、只能由真实 probe 重建。
+
+该变化只提升 warm reuse 与跨 shell 的命中率，不降低 `--reuse off` 的冷运行成本。v1→v2
+换域后第一次 Full/Release 必然全冷，这是预期身份迁移，不是性能或正确性回归。
 
 ## 13. main release-gate 复用晋级计数
 
-1/3: https://github.com/JiaxI2/AiCoding/actions/runs/29900035150 @ 9890b667bfdc54ef5fafe49d27c736210ad13732 PASS
+v1 历史证据（不计入 v2 晋级）：1/3:
+https://github.com/JiaxI2/AiCoding/actions/runs/29900035150 @ 9890b667bfdc54ef5fafe49d27c736210ad13732 PASS
 
 该次正式 main 运行的 release-gate 依次完成 `--reuse off` 冷种子与 `--verify-reuse`
-全量审计，并上传 `release-gate-evidence`。此前 feature 分支上的 dispatch 不计入 1/3；
-后续两次仍须来自 main，凑满 3/3 后另开独立评审提交，当前默认值继续保持 `--reuse off`。
+全量审计，并上传 `release-gate-evidence`。它证明 v1 身份方案，但 ADR 0007 §5 规定 fingerprint
+算法契约换域必须重置计数，因此不进入 v2 的晋级轨道。
+
+v2 当前计数：**0/3**。后续三次均须来自 main，且每次仍先 `--reuse off` 冷种子、再
+`--verify-reuse` 全量审计；凑满 3/3 后另开独立评审提交，当前默认值继续保持
+`--reuse off`。

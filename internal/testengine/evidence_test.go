@@ -3,7 +3,9 @@ package testengine
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -138,6 +140,79 @@ func TestAutoMissReportsReceiptInvalidReason(t *testing.T) {
 	if !strings.HasPrefix(report.Summary.ReceiptInvalidReason, wantPrefix) {
 		t.Fatalf("receipt invalid reason = %q, want prefix %q", report.Summary.ReceiptInvalidReason, wantPrefix)
 	}
+}
+
+func TestVerifyReuseTreatsV1ToolchainReceiptAsOrdinaryMiss(t *testing.T) {
+	repo := newEngineEvidenceRepo(t)
+	originalExecute := executeTestCases
+	defer func() { executeTestCases = originalExecute }()
+	executions := 0
+	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
+		executions++
+		return syntheticResults(cfg, tests, false)
+	}
+
+	cfg := evidenceRunConfig(t, repo)
+	cfg.Out = filepath.Join(t.TempDir(), "v2-seed")
+	seed, err := Run(context.Background(), cfg)
+	if err != nil || !seed.Reusable || seed.Summary.Conclusion != "PASS" {
+		t.Fatalf("v2 seed = %#v err=%v", seed, err)
+	}
+	bundle, err := loadEvidenceBundle(cfg.Out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := validationevidence.Open(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Clean(ProfileSmoke); err != nil {
+		t.Fatal(err)
+	}
+	subject, err := store.Capture(validationevidence.TargetHead)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec, err := EvidenceSpec(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	current, err := store.Fingerprint(subject, spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacy := current
+	legacy.ToolchainDigest = testSnapshotDigest(t, "toolchainDigest.v1 legacy identity")
+	legacy.Identity = ""
+	payload, err := json.Marshal(legacy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(payload)
+	legacy.Identity = fmt.Sprintf("sha256:%x", sum)
+	if _, err := store.Put(validationevidence.Receipt{
+		ValidationIdentity: legacy.Identity, Fingerprint: legacy, Conclusion: "PASS",
+		ResultsDigest: seed.ResultsDigest, Reusable: true, Scope: subject.Scope,
+	}, bundle); err != nil {
+		t.Fatal(err)
+	}
+
+	audit := cfg
+	audit.Out = filepath.Join(t.TempDir(), "v1-miss-audit")
+	audit.VerifyReuse = true
+	report, err := Run(context.Background(), audit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.Conclusion != "PASS" || report.ValidationCode == validationevidence.CodeReceiptInvalid ||
+		report.ValidationCode == validationevidence.CodeReuseAuditMismatch || executions != 2 {
+		t.Fatalf("v1 identity was not an ordinary audit miss: %#v executions=%d", report, executions)
+	}
+	wantPrefix := string(validationevidence.CodeReceiptMiss) + ":"
+	if !strings.HasPrefix(report.Summary.ReceiptInvalidReason, wantPrefix) {
+		t.Fatalf("v1 miss reason=%q, want prefix %q", report.Summary.ReceiptInvalidReason, wantPrefix)
+	}
+	t.Logf("v1-receipt=%s v2-identity=%s verify-reuse=PASS miss=%s", legacy.Identity, current.Identity, report.Summary.ReceiptInvalidReason)
 }
 
 func TestNodeReceiptsReuseExpectedDomainsWithOneTreeListing(t *testing.T) {

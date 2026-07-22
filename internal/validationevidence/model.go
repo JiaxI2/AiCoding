@@ -6,7 +6,9 @@ import (
 )
 
 const (
-	toolchainSchemaVersion = 1
+	toolchainSchemaVersion = 2
+	toolchainDigestVersion = 2
+	toolchainDigestDomain  = "toolchainDigest"
 	receiptSchemaVersion   = 2
 )
 

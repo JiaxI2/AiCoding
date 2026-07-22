@@ -7,8 +7,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/JiaxI2/AiCoding/internal/gitx"
 )
@@ -25,15 +28,29 @@ type executableFingerprint struct {
 	ModTimeUnixNano int64  `json:"modTimeUnixNano"`
 }
 
+type toolchainSemantic struct {
+	Domain       string `json:"domain"`
+	Version      int    `json:"version"`
+	GoVersion    string `json:"goVersion"`
+	GitVersion   string `json:"gitVersion"`
+	Platform     string `json:"platform"`
+	Architecture string `json:"architecture"`
+}
+
 type toolchainCache struct {
-	SchemaVersion    int                   `json:"schemaVersion"`
-	SearchPathDigest string                `json:"searchPathDigest"`
-	Go               executableFingerprint `json:"go"`
-	Git              executableFingerprint `json:"git"`
-	GoVersion        string                `json:"goVersion"`
-	GitVersion       string                `json:"gitVersion"`
-	Digest           string                `json:"digest"`
-	Integrity        string                `json:"integrity"`
+	SchemaVersion int                   `json:"schemaVersion"`
+	Go            executableFingerprint `json:"go"`
+	Git           executableFingerprint `json:"git"`
+	Semantic      toolchainSemantic     `json:"semantic"`
+	Digest        string                `json:"digest"`
+	Integrity     string                `json:"integrity"`
+}
+
+type toolchainProbe struct {
+	Platform     string
+	Architecture string
+	Locate       func(string) (executableFingerprint, error)
+	Version      func(string, executableFingerprint) (string, error)
 }
 
 // Fingerprint computes one validation identity without hashing repository files
@@ -158,40 +175,85 @@ func (r Repository) resolveConfigPath(configured string) (string, string, error)
 }
 
 func (r Repository) toolchainDigest() (string, error) {
+	return r.toolchainDigestWith(systemToolchainProbe())
+}
+
+func systemToolchainProbe() toolchainProbe {
+	return toolchainProbe{
+		Platform:     runtime.GOOS,
+		Architecture: runtime.GOARCH,
+		Locate:       fingerprintExecutable,
+		Version: func(name string, executable executableFingerprint) (string, error) {
+			switch name {
+			case "go":
+				output, err := exec.Command(executable.Path, "version").CombinedOutput()
+				if err != nil {
+					return "", fmt.Errorf("go version: %w: %s", err, strings.TrimSpace(string(output)))
+				}
+				return string(output), nil
+			case "git":
+				output, err := gitx.Run("", "--version")
+				if err != nil {
+					return "", err
+				}
+				return output, nil
+			default:
+				return "", fmt.Errorf("unsupported toolchain probe %q", name)
+			}
+		},
+	}
+}
+
+func (r Repository) toolchainDigestWith(probe toolchainProbe) (string, error) {
 	cachePath := filepath.Join(r.root, "toolchain.json")
-	searchPathDigest := digestBytes([]byte(os.Getenv("PATH")))
-	if cached, err := readToolchainCache(cachePath); err == nil && cached.SearchPathDigest == searchPathDigest {
-		goFingerprint, goErr := fingerprintExecutablePath(cached.Go.Path)
-		gitFingerprint, gitErr := fingerprintExecutablePath(cached.Git.Path)
-		if goErr == nil && gitErr == nil && cached.Go == goFingerprint && cached.Git == gitFingerprint {
+	platform, architecture, err := normalizeToolchainPlatform(probe.Platform, probe.Architecture)
+	if err != nil {
+		return "", fingerprintError(err.Error())
+	}
+	if probe.Locate == nil || probe.Version == nil {
+		return "", fingerprintError("toolchain probe is incomplete")
+	}
+	goFingerprint, err := probe.Locate("go")
+	if err != nil {
+		return "", fingerprintError(err.Error())
+	}
+	gitFingerprint, err := probe.Locate("git")
+	if err != nil {
+		return "", fingerprintError(err.Error())
+	}
+	if cached, readErr := readToolchainCache(cachePath); readErr == nil {
+		if cached.Go == goFingerprint && cached.Git == gitFingerprint &&
+			cached.Semantic.Platform == platform && cached.Semantic.Architecture == architecture {
 			return cached.Digest, nil
 		}
 	}
-	goFingerprint, err := fingerprintExecutable("go")
+	goOutput, err := probe.Version("go", goFingerprint)
+	if err != nil {
+		return "", fingerprintError(fmt.Sprintf("probe go version: %v", err))
+	}
+	goVersion, err := normalizeToolVersion("go", goOutput)
 	if err != nil {
 		return "", fingerprintError(err.Error())
 	}
-	gitFingerprint, err := fingerprintExecutable("git")
+	gitOutput, err := probe.Version("git", gitFingerprint)
 	if err != nil {
-		return "", fingerprintError(err.Error())
+		return "", fingerprintError(fmt.Sprintf("probe git version: %v", err))
 	}
-	goOutput, err := exec.Command(goFingerprint.Path, "version").CombinedOutput()
-	if err != nil {
-		return "", fingerprintError(fmt.Sprintf("go version: %v", err))
-	}
-	gitOutput, err := gitx.Run("", "--version")
+	gitVersion, err := normalizeToolVersion("git", gitOutput)
 	if err != nil {
 		return "", fingerprintError(err.Error())
 	}
 	cache := toolchainCache{
-		SchemaVersion:    toolchainSchemaVersion,
-		SearchPathDigest: searchPathDigest,
-		Go:               goFingerprint,
-		Git:              gitFingerprint,
-		GoVersion:        strings.TrimSpace(string(goOutput)),
-		GitVersion:       strings.TrimSpace(gitOutput),
+		SchemaVersion: toolchainSchemaVersion,
+		Go:            goFingerprint,
+		Git:           gitFingerprint,
+		Semantic: toolchainSemantic{
+			Domain: toolchainDigestDomain, Version: toolchainDigestVersion,
+			GoVersion: goVersion, GitVersion: gitVersion,
+			Platform: platform, Architecture: architecture,
+		},
 	}
-	cache.Digest = toolchainDigest(cache)
+	cache.Digest = semanticToolchainDigest(cache.Semantic)
 	cache.Integrity = toolchainIntegrity(cache)
 	encoded, err := json.MarshalIndent(cache, "", "  ")
 	if err != nil {
@@ -236,33 +298,94 @@ func readToolchainCache(path string) (toolchainCache, error) {
 	if err := json.Unmarshal(raw, &cache); err != nil {
 		return cache, err
 	}
-	if cache.SchemaVersion != toolchainSchemaVersion || !validDigest(cache.SearchPathDigest) || !validDigest(cache.Digest) || cache.Integrity != toolchainIntegrity(cache) || cache.Digest != toolchainDigest(cache) {
+	if cache.SchemaVersion != toolchainSchemaVersion || !validExecutableFingerprint(cache.Go) || !validExecutableFingerprint(cache.Git) ||
+		!validToolchainSemantic(cache.Semantic) || !validDigest(cache.Digest) || cache.Integrity != toolchainIntegrity(cache) ||
+		cache.Digest != semanticToolchainDigest(cache.Semantic) {
 		return toolchainCache{}, fmt.Errorf("invalid toolchain cache")
 	}
 	return cache, nil
 }
 
-func toolchainDigest(cache toolchainCache) string {
-	payload, _ := json.Marshal(struct {
-		Go         executableFingerprint `json:"go"`
-		Git        executableFingerprint `json:"git"`
-		GoVersion  string                `json:"goVersion"`
-		GitVersion string                `json:"gitVersion"`
-	}{cache.Go, cache.Git, cache.GoVersion, cache.GitVersion})
-	return digestBytes(payload)
+func semanticToolchainDigest(semantic toolchainSemantic) string {
+	payload, _ := json.Marshal(semantic)
+	domainSeparated := append([]byte("toolchainDigest.v2\x00"), payload...)
+	return digestBytes(domainSeparated)
 }
 
 func toolchainIntegrity(cache toolchainCache) string {
 	payload, _ := json.Marshal(struct {
-		SchemaVersion    int                   `json:"schemaVersion"`
-		SearchPathDigest string                `json:"searchPathDigest"`
-		Go               executableFingerprint `json:"go"`
-		Git              executableFingerprint `json:"git"`
-		GoVersion        string                `json:"goVersion"`
-		GitVersion       string                `json:"gitVersion"`
-		Digest           string                `json:"digest"`
-	}{cache.SchemaVersion, cache.SearchPathDigest, cache.Go, cache.Git, cache.GoVersion, cache.GitVersion, cache.Digest})
+		SchemaVersion int                   `json:"schemaVersion"`
+		Go            executableFingerprint `json:"go"`
+		Git           executableFingerprint `json:"git"`
+		Semantic      toolchainSemantic     `json:"semantic"`
+		Digest        string                `json:"digest"`
+	}{cache.SchemaVersion, cache.Go, cache.Git, cache.Semantic, cache.Digest})
 	return digestBytes(payload)
+}
+
+func validExecutableFingerprint(fingerprint executableFingerprint) bool {
+	return filepath.IsAbs(fingerprint.Path) && filepath.Clean(fingerprint.Path) == fingerprint.Path && fingerprint.Size >= 0
+}
+
+func validToolchainSemantic(semantic toolchainSemantic) bool {
+	if semantic.Domain != toolchainDigestDomain || semantic.Version != toolchainDigestVersion {
+		return false
+	}
+	platform, architecture, err := normalizeToolchainPlatform(semantic.Platform, semantic.Architecture)
+	if err != nil || platform != semantic.Platform || architecture != semantic.Architecture {
+		return false
+	}
+	goVersion, goErr := normalizeToolVersion("go", semantic.GoVersion)
+	gitVersion, gitErr := normalizeToolVersion("git", semantic.GitVersion)
+	return goErr == nil && gitErr == nil && goVersion == semantic.GoVersion && gitVersion == semantic.GitVersion
+}
+
+func normalizeToolchainPlatform(platform, architecture string) (string, string, error) {
+	platform = strings.ToLower(strings.TrimSpace(platform))
+	architecture = strings.ToLower(strings.TrimSpace(architecture))
+	valid := func(value string) bool {
+		if value == "" {
+			return false
+		}
+		for _, char := range value {
+			if char < 'a' || char > 'z' {
+				if char < '0' || char > '9' {
+					return false
+				}
+			}
+		}
+		return true
+	}
+	if !valid(platform) || !valid(architecture) {
+		return "", "", fmt.Errorf("toolchain platform/architecture is invalid")
+	}
+	return platform, architecture, nil
+}
+
+func normalizeToolVersion(name, output string) (string, error) {
+	if !utf8.ValidString(output) || strings.ContainsRune(output, utf8.RuneError) || strings.IndexFunc(output, func(char rune) bool {
+		return unicode.IsControl(char) && !unicode.IsSpace(char)
+	}) >= 0 {
+		return "", fmt.Errorf("%s version output is not valid text", name)
+	}
+	fields := strings.Fields(output)
+	normalized := strings.Join(fields, " ")
+	switch name {
+	case "go":
+		if len(fields) < 4 || fields[0] != "go" || fields[1] != "version" || !strings.Contains(fields[len(fields)-1], "/") {
+			return "", fmt.Errorf("go version output is not recognized: %q", normalized)
+		}
+		if fields[2] != "devel" && !strings.HasPrefix(fields[2], "go") {
+			return "", fmt.Errorf("go version output is not recognized: %q", normalized)
+		}
+	case "git":
+		if len(fields) < 3 || fields[0] != "git" || fields[1] != "version" || fields[2] == "" || fields[2][0] < '0' || fields[2][0] > '9' {
+			return "", fmt.Errorf("git version output is not recognized: %q", normalized)
+		}
+	default:
+		return "", fmt.Errorf("unsupported toolchain version output %q", name)
+	}
+	return normalized, nil
 }
 
 func fingerprintError(message string) *Error {

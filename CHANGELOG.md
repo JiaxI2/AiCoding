@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- **feat(validation)**: 将 Validation Evidence 的工具链身份换域为 `toolchainDigest.v2`：语义 digest 只含显式 domain/version、规范化 Go/Git 版本输出与平台/架构；绝对路径、size、mtime 仅作为本地 probe cache 键，变化时强制重探而不污染语义身份。v1/损坏 cache 不提供身份，probe 失败或不可解析输出 fail-closed；七项真跑矩阵包含同 tree v1→v2 普通 miss，以及 PowerShell `cmd\git.exe` 与 Git Bash `mingw64\bin\git.exe` 等版本跨 shell 首次双向命中。Fingerprint 字段、唯一 Receipt 类型与默认 `--reuse off` 均不变。 / Moves validation toolchain identity to a domain-separated v2 semantic digest while keeping executable metadata local to the probe cache, rejecting failed or malformed probes, and proving ordinary v1 misses plus bidirectional cross-shell hits while preserving the Fingerprint shape, single Receipt authority, and default-off reuse.
+
+- **docs(validation)**: 修订 ADR 0007 的复用晋级条款：普通工具版本变化不重置计数，fingerprint 算法契约变化必须换域归零；BUDGET 保留 run 29900035150 为 v1 历史证据但不计入 v2，并把 v2 晋级轨道明确重置为 0/3。 / Revises ADR 0007 so ordinary tool upgrades preserve promotion history while fingerprint-contract changes reset it, retaining the prior run as v1 history and restarting v2 at zero of three.
+
 - **docs(plan)**: 在 clean main tree 上批准 TODO 0032 的 `toolchain-semantic-identity` 计划并绑定 `approvedTree=f2778dface7d2c0fde1f01de7cb43ff981f51812`；实现仅可修改登记的 Validation Evidence、单个 testengine 回归、ADR/BUDGET、原始矩阵证据与 TODO/CHANGELOG。 / Approves the bounded TODO 0032 toolchain semantic identity plan on a clean main tree and binds its exact implementation scope to the recorded Git tree.
 
 - **docs(plan)**: 为 TODO 0032 建立窄范围 `toolchainDigest.v2` 计划，只允许将 Go/Git 路径、size、mtime 降为本地 probe cache 键，把版本输出与平台/架构保留为带域分隔的 Receipt 语义身份；同批锁定 ADR 计数换域、七项真跑矩阵、默认 `--reuse off` 与 Fingerprint/Receipt 权威不漂移。 / Adds a bounded toolchainDigest.v2 plan that separates local probe-cache keys from semantic tool versions and platform identity while locking the ADR reset, seven real probes, default-off reuse, and unchanged Fingerprint/Receipt authorities.
