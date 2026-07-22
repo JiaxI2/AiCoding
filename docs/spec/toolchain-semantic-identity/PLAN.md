@@ -1,7 +1,7 @@
 ---
 id: toolchain-semantic-identity
-status: draft
-approvedTree: ""
+status: approved
+approvedTree: "f2778dface7d2c0fde1f01de7cb43ff981f51812"
 scope:
   - internal/validationevidence/**
   - internal/testengine/evidence_test.go

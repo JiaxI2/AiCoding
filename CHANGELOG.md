@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 在 clean main tree 上批准 TODO 0032 的 `toolchain-semantic-identity` 计划并绑定 `approvedTree=f2778dface7d2c0fde1f01de7cb43ff981f51812`；实现仅可修改登记的 Validation Evidence、单个 testengine 回归、ADR/BUDGET、原始矩阵证据与 TODO/CHANGELOG。 / Approves the bounded TODO 0032 toolchain semantic identity plan on a clean main tree and binds its exact implementation scope to the recorded Git tree.
+
 - **docs(plan)**: 为 TODO 0032 建立窄范围 `toolchainDigest.v2` 计划，只允许将 Go/Git 路径、size、mtime 降为本地 probe cache 键，把版本输出与平台/架构保留为带域分隔的 Receipt 语义身份；同批锁定 ADR 计数换域、七项真跑矩阵、默认 `--reuse off` 与 Fingerprint/Receipt 权威不漂移。 / Adds a bounded toolchainDigest.v2 plan that separates local probe-cache keys from semantic tool versions and platform identity while locking the ADR reset, seven real probes, default-off reuse, and unchanged Fingerprint/Receipt authorities.
 
 - **feat(repohealth)**: 在既有 PWSH-002 上增加配置化 PowerShell 棘轮：以 A 退役后 `f56c17e` 的原始 `doctor pwsh` 输出证明 `remainingScripts=19 / unspecified=0`，并冻结 19 条顶层路径；当前集合必须完全相等，后续基线只能追加严格子集，新增、同数替换、删除未同步下调、基线上调或 candidate 缺标记均 fail-closed 并指出文件。PWSH-001 继续只报告，deprecated/thinShell 不新增规则；三类真实负例精确红，独立 Full 为 `71/67/0/0/4 PASS`。 / Adds a measured strict-subset PowerShell script ratchet to the existing PWSH-002 gate while preserving PWSH-001 report-only semantics and avoiding new deprecated/thin-shell policy, with three real negative probes and a passing independent Full profile.
