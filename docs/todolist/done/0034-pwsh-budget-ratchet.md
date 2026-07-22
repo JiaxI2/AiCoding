@@ -1,6 +1,6 @@
 # TODO 0034: PWSH-002 PowerShell 数量与标记棘轮
 
-Status: Planned
+Status: Done
 Verify: A 落地后实测基线写入配置；PWSH-002 阻断 unspecified 与脚本数回升，PWSH-001 仍只报告
 
 ## 顺序依赖
@@ -46,8 +46,9 @@ Verify: A 落地后实测基线写入配置；PWSH-002 阻断 unspecified 与脚
   证据不能证明 20、当前值 19 不等于基线 20；三次探针均已还原。
 - B 独立 Full：`71 total / 67 pass / 0 fail / 0 warn / 4 skip`，
   `test-results/aicoding-global-test-20260722-174408/summary.json`；PWSH-001/PWSH-002 均 PASS。
-- 本项实现已完成；保持 Planned 仅等待本轮 C 后统一真跑的最终 Full/Release 路径回填，
-  随后改为 Done 并归档。
+- 本轮最终 Full：`test-results/0032-final-full/summary.json`；最终 Release：
+  `test-results/0032-final-release/summary.json`。二者对包含 A/B/C 归档的同一 staged tree
+  真跑；PWSH-001 report-only 与 PWSH-002 ratchet 均由最终 profile 再验收。
 
 ## 明确不做
 
