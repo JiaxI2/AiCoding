@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **fix(ci)**: 将官方 `go-task/setup-task` 以完整 action SHA 固定在 main `release-gate` job，并锁定 Task `3.52.0`，使下一次晋级运行的 ENV-004 从 advisory 转为 PASS；testengine 契约测试阻止安装步骤漂移到无关 job。同期将不同 Tree 的 workflow dispatch run `29921228586` 落账为 `toolchainDigest.v2` 晋级证据 2/3：冷种子与审计同 Receipt 双绿；FRESH-004 继续保持设计内 advisory，`--reuse` 默认值仍为 `off`。 / Pins the official Task setup action and Task 3.52.0 to the main release-gate job, locks its scope with a testengine contract, and records independent-tree run 29921228586 as v2 promotion proof 2/3 while preserving the FRESH-004 advisory and default-off reuse.
+
 - **feat(governance)**: 完成 TODO 0035 的 config/schema 双向闭合：实测 35 个非 schema JSON 全部进入唯一 binding table，29 个 schema 全部由 binding 或 standalone 反向登记；`governance dependencies` 复用既有单次 inventory，阻断 rogue 配置、幽灵 schema、幽灵排除与除目录 `/**` 外的模糊通配。九项既有无 schema 配置与 exclusion 表补齐 strict schema，动态键扩展均用 `$comment` 留理由；五项真实破坏探针精确非零并在还原后双门禁转绿。配置继续以 Git + JSON + schema 为权威，Receipt 继续内容寻址文件存储，数据库只在量化退化或三仓聚合需求触发时重评。 / Completes bidirectional closure for all 35 checked-in configuration JSON files and all 29 schemas using one binding authority and the existing single dependency inventory, with strict new schemas, reasoned extension maps, precise rogue/ghost/wildcard failures, five real negative probes, and an explicit evidence-based no-database decision.
 
 - **docs(plan)**: 在 clean main tree 上批准 TODO 0035 的 `config-schema-closure` 计划并绑定 `approvedTree=b25979f874f8dadeceb5c2bbc1673d9af329319b`；后续实现只能在登记的 config、DocSync、dependencies、证据与同步文档范围内产生漂移。 / Approves the bounded config-schema-closure plan on a clean main tree and binds implementation to the registered config, DocSync, dependency-governance, evidence, and synchronized-documentation scope.
