@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(todolist)**: 从外部 staging 仅导入 TODO 0026（内容钉死的 pinned 引用注册）与 TODO 0027（能力使用闭环），保持 Planned，并固定本批执行顺序为 `0027 → 0026 → 复利方向草稿`；`FORWARD_PLAN` 与草稿均未作为 todo 入仓。 / Imports only TODO 0026 and 0027 from external staging, keeps both Planned, records the required execution order, and excludes the forward plan and compounding draft from the todo directory.
+
 - **docs(governance)**: 完成 TODO 0019 的 AiCoding 侧准备：把 0012 已验证的双主题 banner、技术栈 badge 投影、30 秒/3 分钟/persona、Mermaid 节点预算、能力橱窗、四象限与无凭据 Star History 边界整理为 Codex-Skills 上游 PR 的规则/模板/lint/兼容负例清单；同时定位本仓版本硬编码与 `required_sections` 尚未泛化的真实落点。未修改只读子模块、未前移 pin，0019 保持 Planned，待独立上游 PR 合并后继续。 / Prepares the AiCoding side of TODO 0019 with an evidence-backed upstream rule, template, lint, compatibility, and adoption checklist while leaving the read-only submodule and pin untouched and the cross-repository item Planned.
 
 - **docs(powershell)**: 完成 TODO 0002 的重新评估：22 个 `tools/specialty/**/*.ps1` 全部归入已冻结的 tag、release overlay、PowerShell quality、Plan Mode helper、external Skill、硬件安全类别，或处于已有 ADR/Retirement Plan 的兼容退役窗口；默认 profile 继续由 PWSH-003 保证直达 Go CLI。接受 `remainingScripts=20 / thinShells=2 / deprecated=2` 为只读退役快照，不为脚本数归零重写合法专项流程，专项面继续只减不增。 / Completes TODO 0002 by classifying the entire frozen PowerShell surface, preserving only explicit specialty responsibilities and governed compatibility windows, and rejecting a count-driven rewrite while Go-native default routes remain required.
