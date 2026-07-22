@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 为 TODO 0034 建立窄范围 PWSH-002 棘轮计划，绑定 A 落地后 `f56c17e` 的实测脚本集合、原始 doctor 证据、严格子集基线历史、既有 CLI data schema 与冻结 PowerShell 边界；PWSH-001 继续只报告，deprecated/thinShell 不新增规则。 / Adds a bounded plan for the existing PWSH-002 ratchet using the measured post-retirement script set and strict-subset history while preserving PWSH-001 report-only semantics.
+
 - **docs(retirement)**: 将 `verify-codex-kit` Phase 2 的实现提交 `ff4948148f9d28b9a42873cbe46179e383f76853` 精确回填到 Retirement Plan 与已归档 TODO，补全“发布窗口 → 删除提交 → Full 证据”的可追溯链；使用后续证据提交避免实现 commit 自引用哈希悖论。 / Records the exact Phase 2 implementation commit in the retirement plan and archived todo, completing traceability without an impossible self-referential commit hash.
 
 - **chore(powershell)**: 完成 `verify-codex-kit.ps1` 退役计划 Phase 2：在 Phase 1 已跨过正式稳定版 `v1.1.0` 后删除不再拥有语义的 Full 兼容包装，并移除当前测试说明与 `aicoding-platform` export manifest 中仅匹配该脚本的活跃引用；历史证据与只读 Codex-Skills 上游记录保持不动，正式入口仍唯一为 `bin/aicoding.exe test --profile Full --json`。 / Completes Phase 2 of the verify-codex-kit retirement after one stable release, removing only the obsolete Full wrapper and its active profile/export references while preserving historical and upstream evidence.
