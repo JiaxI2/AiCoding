@@ -1,7 +1,7 @@
 ---
 id: pinned-reference-registration
-status: draft
-approvedTree: ""
+status: approved
+approvedTree: "53cd5653570d13d5fbecca346359c7f1fec0c0ae"
 scope:
   - config/internal-capabilities.json
   - config/schemas/kit-manifest.schema.json
