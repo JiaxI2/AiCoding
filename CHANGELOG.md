@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(todolist)**: 登记 TODO 0032–0034：0033 严格执行 `verify-codex-kit` Phase 2 删除，0034 在其落地后的实测 PowerShell 数量上复用 PWSH-002 建立只降不升棘轮，0032 将 toolchain 身份换域为版本语义并同步重置复用晋级计数；固定执行顺序 `0033 → 0034 → 0032`，不翻转 reuse 默认值、不触碰 TODO 0019 或只读 Skill 子模块。 / Registers TODO 0032–0034 for bounded wrapper retirement, a measured one-way PowerShell budget ratchet, and toolchain semantic identity v2 with promotion-count reset, preserving the required execution order and all stated exclusions.
+
 - **ci(validation)**: 完成 TODO 0031：schedule-equivalent 远端运行已验证 `doctor perf` 与 `doctor-perf-evidence`，main `9890b667bfdc54ef5fafe49d27c736210ad13732` 的正式 release-gate 以 `--reuse off` 冷种子和 `--verify-reuse` 全量审计双绿，晋级计数显式落账为 1/3；默认复用继续保持 `off`，后续 2/3、3/3 与独立晋级评审不在本项内。 / Completes TODO 0031 with passing remote doctor-performance evidence and the first qualifying main release-gate seed/audit run, records promotion count 1/3, and deliberately keeps reuse defaulted to off.
 
 - **fix(kit)**: 修复 GitHub Windows runner 上 pinned cache 发布后的确定性长路径失败：短 staging fetch 后，64-hex 最终目录使 loose object 路径越过旧 `MAX_PATH`，`rev-parse <ref>^{commit}` 因而无法复核。bare cache 现写入 repo-local `core.longpaths=true`，保留同一 ref/commit/tree fail-closed 校验与 import 零网络边界；同版 Git for Windows 2.55 回归在 272 字符 loose-object 路径完成 prefetch 与 materialization，kit test/race/vet 全绿。 / Fixes deterministic pinned-cache verification on Windows runners by enabling repo-local long-path handling before the short staging repository is renamed into its 64-hex cache identity, with a Git 2.55 long-path regression that preserves all fail-closed and zero-network semantics.
