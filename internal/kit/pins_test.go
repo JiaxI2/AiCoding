@@ -96,6 +96,32 @@ func TestPinnedLifecycleMaterializesLocallyWithZeroImportNetworkCalls(t *testing
 	t.Logf("positive_prefetch=RESOLVED identity=%s import_network_calls=%d materialized=%s", status.Identity, networkCalls, materialized)
 }
 
+func TestPinnedCacheKeepsLooseObjectsReadableAfterLongFinalRename(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "long-path")
+	external, commit := newPinnedExternalRepositoryAt(t, filepath.Join(base, "external"))
+	consumer := newPinnedConsumerRepositoryAt(t, filepath.Join(base, "consumer"))
+	source := &PinnedSource{Kind: "git", URL: external, Commit: commit}
+
+	status, err := PrefetchPin(context.Background(), consumer, "external-skill", source)
+	if err != nil || !status.Resolved {
+		t.Fatalf("long final pin path was not readable: cachePath=%s status=%#v err=%v", status.CachePath, status, err)
+	}
+	objectRepository := filepath.Join(status.CachePath, pinObjectDir)
+	configured := strings.TrimSpace(pinGit(t, objectRepository, "config", "--bool", "core.longpaths"))
+	if configured != "true" {
+		t.Fatalf("pin object cache core.longpaths = %q, want true", configured)
+	}
+	materialized, err := MaterializePinnedSource(context.Background(), consumer, "external-skill", source)
+	if err != nil || materialized.NetworkCalls != 0 {
+		t.Fatalf("long final pin path was not materialized locally: result=%#v err=%v", materialized, err)
+	}
+	if _, err := os.Stat(filepath.Join(materialized.MaterializedPath, "skills", "external", "SKILL.md")); err != nil {
+		t.Fatalf("long-path materialization is missing the pinned Skill: %v", err)
+	}
+	objectPath := filepath.Join(objectRepository, "objects", commit[:2], commit[2:])
+	t.Logf("long_path_cache=%s objectPathLength=%d", status.CachePath, len(objectPath))
+}
+
 func TestPinnedLifecycleMissingPrefetchReturnsRequiredActionWithoutFetch(t *testing.T) {
 	external, commit := newPinnedExternalRepository(t)
 	consumer := newPinnedConsumerRepository(t)
@@ -213,7 +239,14 @@ func TestPinnedSourceChangeInvalidatesOldValidationReceipt(t *testing.T) {
 
 func newPinnedExternalRepository(t *testing.T) (string, string) {
 	t.Helper()
-	repo := t.TempDir()
+	return newPinnedExternalRepositoryAt(t, t.TempDir())
+}
+
+func newPinnedExternalRepositoryAt(t *testing.T, repo string) (string, string) {
+	t.Helper()
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	pinGit(t, repo, "init")
 	configurePinnedGitIdentity(t, repo)
 	content := "---\nname: pinned-external\ndescription: Pinned External Skill\n---\n\n# Pinned External Skill\n\nUse immutable content.\n"
@@ -225,7 +258,14 @@ func newPinnedExternalRepository(t *testing.T) (string, string) {
 
 func newPinnedConsumerRepository(t *testing.T) string {
 	t.Helper()
-	repo := t.TempDir()
+	return newPinnedConsumerRepositoryAt(t, t.TempDir())
+}
+
+func newPinnedConsumerRepositoryAt(t *testing.T, repo string) string {
+	t.Helper()
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
 	pinGit(t, repo, "init")
 	configurePinnedGitIdentity(t, repo)
 	return repo

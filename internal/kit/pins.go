@@ -123,12 +123,18 @@ func InspectPin(repo, kitID string, source *PinnedSource) (PinStatus, error) {
 		}
 		objectRepository := filepath.Join(cachePath, pinObjectDir)
 		resolved, err := gitx.Run(objectRepository, "rev-parse", "refs/aicoding/pin^{commit}")
-		if err != nil || strings.ToLower(strings.TrimSpace(resolved)) != source.Commit {
-			return status, fmt.Errorf("git pin cache commit verification failed for %s", identity)
+		if err != nil {
+			return status, fmt.Errorf("git pin cache commit verification failed for %s: %w", identity, err)
+		}
+		if got := strings.ToLower(strings.TrimSpace(resolved)); got != source.Commit {
+			return status, fmt.Errorf("git pin cache commit verification failed for %s: got %s want %s", identity, got, source.Commit)
 		}
 		treeOID, err := gitx.TreeOID(objectRepository, source.Commit)
-		if err != nil || treeOID != metadata.TreeOID {
-			return status, fmt.Errorf("git pin cache tree verification failed for %s", identity)
+		if err != nil {
+			return status, fmt.Errorf("git pin cache tree verification failed for %s: %w", identity, err)
+		}
+		if treeOID != metadata.TreeOID {
+			return status, fmt.Errorf("git pin cache tree verification failed for %s: got %s want %s", identity, treeOID, metadata.TreeOID)
 		}
 	case "content":
 		contentDigest, err := digestDirectory(filepath.Join(cachePath, pinContentDir))
@@ -176,6 +182,12 @@ func PrefetchPin(ctx context.Context, repo, kitID string, source *PinnedSource) 
 	objectRepository := filepath.Join(temporary, pinObjectDir)
 	if _, err := gitx.Run("", "init", "--bare", objectRepository); err != nil {
 		return status, fmt.Errorf("initialize pin object cache: %w", err)
+	}
+	// Fetch happens under the short staging leaf, but the published cache path
+	// adds a 64-hex identity. Keep loose-object access valid after that rename
+	// on Windows, where the final path can otherwise cross MAX_PATH.
+	if _, err := gitx.Run(objectRepository, "config", "core.longpaths", "true"); err != nil {
+		return status, fmt.Errorf("enable long paths for pin object cache: %w", err)
 	}
 	status.NetworkCalls = 1
 	if err := runPinFetch(objectRepository, source.URL, source.Commit); err != nil {
