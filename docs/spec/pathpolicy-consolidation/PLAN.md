@@ -1,7 +1,7 @@
 ---
 id: pathpolicy-consolidation
-status: draft
-approvedTree: ""
+status: approved
+approvedTree: "cd05a49e32c019d47e348e426809c160916b70a4"
 scope:
   - internal/pathpolicy/**
   - internal/plan/**
