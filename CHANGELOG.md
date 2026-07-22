@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 在 clean main tree 上批准 PWSH-002 棘轮计划并绑定 `approvedTree=de2db8a74ddef6ff9507a95f4c5181a11fdc0138`；实现只能在登记的 repohealth、配置/schema、现有报告契约、PowerShell 边界、证据与 TODO 范围内产生漂移。 / Approves the bounded PWSH-002 ratchet plan on a clean main tree and binds its exact implementation scope.
+
 - **docs(plan)**: 为 TODO 0034 建立窄范围 PWSH-002 棘轮计划，绑定 A 落地后 `f56c17e` 的实测脚本集合、原始 doctor 证据、严格子集基线历史、既有 CLI data schema 与冻结 PowerShell 边界；PWSH-001 继续只报告，deprecated/thinShell 不新增规则。 / Adds a bounded plan for the existing PWSH-002 ratchet using the measured post-retirement script set and strict-subset history while preserving PWSH-001 report-only semantics.
 
 - **docs(retirement)**: 将 `verify-codex-kit` Phase 2 的实现提交 `ff4948148f9d28b9a42873cbe46179e383f76853` 精确回填到 Retirement Plan 与已归档 TODO，补全“发布窗口 → 删除提交 → Full 证据”的可追溯链；使用后续证据提交避免实现 commit 自引用哈希悖论。 / Records the exact Phase 2 implementation commit in the retirement plan and archived todo, completing traceability without an impossible self-referential commit hash.

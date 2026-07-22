@@ -1,7 +1,7 @@
 ---
 id: pwsh-budget-ratchet
-status: draft
-approvedTree: ""
+status: approved
+approvedTree: "de2db8a74ddef6ff9507a95f4c5181a11fdc0138"
 scope:
   - internal/repohealth/**
   - internal/cli/cli_test.go
