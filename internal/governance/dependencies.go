@@ -251,6 +251,13 @@ func checkDependencies(repo string, walk dependencyWalkDir) DependencyReport {
 	if checked, schemaErrors := docsync.CheckPolicySchemas(repo); checked {
 		report.addDependencyCheck("policy schema closure", schemaErrors, nil)
 	}
+	if checked, completenessErrors := docsync.CheckConfigSchemaCompleteness(
+		repo,
+		inventory.filesWithin("config", nil),
+		inventory.directoriesWithin("config", nil),
+	); checked {
+		report.addDependencyCheck("config schema completeness", completenessErrors, nil)
+	}
 
 	for _, rel := range []string{
 		"config/schemas/dependency-governance.schema.json",

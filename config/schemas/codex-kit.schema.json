@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/codex-kit.schema.json",
+  "title": "AiCoding Codex Kit Configuration",
+  "type": "object",
+  "required": ["name", "version", "codingKitRoot", "agents", "assets", "rules", "skillRuntime", "profiles", "standaloneSkillRegistry"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "codingKitRoot": { "type": "string", "minLength": 1 },
+    "agents": {
+      "type": "object",
+      "required": ["skillsSubmodule", "pluginPath", "marketplacePath"],
+      "additionalProperties": false,
+      "properties": {
+        "skillsSubmodule": { "type": "string", "minLength": 1 },
+        "pluginPath": { "type": "string", "minLength": 1 },
+        "marketplacePath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "required": ["examples", "modules", "platforms", "tests", "tools"],
+      "additionalProperties": false,
+      "properties": {
+        "examples": { "type": "string", "minLength": 1 },
+        "modules": { "type": "string", "minLength": 1 },
+        "platforms": { "type": "string", "minLength": 1 },
+        "tests": { "type": "string", "minLength": 1 },
+        "tools": { "type": "string", "minLength": 1 }
+      }
+    },
+    "rules": {
+      "type": "object",
+      "required": ["buildPluginInSubmodule", "pluginInstallUsesMarketplace", "hooksAreAuxiliaryConstraints"],
+      "additionalProperties": false,
+      "properties": {
+        "buildPluginInSubmodule": { "type": "boolean" },
+        "pluginInstallUsesMarketplace": { "type": "boolean" },
+        "hooksAreAuxiliaryConstraints": { "type": "boolean" }
+      }
+    },
+    "skillRuntime": {
+      "type": "object",
+      "required": ["canonicalUserRoot", "codexUserRoot", "sourceRepositoryEnv", "defaultSourceRepository", "sourceRepositoryMustNotBeUnderSkillRoot", "rejectDuplicateNames", "rejectGeneratedSkillLinks", "rejectWholeRepositoryLinks"],
+      "additionalProperties": false,
+      "properties": {
+        "canonicalUserRoot": { "type": "string", "minLength": 1 },
+        "codexUserRoot": { "type": "string", "minLength": 1 },
+        "sourceRepositoryEnv": { "type": "string", "minLength": 1 },
+        "defaultSourceRepository": { "type": "string", "minLength": 1 },
+        "sourceRepositoryMustNotBeUnderSkillRoot": { "type": "boolean" },
+        "rejectDuplicateNames": { "type": "boolean" },
+        "rejectGeneratedSkillLinks": { "type": "boolean" },
+        "rejectWholeRepositoryLinks": { "type": "boolean" }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "required": ["runtime", "skill-development", "full"],
+      "additionalProperties": false,
+      "properties": {
+        "runtime": { "$ref": "#/$defs/installProfile" },
+        "skill-development": {
+          "type": "object",
+          "required": ["pluginEnabled", "allowSelectedSourceSkillLinks", "maxSelectedSourceSkills"],
+          "additionalProperties": false,
+          "properties": {
+            "pluginEnabled": { "type": "boolean" },
+            "allowSelectedSourceSkillLinks": { "type": "boolean" },
+            "maxSelectedSourceSkills": { "type": "integer" }
+          }
+        },
+        "full": { "$ref": "#/$defs/installProfile" }
+      }
+    },
+    "standaloneSkillRegistry": {
+      "type": "object",
+      "required": ["sourceRepositoryEnv", "sourceRepository", "defaultSourceRepository", "defaultInstallRoot", "supportedInstallRoots", "linkMode", "installByProfile", "sourcePaths", "skills"],
+      "additionalProperties": false,
+      "properties": {
+        "sourceRepositoryEnv": { "type": "string", "minLength": 1 },
+        "sourceRepository": { "type": "string", "minLength": 1 },
+        "defaultSourceRepository": { "type": "string", "minLength": 1 },
+        "defaultInstallRoot": { "type": "string", "minLength": 1 },
+        "supportedInstallRoots": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "linkMode": { "type": "string", "minLength": 1 },
+        "installByProfile": { "type": "boolean" },
+        "sourcePaths": {
+          "$comment": "Skill identifiers are registry data keys, so this map is intentionally extensible while every value remains a path string.",
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "skills": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  },
+  "$defs": {
+    "installProfile": {
+      "type": "object",
+      "required": ["pluginEnabled", "sourceSkillLinks", "standaloneSkills"],
+      "additionalProperties": false,
+      "properties": {
+        "pluginEnabled": { "type": "boolean" },
+        "sourceSkillLinks": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "standaloneSkills": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

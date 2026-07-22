@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/comment-templates.schema.json",
+  "title": "AiCoding C Comment Templates",
+  "type": "object",
+  "required": ["schemaVersion", "description", "templates"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "templates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "description", "language", "kind", "body", "variables"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "language": { "const": "c" },
+          "kind": { "type": "string", "minLength": 1 },
+          "body": { "type": "array", "items": { "type": "string" } },
+          "variables": {
+            "$comment": "Template variable names are author-defined data keys; each variable still has a strict value schema.",
+            "type": "object",
+            "additionalProperties": { "$ref": "#/$defs/variable" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "variable": {
+      "type": "object",
+      "required": ["description", "default"],
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string", "minLength": 1 },
+        "default": { "type": "string" },
+        "required": { "type": "boolean" }
+      }
+    }
+  }
+}

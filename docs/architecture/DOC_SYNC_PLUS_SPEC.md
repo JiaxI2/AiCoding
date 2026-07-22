@@ -41,9 +41,14 @@ bin/aicoding.exe docsync release --json
 
 ## Policy schema closure
 
-`docsync` 对 plan、impact、validation、tagging、docs-sync policy 与 docs-sync semantic 六份
-配置执行 checked-in JSON schema 校验。schema 与配置均缺一不可，未知字段 fail-closed；
-`governance dependencies` 复用同一检查，因此依赖门禁与文档同步门禁不会形成两套 schema 解释。
+`internal/docsync/policy_schema.go` 是 checked-in 配置/schema 闭合的唯一 binding authority。
+当前 35/35 个非 schema JSON 配置逐项执行 schema 校验；29/29 个 schema 必须由配置 binding
+或 standalone 工件登记反向引用。schema 与配置均缺一不可，未知字段 fail-closed。
+
+`governance dependencies` 把既有单次 repository inventory 交给同一权威，阻断未登记配置、
+幽灵 schema、幽灵排除与模糊通配。`config/schema-closure-exclusions.json` 只允许精确文件或
+目录后缀 `/**`；当前 `config/schemas/**` 的排除仅表示它不是配置实例，schema 本身仍受反向
+引用检查。因此依赖门禁与文档同步门禁不会形成两套 schema 解释或第二次仓库扫描。
 
 ## Scoring
 

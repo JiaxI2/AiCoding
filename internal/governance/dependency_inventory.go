@@ -20,7 +20,7 @@ type dependencyInventory struct {
 }
 
 func buildDependencyInventory(repo string, policy dependencyPolicy, walk dependencyWalkDir) (*dependencyInventory, error) {
-	roots := []string{}
+	roots := []string{"config"}
 	for _, boundary := range policy.GoPackageBoundaries {
 		roots = append(roots, boundary.Path)
 	}

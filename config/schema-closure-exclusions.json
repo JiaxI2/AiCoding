@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "exclusions": [
+    {
+      "path": "config/schemas/**",
+      "reason": "Schema files are governed by the binding and standalone reverse-reference inventory."
+    }
+  ]
+}

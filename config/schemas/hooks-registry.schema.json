@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/hooks-registry.schema.json",
+  "title": "AiCoding Hook Registry",
+  "type": "object",
+  "required": ["schemaVersion", "hooks"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "hooks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "owner", "type", "trigger", "path", "enabledByDefault", "machineReadable"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "owner": { "type": "string", "minLength": 1 },
+          "type": { "enum": ["repo-hook", "agent-hook"] },
+          "trigger": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "enabledByDefault": { "type": "boolean" },
+          "machineReadable": { "type": "boolean" },
+          "mode": { "enum": ["enforce", "warn"] },
+          "description": { "type": "string" }
+        }
+      }
+    }
+  }
+}

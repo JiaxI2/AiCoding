@@ -13,6 +13,7 @@
     "requiredMarkers",
     "hookModules"
   ],
+  "additionalProperties": false,
   "properties": {
     "schemaVersion": {
       "type": "integer"
@@ -34,7 +35,13 @@
           "id",
           "artifact",
           "requiredWhen"
-        ]
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "artifact": { "type": "string", "minLength": 1 },
+          "requiredWhen": { "type": "string", "minLength": 1 }
+        }
       }
     },
     "stopFiles": {
@@ -61,6 +68,7 @@
         "selectedDecision",
         "approvedPlan"
       ],
+      "additionalProperties": false,
       "properties": {
         "selectedDecision": {
           "type": "array",
@@ -83,6 +91,7 @@
       }
     },
     "languagePolicy": {
+      "$comment": "Language policy additions are consumed by the external Plan Mode kit and remain an intentional extension point.",
       "type": "object",
       "additionalProperties": true,
       "properties": {
@@ -111,6 +120,7 @@
           "type": "boolean"
         },
         "examples": {
+          "$comment": "Example names are documentation keys owned by the Plan Mode kit.",
           "type": "object",
           "additionalProperties": true
         }

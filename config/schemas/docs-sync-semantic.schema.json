@@ -38,6 +38,7 @@
       "items": { "type": "string", "minLength": 1 }
     },
     "docTargets": {
+      "$comment": "Public-surface class names are policy-defined keys; each target remains a strict unique string array.",
       "type": "object",
       "additionalProperties": {
         "type": "array",

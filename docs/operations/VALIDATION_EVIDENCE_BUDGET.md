@@ -369,3 +369,20 @@ https://github.com/JiaxI2/AiCoding/actions/runs/29916523297 @ 41eefac7a67ac1473a
 
 后续两次仍须来自 main，且每次仍先 `--reuse off` 冷种子、再 `--verify-reuse` 全量审计；
 凑满 3/3 后另开独立评审提交，当前默认值继续保持 `--reuse off`。
+
+## 14. 配置与 Receipt 存储裁决：当前不引入数据库
+
+配置权威保持 Git + JSON + checked-in schema；Validation Receipt store 保持 Git common-dir 下的
+内容寻址文件存储。本轮只闭合配置/schema 清单，不建立数据库、索引服务或集中式配置加载器。
+
+满足以下任一条件时才重新打开数据库评估，且评估必须先保存同机、warm filesystem cache 的
+原始测量结果：
+
+1. Receipt 数量不超过 10,000 时，连续两次测量中各真跑 5 次 `validation list --json`，
+   其 p95 均超过 2 秒或超过最近已记录基线的 3 倍；
+2. 连续三次 main `--verify-reuse` 审计中，Receipt 枚举/读取/校验的可分离 p95 开销超过
+   30 秒，或超过对应 Release 总墙钟的 10%；
+3. 出现一个已批准产品需求，需要在单次查询中聚合至少 3 个独立仓库的 Receipt 证据。
+
+阈值未触发前，数据库议题关闭；单纯文件数量增长、冷 Release 时长或缺少跨仓查询设想均不
+构成重开依据。

@@ -20,8 +20,15 @@
       "const": 1
     },
     "id": {
-      "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
+        },
+        {
+          "const": "{{.ID}}"
+        }
+      ]
     },
     "name": {
       "type": "string",
@@ -77,8 +84,15 @@
           "pattern": "^[0-9]+\\.[0-9]+$"
         },
         "pythonEnvVar": {
-          "type": "string",
-          "pattern": "^[A-Z][A-Z0-9_]*$"
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            {
+              "const": "{{.PythonEnvVar}}"
+            }
+          ]
         },
         "module": {
           "type": "string",
@@ -99,6 +113,7 @@
           }
         },
         "env": {
+          "$comment": "Environment variable names are runtime-defined keys; values remain strict strings.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -153,6 +168,7 @@
       }
     },
     "security": {
+      "$comment": "Security capabilities are component-specific and are additionally constrained by MCP governance.",
       "type": "object",
       "additionalProperties": true
     },

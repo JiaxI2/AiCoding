@@ -22,6 +22,11 @@ Do not create a parallel source of truth outside this domain. Add new items only
 - `internal-capabilities.json`: 28 个 `internal/` 一级包的唯一能力目录，登记类型、稳定态、公共入口、架构文档与验证命令。
 - `schemas/internal-capabilities.schema.json`: 能力目录的结构与分级文档义务 schema。
 - `schemas/cli-report.schema.json`: `report.Result`, `StandardReport` and shared product-check JSON contract.
+- `schema-closure-exclusions.json` / `schemas/schema-closure-exclusions.schema.json`: 配置 schema
+  完备性排除表；精确文件排除不得使用通配，目录排除只允许后缀 `/**`，不存在的排除会失败。
+- `internal/docsync/policy_schema.go` 是配置/schema 双向闭合的唯一 binding authority：当前
+  35/35 个非 schema JSON 配置逐项验证，29/29 个 schema 由 binding 或 standalone 登记反向引用。
+  `config/schemas/**` 只从“配置实例”枚举中排除，仍必须通过反向引用检查，不能成为幽灵 schema。
 - `pwsh-budget.json` / `schemas/pwsh-budget.schema.json`: PWSH-002 的顶层 PowerShell 脚本
   基线历史；首条来自已提交的 `doctor pwsh` 原始证据，后续条目只能是前一集合的严格子集。
 - `validation-policy.json`: pre-push Context Gate 的远端 ref、必需验证 profile、快进与删除策略。

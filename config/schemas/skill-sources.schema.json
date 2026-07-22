@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/skill-sources.schema.json",
+  "title": "AiCoding External Skill Sources",
+  "type": "object",
+  "required": ["schemaVersion", "sources"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "skill", "type", "url", "branch", "trust", "updatePolicy", "layout", "skillPath", "repoRequired", "dependencyFile", "targets"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "skill": { "type": "string", "minLength": 1 },
+          "type": { "const": "git" },
+          "url": { "type": "string", "minLength": 1 },
+          "branch": { "type": "string", "minLength": 1 },
+          "trust": { "type": "string", "minLength": 1 },
+          "updatePolicy": { "type": "string", "minLength": 1 },
+          "layout": { "type": "string", "minLength": 1 },
+          "skillPath": { "type": "string", "minLength": 1 },
+          "repoRequired": { "type": "boolean" },
+          "dependencyFile": { "type": "string", "minLength": 1 },
+          "targets": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    }
+  }
+}

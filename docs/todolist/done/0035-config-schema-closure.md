@@ -1,6 +1,6 @@
 # TODO 0035: config schema 闭合完备化
 
-Status: In-Progress
+Status: Done
 Verify: bin/aicoding.exe governance dependencies --json && bin/aicoding.exe docsync all --json && bin/aicoding.exe plan verify --json && bin/aicoding.exe todolist --json
 
 ## 架构裁决
@@ -75,6 +75,18 @@ Receipt List / `--verify-reuse` 的实测延迟显著退化，或出现跨仓库
 
 - Plan Mode：`config-schema-closure` 已在 clean main tree 上批准，
   `approvedTree=b25979f874f8dadeceb5c2bbc1673d9af329319b`。
+- 最终实测：35 个非 schema 配置全部进入 binding table（35/35），29 个 schema 全部由
+  binding 或 standalone 登记反向引用（29/29）；`governance dependencies` 的
+  `policy schema closure` 与 `config schema completeness` 同时为绿，且回归日志证明
+  dependency inventory 仍只有一次 `WalkDir`。
+- `$comment` 由内置 validator 忽略的行为已有直接单测；所有新增配置 schema 的对象默认
+  `additionalProperties: false`，确需动态键的 map 在 schema 内逐项说明理由。
+- 五项破坏探针的完整 JSON 与原始退出码保存在
+  `docs/operations/evidence/config-schema-closure-negative-matrix.md`；全部还原后的 dependencies
+  再次返回 `ok=true`。
+- 最终 Full summary：`test-results/0035-final-full/summary.json`；最终 Release summary：
+  `test-results/0035-final-release/summary.json`。二者对归档后的同一 staged tree 以
+  `--reuse off` 真跑。
 
 ## 真跑负例
 

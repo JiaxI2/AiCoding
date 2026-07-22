@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(governance)**: 完成 TODO 0035 的 config/schema 双向闭合：实测 35 个非 schema JSON 全部进入唯一 binding table，29 个 schema 全部由 binding 或 standalone 反向登记；`governance dependencies` 复用既有单次 inventory，阻断 rogue 配置、幽灵 schema、幽灵排除与除目录 `/**` 外的模糊通配。九项既有无 schema 配置与 exclusion 表补齐 strict schema，动态键扩展均用 `$comment` 留理由；五项真实破坏探针精确非零并在还原后双门禁转绿。配置继续以 Git + JSON + schema 为权威，Receipt 继续内容寻址文件存储，数据库只在量化退化或三仓聚合需求触发时重评。 / Completes bidirectional closure for all 35 checked-in configuration JSON files and all 29 schemas using one binding authority and the existing single dependency inventory, with strict new schemas, reasoned extension maps, precise rogue/ghost/wildcard failures, five real negative probes, and an explicit evidence-based no-database decision.
+
 - **docs(plan)**: 在 clean main tree 上批准 TODO 0035 的 `config-schema-closure` 计划并绑定 `approvedTree=b25979f874f8dadeceb5c2bbc1673d9af329319b`；后续实现只能在登记的 config、DocSync、dependencies、证据与同步文档范围内产生漂移。 / Approves the bounded config-schema-closure plan on a clean main tree and binds implementation to the registered config, DocSync, dependency-governance, evidence, and synchronized-documentation scope.
 
 - **docs(plan)**: 为 TODO 0035 建立窄范围 config schema 闭合计划：全部 checked-in 配置由唯一 binding table 或有理由的精确排除覆盖，全部 schema 由 binding/standalone 反向登记；`governance dependencies` 复用既有 inventory，数据库、第三方 validator、集中加载器与消费方解码变更均排除。 / Adds a bounded plan for bidirectional config/schema closure using the existing dependency inventory, one binding authority, and reasoned exact exclusions while ruling out databases, third-party validators, centralized loading, and consumer-decoder changes.

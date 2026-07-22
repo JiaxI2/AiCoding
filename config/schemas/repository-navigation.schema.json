@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/repository-navigation.schema.json",
+  "title": "AiCoding Repository Navigation Policy",
+  "type": "object",
+  "required": ["schemaVersion", "limits", "root", "docs", "hubs", "areas", "routes", "readmePolicy"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "limits": {
+      "type": "object",
+      "required": ["maxVisibleRootDirectories", "maxHiddenRootDirectories", "maxRootFiles", "maxDocsRootMarkdownFiles", "maxDirectoryFanout", "maxHumanPathDepth"],
+      "additionalProperties": false,
+      "properties": {
+        "maxVisibleRootDirectories": { "type": "integer" },
+        "maxHiddenRootDirectories": { "type": "integer" },
+        "maxRootFiles": { "type": "integer" },
+        "maxDocsRootMarkdownFiles": { "type": "integer" },
+        "maxDirectoryFanout": { "type": "integer" },
+        "maxHumanPathDepth": { "type": "integer" }
+      }
+    },
+    "root": {
+      "type": "object",
+      "required": ["allowedDirectories", "forbiddenDirectories", "requiredFiles", "generatedDirectories"],
+      "additionalProperties": false,
+      "properties": {
+        "allowedDirectories": { "$ref": "#/$defs/strings" },
+        "forbiddenDirectories": { "$ref": "#/$defs/strings" },
+        "requiredFiles": { "$ref": "#/$defs/strings" },
+        "generatedDirectories": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "docs": {
+      "type": "object",
+      "required": ["allowedCategories", "allowedRootMarkdownFiles", "versionSuffixPattern"],
+      "additionalProperties": false,
+      "properties": {
+        "allowedCategories": { "$ref": "#/$defs/strings" },
+        "allowedRootMarkdownFiles": { "$ref": "#/$defs/strings" },
+        "versionSuffixPattern": { "type": "string", "minLength": 1 }
+      }
+    },
+    "hubs": { "type": "array", "items": { "$ref": "#/$defs/hub" } },
+    "areas": { "type": "array", "items": { "$ref": "#/$defs/area" } },
+    "routes": { "type": "array", "items": { "$ref": "#/$defs/route" } },
+    "readmePolicy": {
+      "type": "object",
+      "required": ["generatedMarkerStart", "generatedMarkerEnd", "requiredHubDirectories", "forbiddenReadmeDirectories"],
+      "additionalProperties": false,
+      "properties": {
+        "generatedMarkerStart": { "type": "string", "minLength": 1 },
+        "generatedMarkerEnd": { "type": "string", "minLength": 1 },
+        "requiredHubDirectories": { "$ref": "#/$defs/strings" },
+        "forbiddenReadmeDirectories": { "$ref": "#/$defs/strings" }
+      }
+    }
+  },
+  "$defs": {
+    "strings": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "hub": {
+      "type": "object",
+      "required": ["path", "title", "purpose"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 }
+      }
+    },
+    "area": {
+      "type": "object",
+      "required": ["path", "purpose", "audience", "entry"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 },
+        "audience": { "type": "string", "minLength": 1 },
+        "entry": { "type": "string" }
+      }
+    },
+    "route": {
+      "type": "object",
+      "required": ["intent", "path", "command"],
+      "additionalProperties": false,
+      "properties": {
+        "intent": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "command": { "type": "string" }
+      }
+    }
+  }
+}

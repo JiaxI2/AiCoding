@@ -283,6 +283,18 @@ func TestCheckDependenciesWalksRepositoryOnce(t *testing.T) {
 	t.Logf("dependency inventory WalkDir calls=%d", walks)
 }
 
+func TestDependencyInventoryAlwaysIncludesConfigJSON(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "config", "rogue.json"), "{}\n")
+	inventory, err := buildDependencyInventory(repo, dependencyPolicy{}, filepath.WalkDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !inventory.hasFile("config/rogue.json") {
+		t.Fatalf("config JSON was absent from the mandatory dependency inventory: %#v", inventory.files)
+	}
+}
+
 func dependencyInventoryForTest(t *testing.T, repo string, roots ...string) *dependencyInventory {
 	t.Helper()
 	inventory, err := collectDependencyInventory(repo, roots, filepath.WalkDir)

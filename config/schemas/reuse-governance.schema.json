@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/reuse-governance.schema.json",
+  "title": "AiCoding Reuse Governance Registry",
+  "type": "object",
+  "required": ["schemaVersion", "policy", "modules"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "policy": {
+      "type": "object",
+      "required": ["requireAttributionForCopiedContent", "requireIndependentRuntime", "requireRollback", "requireNoPublicAPI"],
+      "additionalProperties": false,
+      "properties": {
+        "requireAttributionForCopiedContent": { "type": "boolean" },
+        "requireIndependentRuntime": { "type": "boolean" },
+        "requireRollback": { "type": "boolean" },
+        "requireNoPublicAPI": { "type": "boolean" }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "classification", "state", "literalExternalContent", "runtimeDependency", "publicAPI", "integrations", "requiredPaths", "evidence", "rollback"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "classification": { "type": "string", "minLength": 1 },
+          "state": { "type": "string", "minLength": 1 },
+          "literalExternalContent": { "type": "boolean" },
+          "runtimeDependency": { "type": "boolean" },
+          "publicAPI": { "type": "boolean" },
+          "integrations": { "$ref": "#/$defs/strings" },
+          "requiredPaths": { "$ref": "#/$defs/strings" },
+          "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+          "rollback": { "$ref": "#/$defs/rollback" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "strings": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "evidence": {
+      "type": "object",
+      "required": ["integration", "path", "contains"],
+      "additionalProperties": false,
+      "properties": {
+        "integration": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "contains": { "type": "string", "minLength": 1 }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "required": ["strategy", "statePath"],
+      "additionalProperties": false,
+      "properties": {
+        "strategy": { "type": "string", "minLength": 1 },
+        "statePath": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

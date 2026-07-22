@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/repository-layout.schema.json",
+  "title": "AiCoding Repository Layout Policy",
+  "type": "object",
+  "required": ["schemaVersion", "root", "directoryClasses", "documentation", "prompts", "testFixtures", "generatedArtifacts", "skills"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "root": {
+      "type": "object",
+      "required": ["allowDirectories", "forbiddenDirectories", "transientDirectories"],
+      "additionalProperties": false,
+      "properties": {
+        "allowDirectories": { "$ref": "#/$defs/strings" },
+        "forbiddenDirectories": { "$ref": "#/$defs/strings" },
+        "transientDirectories": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "directoryClasses": {
+      "type": "object",
+      "required": ["source-of-truth", "generated-projection", "runtime-state", "build-artifact", "documentation", "plan-artifact", "test-fixture", "migration-tooling"],
+      "additionalProperties": false,
+      "properties": {
+        "source-of-truth": { "$ref": "#/$defs/strings" },
+        "generated-projection": { "$ref": "#/$defs/strings" },
+        "runtime-state": { "$ref": "#/$defs/strings" },
+        "build-artifact": { "$ref": "#/$defs/strings" },
+        "documentation": { "$ref": "#/$defs/strings" },
+        "plan-artifact": { "$ref": "#/$defs/strings" },
+        "test-fixture": { "$ref": "#/$defs/strings" },
+        "migration-tooling": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "required": ["root", "allowedRootFiles", "allowedOutsideRoots"],
+      "additionalProperties": false,
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "allowedRootFiles": { "$ref": "#/$defs/strings" },
+        "allowedOutsideRoots": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "required": ["allowedRoots", "forbiddenRoot"],
+      "additionalProperties": false,
+      "properties": {
+        "allowedRoots": { "$ref": "#/$defs/strings" },
+        "forbiddenRoot": { "type": "string", "minLength": 1 }
+      }
+    },
+    "testFixtures": {
+      "type": "object",
+      "required": ["root", "forbiddenRoot"],
+      "additionalProperties": false,
+      "properties": {
+        "root": { "type": "string", "minLength": 1 },
+        "forbiddenRoot": { "type": "string", "minLength": 1 }
+      }
+    },
+    "generatedArtifacts": {
+      "type": "object",
+      "required": ["directories", "extensions"],
+      "additionalProperties": false,
+      "properties": {
+        "directories": { "$ref": "#/$defs/strings" },
+        "extensions": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "required": ["authoritativeRoots", "excludedRoots", "runtimeMirrors"],
+      "additionalProperties": false,
+      "properties": {
+        "authoritativeRoots": { "$ref": "#/$defs/strings" },
+        "excludedRoots": { "$ref": "#/$defs/strings" },
+        "runtimeMirrors": { "$ref": "#/$defs/strings" }
+      }
+    }
+  },
+  "$defs": {
+    "strings": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+  }
+}
