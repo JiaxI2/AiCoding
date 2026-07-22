@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 为 TODO 0029 剩余的 `doctor pwsh` 退役窗口显性化建立窄 Plan，覆盖 repohealth、冻结 CLI report schema、typed HelpForm 回归、COMMANDS/报告契约、四个已知兼容壳头标记与 todo 自归档；保持既有 20/2/2 计数且 unspecified 只报告不设门禁。 / Adds a bounded plan for TODO 0029's remaining PowerShell retirement visibility across repohealth, the frozen CLI report schema, typed-help regression, command/report docs, four known wrapper markers, and final todo self-archival while preserving count-only semantics.
+
 - **docs(todolist)**: 执行 TODO 0029 的队列归档阶段：先以真实 nested probe 证明 `internal/todolist` 只读顶层，再用 `git mv` 将 27 个 Done 文件移入 `docs/todolist/done/`；活跃视图由 `31 total / 27 Done / 4 Planned` 收敛为 `4 total / 4 Planned`，文件正文与 Git 历史保留，layout/DocSync 无需新增白名单。 / Archives 27 completed todo files with Git history preserved after a real non-recursive queue probe, reducing the active view from 31 items to four planned items without changing the todolist primitive or broadening layout policy.
 
 - **refactor(pathpolicy)**: 完成 TODO 0028：新增仅依赖 stdlib、只有 `Compile/Match/Validate` 三个公开函数的确定性路径 Primitive，Plan、TestEngine change impact 与 Validation Evidence 改走同一冻结 glob 方言；六份 policy 配置以 checked-in schema 形成 6/6 闭合，DocSync 与 dependency governance 对未知字段共同 fail-closed。配置文件与既有裁决语义不变，重构前后固定 staged 输入的 `plan check` / `change verify` JSON 将以剔除时长字段后的字节相等作为最终硬判据。 / Completes TODO 0028 with one stdlib-only three-function path-policy primitive shared by Plan, TestEngine impact selection, and Validation Evidence, plus six-of-six checked-in policy schemas enforced by DocSync and dependency governance while preserving existing configuration and decision semantics.
