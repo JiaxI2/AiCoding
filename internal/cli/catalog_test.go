@@ -39,6 +39,7 @@ func TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts(t *testing.T) {
 		"aicoding validation explain --profile Smoke|Full|Release --target HEAD|INDEX",
 		"aicoding plan check (--staged | --paths PATH ...)",
 		"aicoding plan approve --id ID",
+		"aicoding doctor pwsh [--repo-root PATH] [--json]",
 		"aicoding powershell regex-lint --path PATH",
 	} {
 		if !strings.Contains(help.String(), expected) {

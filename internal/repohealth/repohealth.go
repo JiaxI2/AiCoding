@@ -34,10 +34,19 @@ type PwshInventory struct {
 }
 
 type PwshRetirement struct {
-	Scope            string `json:"scope"`
-	RemainingScripts int    `json:"remainingScripts"`
-	ThinShells       int    `json:"thinShells"`
-	Deprecated       int    `json:"deprecated"`
+	Scope            string                 `json:"scope"`
+	RemainingScripts int                    `json:"remainingScripts"`
+	ThinShells       int                    `json:"thinShells"`
+	Deprecated       int                    `json:"deprecated"`
+	Unspecified      int                    `json:"unspecified"`
+	Scripts          []PwshRetirementScript `json:"scripts"`
+}
+
+type PwshRetirementScript struct {
+	Path              string `json:"path"`
+	ThinShell         bool   `json:"thinShell"`
+	Deprecated        bool   `json:"deprecated"`
+	RetirementTrigger string `json:"retirementTrigger"`
 }
 
 type HookCheck struct {
@@ -128,13 +137,27 @@ func InspectPwsh(repo string) (PwshInventory, []string) {
 }
 
 func inspectPwshRetirement(repo string) (PwshRetirement, []string) {
-	retirement := PwshRetirement{Scope: "tools/specialty/*.ps1"}
-	matches, err := filepath.Glob(platform.RepoPath(repo, "tools/specialty/*.ps1"))
-	if err != nil {
-		return retirement, []string{"bad PowerShell retirement glob: " + err.Error()}
+	retirement := PwshRetirement{Scope: "tools/specialty/*.ps1", Scripts: []PwshRetirementScript{}}
+	root := platform.RepoPath(repo, "tools/specialty")
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		return retirement, nil
+	} else if err != nil {
+		return retirement, []string{err.Error()}
+	}
+	matches := []string{}
+	errs := []string{}
+	if err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if !entry.IsDir() && strings.EqualFold(filepath.Ext(entry.Name()), ".ps1") {
+			matches = append(matches, path)
+		}
+		return nil
+	}); err != nil {
+		return retirement, []string{err.Error()}
 	}
 	sort.Strings(matches)
-	errs := []string{}
 	for _, path := range matches {
 		info, statErr := os.Stat(path)
 		if statErr != nil || info.IsDir() {
@@ -143,7 +166,6 @@ func inspectPwshRetirement(repo string) (PwshRetirement, []string) {
 			}
 			continue
 		}
-		retirement.RemainingScripts++
 		data, readErr := os.ReadFile(path)
 		if readErr != nil {
 			errs = append(errs, "cannot read "+path+": "+readErr.Error())
@@ -152,14 +174,49 @@ func inspectPwshRetirement(repo string) (PwshRetirement, []string) {
 		lower := strings.ToLower(string(data))
 		thin := strings.Contains(lower, "compatibility wrapper") ||
 			(strings.Contains(lower, "compatibility-only") && strings.Contains(lower, "bin/aicoding"))
-		if thin {
-			retirement.ThinShells++
+		deprecated := strings.Contains(lower, "deprecated(") || (thin && strings.Contains(lower, "warning:"))
+		if filepath.Dir(path) == root {
+			retirement.RemainingScripts++
+			if thin {
+				retirement.ThinShells++
+			}
+			if deprecated {
+				retirement.Deprecated++
+			}
 		}
-		if strings.Contains(lower, "deprecated(") || (thin && strings.Contains(lower, "warning:")) {
-			retirement.Deprecated++
+		trigger := pwshRetirementTrigger(string(data))
+		if thin || deprecated || trigger != "unspecified" {
+			rel, relErr := filepath.Rel(repo, path)
+			if relErr != nil {
+				errs = append(errs, relErr.Error())
+				continue
+			}
+			if trigger == "unspecified" {
+				retirement.Unspecified++
+			}
+			retirement.Scripts = append(retirement.Scripts, PwshRetirementScript{
+				Path: filepath.ToSlash(rel), ThinShell: thin, Deprecated: deprecated, RetirementTrigger: trigger,
+			})
 		}
 	}
 	return retirement, errs
+}
+
+func pwshRetirementTrigger(content string) string {
+	for index, line := range strings.Split(strings.ReplaceAll(content, "\r\n", "\n"), "\n") {
+		if index >= 40 {
+			break
+		}
+		trimmed := strings.TrimSpace(line)
+		const marker = "# RETIRE-AFTER:"
+		if len(trimmed) >= len(marker) && strings.EqualFold(trimmed[:len(marker)], marker) {
+			if trigger := strings.TrimSpace(trimmed[len(marker):]); trigger != "" {
+				return trigger
+			}
+			return "unspecified"
+		}
+	}
+	return "unspecified"
 }
 
 func isPwshInvocationLine(lower string) bool {

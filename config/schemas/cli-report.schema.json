@@ -84,8 +84,76 @@
       "minimum": 0
     }
   },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "command": { "const": "doctor pwsh" }
+        },
+        "required": ["command"]
+      },
+      "then": {
+        "required": ["data"],
+        "properties": {
+          "data": { "$ref": "#/$defs/pwshInventory" }
+        }
+      }
+    }
+  ],
   "additionalProperties": false,
   "$defs": {
+    "pwshInventory": {
+      "type": "object",
+      "required": ["calls", "retirement"],
+      "properties": {
+        "calls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pwshCall" }
+        },
+        "retirement": { "$ref": "#/$defs/pwshRetirement" }
+      },
+      "additionalProperties": false
+    },
+    "pwshCall": {
+      "type": "object",
+      "required": ["path", "line", "text", "category", "recommendation"],
+      "properties": {
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string" },
+        "category": { "type": "string" },
+        "recommendation": { "type": "string" },
+        "suggestedReplacement": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "pwshRetirement": {
+      "type": "object",
+      "required": ["scope", "remainingScripts", "thinShells", "deprecated", "unspecified", "scripts"],
+      "properties": {
+        "scope": { "type": "string", "const": "tools/specialty/*.ps1" },
+        "remainingScripts": { "type": "integer", "minimum": 0 },
+        "thinShells": { "type": "integer", "minimum": 0 },
+        "deprecated": { "type": "integer", "minimum": 0 },
+        "unspecified": { "type": "integer", "minimum": 0 },
+        "scripts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pwshRetirementScript" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "pwshRetirementScript": {
+      "type": "object",
+      "required": ["path", "thinShell", "deprecated", "retirementTrigger"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^tools/specialty/.+\\.ps1$" },
+        "thinShell": { "type": "boolean" },
+        "deprecated": { "type": "boolean" },
+        "retirementTrigger": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
     "finding": {
       "type": "object",
       "required": [

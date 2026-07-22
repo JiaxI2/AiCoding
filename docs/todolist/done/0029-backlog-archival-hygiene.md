@@ -1,6 +1,6 @@
 # TODO 0029: backlog 归档与队列卫生（Done 项归档 + ps1 退役窗口显性化）
 
-Status: Planned
+Status: Done
 Verify: aicoding todolist --json 只列活跃项（Done 归档后 total 大幅下降）；done/ 归档完整可查；doctor pwsh 输出每个薄壳的退役触发条件
 
 > 来源：FORWARD_PLAN C4 + C3。现状：docs/todolist/ 27 项里 26 个 Done ——

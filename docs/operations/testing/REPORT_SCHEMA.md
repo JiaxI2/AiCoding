@@ -84,6 +84,12 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 `executionMode=receipt-hit` 与 `executedCases=0`；未命中则内嵌既有 `testReport`，不定义第二份
 结果 schema。
 
+`doctor pwsh` 的命令专用 `data` 由 `cli-report.schema.json#/$defs/pwshInventory` 约束。
+`retirement` 保留 `remainingScripts/thinShells/deprecated` 三个既有计数，并增加
+`unspecified` 与稳定排序的 `scripts[]`；每项包含 `path/thinShell/deprecated/retirementTrigger`。
+`retirementTrigger` 只读取脚本头部 `# RETIRE-AFTER:`，缺失固定输出 `unspecified`，不会改变
+命令 `ok` 或退出码。
+
 ## 1. 测试 `summary.json`
 
 ```json

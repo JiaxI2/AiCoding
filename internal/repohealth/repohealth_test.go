@@ -6,6 +6,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -39,7 +41,8 @@ func TestInspectPwshRetirementReportsCountsWithoutGate(t *testing.T) {
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "tools", "specialty", "active.ps1"), "Write-Host active\n")
 	mustWrite(t, filepath.Join(repo, "tools", "specialty", "thin.ps1"), "# Compatibility wrapper only\n& bin/aicoding.exe version\n")
-	mustWrite(t, filepath.Join(repo, "tools", "specialty", "deprecated.ps1"), "# DEPRECATED(TODO-0022): remove later\n")
+	mustWrite(t, filepath.Join(repo, "tools", "specialty", "deprecated.ps1"), "# RETIRE-AFTER: after compatibility release\n# DEPRECATED(TODO-0022): remove later\n")
+	mustWrite(t, filepath.Join(repo, "tools", "specialty", "hooks", "nested.ps1"), "# RETIRE-AFTER: after hook consumers migrate\n# Compatibility wrapper only\n& bin/aicoding.exe version\n")
 
 	retirement, errs := inspectPwshRetirement(repo)
 	if len(errs) != 0 {
@@ -48,7 +51,69 @@ func TestInspectPwshRetirementReportsCountsWithoutGate(t *testing.T) {
 	if retirement.RemainingScripts != 3 || retirement.ThinShells != 1 || retirement.Deprecated != 1 {
 		t.Fatalf("unexpected retirement counts: %#v", retirement)
 	}
+	if retirement.Unspecified != 1 || len(retirement.Scripts) != 3 {
+		t.Fatalf("unexpected retirement trigger inventory: %#v", retirement)
+	}
+	if retirement.Scripts[0].Path != "tools/specialty/deprecated.ps1" || retirement.Scripts[0].RetirementTrigger != "after compatibility release" {
+		t.Fatalf("explicit trigger missing or unstable: %#v", retirement.Scripts)
+	}
+	if retirement.Scripts[1].Path != "tools/specialty/hooks/nested.ps1" || !retirement.Scripts[1].ThinShell {
+		t.Fatalf("nested thin shell missing: %#v", retirement.Scripts)
+	}
+	if retirement.Scripts[2].Path != "tools/specialty/thin.ps1" || retirement.Scripts[2].RetirementTrigger != "unspecified" {
+		t.Fatalf("unspecified trigger missing: %#v", retirement.Scripts)
+	}
 	t.Logf("remainingScripts=%d thinShells=%d deprecated=%d", retirement.RemainingScripts, retirement.ThinShells, retirement.Deprecated)
+}
+
+func TestPwshRetirementSchemaFieldsStayAligned(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "config", "schemas", "cli-report.schema.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var schema map[string]any
+	if err := json.Unmarshal(raw, &schema); err != nil {
+		t.Fatal(err)
+	}
+	definitions, ok := schema["$defs"].(map[string]any)
+	if !ok {
+		t.Fatal("CLI report schema has no $defs")
+	}
+	assertRequiredJSONFields(t, definitions, "pwshRetirement", PwshRetirement{Scripts: []PwshRetirementScript{}})
+	assertRequiredJSONFields(t, definitions, "pwshRetirementScript", PwshRetirementScript{})
+}
+
+func assertRequiredJSONFields(t *testing.T, definitions map[string]any, name string, value any) {
+	t.Helper()
+	definition, ok := definitions[name].(map[string]any)
+	if !ok {
+		t.Fatalf("CLI report schema is missing %s", name)
+	}
+	requiredValues, ok := definition["required"].([]any)
+	if !ok {
+		t.Fatalf("CLI report schema %s has no required fields", name)
+	}
+	required := make([]string, 0, len(requiredValues))
+	for _, item := range requiredValues {
+		required = append(required, item.(string))
+	}
+	sort.Strings(required)
+	encoded, err := json.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var object map[string]any
+	if err := json.Unmarshal(encoded, &object); err != nil {
+		t.Fatal(err)
+	}
+	fields := make([]string, 0, len(object))
+	for field := range object {
+		fields = append(fields, field)
+	}
+	sort.Strings(fields)
+	if !reflect.DeepEqual(required, fields) {
+		t.Fatalf("%s schema fields = %v, Go JSON fields = %v", name, required, fields)
+	}
 }
 
 func TestHooksWiredDetectsUnwiredThenWired(t *testing.T) {

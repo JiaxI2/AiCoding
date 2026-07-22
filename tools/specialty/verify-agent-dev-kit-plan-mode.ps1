@@ -1,3 +1,4 @@
+# RETIRE-AFTER: after plan-mode GA and one compatibility release
 [CmdletBinding()]
 param(
   [string]$RepoRoot = "",

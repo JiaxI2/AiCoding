@@ -353,7 +353,11 @@ bin\aicoding.exe verify --profile Smoke --runtime-profile full --source-reposito
 常规文档主入口。未配置 runtime skill 且未显式传入 `--runtime-skill`、
 `--runtime-profile full` 或 source repository 时，status/doctor/verify 直接返回 `skipped`
 且不启动 PowerShell；显式路径仍执行完整探测。`doctor pwsh` 同时只读报告
-`remainingScripts`、`thinShells`、`deprecated`，这些退役计数不构成门禁。
+`remainingScripts`、`thinShells`、`deprecated`，并在 `retirement.scripts[]` 为每个已知
+薄壳/弃用候选输出 `retirementTrigger`。标记来自脚本头部
+`# RETIRE-AFTER: <condition>`；缺失时固定为 `unspecified` 并计入
+`retirement.unspecified`。这些退役字段只用于观测，不构成门禁。命令继续由 typed HelpForm
+`aicoding doctor pwsh [--repo-root PATH] [--json]` 暴露。
 
 ## MCP 组件控制面
 

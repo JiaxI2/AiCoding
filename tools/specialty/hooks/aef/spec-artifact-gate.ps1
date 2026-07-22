@@ -1,3 +1,5 @@
+# RETIRE-AFTER: after AEF consumers call aicoding plan verify directly
+# Compatibility wrapper only.
 [CmdletBinding()]
 param(
   [string]$RepoRoot = "",

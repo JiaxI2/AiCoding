@@ -1,3 +1,4 @@
+# RETIRE-AFTER: one release after Phase 1 reference migration
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]

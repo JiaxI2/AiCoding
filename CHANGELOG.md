@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(repohealth)**: 完成 TODO 0029：先以真实嵌套探针确认 todolist Primitive 只读顶层，再用 `git mv` 将 27 个既有 Done 项移入 `docs/todolist/done/` 并保留历史；`doctor pwsh` 从脚本头部 `RETIRE-AFTER` 标记报告四个薄壳/退役候选的 `retirementTrigger`，缺标记时只计入 `unspecified` 而不设门禁。真实负例在临时删标记后仍以 `exit=0` 返回 `unspecified=1`，还原快照为 `remainingScripts=20 / thinShells=2 / deprecated=2 / unspecified=0`，Smoke `67 total / 45 pass / 0 fail / 0 warn / 22 skip`。 / Completes TODO 0029 by archiving completed queue items with Git history intact and exposing count-only PowerShell retirement triggers, including a real missing-marker probe and a passing Smoke profile.
+
 - **docs(plan)**: 在 clean `feature/convergence` tree 上批准 `backlog-archival-hygiene`，将 TODO 0029 的 doctor PowerShell data 字段、冻结 CLI report schema、四个退役标记与文档同步范围绑定到 Git Tree `883dff773fd0bf97afb430a35a593d2607c2ffbf`。 / Approves the bounded TODO 0029 retirement-visibility plan on a clean tree and binds its repohealth, frozen report-schema, wrapper-marker, and documentation scope to Git Tree `883dff773fd0bf97afb430a35a593d2607c2ffbf`.
 
 - **docs(plan)**: 为 TODO 0029 剩余的 `doctor pwsh` 退役窗口显性化建立窄 Plan，覆盖 repohealth、冻结 CLI report schema、typed HelpForm 回归、COMMANDS/报告契约、四个已知兼容壳头标记与 todo 自归档；保持既有 20/2/2 计数且 unspecified 只报告不设门禁。 / Adds a bounded plan for TODO 0029's remaining PowerShell retirement visibility across repohealth, the frozen CLI report schema, typed-help regression, command/report docs, four known wrapper markers, and final todo self-archival while preserving count-only semantics.
