@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(todolist)**: 登记 TODO 0035 的 config schema 闭合工作：以实测 34 个非 schema 配置与 19 个既有 schema 为基线，保留现有专门校验并补齐严格 schema、唯一 binding table、standalone 反向登记及 `governance dependencies` 完备性检查；数据库与集中式加载框架明确不在范围内。 / Registers TODO 0035 to close the measured configuration/schema surface with strict schemas, one binding table, explicit standalone reverse registration, and dependency-governance completeness while preserving specialized validators and excluding databases or a centralized loader.
+
 - **docs(validation)**: 将 `main@41eefac7a67ac1473a5b9cf7cfc6548ca7372027` 的正式 workflow dispatch run `29916523297` 记为 `toolchainDigest.v2` 晋级证据 1/3；release-gate 的 `--reuse off` 冷种子与 `--verify-reuse` 审计均成功，审计命中同一 Receipt，默认复用仍保持 `off`。 / Records workflow-dispatch run 29916523297 on main as the first of three toolchainDigest.v2 promotion proofs after both the cold seed and audited Receipt reuse succeed, without changing the default reuse mode.
 
 - **test(validation)**: A/B/C 归档后的同一 staged tree 以显式 `--reuse off` 完成 v2 首轮冷 Full 与 Release，固定 summary 为 `test-results/0032-final-full/summary.json`（`71/67/0/0/4 PASS`）和 `test-results/0032-final-release/summary.json`（`71/71/0/0/0 PASS`）；该本地验收不进入远端 main 的 0/3 晋级计数。 / Records the first cold v2 Full and Release validations for the shared A/B/C closure tree, with fixed summary paths and no effect on the remote main promotion count.
