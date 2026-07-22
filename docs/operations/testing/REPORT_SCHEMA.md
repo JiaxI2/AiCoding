@@ -90,6 +90,12 @@ doctor、verify、test 及已迁移的结构化领域命令使用统一 `Standar
 `retirementTrigger` 只读取脚本头部 `# RETIRE-AFTER:`，缺失固定输出 `unspecified`，不会改变
 命令 `ok` 或退出码。
 
+`doctor pwsh-budget` 的 `data` 保留 `calls` 与四类 `counts`，并新增 `ratchet`：
+`configPath/scope`、当前与基线 `remainingScripts/unspecified`、`baselineCommit/evidence`，以及
+稳定排序的 `unexpectedScripts/missingScripts`。PWSH-002 在任一集合漂移、基线历史非严格子集、
+证据不匹配或 retirement candidate 变为 unspecified 时通过顶层 `errors[]` 返回具体路径并
+非零退出；PWSH-001 schema 与退出语义不变。
+
 ## 1. 测试 `summary.json`
 
 ```json

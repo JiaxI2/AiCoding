@@ -98,6 +98,20 @@
           "data": { "$ref": "#/$defs/pwshInventory" }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "command": { "const": "doctor pwsh-budget" }
+        },
+        "required": ["command"]
+      },
+      "then": {
+        "required": ["data"],
+        "properties": {
+          "data": { "$ref": "#/$defs/pwshBudget" }
+        }
+      }
     }
   ],
   "additionalProperties": false,
@@ -151,6 +165,65 @@
         "thinShell": { "type": "boolean" },
         "deprecated": { "type": "boolean" },
         "retirementTrigger": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "pwshBudget": {
+      "type": "object",
+      "required": ["calls", "counts", "ratchet"],
+      "properties": {
+        "calls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pwshBudgetCall" }
+        },
+        "counts": {
+          "type": "object",
+          "required": ["hot-path", "slow-path", "fallback", "documentation-only"],
+          "properties": {
+            "hot-path": { "type": "integer", "minimum": 0 },
+            "slow-path": { "type": "integer", "minimum": 0 },
+            "fallback": { "type": "integer", "minimum": 0 },
+            "documentation-only": { "type": "integer", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "ratchet": { "$ref": "#/$defs/pwshBudgetRatchet" }
+      },
+      "additionalProperties": false
+    },
+    "pwshBudgetCall": {
+      "type": "object",
+      "required": ["path", "line", "text", "category", "budget", "recommendation"],
+      "properties": {
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1 },
+        "text": { "type": "string" },
+        "category": { "type": "string" },
+        "budget": { "type": "string", "enum": ["hot-path", "slow-path", "fallback", "documentation-only"] },
+        "recommendation": { "type": "string" },
+        "suggestedReplacement": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "pwshBudgetRatchet": {
+      "type": "object",
+      "required": [
+        "ok", "configPath", "scope", "baselineRemainingScripts", "currentRemainingScripts",
+        "baselineUnspecified", "currentUnspecified", "baselineCommit", "evidence",
+        "unexpectedScripts", "missingScripts"
+      ],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "configPath": { "type": "string", "const": "config/pwsh-budget.json" },
+        "scope": { "type": "string", "const": "tools/specialty/*.ps1" },
+        "baselineRemainingScripts": { "type": "integer", "minimum": 0 },
+        "currentRemainingScripts": { "type": "integer", "minimum": 0 },
+        "baselineUnspecified": { "type": "integer", "const": 0 },
+        "currentUnspecified": { "type": "integer", "minimum": 0 },
+        "baselineCommit": { "type": "string", "pattern": "^(?:[0-9a-f]{40})?$" },
+        "evidence": { "type": "string" },
+        "unexpectedScripts": { "type": "array", "items": { "type": "string" } },
+        "missingScripts": { "type": "array", "items": { "type": "string" } }
       },
       "additionalProperties": false
     },

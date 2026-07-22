@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "command": "doctor pwsh",
+  "ok": true,
+  "category": "none",
+  "retryable": false,
+  "message": "PowerShell invocation and retirement inventory",
+  "repoRoot": "F:\\Study\\AI\\worktrees\\AiCoding",
+  "data": {
+    "calls": [
+      {
+        "path": "config/kits/release-governance-overlay-kit.json",
+        "line": 33,
+        "text": "\"type\": \"specialty-pwsh\",",
+        "category": "release",
+        "recommendation": "keep-pwsh",
+        "suggestedReplacement": "keep PowerShell/Python slow path"
+      },
+      {
+        "path": "tools/specialty/aicoding-skill.ps1",
+        "line": 969,
+        "text": "pwsh tools/specialty/aicoding-skill.ps1 verify -Skill $Skill -Json",
+        "category": "verify",
+        "recommendation": "go-orchestrate",
+        "suggestedReplacement": "prefer bin/aicoding.exe verify --profile Smoke or test --profile Smoke before PowerShell fallback"
+      },
+      {
+        "path": "tools/specialty/invoke-aicoding-agent-hook.ps1",
+        "line": 61,
+        "text": "$capture = \u0026 pwsh -NoProfile -ExecutionPolicy Bypass -File $hookPath -RepoRoot $RepoRoot -Event $Event -Mode $hookMode -Json 2\u003e\u00261",
+        "category": "unknown",
+        "recommendation": "go-orchestrate",
+        "suggestedReplacement": "review whether this can become a Go orchestration check"
+      },
+      {
+        "path": "tools/specialty/verify-aicoding-agent-dev-kit.ps1",
+        "line": 98,
+        "text": "$checks.sourceVerify = Invoke-Capture \"pwsh\" @(\"-NoProfile\", \"-ExecutionPolicy\", \"Bypass\", \"-File\", (Join-Path $assetRoot \"scripts\\verify-agent-dev-kit.ps1\"), \"-RepoRoot\", $assetRoot, \"-Json\") $assetRoot",
+        "category": "verify",
+        "recommendation": "go-orchestrate",
+        "suggestedReplacement": "prefer bin/aicoding.exe verify --profile Smoke or test --profile Smoke before PowerShell fallback"
+      },
+      {
+        "path": "tools/specialty/verify-aicoding-agent-dev-kit.ps1",
+        "line": 101,
+        "text": "$checks.qualityGate = Invoke-Capture \"pwsh\" @(\"-NoProfile\", \"-ExecutionPolicy\", \"Bypass\", \"-File\", (Join-Path $assetRoot \"scripts\\invoke-agent-quality-gate.ps1\"), \"-RepoRoot\", $assetRoot, \"-Mode\", \"all\", \"-Json\") $assetRoot",
+        "category": "verify",
+        "recommendation": "go-orchestrate",
+        "suggestedReplacement": "prefer bin/aicoding.exe verify --profile Smoke or test --profile Smoke before PowerShell fallback"
+      },
+      {
+        "path": "tools/specialty/verify-release-governance-overlay.ps1",
+        "line": 62,
+        "text": "\u0026 pwsh @args | Out-Null",
+        "category": "release",
+        "recommendation": "keep-pwsh",
+        "suggestedReplacement": "keep PowerShell release-governance overlay slow path"
+      }
+    ],
+    "retirement": {
+      "scope": "tools/specialty/*.ps1",
+      "remainingScripts": 19,
+      "thinShells": 1,
+      "deprecated": 1,
+      "unspecified": 0,
+      "scripts": [
+        {
+          "path": "tools/specialty/hooks/aef/plan-mode-gate.ps1",
+          "thinShell": true,
+          "deprecated": false,
+          "retirementTrigger": "after AEF consumers call aicoding plan check directly"
+        },
+        {
+          "path": "tools/specialty/hooks/aef/spec-artifact-gate.ps1",
+          "thinShell": true,
+          "deprecated": false,
+          "retirementTrigger": "after AEF consumers call aicoding plan verify directly"
+        },
+        {
+          "path": "tools/specialty/verify-agent-dev-kit-plan-mode.ps1",
+          "thinShell": true,
+          "deprecated": true,
+          "retirementTrigger": "after plan-mode GA and one compatibility release"
+        }
+      ]
+    }
+  },
+  "elapsedMs": 15
+}

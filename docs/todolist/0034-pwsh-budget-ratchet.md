@@ -32,6 +32,23 @@ Verify: A 落地后实测基线写入配置；PWSH-002 阻断 unspecified 与脚
 - PWSH-001/PWSH-002 文档边界、COMMANDS、全局用例与 CHANGELOG 同步。
 - 最终 Full、Release 各全绿一次，summary 路径写入本条目后归档。
 
+## 实施证据
+
+- 顺序基点：Phase 2 证据提交 `f56c17e1b8be8723fc4f884cdf537f2f9cd959cd`；原始输出保存于
+  `docs/operations/evidence/pwsh-budget-baseline-f56c17e.json`，实测为
+  `remainingScripts=19 / thinShells=1 / deprecated=1 / unspecified=0`。
+- PWSH-001 保持 report-only：临时新增无标记脚本后仍 `exit=0`，报告
+  `remainingScripts=20`；同一输入的 PWSH-002 `exit=1`，原始错误同时点名
+  `tools/specialty/ratchet-negative.ps1`、缺少 `# RETIRE-AFTER:` 与 `20 != 19`。
+- 带合法 `# RETIRE-AFTER:` 的同名第 20 个脚本仍使 PWSH-002 `exit=1`，错误点名该路径及
+  `PowerShell remainingScripts=20 does not equal baseline=19`，未误报缺标记。
+- 临时把配置基线抬至 20 时 PWSH-002 `exit=1`，原始错误分别指出脚本清单只有 19、
+  证据不能证明 20、当前值 19 不等于基线 20；三次探针均已还原。
+- B 独立 Full：`71 total / 67 pass / 0 fail / 0 warn / 4 skip`，
+  `test-results/aicoding-global-test-20260722-174408/summary.json`；PWSH-001/PWSH-002 均 PASS。
+- 本项实现已完成；保持 Planned 仅等待本轮 C 后统一真跑的最终 Full/Release 路径回填，
+  随后改为 Done 并归档。
+
 ## 明确不做
 
 - 不使 PWSH-001 失败。

@@ -359,6 +359,11 @@ bin\aicoding.exe verify --profile Smoke --runtime-profile full --source-reposito
 `retirement.unspecified`。这些退役字段只用于观测，不构成门禁。命令继续由 typed HelpForm
 `aicoding doctor pwsh [--repo-root PATH] [--json]` 暴露。
 
+`doctor pwsh-budget` / PWSH-002 在既有调用点预算之外读取 `config/pwsh-budget.json`：
+`ratchet` 返回当前/基线 `remainingScripts`、`unspecified`、证据 commit 与新增/缺失路径。
+当前顶层路径集合必须等于最后基线，后续基线只能追加严格子集；新增脚本、同数替换、删除后
+未同步下调、基线上调或退休候选缺标记均非零退出。该门禁不改变 `doctor pwsh` 的退出码。
+
 ## MCP 组件控制面
 
 MCP registry、component manifest、Codex 配置、生命周期和兼容性回归统一由 Go CLI 管理：

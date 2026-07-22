@@ -27,6 +27,8 @@ func TestRunNewFastPathCommands(t *testing.T) {
 	}
 	mustWrite(t, filepath.Join(repo, "Taskfile.yml"), "tasks:\n  smoke:\n    cmds:\n      - bin/aicoding.exe kit verify --all --profile Smoke --json\n")
 	mustWrite(t, filepath.Join(repo, "config", "tagging-policy.json"), `{"schemaVersion":1}`)
+	mustWrite(t, filepath.Join(repo, "docs", "operations", "evidence", "pwsh-budget-release-fixture.json"), `{"schemaVersion":1,"command":"doctor pwsh","ok":true,"data":{"retirement":{"scope":"tools/specialty/*.ps1","remainingScripts":2,"unspecified":0}}}`)
+	mustWrite(t, filepath.Join(repo, "config", "pwsh-budget.json"), `{"schemaVersion":1,"scope":"tools/specialty/*.ps1","baselines":[{"remainingScripts":2,"unspecified":0,"scripts":["tools/specialty/aicoding-tag-governance.ps1","tools/specialty/verify-release-governance-overlay.ps1"],"observedCommit":"0000000000000000000000000000000000000000","evidence":"docs/operations/evidence/pwsh-budget-release-fixture.json"}]}`)
 	writeReleaseFixture(t, repo)
 
 	start := time.Now()

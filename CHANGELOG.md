@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(repohealth)**: 在既有 PWSH-002 上增加配置化 PowerShell 棘轮：以 A 退役后 `f56c17e` 的原始 `doctor pwsh` 输出证明 `remainingScripts=19 / unspecified=0`，并冻结 19 条顶层路径；当前集合必须完全相等，后续基线只能追加严格子集，新增、同数替换、删除未同步下调、基线上调或 candidate 缺标记均 fail-closed 并指出文件。PWSH-001 继续只报告，deprecated/thinShell 不新增规则；三类真实负例精确红，独立 Full 为 `71/67/0/0/4 PASS`。 / Adds a measured strict-subset PowerShell script ratchet to the existing PWSH-002 gate while preserving PWSH-001 report-only semantics and avoiding new deprecated/thin-shell policy, with three real negative probes and a passing independent Full profile.
+
 - **docs(plan)**: 在 clean main tree 上批准 PWSH-002 棘轮计划并绑定 `approvedTree=de2db8a74ddef6ff9507a95f4c5181a11fdc0138`；实现只能在登记的 repohealth、配置/schema、现有报告契约、PowerShell 边界、证据与 TODO 范围内产生漂移。 / Approves the bounded PWSH-002 ratchet plan on a clean main tree and binds its exact implementation scope.
 
 - **docs(plan)**: 为 TODO 0034 建立窄范围 PWSH-002 棘轮计划，绑定 A 落地后 `f56c17e` 的实测脚本集合、原始 doctor 证据、严格子集基线历史、既有 CLI data schema 与冻结 PowerShell 边界；PWSH-001 继续只报告，deprecated/thinShell 不新增规则。 / Adds a bounded plan for the existing PWSH-002 ratchet using the measured post-retirement script set and strict-subset history while preserving PWSH-001 report-only semantics.

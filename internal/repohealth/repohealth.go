@@ -754,8 +754,9 @@ func FormatCount(name string, count int) string {
 }
 
 type PwshBudget struct {
-	Calls  []PwshBudgetCall `json:"calls"`
-	Counts map[string]int   `json:"counts"`
+	Calls   []PwshBudgetCall  `json:"calls"`
+	Counts  map[string]int    `json:"counts"`
+	Ratchet PwshBudgetRatchet `json:"ratchet"`
 }
 
 type PwshBudgetCall struct {
@@ -802,6 +803,9 @@ func ScanPwshBudget(repo string) (PwshBudget, []string) {
 			budget.Counts[bucket] = 0
 		}
 	}
+	ratchet, ratchetErrs := evaluatePwshBudgetRatchet(repo)
+	budget.Ratchet = ratchet
+	errs = append(errs, ratchetErrs...)
 	return budget, errs
 }
 

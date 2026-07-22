@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "scope": "tools/specialty/*.ps1",
+  "baselines": [
+    {
+      "remainingScripts": 19,
+      "unspecified": 0,
+      "scripts": [
+        "tools/specialty/aicoding-skill.ps1",
+        "tools/specialty/aicoding-tag-governance.ps1",
+        "tools/specialty/audit-runtime-skills.ps1",
+        "tools/specialty/confirm-agent-decision.ps1",
+        "tools/specialty/invoke-aicoding-agent-hook.ps1",
+        "tools/specialty/new-agent-plan-mode-session.ps1",
+        "tools/specialty/set-codex-skill-profile.ps1",
+        "tools/specialty/status-ai-debug-repair-kit.ps1",
+        "tools/specialty/status-aicoding-agent-dev-kit.ps1",
+        "tools/specialty/status-codex-agent-powershell-skill-kit.ps1",
+        "tools/specialty/test-ai-debug-repair-kit.ps1",
+        "tools/specialty/test-aicoding-agent-dev-kit.ps1",
+        "tools/specialty/test-codex-agent-powershell-skill-kit.ps1",
+        "tools/specialty/verify-agent-dev-kit-plan-mode.ps1",
+        "tools/specialty/verify-agent-engineering-foundation.ps1",
+        "tools/specialty/verify-ai-debug-repair-kit.ps1",
+        "tools/specialty/verify-aicoding-agent-dev-kit.ps1",
+        "tools/specialty/verify-codex-agent-powershell-skill-kit.ps1",
+        "tools/specialty/verify-release-governance-overlay.ps1"
+      ],
+      "observedCommit": "f56c17e1b8be8723fc4f884cdf537f2f9cd959cd",
+      "evidence": "docs/operations/evidence/pwsh-budget-baseline-f56c17e.json"
+    }
+  ]
+}

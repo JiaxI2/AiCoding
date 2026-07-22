@@ -38,12 +38,18 @@ bin\aicoding.exe doctor pwsh-budget --json
 
 `doctor pwsh-budget` 用于确认 PowerShell 调用仍限制在上述专项类别内。
 
-2026-07-22 的冻结面复核记录为 22 个 `tools/specialty/**/*.ps1`：20 个顶层专项入口与
-2 个嵌套 AEF Hook 薄壳；顶层计数中 `thinShells=2`、`deprecated=2`。可执行职责全部属于
+2026-07-22 的 Phase 2 退役后快照为 21 个 `tools/specialty/**/*.ps1`：19 个顶层专项入口与
+2 个嵌套 AEF Hook 薄壳；顶层计数中 `thinShells=1`、`deprecated=1`。可执行职责全部属于
 上表六类，或处于 ADR/独立 Retirement Plan 已登记的 release 退役窗口。计数是只读观测，
 不是归零 KPI；`doctor pwsh` 还从脚本头部 `# RETIRE-AFTER:` 读取逐候选
 `retirementTrigger`，缺失显示 `unspecified`，同样不设门禁。默认 Taskfile/CI profile 仍只调用 Go CLI。详细逐文件裁决见
 [TODO 0002](../todolist/done/0002-powershell-specialty-convergence.md)。
+
+PWSH-001 的上述 report-only 契约不变。PWSH-002 另从 `config/pwsh-budget.json` 读取
+已提交的顶层路径集合与原始 doctor 证据：当前集合必须与最后基线完全相同，后续基线只能
+追加前一集合的严格子集。新增、删一换一、删除后未同步下调，或退休候选重新变为
+`unspecified` 均由 `doctor pwsh-budget` 非零阻断并指出路径；不对 deprecated/thinShell
+另设数值规则。
 
 ## 禁止事项
 
