@@ -1,7 +1,7 @@
 ---
 id: freeze-promotion
-status: draft
-approvedTree: ""
+status: approved
+approvedTree: "c316c1b148fe2eeb7ef49e9cd4ec4edbe118d832"
 scope:
   - docs/architecture/FREEZE_AND_ACQUISITION_BOUNDARY.md
   - docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md
