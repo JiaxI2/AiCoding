@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 为 TODO 0028 建立窄范围 `pathpolicy-consolidation` 计划，覆盖标准库 Primitive、Plan/change/validation 三消费方、六面 policy schema 与 DocSync、依赖/能力登记及 ADR §12 自评；冻结 schema 写入前必须在 clean tree 绑定批准。 / Adds a bounded TODO 0028 plan for the stdlib-only path-policy primitive, three consumers, six policy schemas, DocSync enforcement, dependency/capability registration, and ADR self-review before frozen-schema changes.
+
 - **docs(todolist)**: 从外部 staging 原样导入 TODO 0028–0031，登记 pathpolicy 解析收敛、Done backlog 归档与 PowerShell 退役窗口、冻结面晋升，以及 CI 防回退与 Receipt 复用晋级轨道；保持四项为 Planned，并按 `0028 → 0029 → 0030 → 0031` 顺序执行。 / Imports TODO 0028–0031 verbatim from external staging for path-policy consolidation, backlog archival, freeze promotion, and the CI/reuse-promotion track while preserving Planned status and the required execution order.
 
 - **docs(architecture)**: 将 staging 的复利知识方向原文落为 `docs/architecture/COMPOUNDING_KNOWLEDGE.md` 并接入架构阅读索引，保持 `Status: Draft`；只固定外部 Obsidian vault、pinned reference 与未来 promotion-ledger 的方向边界，不实现账本、自动晋升、RAG 或任何开放问题。 / Lands the compounding-knowledge direction from staging, indexes it as a Draft, and preserves its explicit no-implementation boundary around an external Obsidian vault, pinned references, and a future promotion ledger.
