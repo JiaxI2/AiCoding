@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 为 TODO 0027 建立独立 Plan Mode 范围，覆盖 capability registry/schema、describe 与生成投影、Loop Engineering 双 Mermaid、DOCS-006 和 Full 门禁；低风险标签不绕过冻结 schema、测试引擎与架构文档的既有敏感路径纪律。 / Adds a bounded Plan Mode scope for TODO 0027 across the capability registry, generated usage projection, Loop Engineering diagrams, DOCS-006, and the Full gate.
+
 - **docs(todolist)**: 从外部 staging 仅导入 TODO 0026（内容钉死的 pinned 引用注册）与 TODO 0027（能力使用闭环），保持 Planned，并固定本批执行顺序为 `0027 → 0026 → 复利方向草稿`；`FORWARD_PLAN` 与草稿均未作为 todo 入仓。 / Imports only TODO 0026 and 0027 from external staging, keeps both Planned, records the required execution order, and excludes the forward plan and compounding draft from the todo directory.
 
 - **docs(governance)**: 完成 TODO 0019 的 AiCoding 侧准备：把 0012 已验证的双主题 banner、技术栈 badge 投影、30 秒/3 分钟/persona、Mermaid 节点预算、能力橱窗、四象限与无凭据 Star History 边界整理为 Codex-Skills 上游 PR 的规则/模板/lint/兼容负例清单；同时定位本仓版本硬编码与 `required_sections` 尚未泛化的真实落点。未修改只读子模块、未前移 pin，0019 保持 Planned，待独立上游 PR 合并后继续。 / Prepares the AiCoding side of TODO 0019 with an evidence-backed upstream rule, template, lint, compatibility, and adoption checklist while leaving the read-only submodule and pin untouched and the cross-repository item Planned.
