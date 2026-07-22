@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: ADR 0010 接受 Kit manifest 的可选 content-pinned `source`，固定 register/prefetch 与零网络 import 的两阶段边界、Git common-dir 内容寻址 cache、registry 引用保护及旧 manifest 兼容；论证 manifest 输入与可重建制品不把用户定制写入 §6 禁止的 owned 资产。 / Accepts ADR 0010 for optional content-pinned Kit sources, separating registration-time prefetch from zero-network import, protecting referenced content-addressed pins, preserving old manifests, and aligning resolved artifacts with the Plugin SDK input doctrine.
+
 - **docs(plan)**: 在 clean worktree 上批准 TODO 0026 内容钉死引用注册计划，并绑定 Git Tree `53cd5653570d13d5fbecca346359c7f1fec0c0ae`；同一批准范围仅允许最后落位 `Status: Draft` 的复利方向文档，不授权实现其 promotion-ledger 开放问题。 / Approves the TODO 0026 pinned-reference plan on a clean worktree, binds it to Git Tree `53cd5653570d13d5fbecca346359c7f1fec0c0ae`, and permits only placement of the Draft compounding direction without implementing its open promotion-ledger design.
 
 - **docs(plan)**: 为 TODO 0026 建立带显式空 `approvedTree` 的独立 Plan Mode 范围，覆盖冻结 Kit manifest schema、pinned source 校验与本地物化、Git common-dir 第六 cache scope、既有 Kit CLI/HelpForm、ADR 0010 和复利方向草稿；实现必须保持 import 零网络、旧 manifest 兼容与 Receipt 内容身份纪律。 / Adds a bounded draft Plan Mode scope with an explicit empty approved tree for TODO 0026 across the frozen Kit schema, pinned-source resolution and local materialization, the sixth cache scope, existing Kit CLI discovery, ADR 0010, and placement of the Draft compounding direction while preserving zero-network imports and content identity.
