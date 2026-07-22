@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(todolist)**: 从外部 staging 原样导入 TODO 0028–0031，登记 pathpolicy 解析收敛、Done backlog 归档与 PowerShell 退役窗口、冻结面晋升，以及 CI 防回退与 Receipt 复用晋级轨道；保持四项为 Planned，并按 `0028 → 0029 → 0030 → 0031` 顺序执行。 / Imports TODO 0028–0031 verbatim from external staging for path-policy consolidation, backlog archival, freeze promotion, and the CI/reuse-promotion track while preserving Planned status and the required execution order.
+
 - **docs(architecture)**: 将 staging 的复利知识方向原文落为 `docs/architecture/COMPOUNDING_KNOWLEDGE.md` 并接入架构阅读索引，保持 `Status: Draft`；只固定外部 Obsidian vault、pinned reference 与未来 promotion-ledger 的方向边界，不实现账本、自动晋升、RAG 或任何开放问题。 / Lands the compounding-knowledge direction from staging, indexes it as a Draft, and preserves its explicit no-implementation boundary around an external Obsidian vault, pinned references, and a future promotion ledger.
 
 - **feat(kit)**: 完成 TODO 0026：Kit manifest v2 向后兼容地增加可选 content-pinned `source`，`kit register` 只登记仓库内 manifest 与依赖 binding、可在注册阶段后台 prefetch，`lifecycle install|update` 仅从 Git common-dir 内容寻址 cache 本地物化且网络调用为 0；完整 40-hex commit/content digest、已解析 pin 路径校验、`evidence-missing` requiredAction、install state 内容身份与 pins 第六 cache scope 共同保持 fail-closed。真实 Git 正例为 register 10ms、list 最大 3ms、import 约 0.5s，六条负例全部命中，最终 Full `67 total / 63 pass / 0 fail / 0 warn / 4 skip`。 / Completes TODO 0026 with backward-compatible content-pinned Kit sources, metadata-only registration, registration-time prefetch, zero-network local lifecycle materialization, bounded path verification, content-bound state, a registry-protected sixth cache scope, six passing negative cases, and a clean Full profile.
