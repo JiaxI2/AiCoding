@@ -355,9 +355,10 @@ https://github.com/JiaxI2/AiCoding/actions/runs/29900035150 @ 9890b667bfdc54ef5f
 全量审计，并上传 `release-gate-evidence`。它证明 v1 身份方案，但 ADR 0007 §5 规定 fingerprint
 算法契约换域必须重置计数，因此不进入 v2 的晋级轨道。
 
-v2 当前计数：**2/3**:
+v2 当前计数：**3/3**:
 https://github.com/JiaxI2/AiCoding/actions/runs/29916523297 @ 41eefac7a67ac1473a5b9cf7cfc6548ca7372027 PASS
 https://github.com/JiaxI2/AiCoding/actions/runs/29921228586 @ 48a355c32941bca2a01eb1f95e3c78c6af3f8090 PASS
+https://github.com/JiaxI2/AiCoding/actions/runs/29922476097 @ 44a99d13b9d9b84181318b7423a22595939438cd PASS
 
 该次正式 main workflow dispatch 的 release-gate 先以 `--reuse off` 完成冷种子，再以
 `--verify-reuse` 完成全量审计并上传 `release-gate-evidence`。两次均针对 Tree
@@ -376,13 +377,18 @@ https://github.com/JiaxI2/AiCoding/actions/runs/29921228586 @ 48a355c32941bca2a0
 release-gate job 均为 `success`。该 run 使用修复前的 workflow，因此仍真实记录
 `ENV-004` 与 `FRESH-004` 两项 advisory。
 
-下一棵 main Tree 的 release-gate 固定通过官方 `go-task/setup-task` 的完整 commit SHA 安装
-Task `3.52.0`，并由 testengine 契约测试锁定在该 job 内；这只清除 `ENV-004`，不伪造或放松
-`FRESH-004` 的 fresh-clone baseline 语义。因此精确预期为 `71 total / 70 pass / 0 fail /
-1 warn / 0 skip`，不是把设计内 advisory 计作 PASS。
+第三次正式 workflow dispatch 针对新 main Tree
+`878cae97795ac7e62b21f4deee215d76d1ffb420`。release-gate 先通过官方
+`go-task/setup-task` 的完整 commit SHA 安装 Task `3.52.0`，再执行 `--reuse off` 冷种子与
+`--verify-reuse` 审计；两段均为 `71 total / 70 pass / 0 fail / 1 warn / 0 skip`，且
+`ENV-004` 的原始 stdout 均为 `3.52.0`、状态均为 PASS。唯一 WARN 是无 Release
+fresh-clone baseline 的设计内 `FRESH-004`。审计返回 `VALIDATION_RECEIPT_HIT`，两段共用
+Receipt `sha256:6b40f63f0a70ce7d2b8cdaa2b8eb99c81b06e570a013627e7a615cab85e69047`；四个 workflow jobs
+及总运行均为 `success`。
 
-后续一次仍须来自新的 main Tree，且仍先 `--reuse off` 冷种子、再 `--verify-reuse` 全量审计；
-凑满 3/3 后另开独立评审提交，当前默认值继续保持 `--reuse off`。
+至此三次 v2 证据来自三棵不同的 main Tree，且每次均完成冷种子与全量审计，晋级前置计数
+已满足。`--reuse` 默认值仍保持 `off`；默认值翻转必须另开独立评审提交并引用上述三个 run
+URL，本次不启动该评审。
 
 ## 14. 配置与 Receipt 存储裁决：当前不引入数据库
 
