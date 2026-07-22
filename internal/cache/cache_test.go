@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
@@ -28,10 +29,10 @@ func TestStatusReportsRegisteredScopesAndTotals(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Status: %v", err)
 	}
-	if len(status.Scopes) != 5 {
-		t.Fatalf("scope count = %d, want 5: %#v", len(status.Scopes), status.Scopes)
+	if len(status.Scopes) != 6 {
+		t.Fatalf("scope count = %d, want 6: %#v", len(status.Scopes), status.Scopes)
 	}
-	wantScopes := []Scope{ScopeFastPath, ScopeTestResults, ScopeValidationReports, ScopeTemp, ScopeWorkState}
+	wantScopes := []Scope{ScopeFastPath, ScopeTestResults, ScopeValidationReports, ScopeTemp, ScopeWorkState, ScopePins}
 	for index, want := range wantScopes {
 		if status.Scopes[index].Scope != want || status.Scopes[index].Path == "" || status.Scopes[index].Policy == "" {
 			t.Fatalf("scope[%d] = %#v, want populated %q", index, status.Scopes[index], want)
@@ -194,6 +195,35 @@ func TestWorkStateIsAuditOnly(t *testing.T) {
 	if _, err := Clean(repo, CleanOptions{Scope: ScopeWorkState}); err == nil || !strings.Contains(err.Error(), "audit-only") {
 		t.Fatalf("Clean work-state error = %v, want audit-only refusal", err)
 	}
+}
+
+func TestCleanPinsRetainsRegistryReferencesAndRemovesOnlyOrphans(t *testing.T) {
+	repo := newGitRepo(t)
+	source := &kit.PinnedSource{Kind: "git", URL: "https://example.invalid/external.git", Commit: strings.Repeat("a", 40)}
+	identity, err := kit.PinnedSourceIdentity(source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeFixture(t, filepath.Join(repo, "config", "kit-registry.json"), `{"schemaVersion":1,"name":"test","defaultMode":"repo-scoped","kits":[{"id":"external","enabled":true,"order":1,"manifest":"config/kits/external.json"}]}`)
+	writeFixture(t, filepath.Join(repo, "config", "kits", "external.json"), `{"schemaVersion":2,"id":"external","name":"External","version":"1.0.0","kind":["skill"],"mode":"go-builtin","source":{"kind":"git","url":"https://example.invalid/external.git","commit":"`+strings.Repeat("a", 40)+`"},"commands":{"status":{"type":"builtin-check"}}}`)
+	root, err := kit.PinCacheRoot(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	referenced := filepath.Join(root, strings.TrimPrefix(identity, "sha256:"))
+	orphan := filepath.Join(root, strings.Repeat("f", 64))
+	writeFixture(t, filepath.Join(referenced, "evidence.txt"), "referenced")
+	writeFixture(t, filepath.Join(orphan, "evidence.txt"), "orphan")
+
+	dryRun, err := Clean(repo, CleanOptions{Scope: ScopePins, DryRun: true})
+	if err != nil || dryRun.PlannedCount != 1 || !strings.HasSuffix(dryRun.Scopes[0].Planned[0].Path, strings.Repeat("f", 64)) {
+		t.Fatalf("pins dry-run crossed the registry reference boundary: result=%#v err=%v", dryRun, err)
+	}
+	removed, err := Clean(repo, CleanOptions{Scope: ScopePins})
+	if err != nil || removed.RemovedCount != 1 || !directoryExists(referenced) || directoryExists(orphan) {
+		t.Fatalf("pins cleanup violated reference retention: result=%#v err=%v", removed, err)
+	}
+	t.Logf("pins_scope=6 referenced_retained=1 orphan_removed=%d", removed.RemovedCount)
 }
 
 func TestBloatWarningsUsesTestResultThreshold(t *testing.T) {

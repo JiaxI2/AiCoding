@@ -567,11 +567,17 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, usageErrorf("kit requires subcommand")
 	}
 	sub := args[0]
-	if !validChoice(sub, "list", "describe", "doctor", "verify", "test", "init") {
+	if !validChoice(sub, "list", "describe", "doctor", "verify", "test", "init", "register", "prefetch") {
 		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
 	}
 	if sub == "init" {
 		return runKitInit(args[1:], start)
+	}
+	if sub == "register" {
+		return runKitRegister(args[1:], start)
+	}
+	if sub == "prefetch" {
+		return runKitPrefetch(args[1:], start)
 	}
 	fs := newFlagSet("kit " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
@@ -806,7 +812,7 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 	var adopt *bool
 	var allRepos *bool
 	if sub == "clean" {
-		scope = fs.String("scope", "", "fast-path|test-results|validation-reports|temp|work-state")
+		scope = fs.String("scope", "", "fast-path|test-results|validation-reports|temp|work-state|pins")
 		keep = fs.Int("keep", 0, "number of newest test results or failed temp directories to retain")
 		dryRun = fs.Bool("dry-run", false, "list planned removals without deleting files")
 		adopt = fs.Bool("adopt", false, "adopt and remove unledgered aicoding-* temp directories")

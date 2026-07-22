@@ -23,6 +23,8 @@ C/H 风格命令见 [C99 Standard C Skill](guides/C99_STANDARD_C_SKILL.md)。
 |---|---|
 | Bootstrap | `bin\aicoding.exe bootstrap --json` |
 | Kit 合规脚手架 | `bin\aicoding.exe kit init <id> [--external] [--dry-run] --json` |
+| 外部 Kit pinned 登记 | `bin\aicoding.exe kit register --manifest config/kits/<id>.json [--prefetch] --json` |
+| 外部 Kit pin 预取 | `bin\aicoding.exe kit prefetch --id <id> --json` |
 | 外部 Skill 草稿脚手架 | `bin\aicoding.exe skill init <id> [--out PATH] [--dry-run] --json` |
 | MCP manifest 脚手架 | `bin\aicoding.exe mcp init <id> [--out PATH] [--dry-run] --json` |
 | Kit 能力深投影 | `bin\aicoding.exe kit describe --kit <id>\|--all [--with-state] --json` |
@@ -129,6 +131,21 @@ entry、`testdata/kits/<id>/workspec-example.json`，并在 `dependency-governan
 `--dry-run` 只返回目标路径、字节数与内容摘要。命令不自动 enable、不写 Skill，也不猜测真实
 上游依赖；目标或 ID 已存在时 fail-closed。正式启用前须评审并按实际实现修正 binding。
 
+`kit register --manifest ...` 只接受仓库内已经存在的 schema v2 manifest，并要求
+`trust.thirdParty:true`、`trust.updatePolicy:pinned` 与可验证的 `source`。Git source 必须给出
+`url` 和完整 40-hex `commit`；content source 必须给出小写 `sha256:<64-hex>` digest。命令只把
+manifest 路径登记到 Kit registry 并补 dependency binding，不复制或 vendoring 外部源码。
+`--prefetch` 在登记完成后启动后台预取，稳定日志位于 pin cache 的 `.jobs/<id>.json`；需要同步
+等待或重试时显式运行 `kit prefetch --id <id>`。Git 网络访问只发生在 prefetch，且按完整 commit
+fetch 后用 `rev-parse` 再次钉死；content source 则验证预先放入对应 content-addressed cache 的内容。
+
+Kit `lifecycle install|update` 只从已经解析的本地 pin cache materialize 到
+`.aicoding/state/kits/<id>/source`，其网络调用数固定为 0。未预取时返回
+`category:evidence-missing` 和 `requiredAction: aicoding kit prefetch --id <id> --json`，不会静默
+联网；manifest 所要求的路径仍须满足“仓库本地文件存在，或已解析 pin 中存在”，不能仅凭声明
+放行。source identity 与 materialized content identity 写入 install state，修改 pin 会改变 catalog
+identity，并使旧 Validation Receipt 不再命中。
+
 `skill init <id> --json` 默认只在 `data.content` 预览完整 `SKILL.md`；只有显式 `--out`
 才写文件，并拒绝 AiCoding 仓库内或经符号链接落入只读 `CodingKit/agents/skills` 的目标。
 生成物是通过上游结构门禁但尚未由 owner 批准的草稿，必须在外部可写 Codex-Skills
@@ -150,7 +167,7 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 
 ## 本地生成物观测与保留
 
-`cache` 是本地生成物的唯一观测/清理面，只扫描以下五个注册根，不遍历无关目录：
+`cache` 是本地生成物的唯一观测/清理面，只扫描以下六个注册根，不遍历无关目录：
 
 | scope | 路径 | `clean` 策略 |
 |---|---|---|
@@ -159,13 +176,15 @@ Fast Path 的稳定 cache identity 为 `.aicoding/cache/fast-path`；旧的 vers
 | `validation-reports` | `<git-common-dir>/aicoding/validation/reports/*` | 仅删除没有 Receipt 或 commit alias 引用的报告；完整性读取复用 Validation Evidence store。 |
 | `temp` | `%TEMP%/aicoding-*` | 通过 `<git-common-dir>/aicoding/temp-ledger.jsonl` 追踪；默认保留 24h 内目录、最近 3 个失败现场及全部 `investigating` 现场。只匹配严格小写前缀。 |
 | `work-state` | `.aicoding/state/work/*` | 只报告大小；审计轨迹（尤其 `attempts.jsonl`）不允许由 cache 清理。 |
+| `pins` | `<git-common-dir>/aicoding/pins/<64-hex>` | 只删除没有被当前 Kit registry 引用的内容寻址 pin；已引用 pin 永远保留，`.jobs` 不作为 pin 条目。 |
 
 ```powershell
 bin\aicoding.exe cache status --json
-bin\aicoding.exe cache clean [--scope fast-path|test-results|validation-reports|temp|work-state] [--keep N] [--dry-run] [--adopt] [--all-repos] --json
+bin\aicoding.exe cache clean [--scope fast-path|test-results|validation-reports|temp|work-state|pins] [--keep N] [--dry-run] [--adopt] [--all-repos] --json
 ```
 
-不指定 `--scope` 时应用全部可清 scope 的默认策略，但跳过 `work-state`；`--dry-run`
+不指定 `--scope` 时应用全部可清 scope 的默认策略，但跳过 `work-state`；其中 `pins` 仍只计划
+删除 registry 未引用的内容寻址条目。`--dry-run`
 只返回计划删除清单和预计释放字节，零落盘。成功的 `test --profile ...` 在报告写入完成后自动对
 `test-results` 应用 keep-last-5；失败或取消的运行不触发清理。`temp` 默认只处理当前
 `repoRoot` 登记的现场；`--all-repos` 才扩到共享 Git common-dir 中其它 worktree 的登记，

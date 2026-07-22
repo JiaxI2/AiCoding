@@ -49,6 +49,26 @@ MCP 脚手架只生成冻结结构、三个 profile 占位和 registry 建议，
 命名约束：可复用能力用平台无关域名；只有真正依赖 AiCoding 行为的资产才允许
 `aicoding-*` 前缀；身份里永不编码版本号。
 
+### 2.1 路径①的 pinned 引用注册（外部 Kit，不 vendoring）
+
+外部 Kit 仍属于路径①的 manifest 变体，不需要新领域 adapter。把仓库内 schema v2 manifest
+的可选 `source` 写为以下二选一，并保持 `trust.thirdParty:true`、`updatePolicy:pinned`：
+
+```json
+{"kind":"git","url":"https://example.invalid/upstream.git","commit":"<40-hex>"}
+{"kind":"content","digest":"sha256:<64-hex>"}
+```
+
+`kit register --manifest config/kits/<id>.json --prefetch --json` 只登记 manifest 路径和依赖
+binding；不复制外部源码。注册阶段可把 Git 网络成本交给后台 prefetch，或用
+`kit prefetch --id <id> --json` 显式等待。后续 `lifecycle install|update --scope kit` 只从已验证
+的本地内容寻址 cache materialize，网络调用固定为 0；cache 缺失时返回 requiredAction，不能把
+“pin 尚未解析”放松成“路径可以不存在”。branch、tag、缩写 SHA 与错误 digest 均 fail-closed。
+
+这与 §6 的 doctrine 一致：外部 source/pin 是显式输入；pin cache 与 materialization 是可重建的
+owned 资产；用户配置和外部 checkout 不进入 owned 资产，update/uninstall 不修改它们。设计决策
+见 [ADR 0010](../decisions/0010-pinned-reference-registration.md)。
+
 ## 3. 路径②：新 external Skill（跨仓库登记）
 
 1. 在 AiCoding 仓库外的可写 Codex-Skills checkout/worktree 创作；可先用

@@ -238,8 +238,10 @@ func pluginProjectionIssues(repo string, snapshots []ManifestSnapshot, policy Pl
 			}
 			if strings.TrimSpace(skill.Path) == "" {
 				issues = append(issues, entry.ID+": skill "+skill.ID+" path is empty")
-			} else if !platform.IsFile(platform.RepoPath(repo, skill.Path)) {
-				issues = append(issues, entry.ID+": skill "+skill.ID+" path is missing: "+skill.Path)
+			} else if available, pathErr := manifestPathAvailable(repo, manifest, skill.Path); pathErr != nil {
+				issues = append(issues, entry.ID+": skill "+skill.ID+" source is unavailable: "+pathErr.Error())
+			} else if !available {
+				issues = append(issues, entry.ID+": skill "+skill.ID+" path is missing from both repository and resolved pin: "+skill.Path)
 			}
 		}
 
@@ -508,6 +510,11 @@ func (v structureVerifier) checkManifest(entry RegistryKit) {
 	if len(manifest.Commands) == 0 {
 		result.Errors = append(result.Errors, "manifest commands are empty")
 	}
+	if manifest.Source != nil {
+		if err := ValidatePinnedSource(manifest.Source); err != nil {
+			result.Errors = append(result.Errors, err.Error())
+		}
+	}
 	v.checkManifestCommands(manifest, &result)
 	v.checkManifestSkills(manifest, &result)
 	v.addKitResult(result)
@@ -549,7 +556,13 @@ func (v structureVerifier) checkManifestCommands(manifest Manifest, result *Stru
 				commandResult.Errors = append(commandResult.Errors, "external-command executable is empty")
 			}
 		case "builtin-check", "builtin-lifecycle":
-			for _, rel := range missingRequiredPaths(v.repo, command.RequiredPaths) {
+			resolution := resolveManifestRequiredPaths(v.repo, manifest, command.RequiredPaths)
+			if resolution.Error != nil {
+				commandResult.Errors = append(commandResult.Errors, resolution.Error.Error())
+			} else if resolution.EvidenceMissing {
+				commandResult.Errors = append(commandResult.Errors, "pinned source is not prefetched; requiredAction: "+resolution.RequiredAction)
+			}
+			for _, rel := range resolution.Missing {
 				commandResult.Errors = append(commandResult.Errors, "missing required path: "+rel)
 			}
 		case "go-composed":

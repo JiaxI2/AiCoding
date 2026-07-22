@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(kit)**: 完成 TODO 0026：Kit manifest v2 向后兼容地增加可选 content-pinned `source`，`kit register` 只登记仓库内 manifest 与依赖 binding、可在注册阶段后台 prefetch，`lifecycle install|update` 仅从 Git common-dir 内容寻址 cache 本地物化且网络调用为 0；完整 40-hex commit/content digest、已解析 pin 路径校验、`evidence-missing` requiredAction、install state 内容身份与 pins 第六 cache scope 共同保持 fail-closed。真实 Git 正例为 register 10ms、list 最大 3ms、import 约 0.5s，六条负例全部命中，最终 Full `67 total / 63 pass / 0 fail / 0 warn / 4 skip`。 / Completes TODO 0026 with backward-compatible content-pinned Kit sources, metadata-only registration, registration-time prefetch, zero-network local lifecycle materialization, bounded path verification, content-bound state, a registry-protected sixth cache scope, six passing negative cases, and a clean Full profile.
+
 - **docs(architecture)**: ADR 0010 接受 Kit manifest 的可选 content-pinned `source`，固定 register/prefetch 与零网络 import 的两阶段边界、Git common-dir 内容寻址 cache、registry 引用保护及旧 manifest 兼容；论证 manifest 输入与可重建制品不把用户定制写入 §6 禁止的 owned 资产。 / Accepts ADR 0010 for optional content-pinned Kit sources, separating registration-time prefetch from zero-network import, protecting referenced content-addressed pins, preserving old manifests, and aligning resolved artifacts with the Plugin SDK input doctrine.
 
 - **docs(plan)**: 在 clean worktree 上批准 TODO 0026 内容钉死引用注册计划，并绑定 Git Tree `53cd5653570d13d5fbecca346359c7f1fec0c0ae`；同一批准范围仅允许最后落位 `Status: Draft` 的复利方向文档，不授权实现其 promotion-ledger 开放问题。 / Approves the TODO 0026 pinned-reference plan on a clean worktree, binds it to Git Tree `53cd5653570d13d5fbecca346359c7f1fec0c0ae`, and permits only placement of the Draft compounding direction without implementing its open promotion-ledger design.

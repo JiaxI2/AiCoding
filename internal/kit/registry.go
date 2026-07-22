@@ -185,6 +185,8 @@ func LoadKitViews(repo string, entries []RegistryKit) []View {
 			v.Version = m.Version
 			v.Kind = m.Kind
 			v.Mode = m.Mode
+			v.Source = clonePinnedSource(m.Source)
+			v.SourceIdentity, _ = PinnedSourceIdentity(m.Source)
 		}
 		views = append(views, v)
 	}
@@ -201,6 +203,8 @@ func CatalogKitViews(snapshots []ManifestSnapshot) []View {
 			view.Version = manifest.Version
 			view.Kind = append([]string{}, manifest.Kind...)
 			view.Mode = manifest.Mode
+			view.Source = clonePinnedSource(manifest.Source)
+			view.SourceIdentity, _ = PinnedSourceIdentity(manifest.Source)
 		}
 		views = append(views, view)
 	}

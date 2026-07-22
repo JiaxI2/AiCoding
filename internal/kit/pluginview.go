@@ -6,8 +6,6 @@ import (
 	"os"
 	"sort"
 	"strings"
-
-	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
 type PluginView struct {
@@ -66,14 +64,17 @@ type PluginWorkflow struct {
 }
 
 type PluginSource struct {
-	Manifest string `json:"manifest"`
+	Manifest string        `json:"manifest"`
+	Pin      *PinnedSource `json:"pin,omitempty"`
+	Identity string        `json:"identity,omitempty"`
 }
 
 type PluginState struct {
-	KitID     string `json:"kitId"`
-	Version   string `json:"version"`
-	Action    string `json:"action,omitempty"`
-	Installed bool   `json:"installed"`
+	KitID          string `json:"kitId"`
+	Version        string `json:"version"`
+	Action         string `json:"action,omitempty"`
+	Installed      bool   `json:"installed"`
+	SourceIdentity string `json:"sourceIdentity,omitempty"`
 }
 
 type PluginAdapter struct {
@@ -129,7 +130,7 @@ func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapte
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", snapshot.Entry().ID, err)
 		}
-		workflows, err := projectPluginWorkflows(repo, skills)
+		workflows, err := projectPluginWorkflows(repo, manifest, skills)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", snapshot.Entry().ID, err)
 		}
@@ -152,7 +153,7 @@ func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapte
 			Operations: operations,
 			Lifecycle:  projectPluginLifecycle(adapter),
 			Workflows:  workflows,
-			Source:     PluginSource{Manifest: identity.Manifest},
+			Source:     PluginSource{Manifest: identity.Manifest, Pin: clonePinnedSource(manifest.Source), Identity: identity.SourceIdentity},
 		}
 		if withState {
 			state, err := projectPluginState(repo, snapshot.Entry(), manifest)
@@ -267,10 +268,10 @@ func projectPluginLifecycle(adapter PluginAdapter) []PluginLifecycle {
 	return items
 }
 
-func projectPluginWorkflows(repo string, skills []SkillEntry) ([]PluginWorkflow, error) {
+func projectPluginWorkflows(repo string, manifest Manifest, skills []SkillEntry) ([]PluginWorkflow, error) {
 	workflows := make([]PluginWorkflow, 0, len(skills))
 	for _, skill := range skills {
-		document, errs := readSkillDocument(platform.RepoPath(repo, skill.Path))
+		document, errs := readManifestSkillDocument(repo, manifest, skill.Path)
 		if len(errs) > 0 {
 			return nil, fmt.Errorf("%s: %s", skill.ID, strings.Join(errs, "; "))
 		}
@@ -297,6 +298,7 @@ func projectPluginState(repo string, entry RegistryKit, manifest Manifest) (*Plu
 	state.Version = installed.Version
 	state.Action = installed.Action
 	state.Installed = true
+	state.SourceIdentity = installed.SourceIdentity
 	return state, nil
 }
 

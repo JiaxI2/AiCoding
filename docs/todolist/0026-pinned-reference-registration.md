@@ -1,6 +1,6 @@
 # TODO 0026: 内容钉死的引用注册（不 vendoring 只登记 + 快速导入）
 
-Status: Planned
+Status: Done
 Verify: 用一个 pinned git 引用注册一个外部 skill/kit（不复制其源码），kit list 立即可见（<300ms），lifecycle install 本地 materialization <10s，且导入内容可被 validation evidence 绑定
 
 > 来源：owner 的两阶段模型 —— "注册（仓库知道有这么个东西，不改源码、快）→

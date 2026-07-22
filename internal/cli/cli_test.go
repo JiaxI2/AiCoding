@@ -237,7 +237,7 @@ func TestTypedCommandCatalogWiresGoFirstTopLevelCommands(t *testing.T) {
 		"aicoding plan verify",
 		"aicoding plan status [--id ID | --all]",
 		"aicoding plan approve --id ID",
-		"aicoding cache clean [--scope fast-path|test-results|validation-reports|temp|work-state] [--keep N] [--dry-run] [--adopt] [--all-repos]",
+		"aicoding cache clean [--scope fast-path|test-results|validation-reports|temp|work-state|pins] [--keep N] [--dry-run] [--adopt] [--all-repos]",
 		"aicoding kit init ID [--external] [--dry-run]",
 		"aicoding skill init ID [--out PATH] [--dry-run]",
 		"aicoding mcp init ID [--out PATH] [--dry-run]",

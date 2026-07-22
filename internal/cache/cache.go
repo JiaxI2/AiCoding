@@ -21,6 +21,7 @@ const (
 	ScopeValidationReports Scope = "validation-reports"
 	ScopeTemp              Scope = "temp"
 	ScopeWorkState         Scope = "work-state"
+	ScopePins              Scope = "pins"
 
 	DefaultTestResultKeep = 5
 	DefaultTempKeep       = 3
@@ -149,7 +150,7 @@ func BloatWarnings(status StatusResult) []string {
 }
 
 func ValidScope(scope Scope) bool {
-	for _, candidate := range []Scope{ScopeFastPath, ScopeTestResults, ScopeValidationReports, ScopeTemp, ScopeWorkState} {
+	for _, candidate := range []Scope{ScopeFastPath, ScopeTestResults, ScopeValidationReports, ScopeTemp, ScopeWorkState, ScopePins} {
 		if scope == candidate {
 			return true
 		}
@@ -159,8 +160,10 @@ func ValidScope(scope Scope) bool {
 
 func registry(repo string) []artifactSpec {
 	validationRoot := filepath.Join(repo, ".git", "aicoding", "validation", "reports")
+	pinsRoot := filepath.Join(repo, ".git", "aicoding", "pins")
 	if commonDir, err := gitx.CommonDir(repo); err == nil {
 		validationRoot = filepath.Join(commonDir, "aicoding", "validation", "reports")
+		pinsRoot = filepath.Join(commonDir, "aicoding", "pins")
 	}
 	return []artifactSpec{
 		{
@@ -191,6 +194,11 @@ func registry(repo string) []artifactSpec {
 			scope: ScopeWorkState, root: platform.RepoPath(repo, ".aicoding/state/work"),
 			displayPath: ".aicoding/state/work/*", policy: "audit-only; list-size; never-clean-attempts.jsonl",
 			cleanByDefault: false, cleanable: false,
+		},
+		{
+			scope: ScopePins, root: pinsRoot,
+			displayPath: filepath.ToSlash(pinsRoot), policy: "remove-only-content-addressed-pins-unreferenced-by-kit-registry",
+			cleanByDefault: true, cleanable: true, match: validReportDirName,
 		},
 	}
 }

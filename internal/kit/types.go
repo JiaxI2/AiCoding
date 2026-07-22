@@ -24,6 +24,7 @@ type Manifest struct {
 	Kind          []string                          `json:"kind"`
 	Mode          string                            `json:"mode"`
 	Description   string                            `json:"description"`
+	Source        *PinnedSource                     `json:"source,omitempty"`
 	Paths         map[string]string                 `json:"paths"`
 	Commands      map[string]CommandDef             `json:"commands"`
 	Skills        map[string]json.RawMessage        `json:"skills"`
@@ -31,6 +32,13 @@ type Manifest struct {
 	State         map[string]string                 `json:"state"`
 	Trust         map[string]interface{}            `json:"trust"`
 	Profiles      map[string]map[string]interface{} `json:"profiles"`
+}
+
+type PinnedSource struct {
+	Kind   string `json:"kind"`
+	URL    string `json:"url,omitempty"`
+	Commit string `json:"commit,omitempty"`
+	Digest string `json:"digest,omitempty"`
 }
 
 type CommandDef struct {
@@ -50,14 +58,16 @@ type CommandDef struct {
 }
 
 type View struct {
-	ID       string   `json:"id"`
-	Enabled  bool     `json:"enabled"`
-	Order    int      `json:"order"`
-	Name     string   `json:"name,omitempty"`
-	Version  string   `json:"version,omitempty"`
-	Kind     []string `json:"kind,omitempty"`
-	Mode     string   `json:"mode,omitempty"`
-	Manifest string   `json:"manifest"`
+	ID             string        `json:"id"`
+	Enabled        bool          `json:"enabled"`
+	Order          int           `json:"order"`
+	Name           string        `json:"name,omitempty"`
+	Version        string        `json:"version,omitempty"`
+	Kind           []string      `json:"kind,omitempty"`
+	Mode           string        `json:"mode,omitempty"`
+	Manifest       string        `json:"manifest"`
+	Source         *PinnedSource `json:"source,omitempty"`
+	SourceIdentity string        `json:"sourceIdentity,omitempty"`
 }
 
 type SmokeResult struct {

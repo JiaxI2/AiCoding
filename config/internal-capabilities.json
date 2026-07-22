@@ -162,7 +162,7 @@
       "type": "domain-capability",
       "status": "stable",
       "summary": "加载、投影、验证并脚手架化 Kit 能力。",
-      "publicEntries": ["aicoding kit list","aicoding kit describe","aicoding kit init","aicoding kit verify"],
+      "publicEntries": ["aicoding kit list","aicoding kit describe","aicoding kit init","aicoding kit register","aicoding kit prefetch","aicoding kit verify"],
       "architectureDoc": "docs/architecture/KIT_LIFECYCLE_ARCHITECTURE.md",
       "quickstart": {
         "steps": ["aicoding kit list --json","aicoding kit describe --all --json"]

@@ -17,14 +17,15 @@ type LifecycleOptions struct {
 }
 
 type LifecyclePlan struct {
-	SchemaVersion int                `json:"schemaVersion"`
-	Action        string             `json:"action"`
-	Mode          string             `json:"mode"`
-	DryRun        bool               `json:"dryRun"`
-	OK            bool               `json:"ok"`
-	Summary       LifecycleSummary   `json:"summary"`
-	Kits          []LifecycleKitPlan `json:"kits"`
-	ElapsedMS     int64              `json:"elapsedMs"`
+	SchemaVersion  int                `json:"schemaVersion"`
+	Action         string             `json:"action"`
+	Mode           string             `json:"mode"`
+	DryRun         bool               `json:"dryRun"`
+	OK             bool               `json:"ok"`
+	Summary        LifecycleSummary   `json:"summary"`
+	Kits           []LifecycleKitPlan `json:"kits"`
+	RequiredAction string             `json:"requiredAction,omitempty"`
+	ElapsedMS      int64              `json:"elapsedMs"`
 }
 
 type LifecycleSummary struct {
@@ -50,6 +51,7 @@ type LifecycleKitPlan struct {
 	RequiredPaths        []string `json:"requiredPaths"`
 	MissingRequiredPaths []string `json:"missingRequiredPaths,omitempty"`
 	Warnings             []string `json:"warnings,omitempty"`
+	RequiredAction       string   `json:"requiredAction,omitempty"`
 	ElapsedMS            int64    `json:"elapsedMs"`
 }
 
@@ -128,6 +130,9 @@ func planLifecycle(repo string, inputs []lifecycleInput, opts LifecycleOptions) 
 			plan.Summary.Skipped++
 		}
 		plan.Summary.Warnings += len(result.Warnings)
+		if plan.RequiredAction == "" && result.RequiredAction != "" {
+			plan.RequiredAction = result.RequiredAction
+		}
 	}
 	plan.ElapsedMS = time.Since(start).Milliseconds()
 	return plan
@@ -189,8 +194,18 @@ func planLifecycleKit(repo string, input lifecycleInput, action string, dryRun b
 
 	switch command.Type {
 	case "builtin-lifecycle":
-		result.MissingRequiredPaths = missingRequiredPaths(repo, command.RequiredPaths)
-		if len(result.MissingRequiredPaths) > 0 {
+		resolution := resolveManifestRequiredPaths(repo, manifest, command.RequiredPaths)
+		result.MissingRequiredPaths = resolution.Missing
+		if resolution.Error != nil {
+			result.OK = false
+			result.Status = "failed"
+			result.Reason = resolution.Error.Error()
+		} else if resolution.EvidenceMissing {
+			result.OK = false
+			result.Status = "evidence-missing"
+			result.Reason = "pinned source is not prefetched"
+			result.RequiredAction = resolution.RequiredAction
+		} else if len(result.MissingRequiredPaths) > 0 {
 			result.OK = false
 			result.Status = "missing"
 			result.Reason = "missing required paths"
@@ -202,8 +217,18 @@ func planLifecycleKit(repo string, input lifecycleInput, action string, dryRun b
 			result.Reason = "Go builtin lifecycle action"
 		}
 	case "builtin-check":
-		result.MissingRequiredPaths = missingRequiredPaths(repo, command.RequiredPaths)
-		if len(result.MissingRequiredPaths) > 0 {
+		resolution := resolveManifestRequiredPaths(repo, manifest, command.RequiredPaths)
+		result.MissingRequiredPaths = resolution.Missing
+		if resolution.Error != nil {
+			result.OK = false
+			result.Status = "failed"
+			result.Reason = resolution.Error.Error()
+		} else if resolution.EvidenceMissing {
+			result.OK = false
+			result.Status = "evidence-missing"
+			result.Reason = "pinned source is not prefetched"
+			result.RequiredAction = resolution.RequiredAction
+		} else if len(result.MissingRequiredPaths) > 0 {
 			result.OK = false
 			result.Status = "missing"
 			result.Reason = "missing required paths"
@@ -266,16 +291,6 @@ func dryRunLifecycleAction(action string) bool {
 	default:
 		return false
 	}
-}
-
-func missingRequiredPaths(repo string, paths []string) []string {
-	missing := []string{}
-	for _, rel := range paths {
-		if !platform.Exists(platform.RepoPath(repo, rel)) {
-			missing = append(missing, rel)
-		}
-	}
-	return missing
 }
 
 func appendPluginPackageWarning(repo string, manifest Manifest, warnings []string) []string {

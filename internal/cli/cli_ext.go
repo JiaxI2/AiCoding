@@ -208,7 +208,7 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 		StandaloneRoot:    standaloneRoot,
 		MigrateUnmanaged:  *migrateUnmanagedArg,
 	})
-	return report.Result{
+	result := report.Result{
 		SchemaVersion: 1,
 		Command:       "lifecycle " + sub,
 		OK:            lifecycleReport.OK,
@@ -219,7 +219,11 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 		Warnings:      lifecycleReport.Warnings,
 		Errors:        lifecycleReport.Errors,
 		ElapsedMS:     report.Elapsed(start),
-	}, report.BoolErr(lifecycleReport.Errors)
+	}
+	if requiredAction := lifecyclePinRequiredAction(lifecycleReport); requiredAction != "" {
+		result = report.WithDecision(result, report.CategoryEvidenceMissing, requiredAction)
+	}
+	return result, report.BoolErr(lifecycleReport.Errors)
 }
 
 func runExport(args []string, start time.Time) (report.Result, error) {

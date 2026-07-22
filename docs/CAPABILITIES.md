@@ -2,7 +2,7 @@
 
 > 本文件由 `config/internal-capabilities.json` 生成，请运行 `bin/aicoding.exe capability index --write` 更新。
 
-Registry digest: `sha256:b2fe8d65542fc1e1188d3989843f2f026174e36dc2f36ae0146a8d22d4ac102d`
+Registry digest: `sha256:b6420c19c403ce024c643f7a8b3a19380cdfcb957f42aefef8c10b96c71baa2d`
 
 共登记 28 个 `internal/` 一级包；文档义务按公共入口、内部实现域和 Primitive 分级。
 
@@ -22,7 +22,7 @@ Registry digest: `sha256:b2fe8d65542fc1e1188d3989843f2f026174e36dc2f36ae0146a8d2
 | `docsync` | `internal/docsync` | `domain-capability` | `stable` | 检测源码、配置与权威文档之间的同步漂移。 | `aicoding docsync all` | [文档](architecture/DOC_SYNC_PLUS_SPEC.md) | `go test ./internal/docsync/...` |
 | `git` | `internal/gitx` | `primitive` | `stable` | 拥有全仓唯一 Git 子进程边界与内容状态读取。 | — | — | `go test ./internal/gitx/...` |
 | `governance` | `internal/governance` | `domain-capability` | `stable` | 执行提交、依赖方向、目录布局与能力孤儿门禁。 | `aicoding governance lint`<br>`aicoding governance dependencies`<br>`aicoding governance layout`<br>`aicoding governance capabilities` | [文档](architecture/GRAPH_FIRST.md) | `go test ./internal/governance/...` |
-| `kit` | `internal/kit` | `domain-capability` | `stable` | 加载、投影、验证并脚手架化 Kit 能力。 | `aicoding kit list`<br>`aicoding kit describe`<br>`aicoding kit init`<br>`aicoding kit verify` | [文档](architecture/KIT_LIFECYCLE_ARCHITECTURE.md) | `go test ./internal/kit/...` |
+| `kit` | `internal/kit` | `domain-capability` | `stable` | 加载、投影、验证并脚手架化 Kit 能力。 | `aicoding kit list`<br>`aicoding kit describe`<br>`aicoding kit init`<br>`aicoding kit register`<br>`aicoding kit prefetch`<br>`aicoding kit verify` | [文档](architecture/KIT_LIFECYCLE_ARCHITECTURE.md) | `go test ./internal/kit/...` |
 | `lifecycle` | `internal/lifecycle` | `product-workflow` | `stable` | 以统一 adapter catalog 编排 Kit、MCP、runtime Skill 与 repo-context 生命周期。 | `aicoding lifecycle plan`<br>`aicoding lifecycle status`<br>`aicoding lifecycle verify` | [文档](architecture/KIT_LIFECYCLE_ARCHITECTURE.md) | `go test ./internal/lifecycle/...` |
 | `loop-engineering` | `internal/loopkit` | `domain-capability` | `stable` | 校验有界 WorkSpec、裁决下一步并追加记录尝试，不执行循环。 | `aicoding work validate`<br>`aicoding work next`<br>`aicoding work status`<br>`aicoding work record` | [文档](architecture/LOOP_ENGINEERING_ARCHITECTURE.md) | `go test ./internal/loopkit/...` |
 | `mcp-control` | `internal/mcpcontrol` | `domain-capability` | `stable` | 读取 MCP 注册表并执行状态、诊断、验证与生命周期动作。 | `aicoding mcp list`<br>`aicoding mcp status`<br>`aicoding mcp doctor`<br>`aicoding mcp verify` | [文档](architecture/MCP_CONTROL_PLANE.md) | `go test ./internal/mcpcontrol/...` |

@@ -1,7 +1,9 @@
 package kit
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,16 +20,18 @@ type ActionOptions struct {
 }
 
 type ActionReport struct {
-	SchemaVersion int            `json:"schemaVersion"`
-	Action        string         `json:"action"`
-	Mode          string         `json:"mode"`
-	DryRun        bool           `json:"dryRun"`
-	OK            bool           `json:"ok"`
-	Summary       ActionSummary  `json:"summary"`
-	Kits          []ActionResult `json:"kits"`
-	Warnings      []string       `json:"warnings,omitempty"`
-	Errors        []string       `json:"errors,omitempty"`
-	RollbackFile  string         `json:"rollbackFile,omitempty"`
+	SchemaVersion  int            `json:"schemaVersion"`
+	Action         string         `json:"action"`
+	Mode           string         `json:"mode"`
+	DryRun         bool           `json:"dryRun"`
+	OK             bool           `json:"ok"`
+	Summary        ActionSummary  `json:"summary"`
+	Kits           []ActionResult `json:"kits"`
+	Warnings       []string       `json:"warnings,omitempty"`
+	Errors         []string       `json:"errors,omitempty"`
+	RollbackFile   string         `json:"rollbackFile,omitempty"`
+	Category       string         `json:"category,omitempty"`
+	RequiredAction string         `json:"requiredAction,omitempty"`
 }
 
 type ActionSummary struct {
@@ -39,27 +43,33 @@ type ActionSummary struct {
 }
 
 type ActionResult struct {
-	ID       string      `json:"id"`
-	Action   string      `json:"action"`
-	OK       bool        `json:"ok"`
-	Status   string      `json:"status"`
-	Message  string      `json:"message,omitempty"`
-	Data     interface{} `json:"data,omitempty"`
-	Warnings []string    `json:"warnings,omitempty"`
-	Errors   []string    `json:"errors,omitempty"`
+	ID             string      `json:"id"`
+	Action         string      `json:"action"`
+	OK             bool        `json:"ok"`
+	Status         string      `json:"status"`
+	Message        string      `json:"message,omitempty"`
+	Data           interface{} `json:"data,omitempty"`
+	Warnings       []string    `json:"warnings,omitempty"`
+	Errors         []string    `json:"errors,omitempty"`
+	Category       string      `json:"category,omitempty"`
+	RequiredAction string      `json:"requiredAction,omitempty"`
 }
 
 type installState struct {
-	SchemaVersion      int       `json:"schemaVersion"`
-	KitID              string    `json:"kitId"`
-	Version            string    `json:"version"`
-	Manifest           string    `json:"manifest"`
-	Action             string    `json:"action"`
-	InstalledAt        time.Time `json:"installedAt"`
-	UpdatedAt          time.Time `json:"updatedAt"`
-	PluginSourceCommit string    `json:"pluginSourceCommit,omitempty"`
-	PluginSkillsDigest string    `json:"pluginSkillsDigest,omitempty"`
-	PluginCachePath    string    `json:"pluginCachePath,omitempty"`
+	SchemaVersion         int       `json:"schemaVersion"`
+	KitID                 string    `json:"kitId"`
+	Version               string    `json:"version"`
+	Manifest              string    `json:"manifest"`
+	Action                string    `json:"action"`
+	InstalledAt           time.Time `json:"installedAt"`
+	UpdatedAt             time.Time `json:"updatedAt"`
+	PluginSourceCommit    string    `json:"pluginSourceCommit,omitempty"`
+	PluginSkillsDigest    string    `json:"pluginSkillsDigest,omitempty"`
+	PluginCachePath       string    `json:"pluginCachePath,omitempty"`
+	SourceIdentity        string    `json:"sourceIdentity,omitempty"`
+	SourceContentIdentity string    `json:"sourceContentIdentity,omitempty"`
+	SourceCachePath       string    `json:"sourceCachePath,omitempty"`
+	MaterializedPath      string    `json:"materializedPath,omitempty"`
 }
 
 type rollbackSnapshot struct {
@@ -136,6 +146,10 @@ func runActions(repo string, inputs []actionInput, opts ActionOptions) ActionRep
 		for _, e := range result.Errors {
 			report.Errors = append(report.Errors, entry.ID+": "+e)
 		}
+		if report.RequiredAction == "" && result.RequiredAction != "" {
+			report.Category = result.Category
+			report.RequiredAction = result.RequiredAction
+		}
 	}
 	return report
 }
@@ -154,8 +168,14 @@ func runActionForKit(repo string, input actionInput, action string, dryRun bool)
 	case "builtin-lifecycle":
 		return runBuiltinLifecycle(repo, entry, manifest, command, action, dryRun)
 	case "builtin-check":
-		missing := missingRequiredPaths(repo, command.RequiredPaths)
-		return ActionResult{ID: entry.ID, Action: action, OK: len(missing) == 0, Status: statusFromMissing(missing), Data: map[string]interface{}{"requiredPaths": command.RequiredPaths, "missing": missing}, Errors: prefixMissing(missing)}
+		resolution := resolveManifestRequiredPaths(repo, manifest, command.RequiredPaths)
+		if resolution.Error != nil {
+			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{resolution.Error.Error()}}
+		}
+		if resolution.EvidenceMissing {
+			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "evidence-missing", Category: "evidence-missing", RequiredAction: resolution.RequiredAction, Data: map[string]interface{}{"requiredPaths": command.RequiredPaths, "missing": resolution.Missing}, Errors: []string{"pinned source is not prefetched"}}
+		}
+		return ActionResult{ID: entry.ID, Action: action, OK: len(resolution.Missing) == 0, Status: statusFromMissing(resolution.Missing), Data: map[string]interface{}{"requiredPaths": command.RequiredPaths, "missing": resolution.Missing}, Errors: prefixMissing(resolution.Missing)}
 	case "builtin-package":
 		if action != "export" {
 			return ActionResult{ID: entry.ID, Action: action, OK: true, Status: "skipped", Message: "package command is export-only"}
@@ -198,9 +218,17 @@ func actionManifest(repo string, input actionInput) (Manifest, error) {
 }
 
 func runBuiltinLifecycle(repo string, entry RegistryKit, manifest Manifest, command CommandDef, action string, dryRun bool) ActionResult {
-	missing := missingRequiredPaths(repo, command.RequiredPaths)
-	if len(missing) > 0 {
-		return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "missing", Data: map[string]interface{}{"missing": missing}, Errors: prefixMissing(missing)}
+	if action != "uninstall" {
+		resolution := resolveManifestRequiredPaths(repo, manifest, command.RequiredPaths)
+		if resolution.Error != nil {
+			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{resolution.Error.Error()}}
+		}
+		if resolution.EvidenceMissing {
+			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "evidence-missing", Category: "evidence-missing", RequiredAction: resolution.RequiredAction, Data: map[string]interface{}{"missing": resolution.Missing}, Errors: []string{"pinned source is not prefetched"}}
+		}
+		if len(resolution.Missing) > 0 {
+			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "missing", Data: map[string]interface{}{"missing": resolution.Missing}, Errors: prefixMissing(resolution.Missing)}
+		}
 	}
 	if dryRun {
 		result := ActionResult{ID: entry.ID, Action: action, OK: true, Status: "planned", Message: "builtin lifecycle dry-run"}
@@ -223,7 +251,16 @@ func runBuiltinLifecycle(repo string, entry RegistryKit, manifest Manifest, comm
 	case "install", "update":
 		var data interface{}
 		var syncedPlugin *PlatformPluginSync
+		var materializedSource *PinMaterialization
 		warnings := []string{}
+		if manifest.Source != nil {
+			materialized, err := MaterializePinnedSource(context.Background(), repo, entry.ID, manifest.Source)
+			data = materialized
+			if err != nil {
+				return pinnedActionFailure(entry.ID, action, materialized, err)
+			}
+			materializedSource = &materialized
+		}
 		if entry.ID == "aicoding-platform" {
 			pluginSync, err := syncPlatformPlugin(repo, manifest)
 			data = pluginSync
@@ -242,11 +279,16 @@ func runBuiltinLifecycle(repo string, entry RegistryKit, manifest Manifest, comm
 				return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Data: pluginSync, Warnings: warnings, Errors: []string{err.Error()}}
 			}
 		}
-		if err := writeInstallState(repo, entry, manifest, action, syncedPlugin); err != nil {
+		if err := writeInstallState(repo, entry, manifest, action, syncedPlugin, materializedSource); err != nil {
 			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{err.Error()}}
 		}
 		return ActionResult{ID: entry.ID, Action: action, OK: true, Status: "ok", Message: "builtin lifecycle state updated after runtime synchronization", Data: data, Warnings: warnings}
 	case "uninstall":
+		if manifest.Source != nil {
+			if err := RemovePinnedMaterialization(repo, entry.ID); err != nil {
+				return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{err.Error()}}
+			}
+		}
 		if err := removeInstallState(repo, manifest); err != nil {
 			return ActionResult{ID: entry.ID, Action: action, OK: false, Status: "failed", Errors: []string{err.Error()}}
 		}
@@ -266,7 +308,7 @@ func runExternal(repo, id, action string, command CommandDef) ActionResult {
 	return ActionResult{ID: id, Action: action, OK: true, Status: "ok", Data: map[string]string{"output": strings.TrimSpace(string(out))}}
 }
 
-func writeInstallState(repo string, entry RegistryKit, manifest Manifest, action string, pluginSync *PlatformPluginSync) error {
+func writeInstallState(repo string, entry RegistryKit, manifest Manifest, action string, pluginSync *PlatformPluginSync, materializedSource *PinMaterialization) error {
 	path := statePath(repo, manifest, entry.ID)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -281,7 +323,24 @@ func writeInstallState(repo string, entry RegistryKit, manifest Manifest, action
 		state.PluginSkillsDigest = pluginSync.SourceBuildInfo.SkillsDigest
 		state.PluginCachePath = pluginSync.InstalledPackage
 	}
+	if materializedSource != nil {
+		state.SourceIdentity = materializedSource.SourceIdentity
+		state.SourceContentIdentity = materializedSource.ContentIdentity
+		state.SourceCachePath = materializedSource.CachePath
+		state.MaterializedPath = materializedSource.MaterializedPath
+	}
 	return writeJSONFile(path, state)
+}
+
+func pinnedActionFailure(id, action string, materialized PinMaterialization, err error) ActionResult {
+	result := ActionResult{ID: id, Action: action, OK: false, Status: "failed", Data: materialized, Errors: []string{err.Error()}}
+	var cacheMiss *PinCacheMissError
+	if errors.As(err, &cacheMiss) {
+		result.Status = "evidence-missing"
+		result.Category = "evidence-missing"
+		result.RequiredAction = cacheMiss.RequiredAction
+	}
+	return result
 }
 
 func removeInstallState(repo string, manifest Manifest) error {

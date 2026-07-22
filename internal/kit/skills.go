@@ -2,6 +2,7 @@ package kit
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -168,7 +169,7 @@ func verifyKitSkills(repo string, input lifecycleInput, profile string) SkillKit
 			continue
 		}
 		full := platform.RepoPath(repo, skill.Path)
-		document, ferrs := readSkillDocument(full)
+		document, ferrs := readManifestSkillDocument(repo, manifest, skill.Path)
 		front := document.Frontmatter
 		for _, e := range ferrs {
 			result.Errors = append(result.Errors, skill.ID+": "+e)
@@ -235,6 +236,21 @@ func readSkillDocument(path string) (skillDocument, []string) {
 	}
 	defer file.Close()
 	return parseSkillDocument(file)
+}
+
+func readManifestSkillDocument(repo string, manifest Manifest, relative string) (skillDocument, []string) {
+	local := platform.RepoPath(repo, relative)
+	if platform.IsFile(local) {
+		return readSkillDocument(local)
+	}
+	if manifest.Source == nil {
+		return skillDocument{Frontmatter: map[string]string{}}, []string{"missing SKILL.md"}
+	}
+	content, err := ReadPinnedFile(repo, manifest.Source, relative)
+	if err != nil {
+		return skillDocument{Frontmatter: map[string]string{}}, []string{"pinned SKILL.md unavailable: " + err.Error()}
+	}
+	return parseSkillDocument(bytes.NewReader(content))
 }
 
 func parseSkillDocument(reader io.Reader) (skillDocument, []string) {

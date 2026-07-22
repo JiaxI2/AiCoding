@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/kit"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/validationevidence"
 )
@@ -162,6 +163,19 @@ func planScope(repo string, spec artifactSpec, options CleanOptions) (scopePlan,
 				continue
 			}
 			plan.entries = append(plan.entries, plannedFromArtifact(entry, "orphaned validation report"))
+			plan.retained--
+		}
+	case ScopePins:
+		referenced, err := kit.ReferencedPinIdentities(repo)
+		if err != nil {
+			return scopePlan{}, fmt.Errorf("resolve registry-referenced pins: %w", err)
+		}
+		for _, entry := range entries {
+			identity := "sha256:" + filepath.Base(entry.path)
+			if referenced[identity] {
+				continue
+			}
+			plan.entries = append(plan.entries, plannedFromArtifact(entry, "content-addressed pin is not referenced by the Kit registry"))
 			plan.retained--
 		}
 	}

@@ -43,6 +43,16 @@ doctor 和 verify 使用同一批 detached manifest values；JSON adapter result
 ## Manifest Model
 
 Kit registry entries live in `config/kit-registry.json`; manifests live in `config/kits/*.json`.
+Schema v2 manifest 可选地声明一个互斥的 content-pinned source：
+
+```json
+{"kind":"git","url":"https://example.invalid/upstream.git","commit":"<40-hex>"}
+{"kind":"content","digest":"sha256:<64-hex>"}
+```
+
+Git `commit` 必须是完整 40-hex，不接受 branch、tag 或缩写 SHA；content digest 必须是小写
+`sha256:<64-hex>`。`source` 整体可选，因此已有 manifest 保持兼容；一旦提供，未知字段和混合
+shape 都会被 `additionalProperties:false` 与严格解码拒绝。
 
 Allowed manifest modes:
 
@@ -61,11 +71,36 @@ Allowed command types:
 - `specialty-pwsh`
 - `unsupported`
 
+## Pinned Registration and Local Materialization
+
+外部 Kit 使用两个阶段，网络边界只存在于注册阶段：
+
+```text
+repository-local manifest
+  -> kit register [--prefetch]     # 登记 metadata；可后台预取
+  -> kit prefetch --id <id>        # fetch 完整 commit 并 rev-parse，写内容寻址 cache
+  -> lifecycle install/update      # 只读本地 cache；networkCalls=0
+  -> .aicoding/state/kits/<id>/source
+```
+
+`kit register` 原子更新已有 Kit registry 与 dependency binding，不 vendor source。
+Git pin cache 位于 `<git-common-dir>/aicoding/pins/<source-identity>`；content pin 使用同一 scope，
+由调用方预先放入内容后按 digest 本地验证。它是 cache 的第六个 scope：只有未被 registry 引用的
+内容寻址条目可清理，被引用条目保留。
+
+结构验证中的路径不变量是“仓库本地文件存在，或已解析 pin 中存在”。pin 未预取时 plan/apply
+返回 `evidence-missing`，并给出 `requiredAction: aicoding kit prefetch --id <id> --json`；它不会
+联网，也不会把缺失路径视为通过。安装 state 绑定 source identity 与 materialized content
+identity；前移 pin 会改变 Kit catalog digest，所以旧 Validation Receipt 不能复用。卸载只删除
+Kit-owned materialization，不删除共享 pin cache，也不修改外部 checkout。
+
 ## Go Control Plane
 
 ```powershell
 bin\aicoding.exe kit verify --all --profile Smoke --json
 bin\aicoding.exe kit verify --all --profile Lifecycle --json
+bin\aicoding.exe kit register --manifest config/kits/<id>.json --prefetch --json
+bin\aicoding.exe kit prefetch --id <id> --json
 bin\aicoding.exe lifecycle plan --action install --scope kit --all --json
 bin\aicoding.exe lifecycle install --scope kit --all --json
 bin\aicoding.exe export --all --zip --json

@@ -57,6 +57,7 @@ flowchart LR
 |---|---|
 | Kit 注册、启用状态与顺序 | `config/kit-registry.json` |
 | Kit 名称、版本、kind、mode、description、trust | `config/kits/*.json` |
+| 可选外部 source pin 与 source identity | 同一 Kit manifest 的 `source` 及其规范化内容身份 |
 | Quickstart 目的、首个 read command、Skill 摘要 | 同一 manifest description/commands/skills 的派生投影 |
 | Skill 身份、角色、描述、标签与路径 | Kit manifest；解析复用 `internal/kit.parseSkillEntries` |
 | Workflow 定位 | manifest Skill 路径与权威 `SKILL.md` 的二级标题 |
@@ -73,7 +74,9 @@ flowchart LR
 ### 4.1 Identity 与定位
 
 `id`、`name`、`identity.enabled/order/version/kind/mode` 和 source manifest 来自
-`CatalogKitViews`；`description` 与 `identity.trust` 来自同一 detached manifest。
+`CatalogKitViews`；`description` 与 `identity.trust` 来自同一 detached manifest。存在 pinned
+source 时，`source.pin` 投影规范化的 pin，`source.identity` 投影稳定内容身份；二者都不包含
+cache 或 materialization 绝对路径。
 
 ### 4.2 Skills 与 Workflows
 
@@ -88,7 +91,8 @@ flowchart LR
 ```
 
 实现对每个 `SKILL.md` 单次顺序扫描，同时取得 frontmatter 与所有 `## ` 标题；不使用正则
-回溯、不复制章节正文、不建立 Workflow DSL。
+回溯、不复制章节正文、不建立 Workflow DSL。路径解析保持有界：先使用仓库本地文件；文件不在
+仓库时，仅允许从已经解析并校验的本地 pin cache 读取。未预取不能被当作路径存在。
 
 ### 4.3 Quickstart
 
@@ -130,7 +134,8 @@ effects 只允许 `{effect: read|write, stateOwner, entrypoint: go-static|bounde
 ### 4.6 State 与 digest
 
 默认不读 state。只有 `--with-state` 才输出稳定摘要
-`{kitId, version, action, installed}`；`installedAt`、`updatedAt` 和绝对 cache path 不进入 View。
+`{kitId, version, action, installed, sourceIdentity?}`；`installedAt`、`updatedAt`、绝对 cache path
+和 materialization path 不进入 View。
 
 `report.Result.inputDigest` 只组合 detached Kit catalog digest 与 adapter catalog digest。
 state、耗时和 repo 绝对路径不参与摘要，因此显式读取 state 也不会污染输入身份。
@@ -196,6 +201,20 @@ Plugin View 位于既有 `report.Result.data`：
 }
 ```
 
+Pinned Kit 的 `source` 形状示例：
+
+```json
+{
+  "manifest": "config/kits/external-kit.json",
+  "pin": {
+    "kind": "git",
+    "url": "https://example.invalid/upstream.git",
+    "commit": "0123456789abcdef0123456789abcdef01234567"
+  },
+  "identity": "sha256:<64-hex>"
+}
+```
+
 Kit 按 registry `order`，各数组按稳定 ID/名字字典序输出。
 
 ## 8. 质量门禁
@@ -204,7 +223,8 @@ Kit 按 registry `order`，各数组按稳定 ID/名字字典序输出。
 不新建 validator 或命令。它检查：
 
 1. enabled Kit 的 manifest description 非空且不以内部实现开头；
-2. Skill description 非空且登记路径存在，umbrella/member 角色沿用既有结构校验；
+2. Skill description 非空且登记路径满足“仓库本地文件存在，或已解析 pin 中存在”，
+   umbrella/member 角色沿用既有结构校验；
 3. enabled Kit 至少有一条 read command，且 `quickstart` 可从现有事实完整派生；
 4. enabled Kit 的 `trust.updatePolicy` 属于 `manual|pinned|tracked`；外部包装 Kit 存在约定边界卡；
 5. 每个 manifest command 有唯一 read/write effect；

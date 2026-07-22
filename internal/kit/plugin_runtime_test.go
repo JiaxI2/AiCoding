@@ -137,7 +137,7 @@ func TestWriteInstallStateRecordsVerifiedPluginIdentity(t *testing.T) {
 		},
 	}
 	entry := RegistryKit{ID: "aicoding-platform", Manifest: "config/kits/aicoding-platform.json"}
-	if err := writeInstallState(repo, entry, manifest, "update", &sync); err != nil {
+	if err := writeInstallState(repo, entry, manifest, "update", &sync, nil); err != nil {
 		t.Fatalf("writeInstallState: %v", err)
 	}
 	state, err := readInstallState(filepath.Join(repo, ".aicoding", "state", "kits", "aicoding-platform", "install-state.json"))
