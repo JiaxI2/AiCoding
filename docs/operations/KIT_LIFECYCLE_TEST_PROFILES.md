@@ -53,10 +53,6 @@ Recommended command:
 bin/aicoding.exe test --profile Full --json
 ```
 
-`tools/specialty/verify-codex-kit.ps1` is a compatibility wrapper that forwards to this
-Full entry; its retirement is tracked in
-[docs/decisions/verify-codex-kit-retirement/RETIREMENT_PLAN.md](../decisions/verify-codex-kit-retirement/RETIREMENT_PLAN.md).
-
 ## Release
 
 Release is an explicit release-only profile for package restore confidence before publishing artifacts.

@@ -96,7 +96,6 @@
       "include": [
         "config/codex-kit.json",
         ".agents/plugins/marketplace.json",
-        "tools/specialty/*codex-kit.ps1",
         "tools/specialty/lib/CodexKit.psm1",
         "CodingKit/README.md"
       ],
@@ -140,7 +139,6 @@
     "include": [
       "config/codex-kit.json",
       ".agents/plugins/marketplace.json",
-      "tools/specialty/*codex-kit.ps1",
       "tools/specialty/lib/CodexKit.psm1",
       "CodingKit/README.md"
     ],

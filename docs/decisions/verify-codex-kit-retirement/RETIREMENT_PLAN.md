@@ -1,6 +1,6 @@
 # Retirement Plan: verify-codex-kit.ps1
 
-Plan Status: Active（Phase 0/1 已完成；Phase 2 待 Phase 1 落地满一个发布版本后执行）
+Plan Status: Completed（Phase 0/1/2 已完成）
 
 目标：按 [POWERSHELL_BOUNDARY.md](../../architecture/POWERSHELL_BOUNDARY.md) 的
 "不删除专项脚本除非有单独计划和验证"规则，为 `tools/specialty/verify-codex-kit.ps1`
@@ -82,7 +82,7 @@ bin\aicoding.exe test --profile Smoke --json
 - [x] 仓库自有文件中不再有指向脚本的活跃门禁引用；
 - [x] docsync 与 Smoke 全绿。
 
-## Phase 2：移除（待 Phase 1 落地满一个发布版本后）
+## Phase 2：移除（已完成）
 
 - 删除 `tools/specialty/verify-codex-kit.ps1`；
 - CHANGELOG 记录移除，与 `bce8282` 兼容路由移除条目同风格；
@@ -96,6 +96,27 @@ bin\aicoding.exe doctor pwsh --json
 bin\aicoding.exe doctor pwsh-budget --json
 bin\aicoding.exe test --profile Smoke --json
 ```
+
+### Phase 2 完成证据（2026-07-22）
+
+- Phase 1 提交：`2a8b49af12386787eb8db112da66cf736882cb84`。
+- 满足窗口的稳定版：`v1.1.0`；`git merge-base --is-ancestor 2a8b49a v1.1.0`
+  返回 `0`，证明该正式 tag 包含 Phase 1，之后另有 `v1.2.0-rc.1`。
+- Phase 2 实现提交：本计划状态变为 Completed 且删除脚本的同一提交；使用
+  `git log -1 -- tools/specialty/verify-codex-kit.ps1` 可定位其 commit，避免在 commit
+  内容中建立不可能稳定的自引用哈希。最终交付报告同时列出该提交的完整 SHA。
+- 删除严格限于 `tools/specialty/verify-codex-kit.ps1`；当前态 Full 说明中的兼容包装段落与
+  `aicoding-platform` export manifest 中仅匹配该脚本的 include 同步移除，历史 CHANGELOG、
+  已完成 todo、架构 Traceability 与本计划保留。
+- 删除后的 `doctor pwsh`：`remainingScripts=19 / thinShells=1 / deprecated=1 /
+  unspecified=0`，退出 `0`；`doctor pwsh-budget` 退出 `0`。
+- dependencies、lint 均 `ok=true`；DocSync `checked=840 / warnings=0 / errors=0`。
+- 首次 Full 真实命中 `EXP-002`：export manifest 仍含只匹配已删脚本的
+  `tools/specialty/*codex-kit.ps1`，失败 summary 为
+  `test-results/aicoding-global-test-20260722-170557/summary.json`；删除该精确残留后，
+  `internal/kit`、`internal/testengine` 与 `kit verify` 全绿。
+- 最终 Full：`71 total / 67 pass / 0 fail / 0 warn / 4 skip`，summary 为
+  `test-results/aicoding-global-test-20260722-171429/summary.json`。
 
 ## 回滚
 

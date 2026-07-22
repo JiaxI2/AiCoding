@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **chore(powershell)**: 完成 `verify-codex-kit.ps1` 退役计划 Phase 2：在 Phase 1 已跨过正式稳定版 `v1.1.0` 后删除不再拥有语义的 Full 兼容包装，并移除当前测试说明与 `aicoding-platform` export manifest 中仅匹配该脚本的活跃引用；历史证据与只读 Codex-Skills 上游记录保持不动，正式入口仍唯一为 `bin/aicoding.exe test --profile Full --json`。 / Completes Phase 2 of the verify-codex-kit retirement after one stable release, removing only the obsolete Full wrapper and its active profile/export references while preserving historical and upstream evidence.
+
 - **docs(todolist)**: 登记 TODO 0032–0034：0033 严格执行 `verify-codex-kit` Phase 2 删除，0034 在其落地后的实测 PowerShell 数量上复用 PWSH-002 建立只降不升棘轮，0032 将 toolchain 身份换域为版本语义并同步重置复用晋级计数；固定执行顺序 `0033 → 0034 → 0032`，不翻转 reuse 默认值、不触碰 TODO 0019 或只读 Skill 子模块。 / Registers TODO 0032–0034 for bounded wrapper retirement, a measured one-way PowerShell budget ratchet, and toolchain semantic identity v2 with promotion-count reset, preserving the required execution order and all stated exclusions.
 
 - **ci(validation)**: 完成 TODO 0031：schedule-equivalent 远端运行已验证 `doctor perf` 与 `doctor-perf-evidence`，main `9890b667bfdc54ef5fafe49d27c736210ad13732` 的正式 release-gate 以 `--reuse off` 冷种子和 `--verify-reuse` 全量审计双绿，晋级计数显式落账为 1/3；默认复用继续保持 `off`，后续 2/3、3/3 与独立晋级评审不在本项内。 / Completes TODO 0031 with passing remote doctor-performance evidence and the first qualifying main release-gate seed/audit run, records promotion count 1/3, and deliberately keeps reuse defaulted to off.
