@@ -122,6 +122,7 @@ flowchart TB
 | 模块 | 唯一职责 | 输入/输出 | 禁止承担 | 权威实现 |
 |---|---|---|---|---|
 | root/path | repo root、规范路径、越界拒绝 | path value | 领域发现、生命周期策略 | `internal/platform` |
+| path policy | 冻结 glob 方言、去重排序、fail-closed 匹配 | patterns + path -> match | plan/impact/push 领域裁决 | `internal/pathpolicy` |
 | snapshot | 规范化事实、内容树、digest、只读 decode | value -> snapshot | action 选择、I/O 执行 | `internal/registry` |
 | plan | 确定性意图、选择、snapshot、digest | task descriptors | 外部资源操作、领域判断 | `internal/runner.ExecutionPlan` |
 | runner | timeout、cancel、有界并发、稳定结果顺序 | plan -> task results | lifecycle 策略、状态所有权 | `internal/runner` |

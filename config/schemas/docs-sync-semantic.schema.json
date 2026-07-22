@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/docs-sync-semantic.schema.json",
+  "title": "AiCoding DocSync Semantic Drift Policy",
+  "type": "object",
+  "required": ["version", "description", "thresholds", "weights", "publicSurfaces", "docTargets", "noDocMarker"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "thresholds": {
+      "type": "object",
+      "required": ["preCommitWarn", "preCommitBlock", "allBlock", "ciBlock", "releaseBlock"],
+      "additionalProperties": false,
+      "properties": {
+        "preCommitWarn": { "type": "integer" },
+        "preCommitBlock": { "type": "integer" },
+        "allBlock": { "type": "integer" },
+        "ciBlock": { "type": "integer" },
+        "releaseBlock": { "type": "integer" }
+      }
+    },
+    "weights": {
+      "type": "object",
+      "required": ["apiDrift", "behaviorDrift", "policyDrift", "commandDrift", "linkDrift"],
+      "additionalProperties": false,
+      "properties": {
+        "apiDrift": { "type": "integer" },
+        "behaviorDrift": { "type": "integer" },
+        "policyDrift": { "type": "integer" },
+        "commandDrift": { "type": "integer" },
+        "linkDrift": { "type": "integer" }
+      }
+    },
+    "publicSurfaces": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "docTargets": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "uniqueItems": true,
+        "items": { "type": "string", "minLength": 1 }
+      }
+    },
+    "noDocMarker": {
+      "type": "object",
+      "required": ["marker", "minimumReasonLength", "forbiddenReasons"],
+      "additionalProperties": false,
+      "properties": {
+        "marker": { "type": "string", "minLength": 1 },
+        "minimumReasonLength": { "type": "integer" },
+        "forbiddenReasons": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

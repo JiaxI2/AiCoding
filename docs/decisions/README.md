@@ -10,3 +10,4 @@ Authority: [AiCoding Primitive Constitution](https://github.com/JiaxI2/AiCoding/
 Current numbered decisions:
 
 - [ADR 0010: Kit 内容钉死引用注册](0010-pinned-reference-registration.md)
+- [ADR 0011: pathpolicy 解析收敛与 policy schema 闭合](0011-pathpolicy-consolidation.md)

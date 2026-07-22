@@ -1,6 +1,6 @@
 # TODO 0028: pathpolicy 解析收敛（三个同构 policy 复用一个 Primitive + 补齐缺失 schema）
 
-Status: Planned
+Status: Done
 Verify: internal/pathpolicy 单测全绿；plan/impact/validation 三个 policy 的 pattern 解析走同一实现；6 个 *policy*.json 全部有 schema 且 docsync 校验覆盖
 
 > 来源：FORWARD_PLAN C1。实测（2026-07-22）：6 个 `*policy*.json` 只有 1 个有 schema；

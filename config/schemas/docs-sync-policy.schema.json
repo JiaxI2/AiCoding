@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/docs-sync-policy.schema.json",
+  "title": "AiCoding Documentation Synchronization Policy",
+  "type": "object",
+  "required": ["$schema", "version", "description", "docPaths", "rules"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "version": { "const": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "docPaths": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/rule" }
+    }
+  },
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "required": ["name", "changed", "requiresAnyDoc", "allowNoDocMarker"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "changed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "requiresAnyDoc": { "type": "boolean" },
+        "allowNoDocMarker": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

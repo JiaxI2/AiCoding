@@ -233,6 +233,16 @@
       "verification": ["go test ./internal/mcpcontrol/..."]
     },
     {
+      "id": "path-policy",
+      "package": "internal/pathpolicy",
+      "name": "Deterministic Path Policy",
+      "type": "primitive",
+      "status": "stable",
+      "summary": "统一编译、校验并匹配冻结的仓库相对路径 pattern 方言。",
+      "publicEntries": [],
+      "verification": ["go test ./internal/pathpolicy/..."]
+    },
+    {
       "id": "plan-mode",
       "package": "internal/plan",
       "name": "Plan Mode",

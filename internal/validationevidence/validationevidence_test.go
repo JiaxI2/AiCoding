@@ -32,7 +32,7 @@ func TestPackageBoundaryAndPublicAPIRemainSmall(t *testing.T) {
 		}
 		for _, imported := range parsed.Imports {
 			name := strings.Trim(imported.Path.Value, "\"")
-			if strings.Contains(name, "/internal/") && name != "github.com/JiaxI2/AiCoding/internal/gitx" {
+			if strings.Contains(name, "/internal/") && name != "github.com/JiaxI2/AiCoding/internal/gitx" && name != "github.com/JiaxI2/AiCoding/internal/pathpolicy" {
 				t.Fatalf("validationevidence imports business package %s", name)
 			}
 		}
@@ -93,6 +93,22 @@ func TestPolicyLoadIsStrict(t *testing.T) {
 	writeEvidenceFile(t, repo, validationPolicyPath, strings.Replace(valid, `"release"`, `"manual"`, 1))
 	if _, err := LoadPolicy(repo); err == nil {
 		t.Fatal("LoadPolicy accepted an unsupported profile")
+	}
+}
+
+func TestPushContextPrefixUsesSharedPathPolicyBoundary(t *testing.T) {
+	policy := Policy{SchemaVersion: 1, UnmatchedAction: "allow", Contexts: []PushContext{
+		{ID: "heads", RemoteRefPrefix: "refs/heads/", RequiredProfile: "smoke"},
+	}}
+	if err := validatePolicy(policy); err != nil {
+		t.Fatal(err)
+	}
+	context, ok := matchPushContext(policy, "refs/heads/feature/x")
+	if !ok || context.ID != "heads" {
+		t.Fatalf("nested ref did not match prefix: context=%#v matched=%v", context, ok)
+	}
+	if _, ok := matchPushContext(policy, "refs/headship/x"); ok {
+		t.Fatal("prefix crossed a path segment boundary")
 	}
 }
 

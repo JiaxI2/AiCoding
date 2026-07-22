@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **refactor(pathpolicy)**: 完成 TODO 0028：新增仅依赖 stdlib、只有 `Compile/Match/Validate` 三个公开函数的确定性路径 Primitive，Plan、TestEngine change impact 与 Validation Evidence 改走同一冻结 glob 方言；六份 policy 配置以 checked-in schema 形成 6/6 闭合，DocSync 与 dependency governance 对未知字段共同 fail-closed。配置文件与既有裁决语义不变，重构前后固定 staged 输入的 `plan check` / `change verify` JSON 将以剔除时长字段后的字节相等作为最终硬判据。 / Completes TODO 0028 with one stdlib-only three-function path-policy primitive shared by Plan, TestEngine impact selection, and Validation Evidence, plus six-of-six checked-in policy schemas enforced by DocSync and dependency governance while preserving existing configuration and decision semantics.
+
 - **docs(plan)**: 在 clean `feature/convergence` tree 上批准 `pathpolicy-consolidation`，将 TODO 0028 的冻结 schema、三消费方、Primitive/ADR 与 DocSync 实现范围绑定到 Git Tree `cd05a49e32c019d47e348e426809c160916b70a4`。 / Approves the bounded TODO 0028 path-policy plan on a clean tree and binds its frozen-schema, consumer, primitive/ADR, and DocSync scope to Git Tree `cd05a49e32c019d47e348e426809c160916b70a4`.
 
 - **docs(plan)**: 为 TODO 0028 建立窄范围 `pathpolicy-consolidation` 计划，覆盖标准库 Primitive、Plan/change/validation 三消费方、六面 policy schema 与 DocSync、依赖/能力登记及 ADR §12 自评；冻结 schema 写入前必须在 clean tree 绑定批准。 / Adds a bounded TODO 0028 plan for the stdlib-only path-policy primitive, three consumers, six policy schemas, DocSync enforcement, dependency/capability registration, and ADR self-review before frozen-schema changes.

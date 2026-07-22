@@ -39,6 +39,12 @@ bin/aicoding.exe docsync ci --json
 bin/aicoding.exe docsync release --json
 ```
 
+## Policy schema closure
+
+`docsync` 对 plan、impact、validation、tagging、docs-sync policy 与 docs-sync semantic 六份
+配置执行 checked-in JSON schema 校验。schema 与配置均缺一不可，未知字段 fail-closed；
+`governance dependencies` 复用同一检查，因此依赖门禁与文档同步门禁不会形成两套 schema 解释。
+
 ## Scoring
 
 Default score weights are stored in `config/docs-sync.semantic.json`:

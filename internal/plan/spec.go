@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/JiaxI2/AiCoding/internal/pathpolicy"
 )
 
 const SpecsRoot = "docs/spec"
@@ -213,11 +215,12 @@ func verifySpec(repo string, spec Spec) ([]string, []string) {
 	}
 	seenScope := map[string]bool{}
 	for _, pattern := range spec.Scope {
-		normalized, err := normalizePattern(pattern)
+		compiled, err := pathpolicy.Compile([]string{pattern})
 		if err != nil {
 			errs = append(errs, prefix+"invalid scope pattern: "+err.Error())
 			continue
 		}
+		normalized := compiled[0].Value
 		if seenScope[normalized] {
 			errs = append(errs, prefix+"duplicate scope pattern: "+normalized)
 		}

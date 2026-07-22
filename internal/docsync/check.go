@@ -64,6 +64,10 @@ func Check(repo, mode string) CheckResult {
 	result.RiskFiles, result.DocFiles = classifyFiles(files)
 	result.Errors = append(result.Errors, errs...)
 	result.Errors = append(result.Errors, policyErrors(files)...)
+	if checked, schemaErrors := CheckPolicySchemas(repo); checked {
+		result.Checks = append(result.Checks, CheckItem{Name: "policy schema closure", OK: len(schemaErrors) == 0})
+		result.Errors = append(result.Errors, schemaErrors...)
+	}
 	if mode == "all" || mode == "ci" || mode == "release" {
 		statusErrors := architectureStatusErrors(repo)
 		result.Checks = append(result.Checks, CheckItem{Name: "architecture status headers", OK: len(statusErrors) == 0})

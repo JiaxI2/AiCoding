@@ -2,9 +2,9 @@
 
 > 本文件由 `config/internal-capabilities.json` 生成，请运行 `bin/aicoding.exe capability index --write` 更新。
 
-Registry digest: `sha256:b6420c19c403ce024c643f7a8b3a19380cdfcb957f42aefef8c10b96c71baa2d`
+Registry digest: `sha256:1f915ac583c9dc8d7661c87741942fc68d96c3439dbc797a734f0e8fe7523fdd`
 
-共登记 28 个 `internal/` 一级包；文档义务按公共入口、内部实现域和 Primitive 分级。
+共登记 29 个 `internal/` 一级包；文档义务按公共入口、内部实现域和 Primitive 分级。
 
 - `publicEntries` 非空：必须指向 typed command catalog 中的现存入口，并登记架构文档。
 - `stable` 且 `publicEntries` 非空：必须登记 quickstart 与 activation，避免只有命令没有用法。
@@ -26,6 +26,7 @@ Registry digest: `sha256:b6420c19c403ce024c643f7a8b3a19380cdfcb957f42aefef8c10b9
 | `lifecycle` | `internal/lifecycle` | `product-workflow` | `stable` | 以统一 adapter catalog 编排 Kit、MCP、runtime Skill 与 repo-context 生命周期。 | `aicoding lifecycle plan`<br>`aicoding lifecycle status`<br>`aicoding lifecycle verify` | [文档](architecture/KIT_LIFECYCLE_ARCHITECTURE.md) | `go test ./internal/lifecycle/...` |
 | `loop-engineering` | `internal/loopkit` | `domain-capability` | `stable` | 校验有界 WorkSpec、裁决下一步并追加记录尝试，不执行循环。 | `aicoding work validate`<br>`aicoding work next`<br>`aicoding work status`<br>`aicoding work record` | [文档](architecture/LOOP_ENGINEERING_ARCHITECTURE.md) | `go test ./internal/loopkit/...` |
 | `mcp-control` | `internal/mcpcontrol` | `domain-capability` | `stable` | 读取 MCP 注册表并执行状态、诊断、验证与生命周期动作。 | `aicoding mcp list`<br>`aicoding mcp status`<br>`aicoding mcp doctor`<br>`aicoding mcp verify` | [文档](architecture/MCP_CONTROL_PLANE.md) | `go test ./internal/mcpcontrol/...` |
+| `path-policy` | `internal/pathpolicy` | `primitive` | `stable` | 统一编译、校验并匹配冻结的仓库相对路径 pattern 方言。 | — | — | `go test ./internal/pathpolicy/...` |
 | `plan-mode` | `internal/plan` | `domain-capability` | `stable` | 校验计划产物、批准绑定与 Git Tree 漂移。 | `aicoding plan check`<br>`aicoding plan verify`<br>`aicoding plan status`<br>`aicoding plan approve` | [文档](architecture/PLAN_MODE_ARCHITECTURE.md) | `go test ./internal/plan/...` |
 | `platform` | `internal/platform` | `primitive` | `stable` | 提供仓库路径、文件事实与临时资源生命周期原语。 | — | — | `go test ./internal/platform/...` |
 | `powershell-regex` | `internal/pwshregex` | `domain-capability` | `stable` | 对 PowerShell 正则高风险写法执行 Go-native 快速检查。 | `aicoding powershell regex-lint` | [文档](architecture/POWERSHELL_BOUNDARY.md) | `go test ./internal/pwshregex/...` |

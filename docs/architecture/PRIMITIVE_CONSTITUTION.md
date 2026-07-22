@@ -18,7 +18,7 @@ Status: Accepted and Frozen
 
 ## Primitive 依赖方向图
 
-这张图只回答五个 Primitive 各自做什么，以及依赖为什么只能由上层指向 Primitive。
+这张图只回答六个 Primitive 各自做什么，以及依赖为什么只能由上层指向 Primitive。
 红色虚线是机器治理必须拒绝的反向 import。
 
 ```mermaid
@@ -29,17 +29,20 @@ flowchart TB
   RN["runner<br/>有界调度"]
   RP["report<br/>唯一证据信封"]
   PF["platform<br/>根、路径与资源生命周期"]
+  PP["pathpolicy<br/>冻结路径方言编译与匹配"]
   UP --> GX
   UP --> RG
   UP --> RN
   UP --> RP
   UP --> PF
+  UP --> PP
   GX -. "forbidden reverse import" .-> UP
   RG -. "forbidden reverse import" .-> UP
   RN -. "forbidden reverse import" .-> UP
   RP -. "forbidden reverse import" .-> UP
   PF -. "forbidden reverse import" .-> UP
-  linkStyle 5,6,7,8,9 stroke:#B42318,stroke-width:2px
+  PP -. "forbidden reverse import" .-> UP
+  linkStyle 6,7,8,9,10,11 stroke:#B42318,stroke-width:2px
 ```
 
 ## 12 条约束

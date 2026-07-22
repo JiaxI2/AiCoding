@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/gitx"
+	"github.com/JiaxI2/AiCoding/internal/pathpolicy"
 )
 
 const validationPolicyPath = "config/validation-policy.json"
@@ -311,6 +312,13 @@ func validatePolicy(policy Policy) error {
 		if !strings.HasPrefix(selector, "refs/") {
 			return policyError("validation context " + context.ID + " has an invalid remote ref selector")
 		}
+		pattern := selector
+		if context.RemoteRefPrefix != "" {
+			pattern += "**"
+		}
+		if strings.ContainsAny(selector, "*?[]{}\\") || pathpolicy.Validate([]string{pattern}) != nil {
+			return policyError("validation context " + context.ID + " has an invalid remote ref selector")
+		}
 		if context.RequiredProfile != "smoke" && context.RequiredProfile != "full" && context.RequiredProfile != "release" {
 			return policyError("validation context " + context.ID + " has an invalid requiredProfile")
 		}
@@ -320,7 +328,16 @@ func validatePolicy(policy Policy) error {
 
 func matchPushContext(policy Policy, remoteRef string) (PushContext, bool) {
 	for _, context := range policy.Contexts {
-		if context.RemoteRef != "" && remoteRef == context.RemoteRef || context.RemoteRefPrefix != "" && strings.HasPrefix(remoteRef, context.RemoteRefPrefix) {
+		pattern := context.RemoteRef
+		if context.RemoteRefPrefix != "" {
+			pattern = context.RemoteRefPrefix + "**"
+		}
+		compiled, err := pathpolicy.Compile([]string{pattern})
+		if err != nil {
+			continue
+		}
+		matched, err := pathpolicy.Match(compiled[0], remoteRef)
+		if err == nil && matched {
 			return context, true
 		}
 	}

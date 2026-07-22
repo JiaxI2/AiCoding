@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JiaxI2/AiCoding/internal/docsync"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 )
 
@@ -247,6 +248,9 @@ func checkDependencies(repo string, walk dependencyWalkDir) DependencyReport {
 	report.addDependencyCheck("orthogonal Go package boundaries", checkGoPackageBoundariesWithInventory(repo, policy.GoPackageBoundaries, inventory), nil)
 	report.addDependencyCheck("git process ownership", checkGitProcessOwnership(repo, policy.GitProcessBoundary, inventory), nil)
 	report.addDependencyCheck("gitx importer allowlist", checkGitxImporterAllowlist(repo, policy.GitProcessBoundary, inventory), nil)
+	if checked, schemaErrors := docsync.CheckPolicySchemas(repo); checked {
+		report.addDependencyCheck("policy schema closure", schemaErrors, nil)
+	}
 
 	for _, rel := range []string{
 		"config/schemas/dependency-governance.schema.json",

@@ -9,9 +9,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/JiaxI2/AiCoding/internal/pathpolicy"
 )
 
 const PolicyPath = "config/plan-policy.json"
@@ -85,8 +86,20 @@ func CheckPaths(policy Policy, paths []string) (Check, error) {
 		ApprovedPlans: []string{},
 		Uncovered:     []SensitiveMatch{},
 	}
+	exemptPatterns, err := pathpolicy.Compile(policy.ExemptPaths)
+	if err != nil {
+		return Check{}, err
+	}
+	sensitiveValues := make([]string, 0, len(policy.SensitivePaths))
+	for _, rule := range policy.SensitivePaths {
+		sensitiveValues = append(sensitiveValues, rule.Pattern)
+	}
+	sensitivePatterns, err := pathpolicy.Compile(sensitiveValues)
+	if err != nil {
+		return Check{}, err
+	}
 	for _, path := range normalizedPaths {
-		exempt, err := matchesAny(policy.ExemptPaths, path)
+		exempt, err := matchesAny(exemptPatterns, path)
 		if err != nil {
 			return Check{}, err
 		}
@@ -94,8 +107,8 @@ func CheckPaths(policy Policy, paths []string) (Check, error) {
 			check.Exempt = append(check.Exempt, path)
 			continue
 		}
-		for _, rule := range policy.SensitivePaths {
-			matched, err := matchPattern(rule.Pattern, path)
+		for index, rule := range policy.SensitivePaths {
+			matched, err := pathpolicy.Match(sensitivePatterns[index], path)
 			if err != nil {
 				return Check{}, err
 			}
@@ -117,10 +130,11 @@ func normalizePolicy(policy Policy) (Policy, error) {
 	}
 	rules := make(map[string]string, len(policy.SensitivePaths))
 	for index, rule := range policy.SensitivePaths {
-		pattern, err := normalizePattern(rule.Pattern)
+		compiled, err := pathpolicy.Compile([]string{rule.Pattern})
 		if err != nil {
 			return Policy{}, fmt.Errorf("sensitivePaths[%d]: %w", index, err)
 		}
+		pattern := compiled[0].Value
 		reason := strings.TrimSpace(rule.Reason)
 		if reason == "" {
 			return Policy{}, fmt.Errorf("sensitivePaths[%d].reason is required", index)
@@ -130,27 +144,40 @@ func normalizePolicy(policy Policy) (Policy, error) {
 		}
 		rules[pattern] = reason
 	}
-	policy.SensitivePaths = make([]SensitiveRule, 0, len(rules))
-	for pattern, reason := range rules {
-		policy.SensitivePaths = append(policy.SensitivePaths, SensitiveRule{Pattern: pattern, Reason: reason})
+	patterns := make([]string, 0, len(rules))
+	for pattern := range rules {
+		patterns = append(patterns, pattern)
 	}
-	sort.Slice(policy.SensitivePaths, func(i, j int) bool {
-		return policy.SensitivePaths[i].Pattern < policy.SensitivePaths[j].Pattern
-	})
+	compiledRules, err := pathpolicy.Compile(patterns)
+	if err != nil {
+		return Policy{}, err
+	}
+	policy.SensitivePaths = make([]SensitiveRule, 0, len(compiledRules))
+	for _, pattern := range compiledRules {
+		policy.SensitivePaths = append(policy.SensitivePaths, SensitiveRule{Pattern: pattern.Value, Reason: rules[pattern.Value]})
+	}
 
 	exempt := make(map[string]struct{}, len(policy.ExemptPaths))
 	for index, raw := range policy.ExemptPaths {
-		pattern, err := normalizePattern(raw)
+		compiled, err := pathpolicy.Compile([]string{raw})
 		if err != nil {
 			return Policy{}, fmt.Errorf("exemptPaths[%d]: %w", index, err)
 		}
+		pattern := compiled[0].Value
 		exempt[pattern] = struct{}{}
 	}
-	policy.ExemptPaths = make([]string, 0, len(exempt))
+	exemptValues := make([]string, 0, len(exempt))
 	for pattern := range exempt {
-		policy.ExemptPaths = append(policy.ExemptPaths, pattern)
+		exemptValues = append(exemptValues, pattern)
 	}
-	sort.Strings(policy.ExemptPaths)
+	compiledExempt, err := pathpolicy.Compile(exemptValues)
+	if err != nil {
+		return Policy{}, err
+	}
+	policy.ExemptPaths = make([]string, 0, len(compiledExempt))
+	for _, pattern := range compiledExempt {
+		policy.ExemptPaths = append(policy.ExemptPaths, pattern.Value)
+	}
 	return policy, nil
 }
 
@@ -171,20 +198,6 @@ func normalizePaths(paths []string) ([]string, error) {
 	return normalized, nil
 }
 
-func normalizePattern(raw string) (string, error) {
-	pattern := filepath.ToSlash(strings.TrimSpace(raw))
-	if err := validateRelativePath(pattern); err != nil {
-		return "", err
-	}
-	if strings.ContainsAny(pattern, "[]{}") {
-		return "", errors.New("pattern supports only *, **, and ? wildcards")
-	}
-	if _, err := regexp.Compile(globRegex(pattern)); err != nil {
-		return "", fmt.Errorf("invalid pattern %q: %w", pattern, err)
-	}
-	return pattern, nil
-}
-
 func validateRelativePath(value string) error {
 	if value == "" {
 		return errors.New("repository-relative path is required")
@@ -200,9 +213,9 @@ func validateRelativePath(value string) error {
 	return nil
 }
 
-func matchesAny(patterns []string, path string) (bool, error) {
+func matchesAny(patterns []pathpolicy.Pattern, path string) (bool, error) {
 	for _, pattern := range patterns {
-		matched, err := matchPattern(pattern, path)
+		matched, err := pathpolicy.Match(pattern, path)
 		if err != nil {
 			return false, err
 		}
@@ -211,48 +224,4 @@ func matchesAny(patterns []string, path string) (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-// MatchPattern exposes the same normalized repository-path matcher used by
-// Plan Mode so adjacent policies do not grow a second glob dialect.
-func MatchPattern(pattern, repoPath string) (bool, error) {
-	normalizedPattern, err := normalizePattern(pattern)
-	if err != nil {
-		return false, err
-	}
-	normalizedPaths, err := normalizePaths([]string{repoPath})
-	if err != nil {
-		return false, err
-	}
-	return matchPattern(normalizedPattern, normalizedPaths[0])
-}
-
-func matchPattern(pattern, path string) (bool, error) {
-	compiled, err := regexp.Compile(globRegex(pattern))
-	if err != nil {
-		return false, fmt.Errorf("compile plan pattern %q: %w", pattern, err)
-	}
-	return compiled.MatchString(path), nil
-}
-
-func globRegex(pattern string) string {
-	var out strings.Builder
-	out.WriteByte('^')
-	for index := 0; index < len(pattern); index++ {
-		switch pattern[index] {
-		case '*':
-			if index+1 < len(pattern) && pattern[index+1] == '*' {
-				out.WriteString(".*")
-				index++
-			} else {
-				out.WriteString("[^/]*")
-			}
-		case '?':
-			out.WriteString("[^/]")
-		default:
-			out.WriteString(regexp.QuoteMeta(string(pattern[index])))
-		}
-	}
-	out.WriteByte('$')
-	return out.String()
 }

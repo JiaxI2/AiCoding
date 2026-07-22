@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/JiaxI2/AiCoding/internal/pathpolicy"
 )
 
 // BindingStatus is the deterministic projection of changes since approval.
@@ -67,11 +69,19 @@ func EvaluateBinding(policy Policy, spec Spec, currentTree string, changed []str
 		OutOfScope:   []string{},
 		Exempt:       []string{},
 	}
-	covered := make([]bool, len(spec.Scope))
+	scopePatterns, err := pathpolicy.Compile(spec.Scope)
+	if err != nil {
+		return BindingStatus{}, err
+	}
+	exemptPatterns, err := pathpolicy.Compile(policy.ExemptPaths)
+	if err != nil {
+		return BindingStatus{}, err
+	}
+	covered := make([]bool, len(scopePatterns))
 	for _, path := range paths {
 		inScope := false
-		for index, pattern := range spec.Scope {
-			matched, matchErr := matchPattern(pattern, path)
+		for index, pattern := range scopePatterns {
+			matched, matchErr := pathpolicy.Match(pattern, path)
 			if matchErr != nil {
 				return BindingStatus{}, matchErr
 			}
@@ -84,7 +94,7 @@ func EvaluateBinding(policy Policy, spec Spec, currentTree string, changed []str
 			status.Drift = append(status.Drift, path)
 			continue
 		}
-		exempt, matchErr := matchesAny(policy.ExemptPaths, path)
+		exempt, matchErr := matchesAny(exemptPatterns, path)
 		if matchErr != nil {
 			return BindingStatus{}, matchErr
 		}
@@ -106,13 +116,24 @@ func EvaluateBinding(policy Policy, spec Spec, currentTree string, changed []str
 func ApprovedCoverage(specs []Spec, sensitive []SensitiveMatch) ([]string, []SensitiveMatch, error) {
 	used := map[string]struct{}{}
 	uncovered := make([]SensitiveMatch, 0)
+	compiledScopes := make(map[string][]pathpolicy.Pattern, len(specs))
+	for _, spec := range specs {
+		if spec.Status != StatusApproved {
+			continue
+		}
+		compiled, err := pathpolicy.Compile(spec.Scope)
+		if err != nil {
+			return nil, nil, err
+		}
+		compiledScopes[spec.ID] = compiled
+	}
 	for _, item := range sensitive {
 		covered := false
 		for _, spec := range specs {
 			if spec.Status != StatusApproved {
 				continue
 			}
-			matched, err := matchesAny(spec.Scope, item.Path)
+			matched, err := matchesAny(compiledScopes[spec.ID], item.Path)
 			if err != nil {
 				return nil, nil, err
 			}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aicoding.local/schemas/validation-policy.schema.json",
+  "title": "AiCoding Validation Context Policy",
+  "type": "object",
+  "required": ["schemaVersion", "unmatchedAction", "contexts"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "unmatchedAction": { "enum": ["allow", "deny"] },
+    "contexts": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/context" }
+    }
+  },
+  "$defs": {
+    "context": {
+      "type": "object",
+      "required": ["id", "requiredProfile", "requireFastForward", "allowDelete"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "remoteRef": { "type": "string", "pattern": "^refs/" },
+        "remoteRefPrefix": { "type": "string", "pattern": "^refs/" },
+        "requiredProfile": { "enum": ["smoke", "full", "release"] },
+        "requireFastForward": { "type": "boolean" },
+        "allowDelete": { "type": "boolean" }
+      },
+      "oneOf": [
+        { "required": ["remoteRef"] },
+        { "required": ["remoteRefPrefix"] }
+      ]
+    }
+  }
+}

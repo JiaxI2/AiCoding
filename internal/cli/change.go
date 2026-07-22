@@ -1,20 +1,14 @@
 package cli
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/JiaxI2/AiCoding/internal/gitx"
-	"github.com/JiaxI2/AiCoding/internal/plan"
 	"github.com/JiaxI2/AiCoding/internal/platform"
 	"github.com/JiaxI2/AiCoding/internal/report"
 	"github.com/JiaxI2/AiCoding/internal/testengine"
@@ -23,29 +17,9 @@ import (
 
 const impactPolicyPath = "config/impact-policy.json"
 
-type changeImpactRule struct {
-	Pattern string `json:"pattern"`
-	Profile string `json:"profile"`
-	Reason  string `json:"reason"`
-}
-
-type changeImpactPolicy struct {
-	DefaultProfile string             `json:"defaultProfile"`
-	Rules          []changeImpactRule `json:"rules"`
-}
-
-type impactPolicyFile struct {
-	SchemaVersion int                `json:"schemaVersion"`
-	RaceScope     json.RawMessage    `json:"raceScope"`
-	ChangeVerify  changeImpactPolicy `json:"changeVerify"`
-}
-
-type changeImpactMatch struct {
-	Path    string `json:"path"`
-	Pattern string `json:"pattern"`
-	Profile string `json:"profile"`
-	Reason  string `json:"reason"`
-}
+type changeImpactRule = testengine.ChangeImpactRule
+type changeImpactPolicy = testengine.ChangeImpactPolicy
+type changeImpactMatch = testengine.ChangeImpactMatch
 
 type changeVerifyStep struct {
 	Name       string `json:"name"`
@@ -325,119 +299,11 @@ func changeDirtySubject(repo string, status gitx.Status) (validationevidence.Sub
 }
 
 func loadChangeImpactPolicy(repo string) (changeImpactPolicy, error) {
-	raw, err := os.ReadFile(filepath.Join(repo, filepath.FromSlash(impactPolicyPath)))
-	if err != nil {
-		return changeImpactPolicy{}, fmt.Errorf("read %s: %w", impactPolicyPath, err)
-	}
-	var file impactPolicyFile
-	decoder := json.NewDecoder(bytes.NewReader(raw))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&file); err != nil {
-		return changeImpactPolicy{}, fmt.Errorf("parse %s: %w", impactPolicyPath, err)
-	}
-	var trailing any
-	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
-		if err == nil {
-			return changeImpactPolicy{}, fmt.Errorf("parse %s: multiple JSON values", impactPolicyPath)
-		}
-		return changeImpactPolicy{}, fmt.Errorf("parse %s: %w", impactPolicyPath, err)
-	}
-	if file.SchemaVersion != 1 {
-		return changeImpactPolicy{}, errors.New("impact policy schemaVersion must be 1")
-	}
-	policy := file.ChangeVerify
-	defaultProfile, err := normalizeImpactProfile(policy.DefaultProfile)
-	if err != nil {
-		return changeImpactPolicy{}, fmt.Errorf("changeVerify.defaultProfile: %w", err)
-	}
-	policy.DefaultProfile = defaultProfile
-	if len(policy.Rules) == 0 {
-		return changeImpactPolicy{}, errors.New("impact policy requires changeVerify.rules")
-	}
-	seen := map[string]bool{}
-	for index := range policy.Rules {
-		rule := &policy.Rules[index]
-		rule.Pattern = filepath.ToSlash(strings.TrimSpace(rule.Pattern))
-		if seen[rule.Pattern] {
-			return changeImpactPolicy{}, fmt.Errorf("changeVerify.rules[%d] duplicates pattern %q", index, rule.Pattern)
-		}
-		seen[rule.Pattern] = true
-		if _, err := plan.MatchPattern(rule.Pattern, "policy-probe"); err != nil {
-			return changeImpactPolicy{}, fmt.Errorf("changeVerify.rules[%d].pattern: %w", index, err)
-		}
-		rule.Profile, err = normalizeImpactProfile(rule.Profile)
-		if err != nil {
-			return changeImpactPolicy{}, fmt.Errorf("changeVerify.rules[%d].profile: %w", index, err)
-		}
-		rule.Reason = strings.TrimSpace(rule.Reason)
-		if rule.Reason == "" {
-			return changeImpactPolicy{}, fmt.Errorf("changeVerify.rules[%d].reason is required", index)
-		}
-	}
-	return policy, nil
-}
-
-func normalizeImpactProfile(profile string) (string, error) {
-	switch strings.ToLower(strings.TrimSpace(profile)) {
-	case testengine.ProfileSmoke:
-		return testengine.ProfileSmoke, nil
-	case testengine.ProfileFull:
-		return testengine.ProfileFull, nil
-	case testengine.ProfileRelease:
-		return testengine.ProfileRelease, nil
-	default:
-		return "", fmt.Errorf("unsupported profile %q", profile)
-	}
+	return testengine.LoadChangeImpactPolicy(repo)
 }
 
 func selectChangeProfile(policy changeImpactPolicy, paths []string) (string, []changeImpactMatch, error) {
-	profile := ""
-	matches := []changeImpactMatch{}
-	for _, repoPath := range paths {
-		pathProfile := ""
-		for _, rule := range policy.Rules {
-			matched, err := plan.MatchPattern(rule.Pattern, repoPath)
-			if err != nil {
-				return "", nil, err
-			}
-			if !matched {
-				continue
-			}
-			matches = append(matches, changeImpactMatch{Path: repoPath, Pattern: rule.Pattern, Profile: displayTestProfile(rule.Profile), Reason: rule.Reason})
-			if profileRank(rule.Profile) > profileRank(pathProfile) {
-				pathProfile = rule.Profile
-			}
-		}
-		if pathProfile == "" {
-			pathProfile = policy.DefaultProfile
-		}
-		if profileRank(pathProfile) > profileRank(profile) {
-			profile = pathProfile
-		}
-	}
-	if profile == "" {
-		profile = policy.DefaultProfile
-	}
-	sort.Slice(matches, func(i, j int) bool {
-		if matches[i].Path != matches[j].Path {
-			return matches[i].Path < matches[j].Path
-		}
-		return matches[i].Pattern < matches[j].Pattern
-	})
-	return profile, matches, nil
-}
-
-func profileRank(profile string) int {
-	switch profile {
-	case testengine.ProfileSmoke:
-		return 1
-	case testengine.ProfileFull:
-		return 2
-	case testengine.ProfileRelease:
-		return 3
-	default:
-		return 0
-	}
+	return testengine.SelectChangeProfile(policy, paths)
 }
 
 func displayTestProfile(profile string) string {
