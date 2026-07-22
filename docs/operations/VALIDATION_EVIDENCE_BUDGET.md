@@ -326,3 +326,13 @@ FRESH leaf，不把本轮完整 Release 的 Go 负载混入结论。
   直接重放 `release verify --repo-root <materialized-root>` 通过，最终 leaf 固化该显式参数。
 - 原始失败与最终报告保存在本地 ignored
   `test-results/0018-materialization-20260722/`；失败不会发布成功 Receipt。
+
+## 12. 已知限制：跨 shell 的 toolchain 身份偏严
+
+当前 `toolchainDigest` 把 Go/Git 可执行文件的绝对路径与 mtime 一并计入身份。同一台机器上，
+Git Bash 的 `/usr/bin/git` 与 PowerShell 解析到的 `cmd/git.exe` 会产生不同 toolchain 身份，
+即使 Tree 等其余身份字段完全相同，两边的 Receipt 仍不能互相复用。
+
+本轮把“开发者交互 shell 与自动化环境的 Receipt 不互认”记录为预期偏严的已知限制，
+不修改实现、不放宽完整性检查。候选改进是让 `toolchainDigest` 只绑定工具版本语义，
+把绝对路径与 mtime 降为 toolchain probe cache 的本地缓存键；该调整须另行设计、验证和评审。

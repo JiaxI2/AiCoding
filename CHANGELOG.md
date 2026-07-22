@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **ci(perf)**: 为 `aicoding-ci.yml` 的 weekly schedule 与显式 schedule-equivalent dispatch 新增独立 `doctor perf --json` job，并始终上传 `doctor-perf-evidence`；PR/push 事件不会选择该 job。Validation Evidence 预算同时记录跨 shell 的 toolchain 身份偏严限制：当前路径/mtime 会阻止等版本工具的 Receipt 互认，候选改进只登记、不在本轮改实现；默认复用仍为 `off`。 / Adds a scheduled and explicitly dispatchable doctor-performance job with evidence upload, excludes PR/push selection, and records the known cross-shell toolchain identity limitation without changing reuse behavior.
+
 - **feat(freeze)**: 完成 TODO 0030：严格按清单将 Loop Engineering、Plan Mode、Validation Evidence 核心 Receipt 契约与 Kit pinned `source` 语义晋升到冻结边界，复利知识继续保持 Draft、capability schema 不晋升；新增 FREEZE-004..007 四条全 profile 静态断言。计划绑定 `approvedTree=c316c1b148fe2eeb7ef49e9cd4ec4edbe118d832`；临时 `work run` 与 `Decide` 第五参数两条真实负例分别精确红后零 diff 还原，Full `71 total / 67 pass / 0 fail / 0 warn / 4 skip`。 / Completes TODO 0030 with the exact four promoted freeze surfaces, four all-profile static assertions, two passing negative probes, and a clean Full profile while leaving Draft and newly introduced schema surfaces unfrozen.
 
 - **docs(plan)**: 在 clean `feature/convergence` tree 上批准 `freeze-promotion`，将 TODO 0030 的精确架构/静态断言范围绑定到 Git Tree `c316c1b148fe2eeb7ef49e9cd4ec4edbe118d832`；后续冻结晋升只能在该 scope 内实施。 / Approves the bounded TODO 0030 freeze-promotion plan on a clean tree and binds its exact architecture and static-assertion scope to Git Tree `c316c1b148fe2eeb7ef49e9cd4ec4edbe118d832`.
