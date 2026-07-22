@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(plan)**: 为 TODO 0035 建立窄范围 config schema 闭合计划：全部 checked-in 配置由唯一 binding table 或有理由的精确排除覆盖，全部 schema 由 binding/standalone 反向登记；`governance dependencies` 复用既有 inventory，数据库、第三方 validator、集中加载器与消费方解码变更均排除。 / Adds a bounded plan for bidirectional config/schema closure using the existing dependency inventory, one binding authority, and reasoned exact exclusions while ruling out databases, third-party validators, centralized loading, and consumer-decoder changes.
+
 - **docs(todolist)**: 登记 TODO 0035 的 config schema 闭合工作：以实测 34 个非 schema 配置与 19 个既有 schema 为基线，保留现有专门校验并补齐严格 schema、唯一 binding table、standalone 反向登记及 `governance dependencies` 完备性检查；数据库与集中式加载框架明确不在范围内。 / Registers TODO 0035 to close the measured configuration/schema surface with strict schemas, one binding table, explicit standalone reverse registration, and dependency-governance completeness while preserving specialized validators and excluding databases or a centralized loader.
 
 - **docs(validation)**: 将 `main@41eefac7a67ac1473a5b9cf7cfc6548ca7372027` 的正式 workflow dispatch run `29916523297` 记为 `toolchainDigest.v2` 晋级证据 1/3；release-gate 的 `--reuse off` 冷种子与 `--verify-reuse` 审计均成功，审计命中同一 Receipt，默认复用仍保持 `off`。 / Records workflow-dispatch run 29916523297 on main as the first of three toolchainDigest.v2 promotion proofs after both the cold seed and audited Receipt reuse succeed, without changing the default reuse mode.

@@ -1,6 +1,6 @@
 # TODO 0035: config schema 闭合完备化
 
-Status: Planned
+Status: In-Progress
 Verify: bin/aicoding.exe governance dependencies --json && bin/aicoding.exe docsync all --json && bin/aicoding.exe plan verify --json && bin/aicoding.exe todolist --json
 
 ## 架构裁决
