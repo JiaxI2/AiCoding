@@ -113,70 +113,70 @@
     "readmeBadges": [
       {
         "label": "Release",
-        "imageFragment": "github/v/release/JiaxI2/AiCoding",
+        "imageFragment": "github/v/release/JiaxI2/AiCoding?label=Release&color=181717&logo=github&logoColor=white",
         "target": "https://github.com/JiaxI2/AiCoding/releases/latest",
         "authority": "repository-release",
         "displayVersion": ""
       },
       {
         "label": "Go",
-        "imageFragment": "Go-1.22%2B",
+        "imageFragment": "Go-1.22%2B-00ADD8?logo=go&logoColor=white",
         "target": "https://go.dev/doc/go1.22",
         "authority": "upstream-version",
         "displayVersion": "1.22+"
       },
       {
         "label": "Go toolchain",
-        "imageFragment": "Go%20toolchain-1.26.5",
+        "imageFragment": "Go%20toolchain-1.26.5-00ADD8?logo=go&logoColor=white",
         "target": "https://go.dev/doc/devel/release#go1.26.5",
         "authority": "upstream-version",
         "displayVersion": "1.26.5"
       },
       {
         "label": "Staticcheck",
-        "imageFragment": "Staticcheck-2026.1",
+        "imageFragment": "Staticcheck-2026.1-00ADD8?logo=go&logoColor=white",
         "target": "https://github.com/dominikh/go-tools/releases/tag/2026.1",
         "authority": "upstream-version",
         "displayVersion": "2026.1"
       },
       {
         "label": "Govulncheck",
-        "imageFragment": "Govulncheck-1.6.0",
+        "imageFragment": "Govulncheck-1.6.0-00ADD8?logo=go&logoColor=white",
         "target": "https://go.googlesource.com/vuln/+/refs/tags/v1.6.0",
         "authority": "upstream-version",
         "displayVersion": "1.6.0"
       },
       {
         "label": "PowerShell",
-        "imageFragment": "PowerShell-7%2B",
+        "imageFragment": "PowerShell-7%2B-5391FE?logo=powershell&logoColor=white",
         "target": "https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0",
         "authority": "upstream-version",
         "displayVersion": "7+"
       },
       {
         "label": "Python",
-        "imageFragment": "Python-3.10%2B",
+        "imageFragment": "Python-3.10%2B-3776AB?logo=python&logoColor=white",
         "target": "https://docs.python.org/3.10/whatsnew/3.10.html",
         "authority": "upstream-version",
         "displayVersion": "3.10+"
       },
       {
         "label": "Taskfile",
-        "imageFragment": "Taskfile-optional",
+        "imageFragment": "Taskfile-optional-29BEB0?logo=task&logoColor=white",
         "target": "https://taskfile.dev/",
         "authority": "upstream-project",
         "displayVersion": ""
       },
       {
         "label": "Clang-format",
-        "imageFragment": "Clang--format-17.0.2",
+        "imageFragment": "Clang--format-17.0.2-262D3A?logo=llvm&logoColor=white",
         "target": "https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2",
         "authority": "upstream-version",
         "displayVersion": "17.0.2"
       },
       {
         "label": "C UserStyle Kit",
-        "imageFragment": "C%20UserStyle%20Kit-1.2.0",
+        "imageFragment": "C%20UserStyle%20Kit-1.2.0-A8B9CC?logo=c&logoColor=black",
         "target": "docs/guides/C99_STANDARD_C_SKILL.md",
         "authority": "local-kit",
         "displayVersion": "1.2.0",

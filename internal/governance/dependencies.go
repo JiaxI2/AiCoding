@@ -7,6 +7,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -243,6 +244,7 @@ func checkDependencies(repo string, walk dependencyWalkDir) DependencyReport {
 	report.addDependencyCheck("Skill naming and exposure", checkSkillDependencyPolicy(repo, policy, layers), nil)
 	report.addDependencyCheck("asset identity version opacity", checkAssetVersionOpacity(repo, policy, inventory), nil)
 	report.addDependencyCheck("README version badge authority", checkReadmeVersionBadges(repo, policy), nil)
+	report.addDependencyCheck("README SVG image policy", checkReadmeImages(repo, policy.VersionVisibility.ReadmeFiles), nil)
 	report.addDependencyCheck("activation manifests URL-free", checkActivationManifestsURLFree(policy.AcquisitionBoundary, inventory), nil)
 	report.addDependencyCheck("cloneable sources registry", checkCloneableSourcesRegistry(repo, policy.AcquisitionBoundary, inventory), nil)
 	report.addDependencyCheck("orthogonal Go package boundaries", checkGoPackageBoundariesWithInventory(repo, policy.GoPackageBoundaries, inventory), nil)
@@ -1307,6 +1309,92 @@ func checkReadmeVersionBadges(repo string, policy dependencyPolicy) []string {
 		}
 	}
 	return errs
+}
+
+var readmeMarkdownImageExpression = regexp.MustCompile(`!\[[^]]*\]\(([^)[:space:]]+)`)
+var readmeHTMLImageExpression = regexp.MustCompile(`(?i)<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']`)
+var readmeHTMLSourceSetExpression = regexp.MustCompile(`(?i)<source\b[^>]*\bsrcset\s*=\s*["']([^"']+)["']`)
+var shieldsHexColorExpression = regexp.MustCompile(`(?i)-[0-9a-f]{6}(?:\.svg)?$`)
+var shieldsQueryColorExpression = regexp.MustCompile(`(?i)^[0-9a-f]{6}$`)
+
+func checkReadmeImages(repo string, readmeFiles []string) []string {
+	errs := []string{}
+	for _, rel := range readmeFiles {
+		data, err := os.ReadFile(platform.RepoPath(repo, rel))
+		if err != nil {
+			errs = append(errs, err.Error())
+			continue
+		}
+		lines := strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
+		for index, line := range lines {
+			if strings.Contains(strings.ToLower(line), "```mermaid") {
+				errs = append(errs, fmt.Sprintf("%s must embed exported SVG instead of Mermaid at line %d", rel, index+1))
+			}
+			if strings.Contains(strings.ToLower(line), "<svg") {
+				errs = append(errs, fmt.Sprintf("%s must reference an SVG file instead of inline SVG at line %d", rel, index+1))
+			}
+			for _, expression := range []*regexp.Regexp{readmeMarkdownImageExpression, readmeHTMLImageExpression, readmeHTMLSourceSetExpression} {
+				for _, match := range expression.FindAllStringSubmatch(line, -1) {
+					errs = append(errs, validateReadmeImageSource(repo, rel, match[1], index+1)...)
+				}
+			}
+		}
+	}
+	return errs
+}
+
+func validateReadmeImageSource(repo, readme, source string, line int) []string {
+	errPrefix := fmt.Sprintf("%s image at line %d", readme, line)
+	base, fragment, _ := strings.Cut(source, "#")
+	if fragment != "" && fragment != "gh-light-mode-only" && fragment != "gh-dark-mode-only" {
+		return []string{errPrefix + " uses unsupported GitHub theme marker: #" + fragment}
+	}
+	pathPart := strings.SplitN(base, "?", 2)[0]
+	lowerPath := strings.ToLower(pathPart)
+	if fragment == "gh-light-mode-only" && !strings.HasSuffix(lowerPath, "-light.svg") {
+		return []string{errPrefix + " must bind #gh-light-mode-only to a -light.svg asset: " + source}
+	}
+	if fragment == "gh-dark-mode-only" && !strings.HasSuffix(lowerPath, "-dark.svg") {
+		return []string{errPrefix + " must bind #gh-dark-mode-only to a -dark.svg asset: " + source}
+	}
+
+	parsed, parseErr := url.Parse(base)
+	if parseErr != nil {
+		return []string{errPrefix + " has an invalid source URL: " + source}
+	}
+	if strings.EqualFold(parsed.Host, "img.shields.io") {
+		if !shieldsBadgeHasSemanticColor(parsed) {
+			return []string{errPrefix + " uses an implicit/default badge color: " + source}
+		}
+		return nil
+	}
+	if !strings.HasSuffix(lowerPath, ".svg") {
+		return []string{errPrefix + " must use an SVG source: " + source}
+	}
+	if parsed.IsAbs() {
+		if parsed.Scheme != "https" {
+			return []string{errPrefix + " must use HTTPS for a remote SVG: " + source}
+		}
+		return nil
+	}
+	if filepath.IsAbs(pathPart) {
+		return []string{errPrefix + " must use a repository-relative SVG path: " + source}
+	}
+	asset := filepath.Join(filepath.Dir(readme), filepath.FromSlash(pathPart))
+	if !platform.IsFile(platform.RepoPath(repo, asset)) {
+		return []string{errPrefix + " references a missing SVG asset: " + source}
+	}
+	return nil
+}
+
+func shieldsBadgeHasSemanticColor(source *url.URL) bool {
+	if strings.Contains(strings.ToLower(source.Path), "/github/actions/workflow/status/") {
+		return true
+	}
+	if shieldsQueryColorExpression.MatchString(source.Query().Get("color")) {
+		return true
+	}
+	return strings.HasPrefix(strings.ToLower(source.Path), "/badge/") && shieldsHexColorExpression.MatchString(source.Path)
 }
 
 var readmeBadgeLabelExpression = regexp.MustCompile(`\[!\[([^]]+)\]\(`)

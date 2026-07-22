@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(readme)**: 将三份仓库入口 README 的图像契约收敛为 SVG-only：用 Microsoft Visio 绘制并导出“一张图看懂”的 light/dark SVG，以 GitHub `#gh-light-mode-only` / `#gh-dark-mode-only` 自动切换；Banner 延续同一主题写法，外部 raster 图降为普通链接。徽章颜色改为技术/产品公认品牌色或 CI 状态语义色，依赖治理新增 raster、Mermaid、错误主题 marker 与隐式默认 badge 色的 fail-closed 校验。 / Makes the three repository READMEs SVG-only, replaces the Mermaid overview with Visio-exported light/dark SVGs using GitHub theme markers, preserves the themed banner pattern, removes raster embeds, and enforces brand/status badge colors without implicit defaults.
+
 - **docs(validation)**: 将新 main Tree `878cae97795ac7e62b21f4deee215d76d1ffb420` 的 workflow dispatch run `29922476097` 落账为 `toolchainDigest.v2` 晋级证据 3/3：固定 Task `3.52.0` 后 ENV-004 在冷种子与审计中均转为 PASS，两段均为 `70 PASS / 1 WARN`，唯一 WARN 是设计内 FRESH-004；审计命中同一 Receipt，四个 jobs 全绿。三次独立 Tree 的前置计数已满足，但默认 `--reuse off` 不变，翻转仍须另开独立评审。 / Records independent-tree run 29922476097 as v2 promotion proof 3/3 after Task 3.52.0 turns ENV-004 into PASS in both seed and audit, leaving only the designed FRESH-004 advisory; all jobs pass and default reuse remains off pending a separate review.
 
 - **fix(ci)**: 将官方 `go-task/setup-task` 以完整 action SHA 固定在 main `release-gate` job，并锁定 Task `3.52.0`，使下一次晋级运行的 ENV-004 从 advisory 转为 PASS；testengine 契约测试阻止安装步骤漂移到无关 job。同期将不同 Tree 的 workflow dispatch run `29921228586` 落账为 `toolchainDigest.v2` 晋级证据 2/3：冷种子与审计同 Receipt 双绿；FRESH-004 继续保持设计内 advisory，`--reuse` 默认值仍为 `off`。 / Pins the official Task setup action and Task 3.52.0 to the main release-gate job, locks its scope with a testengine contract, and records independent-tree run 29921228586 as v2 promotion proof 2/3 while preserving the FRESH-004 advisory and default-off reuse.

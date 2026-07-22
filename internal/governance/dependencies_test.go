@@ -131,6 +131,51 @@ func TestReadmeBadgeLabelsAcceptUppercaseInitial(t *testing.T) {
 	}
 }
 
+func TestReadmeImagesAcceptSVGThemeMarkersAndSemanticBadges(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "docs", "assets", "overview-light.svg"), "<svg></svg>\n")
+	mustWrite(t, filepath.Join(repo, "docs", "assets", "overview-dark.svg"), "<svg></svg>\n")
+	mustWrite(t, filepath.Join(repo, "README.md"), `<p>
+  <img src="docs/assets/overview-light.svg#gh-light-mode-only">
+  <img src="docs/assets/overview-dark.svg#gh-dark-mode-only">
+</p>
+![Architecture](docs/assets/overview-light.svg)
+[![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go)](https://go.dev/)
+[![CI](https://img.shields.io/github/actions/workflow/status/acme/repo/ci.yml?branch=main)](https://example.com/ci)
+`)
+
+	if errs := checkReadmeImages(repo, []string{"README.md"}); len(errs) != 0 {
+		t.Fatalf("expected governed SVG sources to pass, got %#v", errs)
+	}
+}
+
+func TestReadmeImagesRejectRasterMermaidAndImplicitBadgeColor(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "README.md"), "```mermaid\ngraph LR\n```\n![Raster](diagram.png)\n[![Tool](https://img.shields.io/badge/Tool-stable)](https://example.com)\n")
+
+	errs := checkReadmeImages(repo, []string{"README.md"})
+	for _, want := range []string{
+		"must embed exported SVG instead of Mermaid",
+		"must use an SVG source: diagram.png",
+		"uses an implicit/default badge color",
+	} {
+		if !hasErrorContaining(errs, want) {
+			t.Fatalf("expected %q, got %#v", want, errs)
+		}
+	}
+}
+
+func TestReadmeImagesRejectMismatchedThemeMarker(t *testing.T) {
+	repo := t.TempDir()
+	mustWrite(t, filepath.Join(repo, "docs", "assets", "overview-dark.svg"), "<svg></svg>\n")
+	mustWrite(t, filepath.Join(repo, "README.md"), `<img src="docs/assets/overview-dark.svg#gh-light-mode-only">`)
+
+	errs := checkReadmeImages(repo, []string{"README.md"})
+	if !hasErrorContaining(errs, "must bind #gh-light-mode-only to a -light.svg asset") {
+		t.Fatalf("expected mismatched theme marker error, got %#v", errs)
+	}
+}
+
 func TestGoPackageBoundariesRejectReverseCoreDependency(t *testing.T) {
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "internal", "registry", "bad.go"), `package registry

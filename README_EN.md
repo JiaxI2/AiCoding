@@ -5,7 +5,7 @@
 
 <p align="center"><a href="README.md">Repository home</a> · <a href="README_CN.md">简体中文</a></p>
 
-[![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=Release&color=526D82)](https://github.com/JiaxI2/AiCoding/releases/latest) [![CI](https://github.com/JiaxI2/AiCoding/actions/workflows/aicoding-ci.yml/badge.svg?branch=main)](https://github.com/JiaxI2/AiCoding/actions/workflows/aicoding-ci.yml) [![License](https://img.shields.io/github/license/JiaxI2/AiCoding?label=License&color=666666)](LICENSE) [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/go1.22) [![Go toolchain](https://img.shields.io/badge/Go%20toolchain-1.26.5-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/devel/release#go1.26.5) [![Staticcheck](https://img.shields.io/badge/Staticcheck-2026.1-59636E)](https://github.com/dominikh/go-tools/releases/tag/2026.1) [![Govulncheck](https://img.shields.io/badge/Govulncheck-1.6.0-59636E?logo=go&logoColor=white)](https://go.googlesource.com/vuln/+/refs/tags/v1.6.0) [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.10/whatsnew/3.10.html) [![Taskfile](https://img.shields.io/badge/Taskfile-optional-59636E?logo=task&logoColor=white)](https://taskfile.dev/) [![Clang-format](https://img.shields.io/badge/Clang--format-17.0.2-59636E?logo=llvm&logoColor=white)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2) [![C UserStyle Kit](https://img.shields.io/badge/C%20UserStyle%20Kit-1.2.0-404040?logo=c&logoColor=white)](docs/guides/C99_STANDARD_C_SKILL.md)
+[![Release](https://img.shields.io/github/v/release/JiaxI2/AiCoding?label=Release&color=181717&logo=github&logoColor=white)](https://github.com/JiaxI2/AiCoding/releases/latest) [![CI](https://img.shields.io/github/actions/workflow/status/JiaxI2/AiCoding/aicoding-ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/JiaxI2/AiCoding/actions/workflows/aicoding-ci.yml) [![License](https://img.shields.io/github/license/JiaxI2/AiCoding?label=License&color=D22128&logo=apache&logoColor=white)](LICENSE) [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/go1.22) [![Go toolchain](https://img.shields.io/badge/Go%20toolchain-1.26.5-00ADD8?logo=go&logoColor=white)](https://go.dev/doc/devel/release#go1.26.5) [![Staticcheck](https://img.shields.io/badge/Staticcheck-2026.1-00ADD8?logo=go&logoColor=white)](https://github.com/dominikh/go-tools/releases/tag/2026.1) [![Govulncheck](https://img.shields.io/badge/Govulncheck-1.6.0-00ADD8?logo=go&logoColor=white)](https://go.googlesource.com/vuln/+/refs/tags/v1.6.0) [![PowerShell](https://img.shields.io/badge/PowerShell-7%2B-5391FE?logo=powershell&logoColor=white)](https://github.com/PowerShell/PowerShell/releases/tag/v7.0.0) [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://docs.python.org/3.10/whatsnew/3.10.html) [![Taskfile](https://img.shields.io/badge/Taskfile-optional-29BEB0?logo=task&logoColor=white)](https://taskfile.dev/) [![Clang-format](https://img.shields.io/badge/Clang--format-17.0.2-262D3A?logo=llvm&logoColor=white)](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.2) [![C UserStyle Kit](https://img.shields.io/badge/C%20UserStyle%20Kit-1.2.0-A8B9CC?logo=c&logoColor=black)](docs/guides/C99_STANDARD_C_SKILL.md)
 
 AiCoding turns local AI coding work into something verifiable, reusable, and auditable: a full check of one Git content state takes about 150 seconds, while an unchanged state can be rechecked in about 424 milliseconds, with every green result traceable to what it validated.
 
@@ -15,40 +15,10 @@ The product is Windows-first and automation-ready, and every formal entrypoint r
 
 ## The loop at a glance
 
-```mermaid
-%%{init: {"theme":"base","themeVariables":{"primaryColor":"#FFFFFF","primaryTextColor":"#000000","primaryBorderColor":"#404040","lineColor":"#404040","secondaryColor":"#F7F7F7","tertiaryColor":"#FFFFFF","clusterBkg":"#FAFAFA","clusterBorder":"#666666","fontFamily":"Arial, sans-serif"}}}%%
-graph TB
-  subgraph A["You or automation"]
-    U["State a change goal"]
-  end
-  subgraph B["Rules for doing the work"]
-    C["One command entry"]
-    P["Bind the plan to content"]
-    W["Choose the next step by evidence"]
-    G["Check before commit"]
-  end
-  subgraph D["Quality evidence"]
-    T["Validate by risk"]
-    E["Reusable, auditable result"]
-  end
-  subgraph F["Composable capabilities"]
-    K["Engineering capability packs"]
-    S["Domain knowledge and tools"]
-  end
-  U --> C
-  C --> P
-  C --> W
-  C --> G
-  C --> T
-  C --> K
-  P --> E
-  W --> E
-  G --> E
-  T --> E
-  K --> S
-  K --> E
-  E -. reuse already-validated content .-> G
-```
+<p align="center">
+  <img src="docs/assets/aicoding-overview-light.svg#gh-light-mode-only" width="100%" alt="AiCoding at a glance">
+  <img src="docs/assets/aicoding-overview-dark.svg#gh-dark-mode-only" width="100%" alt="AiCoding at a glance">
+</p>
 
 ## Quick Start
 
@@ -118,10 +88,4 @@ The repository follows its [Git Governance Standard](docs/governance/RELEASE_POL
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=JiaxI2%2FAiCoding&type=date&legend=top-left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&theme=dark&legend=top-left">
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&legend=top-left">
-    <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=JiaxI2/AiCoding&type=date&legend=top-left">
-  </picture>
-</a>
+[View the Star History chart.](https://www.star-history.com/?repos=JiaxI2%2FAiCoding&type=date&legend=top-left)

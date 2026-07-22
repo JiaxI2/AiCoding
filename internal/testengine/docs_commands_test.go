@@ -39,11 +39,21 @@ func TestArchitectureDiagramsEnforceNodeBudget(t *testing.T) {
 		source.WriteString("[\"node\"]\n")
 	}
 	source.WriteString("```\n")
-	writeArchitectureFixtureFile(t, repo, "README.md", source.String())
+	writeArchitectureFixtureFile(t, repo, "docs/architecture/PRIMITIVE_CONSTITUTION.md", source.String())
 
 	err := checkArchitectureDiagrams(repo)
 	if err == nil || !strings.Contains(err.Error(), "21 explicit nodes") {
 		t.Fatalf("node budget error = %v", err)
+	}
+}
+
+func TestReadmeArchitectureDiagramRejectsMissingThemeVariant(t *testing.T) {
+	repo := architectureDiagramFixture(t)
+	writeArchitectureFixtureFile(t, repo, "README.md", `<img src="docs/assets/aicoding-overview-light.svg#gh-light-mode-only">`)
+
+	err := checkArchitectureDiagrams(repo)
+	if err == nil || !strings.Contains(err.Error(), "aicoding-overview-dark.svg#gh-dark-mode-only") {
+		t.Fatalf("missing dark SVG variant error = %v", err)
 	}
 }
 
@@ -71,9 +81,15 @@ type CommandDescriptor struct {
 	Aliases []string
 }
 `)
-	for _, document := range architectureDiagramDocuments {
+	for _, document := range mermaidArchitectureDiagramDocuments {
 		content := strings.Repeat("```mermaid\nflowchart LR\n  OK[\"aicoding verify\"]\n```\n", document.count)
 		writeArchitectureFixtureFile(t, repo, document.path, content)
+	}
+	writeArchitectureFixtureFile(t, repo, "README.md", `<img src="docs/assets/aicoding-overview-light.svg#gh-light-mode-only">
+<img src="docs/assets/aicoding-overview-dark.svg#gh-dark-mode-only">
+`)
+	for _, variant := range readmeSVGArchitectureVariants {
+		writeArchitectureFixtureFile(t, repo, variant.path, `<svg><title>VMCP_entry</title><text>aicoding verify</text></svg>`)
 	}
 	return repo
 }

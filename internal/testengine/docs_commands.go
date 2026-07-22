@@ -14,22 +14,31 @@ import (
 
 const architectureDiagramNodeBudget = 20
 
-type architectureDiagramDocument struct {
+type mermaidArchitectureDiagramDocument struct {
 	path  string
 	count int
 }
 
+type readmeSVGArchitectureVariant struct {
+	path   string
+	marker string
+}
+
 var (
-	architectureDiagramDocuments = []architectureDiagramDocument{
-		{path: "README.md", count: 1},
+	mermaidArchitectureDiagramDocuments = []mermaidArchitectureDiagramDocument{
 		{path: "docs/architecture/PRIMITIVE_CONSTITUTION.md", count: 1},
 		{path: "docs/architecture/AICODING_CORE_ARCHITECTURE.md", count: 1},
 		{path: "docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md", count: 2},
 		{path: "docs/reference/KIT_PLUGIN_VIEW.md", count: 1},
 		{path: "docs/COMMANDS.md", count: 1},
 	}
+	readmeSVGArchitectureVariants = []readmeSVGArchitectureVariant{
+		{path: "docs/assets/aicoding-overview-light.svg", marker: "#gh-light-mode-only"},
+		{path: "docs/assets/aicoding-overview-dark.svg", marker: "#gh-dark-mode-only"},
+	}
 	diagramCommandPattern = regexp.MustCompile(`\baicoding(?:\.exe)?[ \t]+([a-z][a-z0-9-]*)\b`)
 	diagramNodePattern    = regexp.MustCompile(`(?m)^\s*([A-Za-z][A-Za-z0-9_]*)\s*(?:\[|\(|\{)`)
+	visioSVGTitlePattern  = regexp.MustCompile(`<title>VMCP_([^<]+)</title>`)
 )
 
 type mermaidDiagram struct {
@@ -42,8 +51,11 @@ func checkArchitectureDiagrams(repo string) error {
 	if err != nil {
 		return err
 	}
+	if err := checkReadmeSVGArchitectureDiagram(repo, commands); err != nil {
+		return err
+	}
 
-	for _, document := range architectureDiagramDocuments {
+	for _, document := range mermaidArchitectureDiagramDocuments {
 		rel := document.path
 		path := filepath.Join(repo, filepath.FromSlash(rel))
 		data, readErr := os.ReadFile(path)
@@ -64,6 +76,53 @@ func checkArchitectureDiagrams(repo string) error {
 		}
 	}
 	return nil
+}
+
+func checkReadmeSVGArchitectureDiagram(repo string, commands map[string]struct{}) error {
+	readmeData, err := os.ReadFile(filepath.Join(repo, "README.md"))
+	if err != nil {
+		return fmt.Errorf("read README.md: %w", err)
+	}
+	readme := string(readmeData)
+	var baseline []string
+	for _, variant := range readmeSVGArchitectureVariants {
+		reference := variant.path + variant.marker
+		if strings.Count(readme, reference) != 1 {
+			return fmt.Errorf("README.md: expected exactly one themed SVG architecture reference %q", reference)
+		}
+		data, readErr := os.ReadFile(filepath.Join(repo, filepath.FromSlash(variant.path)))
+		if readErr != nil {
+			return fmt.Errorf("read %s: %w", variant.path, readErr)
+		}
+		source := string(data)
+		if !strings.Contains(source, "<svg") || !strings.Contains(source, "</svg>") {
+			return fmt.Errorf("%s: exported architecture asset is not SVG", variant.path)
+		}
+		nodes := visioSVGNodeIDs(source)
+		if len(nodes) == 0 || len(nodes) > architectureDiagramNodeBudget {
+			return fmt.Errorf("%s: Visio SVG diagram has %d explicit nodes; expected 1..%d", variant.path, len(nodes), architectureDiagramNodeBudget)
+		}
+		if baseline == nil {
+			baseline = nodes
+		} else if strings.Join(baseline, "\n") != strings.Join(nodes, "\n") {
+			return fmt.Errorf("%s: themed Visio SVG node set differs from %s", variant.path, readmeSVGArchitectureVariants[0].path)
+		}
+		if err := checkDiagramCommands(variant.path, source, 1, commands); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func visioSVGNodeIDs(source string) []string {
+	ids := []string{}
+	for _, match := range visioSVGTitlePattern.FindAllStringSubmatch(source, -1) {
+		if strings.HasPrefix(match[1], "e-") {
+			continue
+		}
+		ids = append(ids, match[1])
+	}
+	return ids
 }
 
 func typedCatalogCommandNames(path string) (map[string]struct{}, error) {
@@ -163,12 +222,16 @@ func checkMermaidDiagram(rel string, diagram mermaidDiagram, commands map[string
 		return fmt.Errorf("%s:%d: Mermaid diagram has %d explicit nodes; expected 1..%d", rel, diagram.startLine, len(nodes), architectureDiagramNodeBudget)
 	}
 
-	for _, match := range diagramCommandPattern.FindAllStringSubmatchIndex(diagram.source, -1) {
-		command := diagram.source[match[2]:match[3]]
+	return checkDiagramCommands(rel, diagram.source, diagram.startLine, commands)
+}
+
+func checkDiagramCommands(rel, source string, startLine int, commands map[string]struct{}) error {
+	for _, match := range diagramCommandPattern.FindAllStringSubmatchIndex(source, -1) {
+		command := source[match[2]:match[3]]
 		if _, ok := commands[command]; ok {
 			continue
 		}
-		line := diagram.startLine + strings.Count(diagram.source[:match[0]], "\n")
+		line := startLine + strings.Count(source[:match[0]], "\n")
 		return fmt.Errorf("%s:%d: diagram command %q is absent from internal/cli typed catalog", rel, line, "aicoding "+command)
 	}
 	return nil

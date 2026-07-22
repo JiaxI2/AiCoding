@@ -264,9 +264,11 @@ Documentation synchronization is enforced by `bin/aicoding.exe docsync`, `.githo
 
 - `README.md`、`README_CN.md`、`README_EN.md` 是架构入口，只描述平台、kit、plugin、skill 母级边界，不列具体 leaf skill 命令。
 - 具体 skill 命令、专项格式化命令和 Taskfile 子命令放在 `docs/COMMANDS.md` 或对应专项文档中。
-- 新增稳定工具链、运行体系或默认验证体系时，必须同步三份 README 顶部 badge，并链接到权威 URL。
+- 新增稳定工具链、运行体系或默认验证体系时，必须同步三份 README 顶部 badge，并链接到权威 URL。badge 不使用共享默认色或任意兜底色：技术/产品身份使用其公认品牌色，状态 badge 使用状态语义色；颜色与图像片段一并由既有依赖治理门禁锁定。
 - README 中的版本只能通过顶部 badge 展示；第三方版本链接上游准确版本页，本地 Kit 版本链接本仓库权威 Kit 文档。
-- README 架构图优先使用短文本图；如果使用 Mermaid，节点标签必须短，不写长路径、不写具体 leaf skill 名，避免渲染裁剪。
+- 三份仓库入口 README 中凡以图像形式展示的 Banner、架构图、流程图、截图或 badge，图像源都必须是 SVG；不得嵌入 raster 图片、内联 SVG 或 Mermaid 代码块。受信任的动态 badge 服务必须实际输出 SVG。
+- 主题专用 SVG 可按需提供 `-light.svg#gh-light-mode-only` 与 `-dark.svg#gh-dark-mode-only` 两个入口；主题标记是可选显示控制，不要求每张 SVG 都复制成一对。GitHub Banner 必须使用这一 light/dark 写法，普通单主题 SVG 可以直接嵌入。
+- README 架构图使用短标签，不写长路径、不写具体 leaf skill 名，避免导出和 GitHub 渲染裁剪；需要可编辑绘图时用 Visio 绘制并导出 SVG 后再插入 README。
 
 ## 语言策略 / Language Policy
 

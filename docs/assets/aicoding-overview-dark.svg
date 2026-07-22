@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- 由 Microsoft Visio, SVG Export 生成 readme-overview-dark.svg AiCoding at a Glance (dark) -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events"
+		xmlns:v="http://schemas.microsoft.com/visio/2003/SVGExtensions/" width="17.2in" height="5.65in" viewBox="0 0 1238.4 406.8"
+		xml:space="preserve" color-interpolation-filters="sRGB" class="st15">
+	<v:documentProperties v:langID="2052" v:metric="true" v:viewMarkup="false"/>
+
+	<style type="text/css">
+	<![CDATA[
+		.st1 {fill:#161b22;stroke:#8b949e;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.25}
+		.st2 {fill:#f0f6fc;font-family:微软雅黑;font-size:0.916672em;font-weight:bold}
+		.st3 {font-family:Segoe UI;font-size:1em}
+		.st4 {fill:#0c2d6b;stroke:#58a6ff;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.25}
+		.st5 {fill:#f0f6fc;font-family:Segoe UI;font-size:0.916672em;font-weight:bold}
+		.st6 {font-family:微软雅黑;font-size:1em}
+		.st7 {fill:#3b2e00;stroke:#d29922;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.25}
+		.st8 {font-size:1em}
+		.st9 {fill:#271052;stroke:#a371f7;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.25}
+		.st10 {fill:#0f2d1b;stroke:#3fb950;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.25}
+		.st11 {fill:#123b3c;stroke:#39c5bb;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.25}
+		.st12 {fill:#21262d;stroke:#8b949e;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.25}
+		.st13 {marker-end:url(#mrkr13-39);stroke:#8b949e;stroke-linecap:round;stroke-linejoin:round;stroke-width:1}
+		.st14 {fill:#8b949e;fill-opacity:1;stroke:#8b949e;stroke-opacity:1;stroke-width:0.28409090909091}
+		.st15 {fill:none;fill-rule:evenodd;font-size:12px;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<defs id="Markers">
+		<g id="lend13">
+			<path d="M 3 1 L 0 0 L 3 -1 L 3 1 " style="stroke:none"/>
+		</g>
+		<marker id="mrkr13-39" class="st14" v:arrowType="13" v:arrowSize="2" v:setback="10.56" refX="-10.56" orient="auto"
+				markerUnits="strokeWidth" overflow="visible">
+			<use xlink:href="#lend13" transform="scale(-3.52,-3.52) "/>
+		</marker>
+	</defs>
+	<g v:mID="0" v:index="1" v:groupContext="foregroundPage">
+		<title>AiCoding at a Glance (dark)</title>
+		<v:pageProperties v:drawingScale="0.0393701" v:pageScale="0.0393701" v:drawingUnits="24" v:shadowOffsetX="8.50394"
+				v:shadowOffsetY="-8.50394"/>
+		<v:layer v:name="连接线" v:index="0"/>
+		<g id="shape1-1" v:mID="1" v:groupContext="shape" transform="translate(21.6,-266.4)">
+			<title>VMCP_actor</title>
+			<desc>你 / Agent</desc>
+			<v:textBlock v:margins="rect(0.72,0.72,0.72,0.72)" v:tabSpace="42.5197"/>
+			<v:textRect cx="108" cy="352.8" width="172.8" height="86.4"/>
+			<rect x="0" y="298.8" width="216" height="108" rx="8.64" ry="8.64" class="st1"/>
+			<text x="81.31" y="356.14" class="st2" v:langID="2052"><v:paragraph v:horizAlign="1"/><v:tabList/>你<tspan class="st3"> </tspan><tspan
+						class="st3">/ Agent</tspan></text>		</g>
+		<g id="shape2-6" v:mID="2" v:groupContext="shape" transform="translate(266.4,-266.4)">
+			<title>VMCP_cli</title>
+			<desc>aicoding CLI 唯一入口 / One Entry</desc>
+			<v:textBlock v:margins="rect(0.72,0.72,0.72,0.72)" v:tabSpace="42.5197"/>
+			<v:textRect cx="108" cy="352.8" width="172.8" height="86.4"/>
+			<rect x="0" y="298.8" width="216" height="108" rx="8.64" ry="8.64" class="st4"/>
+			<text x="76.27" y="349.41" class="st5" v:langID="2052"><v:paragraph v:horizAlign="1"/><v:tabList/>aicoding CLI<v:newlineChar/><tspan
+						x="54.99" dy="1.212em" class="st6">唯一入口</tspan> / One Entry</text>		</g>
+		<g id="shape3-10" v:mID="3" v:groupContext="shape" transform="translate(511.2,-266.4)">
+			<title>VMCP_workflow</title>
+			<desc>Product Workflow plan · work · test lifecycle · governance</desc>
+			<v:textBlock v:margins="rect(0.72,0.72,0.72,0.72)" v:tabSpace="42.5197"/>
+			<v:textRect cx="108" cy="352.8" width="172.8" height="86.4"/>
+			<rect x="0" y="298.8" width="216" height="108" rx="8.64" ry="8.64" class="st7"/>
+			<text x="60.47" y="342.9" class="st5" v:langID="2052"><v:paragraph v:horizAlign="1"/><v:tabList/>Product Workflow<v:newlineChar/><tspan
+						x="65" dy="1.2em" class="st8">plan · work · test<v:newlineChar/></tspan><tspan x="52.34" dy="1.2em"
+						class="st8">lifecycle · governance</tspan></text>		</g>
+		<g id="shape4-15" v:mID="4" v:groupContext="shape" transform="translate(511.2,-32.4)">
+			<title>VMCP_kit</title>
+			<desc>Kit 可安装 · 可分发</desc>
+			<v:textBlock v:margins="rect(0.72,0.72,0.72,0.72)" v:tabSpace="42.5197"/>
+			<v:textRect cx="108" cy="352.8" width="172.8" height="86.4"/>
+			<rect x="0" y="298.8" width="216" height="108" rx="8.64" ry="8.64" class="st9"/>
+			<text x="100.73" y="349.41" class="st5" v:langID="2052"><v:paragraph v:horizAlign="1"/><v:tabList/>Kit<v:newlineChar/><tspan
+						x="70.47" dy="1.212em" class="st6">可安装</tspan> · <tspan class="st6">可分发</tspan></text>		</g>
+		<g id="shape5-20" v:mID="5" v:groupContext="shape" transform="translate(756,-266.4)">
+			<title>VMCP_receipt</title>
+			<desc>Validation Receipt 内容绑定 · 审计 · 复用</desc>
+			<v:textBlock v:margins="rect(0.72,0.72,0.72,0.72)" v:tabSpace="42.5197"/>
+			<v:textRect cx="108" cy="352.8" width="172.8" height="86.4"/>
+			<rect x="0" y="298.8" width="216" height="108" rx="8.64" ry="8.64" class="st10"/>
+			<text x="60.68" y="349.41" class="st5" v:langID="2052"><v:paragraph v:horizAlign="1"/><v:tabList/>Validation Receipt<v:newlineChar/><tspan
+						x="54.95" dy="1.212em" class="st6">内容绑定</tspan> · <tspan class="st6">审计</tspan> · <tspan class="st6">复用</tspan></text>		</g>
+		<g id="shape6-26" v:mID="6" v:groupContext="shape" transform="translate(756,-32.4)">
+			<title>VMCP_domain</title>
+			<desc>Domain Capability plan · loop · test · evidence</desc>
+			<v:textBlock v:margins="rect(0.72,0.72,0.72,0.72)" v:tabSpace="42.5197"/>
+			<v:textRect cx="108" cy="352.8" width="172.8" height="86.4"/>
+			<rect x="0" y="298.8" width="216" height="108" rx="8.64" ry="8.64" class="st11"/>
+			<text x="60.22" y="349.5" class="st5" v:langID="2052"><v:paragraph v:horizAlign="1"/><v:tabList/>Domain Capability<v:newlineChar/><tspan
+						x="38.95" dy="1.2em" class="st8">plan · loop · test · evidence</tspan></text>		</g>
+		<g id="shape7-30" v:mID="7" v:groupContext="shape" transform="translate(1000.8,-32.4)">
+			<title>VMCP_primitive</title>
+			<desc>Primitive gitx · report · runner · registry</desc>
+			<v:textBlock v:margins="rect(0.72,0.72,0.72,0.72)" v:tabSpace="42.5197"/>
+			<v:textRect cx="108" cy="352.8" width="172.8" height="86.4"/>
+			<rect x="0" y="298.8" width="216" height="108" rx="8.64" ry="8.64" class="st12"/>
+			<text x="84.61" y="349.5" class="st5" v:langID="2052"><v:paragraph v:horizAlign="1"/><v:tabList/>Primitive<v:newlineChar/><tspan
+						x="30.84" dy="1.2em" class="st8">gitx · report · runner · registry</tspan></text>		</g>
+		<g id="shape8-34" v:mID="8" v:groupContext="shape" v:layerMember="0" transform="translate(237.6,-313.313)">
+			<title>VMCP_e-actor-cli</title>
+			<path d="M0 399.71 L18.24 399.71" class="st13"/>
+		</g>
+		<g id="shape9-40" v:mID="9" v:groupContext="shape" v:layerMember="0" transform="translate(482.4,-313.313)">
+			<title>VMCP_e-cli-workflow</title>
+			<path d="M0 399.71 L18.24 399.71" class="st13"/>
+		</g>
+		<g id="shape10-45" v:mID="10" v:groupContext="shape" v:layerMember="0" transform="translate(727.2,-313.313)">
+			<title>VMCP_e-workflow-receipt</title>
+			<path d="M0 399.71 L18.24 399.71" class="st13"/>
+		</g>
+		<g id="shape11-50" v:mID="11" v:groupContext="shape" v:layerMember="0" transform="translate(612.113,-266.4)">
+			<title>VMCP_e-workflow-kit</title>
+			<path d="M7.09 406.8 L7.09 522.24" class="st13"/>
+		</g>
+		<g id="shape12-55" v:mID="12" v:groupContext="shape" v:layerMember="0" transform="translate(727.2,-79.3134)">
+			<title>VMCP_e-kit-domain</title>
+			<path d="M0 399.71 L18.24 399.71" class="st13"/>
+		</g>
+		<g id="shape13-60" v:mID="13" v:groupContext="shape" v:layerMember="0" transform="translate(972,-79.3134)">
+			<title>VMCP_e-domain-primitive</title>
+			<path d="M0 399.71 L18.24 399.71" class="st13"/>
+		</g>
+	</g>
+</svg>
