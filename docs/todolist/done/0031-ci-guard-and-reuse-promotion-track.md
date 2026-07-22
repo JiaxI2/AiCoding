@@ -1,6 +1,6 @@
 # TODO 0031: CI 防回退 + 复用晋级轨道（doctor perf 进 schedule；release-gate 绿灯累计启动）
 
-Status: Planned
+Status: Done
 Verify: CI schedule 含 doctor perf 且一次远端运行绿；main 上 release-gate 首次正式计数运行完成并记录 run URL（1/3）
 
 > 来源：FORWARD_PLAN O2 + O5。**O2 是"冷 Release 也快"的最后一步**：
@@ -52,3 +52,14 @@ bin\aicoding.exe docsync all --json ; bin\aicoding.exe test --profile Smoke --js
 
 通过判据：doctor perf 远端一次绿 + artifact 在；release-gate 1/3 落账且 run URL 可访问；
 默认值仍为 `--reuse off`（grep 确认，防止本项越权提前晋级）。
+
+## 完成证据（2026-07-22）
+
+- schedule-equivalent doctor perf：<https://github.com/JiaxI2/AiCoding/actions/runs/29896483333>
+  在 feature tip `9890b667bfdc54ef5fafe49d27c736210ad13732` PASS，并上传
+  `doctor-perf-evidence`。
+- 正式 main 计数：<https://github.com/JiaxI2/AiCoding/actions/runs/29900035150>
+  在同一 SHA 完成 `--reuse off` 冷种子与 `--verify-reuse` 全量审计，全部 job PASS，
+  `release-gate-evidence` 已上传。
+- `internal/cli/test.go` 与 `internal/testengine/engine.go` 的 flag/fallback 均仍以
+  `ReuseOff` 为默认值；本项未做复用晋级。

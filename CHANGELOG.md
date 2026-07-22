@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **ci(validation)**: 完成 TODO 0031：schedule-equivalent 远端运行已验证 `doctor perf` 与 `doctor-perf-evidence`，main `9890b667bfdc54ef5fafe49d27c736210ad13732` 的正式 release-gate 以 `--reuse off` 冷种子和 `--verify-reuse` 全量审计双绿，晋级计数显式落账为 1/3；默认复用继续保持 `off`，后续 2/3、3/3 与独立晋级评审不在本项内。 / Completes TODO 0031 with passing remote doctor-performance evidence and the first qualifying main release-gate seed/audit run, records promotion count 1/3, and deliberately keeps reuse defaulted to off.
+
 - **fix(kit)**: 修复 GitHub Windows runner 上 pinned cache 发布后的确定性长路径失败：短 staging fetch 后，64-hex 最终目录使 loose object 路径越过旧 `MAX_PATH`，`rev-parse <ref>^{commit}` 因而无法复核。bare cache 现写入 repo-local `core.longpaths=true`，保留同一 ref/commit/tree fail-closed 校验与 import 零网络边界；同版 Git for Windows 2.55 回归在 272 字符 loose-object 路径完成 prefetch 与 materialization，kit test/race/vet 全绿。 / Fixes deterministic pinned-cache verification on Windows runners by enabling repo-local long-path handling before the short staging repository is renamed into its 64-hex cache identity, with a Git 2.55 long-path regression that preserves all fail-closed and zero-network semantics.
 
 - **ci(perf)**: 为 `aicoding-ci.yml` 的 weekly schedule 与显式 schedule-equivalent dispatch 新增独立 `doctor perf --json` job，并始终上传 `doctor-perf-evidence`；PR/push 事件不会选择该 job，契约测试同步锁定第四个 setup-go/toolchain probe、唯一 perf 命令与 artifact。Validation Evidence 预算同时记录跨 shell 的 toolchain 身份偏严限制：当前路径/mtime 会阻止等版本工具的 Receipt 互认，候选改进只登记、不在本轮改实现；默认复用仍为 `off`。 / Adds a scheduled and explicitly dispatchable doctor-performance job with evidence upload, excludes PR/push selection, locks its toolchain and artifact contract in tests, and records the known cross-shell toolchain identity limitation without changing reuse behavior.
