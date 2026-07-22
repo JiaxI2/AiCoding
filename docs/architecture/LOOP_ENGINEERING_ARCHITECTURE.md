@@ -1,6 +1,8 @@
 # Loop Engineering 架构（有界迭代工作的裁决面）
 
-Status: Accepted
+Status: Accepted and Frozen
+
+> 解冻必须走 ADR，并同时满足现实问题、稳定变化点、至少两个真实消费者三项条件。
 
 > 本文定义 Loop Engineering 的职责边界、状态机与数据契约。它**不定义新的控制面**：
 > 执行仍归 [核心架构](AICODING_CORE_ARCHITECTURE.md) 的六模块，验证证据归

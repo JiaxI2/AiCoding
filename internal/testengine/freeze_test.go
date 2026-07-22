@@ -9,14 +9,24 @@ import (
 
 func TestFreezeChecksCurrentRepository(t *testing.T) {
 	repo := filepath.Join("..", "..")
-	if err := checkFrozenSchemas(repo); err != nil {
-		t.Fatal(err)
+	checks := []struct {
+		id    string
+		check func() error
+	}{
+		{id: "FREEZE-001", check: func() error { return checkFrozenSchemas(repo) }},
+		{id: "FREEZE-002", check: func() error { return checkUniqueProductionType(repo, "internal/report", "Result") }},
+		{id: "FREEZE-003", check: func() error { return checkUniqueProductionType(repo, "internal/validationevidence", "Receipt") }},
+		{id: "FREEZE-004", check: func() error { return checkLoopWorkCatalog(repo) }},
+		{id: "FREEZE-005", check: func() error { return checkLoopDecideSignature(repo) }},
+		{id: "FREEZE-006", check: func() error { return checkValidationFingerprintFields(repo) }},
+		{id: "FREEZE-007", check: func() error { return checkKitManifestSourceOptional(repo) }},
 	}
-	if err := checkUniqueProductionType(repo, "internal/report", "Result"); err != nil {
-		t.Fatal(err)
-	}
-	if err := checkUniqueProductionType(repo, "internal/validationevidence", "Receipt"); err != nil {
-		t.Fatal(err)
+	for _, check := range checks {
+		t.Run(check.id, func(t *testing.T) {
+			if err := check.check(); err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
@@ -41,11 +51,52 @@ func TestRegistryContainsFreezeGates(t *testing.T) {
 			found[testCase.ID] = testCase
 		}
 	}
-	for _, id := range []string{"FREEZE-001", "FREEZE-002", "FREEZE-003"} {
+	for _, id := range []string{"FREEZE-001", "FREEZE-002", "FREEZE-003", "FREEZE-004", "FREEZE-005", "FREEZE-006", "FREEZE-007"} {
 		testCase, ok := found[id]
 		if !ok || testCase.Kind != "static" || testCase.Severity != Required || len(testCase.Profiles) != len(allProfiles()) {
 			t.Fatalf("invalid %s registry case: %#v", id, testCase)
 		}
+	}
+}
+
+func TestLoopWorkCatalogRejectsExecutionCommand(t *testing.T) {
+	repo := t.TempDir()
+	writeFreezeTestFile(t, repo, "internal/cli/catalog.go", "package cli\n\nvar forbidden = \"aicoding work run --file SPEC.json\"\n")
+	err := checkLoopWorkCatalog(repo)
+	if err == nil || !strings.Contains(err.Error(), "work run") {
+		t.Fatalf("work run was not rejected: %v", err)
+	}
+}
+
+func TestLoopDecideSignatureRejectsFifthParameter(t *testing.T) {
+	repo := t.TempDir()
+	writeFreezeTestFile(t, repo, "internal/loopkit/transition/transition.go", `package transition
+
+func Decide(spec workspec.Spec, history []Attempt, gates []GateStatus, now time.Time, force bool) (Decision, error) {
+	return Decision{}, nil
+}
+`)
+	err := checkLoopDecideSignature(repo)
+	if err == nil || !strings.Contains(err.Error(), "signature changed") {
+		t.Fatalf("Decide signature drift was not rejected: %v", err)
+	}
+}
+
+func TestValidationFingerprintRejectsFieldDrift(t *testing.T) {
+	repo := t.TempDir()
+	writeFreezeTestFile(t, repo, "internal/validationevidence/model.go", "package validationevidence\n\ntype Fingerprint struct { Identity string }\n")
+	err := checkValidationFingerprintFields(repo)
+	if err == nil || !strings.Contains(err.Error(), "field list changed") {
+		t.Fatalf("Fingerprint field drift was not rejected: %v", err)
+	}
+}
+
+func TestKitManifestSourceRejectsRequired(t *testing.T) {
+	repo := t.TempDir()
+	writeFreezeTestFile(t, repo, "config/schemas/kit-manifest.schema.json", `{"required":["source"],"properties":{"source":{}}}`)
+	err := checkKitManifestSourceOptional(repo)
+	if err == nil || !strings.Contains(err.Error(), "must remain optional") {
+		t.Fatalf("required source was not rejected: %v", err)
 	}
 }
 

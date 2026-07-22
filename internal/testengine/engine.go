@@ -493,6 +493,10 @@ func Registry(cfg Config) []TestCase {
 		{ID: "FREEZE-001", Category: "FREEZE", Title: "冻结 schema 文件存在", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "FREEZE-002", Category: "FREEZE", Title: "report Result 权威唯一", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "FREEZE-003", Category: "FREEZE", Title: "validation Receipt 权威唯一", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-004", Category: "FREEZE", Title: "Loop 不拥有 work 执行命令", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-005", Category: "FREEZE", Title: "Loop Decide 四参数注入", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-006", Category: "FREEZE", Title: "Validation fingerprint 字段集", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-007", Category: "FREEZE", Title: "Kit source 保持可选", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
 		{ID: "GIT-001", Category: "GIT_GOVERNANCE", Title: "工作区状态", Severity: WarnOnly, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"git", "status", "--short"}},
 		{ID: "GIT-002", Category: "GIT_GOVERNANCE", Title: "hooks verify", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "hooks", "--json"}, ExpectJSON: true},
@@ -894,6 +898,14 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = checkUniqueProductionType(cfg.Repo, "internal/report", "Result")
 	case "FREEZE-003":
 		err = checkUniqueProductionType(cfg.Repo, "internal/validationevidence", "Receipt")
+	case "FREEZE-004":
+		err = checkLoopWorkCatalog(cfg.Repo)
+	case "FREEZE-005":
+		err = checkLoopDecideSignature(cfg.Repo)
+	case "FREEZE-006":
+		err = checkValidationFingerprintFields(cfg.Repo)
+	case "FREEZE-007":
+		err = checkKitManifestSourceOptional(cfg.Repo)
 	case "GIT-007":
 		err = checkGitAttributes(cfg.Repo)
 	case "PWSH-003":

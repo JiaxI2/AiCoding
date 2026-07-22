@@ -1,6 +1,8 @@
 # Plan Mode 架构（批准内容树与范围漂移）
 
-Status: Accepted
+Status: Accepted and Frozen
+
+> 解冻必须走 ADR，并同时满足现实问题、稳定变化点、至少两个真实消费者三项条件。
 
 > 本文是 Plan Mode 的唯一架构权威。决策依据见
 > [ADR 0009](../decisions/0009-plan-mode-rework.md)；初代 overlay 记录见已被取代的

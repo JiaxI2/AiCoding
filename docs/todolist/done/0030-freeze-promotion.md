@@ -1,6 +1,6 @@
 # TODO 0030: 冻结面提升（已实测验证的架构进 Frozen + 可执行断言）
 
-Status: Planned
+Status: Done
 Verify: FREEZE_AND_ACQUISITION_BOUNDARY 收录新增冻结条目；对应 FREEZE-00x 静态用例在 Full 全绿且负例可抓
 
 > 来源：FORWARD_PLAN C2。LOOP_ENGINEERING / PLAN_MODE 架构与 ADR 0007/0010

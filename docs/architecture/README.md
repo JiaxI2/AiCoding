@@ -9,7 +9,7 @@ Status: Accepted
 
 1. [AICODING_CORE_ARCHITECTURE.md](AICODING_CORE_ARCHITECTURE.md)：系统是什么，稳定内核与总体契约事实。
 2. [PRIMITIVE_CONSTITUTION.md](PRIMITIVE_CONSTITUTION.md)：Primitive 应该长什么样，如何判断新增是否必要。
-3. [FREEZE_AND_ACQUISITION_BOUNDARY.md](FREEZE_AND_ACQUISITION_BOUNDARY.md)：哪些契约已冻结，哪里不能随意修改。
+3. [FREEZE_AND_ACQUISITION_BOUNDARY.md](FREEZE_AND_ACQUISITION_BOUNDARY.md)：哪些契约已冻结；包含 Loop、Plan、Receipt 与 pinned source 的晋升条目。
 4. [EXTENSION_ADAPTER_CONTRACT.md](EXTENSION_ADAPTER_CONTRACT.md)：新能力如何通过 adapter 进入系统。
 
 ## 按需（做特定领域时）
@@ -20,8 +20,8 @@ Status: Accepted
 - [POWERSHELL_BOUNDARY.md](POWERSHELL_BOUNDARY.md)：PowerShell 专项保留面。
 - [DOC_SYNC_PLUS_SPEC.md](DOC_SYNC_PLUS_SPEC.md)：DocSync Plus 合同。
 - [GRAPH_FIRST.md](GRAPH_FIRST.md)：图优先的依赖表达。
-- [LOOP_ENGINEERING_ARCHITECTURE.md](LOOP_ENGINEERING_ARCHITECTURE.md)：有界迭代的下一步裁决。
-- [PLAN_MODE_ARCHITECTURE.md](PLAN_MODE_ARCHITECTURE.md)：批准 Tree、scope 漂移和 pre-commit 门禁。
+- [LOOP_ENGINEERING_ARCHITECTURE.md](LOOP_ENGINEERING_ARCHITECTURE.md)（Accepted and Frozen）：有界迭代的下一步裁决。
+- [PLAN_MODE_ARCHITECTURE.md](PLAN_MODE_ARCHITECTURE.md)（Accepted and Frozen）：批准 Tree、scope 漂移和 pre-commit 门禁。
 - [CODEX_KIT_ARCHITECTURE.md](CODEX_KIT_ARCHITECTURE.md)：Codex Kit 平台集成边界。
 - [C_USERSTYLE_KIT_ARCHITECTURE.md](C_USERSTYLE_KIT_ARCHITECTURE.md)：C99 风格裁决面、执行链与冻结边界。
 - [AI_DEBUG_KIT_BOUNDARY.md](AI_DEBUG_KIT_BOUNDARY.md)：AI Debug Kit 在进入平台控制面前的准入边界。

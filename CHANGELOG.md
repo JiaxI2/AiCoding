@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **feat(freeze)**: 完成 TODO 0030：严格按清单将 Loop Engineering、Plan Mode、Validation Evidence 核心 Receipt 契约与 Kit pinned `source` 语义晋升到冻结边界，复利知识继续保持 Draft、capability schema 不晋升；新增 FREEZE-004..007 四条全 profile 静态断言。计划绑定 `approvedTree=c316c1b148fe2eeb7ef49e9cd4ec4edbe118d832`；临时 `work run` 与 `Decide` 第五参数两条真实负例分别精确红后零 diff 还原，Full `71 total / 67 pass / 0 fail / 0 warn / 4 skip`。 / Completes TODO 0030 with the exact four promoted freeze surfaces, four all-profile static assertions, two passing negative probes, and a clean Full profile while leaving Draft and newly introduced schema surfaces unfrozen.
+
 - **docs(plan)**: 在 clean `feature/convergence` tree 上批准 `freeze-promotion`，将 TODO 0030 的精确架构/静态断言范围绑定到 Git Tree `c316c1b148fe2eeb7ef49e9cd4ec4edbe118d832`；后续冻结晋升只能在该 scope 内实施。 / Approves the bounded TODO 0030 freeze-promotion plan on a clean tree and binds its exact architecture and static-assertion scope to Git Tree `c316c1b148fe2eeb7ef49e9cd4ec4edbe118d832`.
 
 - **docs(plan)**: 为 TODO 0030 建立窄范围 `freeze-promotion` 计划，仅覆盖裁决清单中的两份架构 Status、冻结边界/索引、FREEZE-004..007 静态断言与两条临时负例；明确不晋升复利 Draft 或 capability registry schema，并要求 clean tree 审批绑定后才实现。 / Adds a bounded TODO 0030 freeze-promotion plan for the exact architecture statuses, boundary/index updates, four static assertions, and two temporary negative probes while excluding the compounding Draft and capability schema.

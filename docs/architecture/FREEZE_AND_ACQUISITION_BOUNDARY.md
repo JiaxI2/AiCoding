@@ -6,14 +6,14 @@ Status: Accepted and Frozen
 
 本文完成发布后的两项收敛：
 
-1. 将四个已被多方消费、语义稳定的契约面正式冻结（§2）；
+1. 将八个已被多方消费、语义稳定的契约面正式冻结（§2）；
 2. 定义外部来源（GitHub/URL 起源的 Skill、MCP、Kit）的获取/激活分离边界与
    标准接入流程，使"慢"被隔离在唯一的获取步骤中，激活保持本地快速（§3）。
 
 原则与 Git 相同：Git 快不是因为网络快，而是因为几乎所有命令都是纯本地操作，
 网络被隔离在 `fetch/push` 两个显式动作里。本仓库将同一结构固化为契约。
 
-## 2. 四项冻结声明
+## 2. 八项冻结声明
 
 ### 2.1 JSON 报告契约
 
@@ -45,6 +45,37 @@ Status: Accepted and Frozen
   specialty 脚本，不承载业务逻辑、判断或组合语义。
 - **规则**：本项当前为声明性冻结，不新增门禁；出现第一次真实违规证据后再以
   ADR 升级为可执行检查（遵循停止规则，不为推测预建）。
+
+### 2.5 Loop Engineering 裁决面
+
+- **冻结面**：Loop 只裁决下一步，不拥有尝试执行；typed catalog 的 `work` 入口保持
+  `validate / next / status / record`，不得出现 `run / prepare / step`。
+- **规则**：`transition.Decide` 保持 `spec / history / gates / now` 四参数事实注入与
+  `(Decision, error)` 返回，不读取隐藏全局状态。
+- **理由**：Agent 执行与 AiCoding 裁决的边界已经由 CLI、架构图和端到端 quickstart 共同消费。
+
+### 2.6 Plan Mode 批准树与 scope
+
+- **冻结面**：Plan 批准 clean `HEAD^{tree}`，以 `approvedTree` 和显式 scope 判定后续漂移；
+  pre-commit 对敏感路径执行 fail-closed 覆盖检查。
+- **规则**：Plan 不执行实现、不签发 Receipt、不调度 Loop；改变这三条边界必须走 ADR。
+- **理由**：CLI、pre-commit、Validation Evidence 与 Loop 已共同依赖内容树批准语义。
+
+### 2.7 Validation Evidence 核心 Receipt 契约
+
+- **冻结面**：`Fingerprint` 的身份字段清单、完整 PASS 才可签发 Receipt、查询/完整性失败
+  fail-closed，以及失败结果不进入 Receipt cache。
+- **规则**：身份仍由 repository、Tree、profile、plan、engine、config、toolchain、options
+  及既有节点字段组成；不得以 commit、时间戳或失败结果替代。
+- **理由**：TestEngine、Context Gate、push gate 和复用审计均消费同一内容身份。
+
+### 2.8 Kit pinned reference source
+
+- **冻结面**：Kit manifest v2 的 `source` 是可选输入；Git 只接受完整 40-hex commit，
+  content 只接受 SHA-256 digest，缺省时保持旧 manifest 的仓库内路径语义。
+- **规则**：register/prefetch 属于获取阶段，install/update 只从本地内容寻址 cache 物化；
+  cache 缺失必须 fail-closed，不得静默联网。
+- **理由**：registry、Kit lifecycle、pins cache 与 Validation Evidence 已共同消费该语义。
 
 ## 3. 获取/激活边界
 
@@ -89,7 +120,7 @@ Status: Accepted and Frozen
   验证半径 = `internal/mcpcontrol` + component verify，不触碰任何契约；
 - 完全离线激活作为验收抽查项（断网 spot-check），不进入默认门禁。
 
-## 4. 可执行门禁（两条）
+## 4. 可执行门禁（六条）
 
 1. **激活面 URL-free**（governance dependencies 新 check）：
    `config/kit-registry.json`、`config/kits/*.json`、`config/mcp-registry.json`、
@@ -100,8 +131,13 @@ Status: Accepted and Frozen
    仓库根形态的 github/gitcode 地址）只允许出现在 `.gitmodules` 与
    `config/skill-sources.json`。文档链接、badge 权威 URL、schema `$id` 不属于
    可克隆源，不在本检查范围。
+3. **FREEZE-004：Loop 无执行入口**：typed catalog 不得登记 `work run|prepare|step`。
+4. **FREEZE-005：Decide 注入面**：AST 断言 `Decide` 的四参数与返回类型不漂移。
+5. **FREEZE-006：Receipt 身份字段**：AST 断言 `Fingerprint` 字段清单与顺序不漂移。
+6. **FREEZE-007：pinned source 可选性**：schema 必须声明 `source`，且顶层
+   `required` 集合不得包含它。
 
-两条检查在当前 main 上应当零违规通过（冻结的是既成现实，不是新行为）。
+六条检查在当前 main 上应当零违规通过（冻结的是既成现实，不是新行为）。
 
 ## 5. 明确拒绝
 
