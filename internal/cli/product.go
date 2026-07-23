@@ -70,7 +70,7 @@ func runProductDoctor(args []string, start time.Time, outerCommand string) (repo
 func runProductVerify(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("verify")
 	repoArg := fs.String("repo-root", "", "repository root")
-	profileArg := fs.String("profile", "", "Smoke, Full or Release")
+	profileArg := fs.String("profile", "", productProfileHelp())
 	codexConfigArg := fs.String("codex-config", "", "Codex config.toml path")
 	configuredArg := fs.Bool("configured", false, "include configured Codex MCP inventory")
 	runtimeProfileArg := fs.String("runtime-profile", "", "expected runtime Skill profile: runtime, full, or skill-development")

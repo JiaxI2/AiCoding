@@ -14,12 +14,13 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("mcp requires subcommand: init, list, status, doctor, or verify")
 	}
-	sub := strings.ToLower(args[0])
-	if sub == "init" {
-		return runMCPInit(args[1:], start)
+	subID, err := resolveCatalogSubcommandID(CommandMCP, args[0])
+	if err != nil {
+		return report.Result{}, err
 	}
-	if !validChoice(sub, "list", "status", "doctor", "verify") {
-		return report.Result{}, usageErrorf("unsupported mcp subcommand: %s", sub)
+	sub := args[0]
+	if subID == SubMCPInit {
+		return runMCPInit(args[1:], start)
 	}
 	component := ""
 	flagArgs := args[1:]
@@ -31,18 +32,22 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 	repoArg := fs.String("repo-root", "", "repository root")
 	componentArg := fs.String("component", component, "MCP component id")
 	allArg := fs.Bool("all", false, "all enabled managed MCP components")
-	profileArg := fs.String("profile", "Smoke", "Smoke, Full or Release")
+	profileArg := fs.String("profile", "Smoke", productProfileHelp())
 	codexConfigArg := fs.String("codex-config", "", "Codex config.toml path")
 	configuredArg := fs.Bool("configured", false, "include currently configured Codex MCP compatibility probes")
 	_ = fs.Bool("json", false, "JSON output")
 	if err := parseNoPositionals(fs, flagArgs); err != nil {
 		return report.Result{}, err
 	}
+	_, profileDisplay, err := normalizeTestProfile(*profileArg)
+	if err != nil {
+		return report.Result{}, err
+	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("mcp "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
-	if sub == "list" {
+	if subID == SubMCPList {
 		inventory, listErr := mcpcontrol.ListInventory(repo, *codexConfigArg)
 		if listErr != nil {
 			return report.Fail("mcp list", start, "cannot load MCP inventory", nil, listErr.Error()), listErr
@@ -69,8 +74,8 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("mcp "+sub, start, "MCP component selection failed", nil, err.Error()), err
 	}
 	entries := componentSnapshotEntries(components)
-	switch sub {
-	case "status":
+	switch subID {
+	case SubMCPStatus:
 		status := mcpcontrol.StatusCatalog(repo, *codexConfigArg, components)
 		errorsFound, warnings := statusMessages(status)
 		return report.Result{
@@ -85,7 +90,7 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			Errors:        errorsFound,
 			ElapsedMS:     report.Elapsed(start),
 		}, report.BoolErr(errorsFound)
-	case "doctor":
+	case SubMCPDoctor:
 		doctor := mcpcontrol.DoctorCatalogComponentsContext(context.Background(), repo, components)
 		errorsFound := commandErrors(entries, doctor)
 		return report.Result{
@@ -99,14 +104,14 @@ func runMCP(args []string, start time.Time) (report.Result, error) {
 			Errors:        errorsFound,
 			ElapsedMS:     report.Elapsed(start),
 		}, report.BoolErr(errorsFound)
-	case "verify":
+	case SubMCPVerify:
 		includeConfigured := *configuredArg || *allArg
 		verification := mcpcontrol.VerifyCatalog(
 			context.Background(),
 			repo,
 			*codexConfigArg,
 			components,
-			*profileArg,
+			profileDisplay,
 			includeConfigured,
 		)
 		return report.Result{

@@ -233,11 +233,11 @@ Kit 按 registry `order`，各数组按稳定 ID/名字字典序输出。
    Catalog；调用 `go` 等真正外部工具时不把其参数误当 AiCoding 命令；
 8. 投影不宣传已移除的兼容命令。
 
-`kit verify --profile Smoke` 将新增问题报告为 warnings；Lifecycle 为 errors。官方 Full/Release
+`kit verify --level smoke` 将新增问题报告为 warnings；`--level lifecycle` 为 errors。官方 Full/Release
 测试同样执行 Lifecycle 结构用例，因而保持阻断。验证必须使用：
 
 ```powershell
-bin\aicoding.exe kit verify --all --profile Lifecycle --json
+bin\aicoding.exe kit verify --all --level lifecycle --json
 ```
 
 ## 9. 完成定义

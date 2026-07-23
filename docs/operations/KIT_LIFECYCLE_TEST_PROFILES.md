@@ -1,6 +1,8 @@
 ﻿# Kit Lifecycle Test Profiles
 
-Kit Lifecycle v2 uses three explicit validation profiles. Default repository gates must stay on Smoke unless a developer intentionally requests a heavier profile.
+产品测试仍只有 Smoke/Full/Release 三个 profile。Kit 自身的管理检查强度与产品 profile 正交，
+使用 `kit verify --level smoke|lifecycle`；默认仓库门禁使用 `--level smoke`，只有结构收口才显式
+选择 `--level lifecycle`。
 
 ## Smoke
 
@@ -13,7 +15,7 @@ Smoke must:
 - verify PowerShell script command paths exist;
 - verify declared Kit skills, common registry declarations, and hook registry declarations;
 - keep `bin/aicoding.exe fresh-clone --profile Smoke --json` on Smoke by default;
-- keep `bin/aicoding.exe kit verify --all --profile Smoke --json` on Smoke by default.
+- keep `bin/aicoding.exe kit verify --all --level smoke --json` on the lightweight management level by default.
 
 Smoke must not:
 
@@ -27,7 +29,7 @@ Recommended commands:
 
 ```powershell
 bin\aicoding.exe test --profile Smoke --json
-bin\aicoding.exe kit verify --all --profile Smoke --json
+bin\aicoding.exe kit verify --all --level smoke --json
 bin/aicoding.exe fresh-clone --profile Smoke --json
 ```
 

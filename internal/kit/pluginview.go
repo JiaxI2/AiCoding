@@ -92,6 +92,12 @@ type PluginAdapterAction struct {
 type PluginProjectionPolicy struct {
 	Adapter       PluginAdapter
 	TypedCommands []string
+	Quickstarts   []PluginQuickstartRoute
+}
+
+type PluginQuickstartRoute struct {
+	Operation string   `json:"operation"`
+	Command   []string `json:"command"`
 }
 
 var manifestCommandEffect = map[string]string{
@@ -107,8 +113,11 @@ var manifestCommandEffect = map[string]string{
 	"verify-skills": "read",
 }
 
-func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapter PluginAdapter, withState bool) ([]PluginView, error) {
-	if err := validatePluginAdapter(adapter); err != nil {
+func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, policy PluginProjectionPolicy, withState bool) ([]PluginView, error) {
+	if err := validatePluginAdapter(policy.Adapter); err != nil {
+		return nil, err
+	}
+	if err := validatePluginQuickstarts(policy.Quickstarts); err != nil {
 		return nil, err
 	}
 	identities := CatalogKitViews(snapshots)
@@ -126,7 +135,7 @@ func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapte
 		if len(skillErrors) > 0 {
 			return nil, fmt.Errorf("%s: parse skills: %s", snapshot.Entry().ID, strings.Join(skillErrors, "; "))
 		}
-		operations, err := projectPluginOperations(manifest.Commands, adapter)
+		operations, err := projectPluginOperations(manifest.Commands, policy.Adapter)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", snapshot.Entry().ID, err)
 		}
@@ -140,7 +149,7 @@ func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapte
 			ID:          identity.ID,
 			Name:        identity.Name,
 			Description: manifest.Description,
-			Quickstart:  projectPluginQuickstart(identity.ID, manifest.Description, operations, skills),
+			Quickstart:  projectPluginQuickstart(identity.ID, manifest.Description, operations, skills, policy.Quickstarts),
 			Identity: PluginIdentity{
 				Enabled: identity.Enabled,
 				Order:   identity.Order,
@@ -151,7 +160,7 @@ func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapte
 			},
 			Skills:     cloneSkillEntries(skills),
 			Operations: operations,
-			Lifecycle:  projectPluginLifecycle(adapter),
+			Lifecycle:  projectPluginLifecycle(policy.Adapter),
 			Workflows:  workflows,
 			Source:     PluginSource{Manifest: identity.Manifest, Pin: clonePinnedSource(manifest.Source), Identity: identity.SourceIdentity},
 		}
@@ -167,14 +176,14 @@ func ProjectCatalogPluginViews(repo string, snapshots []ManifestSnapshot, adapte
 	return views, nil
 }
 
-func projectPluginQuickstart(id, description string, operations []PluginOperation, skills []SkillEntry) PluginQuickstart {
+func projectPluginQuickstart(id, description string, operations []PluginOperation, skills []SkillEntry, routes []PluginQuickstartRoute) PluginQuickstart {
 	quickstart := PluginQuickstart{
 		Purpose: strings.TrimSpace(description),
 		Skills:  make([]PluginQuickstartSkill, 0, len(skills)),
 	}
 	for _, operation := range operations {
 		if operation.Effect == "read" {
-			quickstart.Command = pluginQuickstartCommand(id, operation.Name)
+			quickstart.Command = pluginQuickstartCommand(id, operation.Name, routes)
 			break
 		}
 	}
@@ -187,18 +196,20 @@ func projectPluginQuickstart(id, description string, operations []PluginOperatio
 	return quickstart
 }
 
-func pluginQuickstartCommand(id, operation string) string {
-	selector := " --scope kit --kit " + id + " --json"
-	switch operation {
-	case "doctor", "status", "verify":
-		return "aicoding lifecycle " + operation + selector
-	case "test":
-		return "aicoding kit test --kit " + id + " --profile Smoke --json"
-	case "skills", "verify-skills":
-		return "aicoding skill verify --kit " + id + " --profile Smoke --json"
-	default:
-		return ""
+func pluginQuickstartCommand(id, operation string, routes []PluginQuickstartRoute) string {
+	for _, route := range routes {
+		if route.Operation != operation {
+			continue
+		}
+		tokens := append([]string(nil), route.Command...)
+		for index, token := range tokens {
+			if token == "{kit}" {
+				tokens[index] = id
+			}
+		}
+		return strings.Join(tokens, " ")
 	}
+	return ""
 }
 
 func cloneSkillEntries(skills []SkillEntry) []SkillEntry {
@@ -315,6 +326,20 @@ func validatePluginAdapter(adapter PluginAdapter) error {
 			return fmt.Errorf("duplicate plugin adapter action: %s", action.Name)
 		}
 		seen[action.Name] = true
+	}
+	return nil
+}
+
+func validatePluginQuickstarts(routes []PluginQuickstartRoute) error {
+	seen := map[string]bool{}
+	for _, route := range routes {
+		if strings.TrimSpace(route.Operation) == "" || len(route.Command) == 0 {
+			return errors.New("plugin quickstart routes require an operation and command tokens")
+		}
+		if seen[route.Operation] {
+			return fmt.Errorf("duplicate plugin quickstart operation: %s", route.Operation)
+		}
+		seen[route.Operation] = true
 	}
 	return nil
 }

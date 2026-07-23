@@ -640,7 +640,7 @@ func routeAdvice(category, path, line string) (string, string) {
 		return "keep-pwsh", "keep PowerShell/Python slow path"
 	}
 	if strings.Contains(lower, "aicoding-kit.ps1") && strings.Contains(lower, "profile smoke") {
-		return "go-now", "bin/aicoding.exe kit verify --all --profile Smoke --json"
+		return "go-now", "bin/aicoding.exe kit verify --all --level smoke --json"
 	}
 	if strings.Contains(lower, "governance lint") {
 		return "go-now", "bin/aicoding.exe governance lint --json"

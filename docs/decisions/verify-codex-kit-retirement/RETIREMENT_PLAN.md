@@ -23,7 +23,7 @@ Plan Status: Completed（Phase 0/1/2 已完成）
   quality、Plan Mode helpers、external skill workflows、safety/hardware/toolchain）中的任何一个；
 - 其现状恰好是禁止事项"不把 Go 默认入口重新包装成 PowerShell"所指的形态；
 - 其原始职责已被 Go 控制面完全覆盖：重门禁 = `bin\aicoding.exe test --profile Full --json`，
-  Smoke 级 kit 检查 = `bin\aicoding.exe kit verify --all --profile Smoke --json`。
+  Smoke 级 kit 检查 = `bin\aicoding.exe kit verify --all --level smoke --json`。
 
 结论：脚本应退役。但按"单独计划和验证"规则不直接删除，且在引用迁移完成前保持
 可用（Phase 0 修复），复用 `full` 别名本身"兼容窗口 → 到期移除"的既有先例（`bce8282`）。

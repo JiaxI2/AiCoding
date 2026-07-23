@@ -67,7 +67,7 @@ host 工具，不接受 shell 命令、不调用 TI/CCS 或固件构建，见
 ```powershell
 bin\aicoding.exe skill c99-standard-c status --json
 bin\aicoding.exe skill c99-standard-c check --scope paths --path testdata/style-samples/foc_sample.c --json
-bin\aicoding.exe skill c99-standard-c verify --profile fast --json
+bin\aicoding.exe skill c99-standard-c verify --depth fast --json
 ```
 
 ## 可靠性与安全

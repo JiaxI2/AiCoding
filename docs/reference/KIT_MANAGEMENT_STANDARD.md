@@ -23,7 +23,7 @@ Status: Accepted
 | | 5. 哪些操作写状态、如何恢复 | `operations[].effect: write`、manifest `state.root`、领域 lifecycle rollback |
 | 维护 | 6. 谁拥有、来源何处 | manifest `trust.level` 与 `trust.source` |
 | | 7. 如何升级 | manifest `trust.updatePolicy`：`manual`、`pinned` 或 `tracked` |
-| | 8. 如何验证 | manifest `profiles` 与 `kit verify --profile Lifecycle` |
+| | 8. 如何验证 | manifest `profiles` 与 `kit verify --level lifecycle` |
 | | 9. 外部依赖边界是什么 | `trust.thirdParty: true` 时的 `docs/reference/kits/<id>-BOUNDARY.md` |
 
 九问只引用既有事实。`quickstart` 是同一事实的只读便利投影，不是可独立编辑的配置。
@@ -82,7 +82,7 @@ Status: Accepted
 
 1. 修改既有 manifest、Skill 或 adapter 权威。
 2. 运行 `kit describe --kit <id> --json`，确认 Quickstart 随权威输入变化。
-3. 运行 `kit verify --all --profile Lifecycle --json`。
+3. 运行 `kit verify --all --level lifecycle --json`。
 4. 运行 DocSync 与目标 Full/Release 门禁。
 
 新增 Kit 优先执行 `aicoding kit init <id> [--external] --json`。模板权威位于

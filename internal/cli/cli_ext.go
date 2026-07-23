@@ -18,12 +18,10 @@ func runDocSync(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("docsync requires mode: staged, all, ci, or release")
 	}
-	mode := strings.ToLower(args[0])
-	switch mode {
-	case "staged", "all", "ci", "release":
-	default:
-		return report.Result{}, usageErrorf("unsupported docsync mode: %s", mode)
+	if _, err := resolveCatalogSubcommandID(CommandDocSync, args[0]); err != nil {
+		return report.Result{}, err
 	}
+	mode := args[0]
 	fs := newFlagSet("docsync " + mode)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
@@ -48,22 +46,33 @@ func runDocSync(args []string, start time.Time) (report.Result, error) {
 }
 
 func runSkill(args []string, start time.Time) (report.Result, error) {
-	if len(args) >= 1 && args[0] == cstyle.DefaultSkillID {
+	if len(args) < 1 {
+		return report.Result{}, usageErrorf("skill requires subcommand: init, verify, or c99-standard-c")
+	}
+	sub, err := resolveCatalogSubcommandID(CommandSkill, args[0])
+	if err != nil {
+		return report.Result{}, err
+	}
+	switch sub {
+	case SubSkillC99:
 		return runCStyleCommand("skill "+cstyle.DefaultSkillID, cstyle.DefaultSkillID, args[1:], start)
-	}
-	if len(args) >= 1 && args[0] == "init" {
+	case SubSkillInit:
 		return runSkillInit(args[1:], start)
-	}
-	if len(args) < 1 || args[0] != "verify" {
+	case SubSkillVerify:
+	default:
 		return report.Result{}, usageErrorf("skill requires subcommand: init, verify, or c99-standard-c")
 	}
 	fs := newFlagSet("skill verify")
 	repoArg := fs.String("repo-root", "", "repository root")
 	kitArg := fs.String("kit", "", "kit id")
 	allArg := fs.Bool("all", false, "all enabled kits")
-	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
+	profile := fs.String("profile", "Smoke", productProfileHelp())
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
+	_, profileDisplay, err := normalizeTestProfile(*profile)
+	if err != nil {
 		return report.Result{}, err
 	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
@@ -80,7 +89,7 @@ func runSkill(args []string, start time.Time) (report.Result, error) {
 		res = report.WithDecision(res, report.CategoryUsage, "aicoding kit list --json")
 		return res, usageErrorf("%s", err)
 	}
-	res := kit.VerifyCatalogSkills(repo, selected, *profile)
+	res := kit.VerifyCatalogSkills(repo, selected, profileDisplay)
 	reuseCheck := reuse.Verify(repo)
 	for _, issue := range reuseCheck.Errors {
 		res.Errors = append(res.Errors, "reuse governance: "+issue)
@@ -96,10 +105,11 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("lifecycle requires subcommand: plan, install, update, status, doctor, verify, uninstall, or rollback")
 	}
-	sub := strings.ToLower(args[0])
-	if !validChoice(sub, "plan", "install", "update", "status", "doctor", "verify", "uninstall", "rollback") {
-		return report.Result{}, usageErrorf("unsupported lifecycle action: %s", sub)
+	subID, err := resolveCatalogSubcommandID(CommandLifecycle, args[0])
+	if err != nil {
+		return report.Result{}, err
 	}
+	sub := args[0]
 	fs := newFlagSet("lifecycle " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	scopeArg := fs.String("scope", "", "kit, mcp, runtime-skill, repo-context, or all")
@@ -108,7 +118,7 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	allArg := fs.Bool("all", false, "all enabled entries in the selected adapter")
 	actionArg := fs.String("action", "", "lifecycle action for plan")
 	lastArg := fs.Bool("last", false, "rollback last snapshot")
-	profileArg := fs.String("profile", "Smoke", "verification profile: Smoke, Full or Release")
+	profileArg := fs.String("profile", "Smoke", "verification profile: "+productProfileHelp())
 	codexConfigArg := fs.String("codex-config", "", "Codex config.toml path")
 	configuredArg := fs.Bool("configured", false, "include configured Codex MCP probes")
 	runtimeProfileArg := fs.String("runtime-profile", "", "runtime, full, or skill-development")
@@ -118,6 +128,10 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 	migrateUnmanagedArg := fs.Bool("migrate-unmanaged", false, "back up and replace registered unmanaged runtime Skill paths")
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args[1:]); err != nil {
+		return report.Result{}, err
+	}
+	_, verifyProfile, err := normalizeTestProfile(*profileArg)
+	if err != nil {
 		return report.Result{}, err
 	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
@@ -157,7 +171,7 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, usageErrorf("runtime Skill flags require --scope runtime-skill or --scope all")
 	}
 
-	if sub == "rollback" {
+	if subID == SubLifecycleRollback {
 		if !*lastArg {
 			return report.Result{}, usageErrorf("lifecycle rollback requires --last")
 		}
@@ -166,7 +180,7 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 		}
 	}
 	action := sub
-	if sub == "plan" {
+	if subID == SubLifecyclePlan {
 		action = strings.ToLower(*actionArg)
 		if action == "" {
 			action = "install"
@@ -199,9 +213,9 @@ func runLifecycle(args []string, start time.Time) (report.Result, error) {
 		KitID:             *kitArg,
 		ComponentID:       *componentArg,
 		CodexConfig:       *codexConfigArg,
-		VerifyProfile:     *profileArg,
+		VerifyProfile:     verifyProfile,
 		IncludeConfigured: *configuredArg,
-		DryRun:            sub == "plan",
+		DryRun:            subID == SubLifecyclePlan,
 		RuntimeProfile:    runtimeProfile,
 		RuntimeSkill:      *runtimeSkillArg,
 		SourceRepository:  *sourceRepositoryArg,
@@ -253,17 +267,21 @@ func runExport(args []string, start time.Time) (report.Result, error) {
 func runFreshClone(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("fresh-clone")
 	repoArg := fs.String("repo-root", "", "repository root")
-	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
+	profile := fs.String("profile", "Smoke", productProfileHelp())
 	keepTemp := fs.Bool("keep-temp", false, "keep temp clone")
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args); err != nil {
+		return report.Result{}, err
+	}
+	_, profileDisplay, err := normalizeTestProfile(*profile)
+	if err != nil {
 		return report.Result{}, err
 	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("fresh-clone", start, "cannot resolve repo root", nil, err.Error()), err
 	}
-	res := kit.FreshClone(repo, *profile, *keepTemp)
+	res := kit.FreshClone(repo, profileDisplay, *keepTemp)
 	return report.Result{SchemaVersion: 1, Command: "fresh-clone", OK: res.OK, Message: "Go fresh clone gate", RepoRoot: repo, Data: res, Errors: res.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(res.Errors)
 }
 
@@ -271,10 +289,14 @@ func runReleaseCommand(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("release requires subcommand: verify or gate")
 	}
-	if args[0] == "verify" {
+	sub, err := resolveCatalogSubcommandID(CommandRelease, args[0])
+	if err != nil {
+		return report.Result{}, err
+	}
+	if sub == SubReleaseVerify {
 		return runRelease(args, start)
 	}
-	if args[0] != "gate" {
+	if sub != SubReleaseGate {
 		return report.Result{}, usageErrorf("unsupported release subcommand: %s", args[0])
 	}
 	return runTestProfile("release", args[1:], "release gate", start)

@@ -16,16 +16,20 @@ import (
 // runCodexUsage is intentionally thin: token parsing and normalization live in
 // report/tokenusage so Plan reports and other commands can reuse the same API.
 func runCodexUsage(args []string, start time.Time) (report.Result, error) {
-	if len(args) == 0 || args[0] != "usage" {
+	if len(args) == 0 {
 		return report.Result{}, usageErrorf("codex 需要 usage 子命令")
 	}
 	if len(args) == 1 {
 		return report.Result{}, usageErrorf("codex usage 需要 parse 或 run")
 	}
-	switch args[1] {
-	case "parse":
+	sub, err := resolveCatalogSubcommandID(CommandCodex, args[0], args[1])
+	if err != nil {
+		return report.Result{}, err
+	}
+	switch sub {
+	case SubCodexUsageParse:
 		return runCodexUsageParse(args[2:], start)
-	case "run":
+	case SubCodexUsageRun:
 		return runCodexUsageCommand(args[2:], start)
 	default:
 		return report.Result{}, usageErrorf("不支持的 codex usage 子命令：%s", args[1])

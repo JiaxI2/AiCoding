@@ -458,7 +458,7 @@ func Registry(cfg Config) []TestCase {
 		{ID: "C99-004", Category: "C99_SKILL", Title: "C99 staged 检查入口", Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "check", "--scope", "staged", "--json"}, ExpectJSON: true},
 		{ID: "C99-005", Category: "C99_SKILL", Title: "C99 source-of-truth 配置", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "C99-006", Category: "C99_SKILL", Title: "C99 排除目录策略", Severity: Required, Profiles: allProfiles(), Kind: "static"},
-		{ID: "C99-007", Category: "C99_SKILL", Title: "C Kit 快速验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "verify", "--profile", "fast", "--json"}, TimeoutKind: "long", ExpectJSON: true},
+		{ID: "C99-007", Category: "C99_SKILL", Title: "C Kit 快速验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "c99-standard-c", "verify", "--depth", "fast", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 		{ID: "C99-008", Category: "C99_SKILL", Title: "C Kit 资产与参考完整性", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "SKILL-001", Category: "SKILL", Title: "全部启用 Skill Smoke 验证", Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "skill", "verify", "--all", "--profile", "Smoke", "--json"}, TimeoutKind: "long", ExpectJSON: true},
 
@@ -497,6 +497,8 @@ func Registry(cfg Config) []TestCase {
 		{ID: "FREEZE-005", Category: "FREEZE", Title: "Loop Decide 四参数注入", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "FREEZE-006", Category: "FREEZE", Title: "Validation fingerprint 字段集", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 		{ID: "FREEZE-007", Category: "FREEZE", Title: "Kit source 保持可选", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-008", Category: "FREEZE", Title: "typed 子命令与 alias 唯一登记", Severity: Required, Profiles: allProfiles(), Kind: "static"},
+		{ID: "FREEZE-009", Category: "FREEZE", Title: "产品 --profile 三档词汇表", Severity: Required, Profiles: allProfiles(), Kind: "static"},
 
 		{ID: "GIT-001", Category: "GIT_GOVERNANCE", Title: "工作区状态", Severity: WarnOnly, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{"git", "status", "--short"}},
 		{ID: "GIT-002", Category: "GIT_GOVERNANCE", Title: "hooks verify", Node: nodeGovernance, Severity: Required, Profiles: []string{"smoke", "full", "release"}, Kind: "command", Command: []string{bin, "verify", "hooks", "--json"}, ExpectJSON: true},
@@ -906,6 +908,10 @@ func runStatic(cfg Config, tc TestCase) Result {
 		err = checkValidationFingerprintFields(cfg.Repo)
 	case "FREEZE-007":
 		err = checkKitManifestSourceOptional(cfg.Repo)
+	case "FREEZE-008":
+		err = checkTypedSubcommandCatalog(cfg.Repo)
+	case "FREEZE-009":
+		err = checkProductProfileVocabulary(cfg.Repo)
 	case "GIT-007":
 		err = checkGitAttributes(cfg.Repo)
 	case "PWSH-003":

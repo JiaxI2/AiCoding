@@ -75,8 +75,10 @@ func Execute(args []string, stdout io.Writer, stderr io.Writer) int {
 		return ExitSuccess
 	}
 	var res report.Result
-	var err error
-	if route.handler == nil {
+	commandArgs, err := commands.prepareInvocation(route, commandArgs)
+	if err != nil {
+		res = report.Result{}
+	} else if route.handler == nil {
 		err = usageErrorf("command route is unavailable: %s", cmd)
 	} else {
 		res, err = route.handler(commandArgs, start)
@@ -199,15 +201,33 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 		return report.Result{}, usageErrorf("%s requires subcommand: status, templates, fmt, check, or verify", commandPrefix)
 	}
 
+	subID, err := resolveCatalogSubcommandID(CommandSkill, cstyle.DefaultSkillID, args[0])
+	if err != nil {
+		return report.Result{}, err
+	}
 	sub := args[0]
-	if !validChoice(sub, "status", "templates", "fmt", "check", "verify") {
-		return report.Result{}, usageErrorf("unsupported %s subcommand: %s", commandPrefix, sub)
+	flagArgs := args[1:]
+	deprecationWarnings := []string{}
+	if subID == SubSkillC99Verify {
+		var rewriteErr error
+		flagArgs, deprecationWarnings, rewriteErr = rewriteDeprecatedChoiceFlag(flagArgs, deprecatedChoiceFlag{
+			Old:         "profile",
+			Replacement: "depth",
+			Values:      []string{"fast", "full"},
+			Warning:     "deprecated: skill c99-standard-c verify --profile is retired by ADR 0012; use --depth fast|full",
+		})
+		if rewriteErr != nil {
+			return report.Result{}, rewriteErr
+		}
 	}
 	fs := newFlagSet(commandPrefix + " " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	scopeArg := fs.String("scope", "changed", "changed, staged, all, or paths")
 	previewArg := fs.Bool("preview", false, "preview formatting changes without writing files")
-	profileArg := fs.String("profile", "fast", "C Kit verification profile: fast or full")
+	depth := "fast"
+	if subID == SubSkillC99Verify {
+		fs.StringVar(&depth, "depth", "fast", "C Kit verification depth: fast or full")
+	}
 	targetArg := fs.String("target", "", "C Kit verification target manifest")
 	timingsArg := fs.Bool("timings", false, "include C Kit per-step timings")
 	_ = fs.Bool("json", false, "json output")
@@ -216,8 +236,12 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 	var overlayArgs multiFlag
 	fs.Var(&pathArgs, "path", "explicit path for --scope paths; can be repeated")
 	fs.Var(&overlayArgs, "overlay", "C Kit partial configuration overlay; can be repeated")
-	if err := parseNoPositionals(fs, args[1:]); err != nil {
+	if err := parseNoPositionals(fs, flagArgs); err != nil {
 		return report.Result{}, err
+	}
+	depth = strings.ToLower(strings.TrimSpace(depth))
+	if subID == SubSkillC99Verify && !validChoice(depth, "fast", "full") {
+		return report.Result{}, usageErrorf("unsupported C Kit verification depth: %s", depth)
 	}
 
 	repo, err := platform.ResolveRepoRoot(*repoArg)
@@ -225,8 +249,8 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 		return report.Fail(commandPrefix+" "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
 
-	switch sub {
-	case "status":
+	switch subID {
+	case SubSkillC99Status:
 		status, statusErr := cstyle.SkillStatus(repo, skillID)
 		errs := []string{}
 		if statusErr != nil {
@@ -266,7 +290,7 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 			ElapsedMS:     elapsed,
 		}, report.BoolErr(errs)
 
-	case "templates":
+	case SubSkillC99Templates:
 		data, validationErr := cstyle.ValidateCommentTemplates(repo, skillID)
 		elapsed := report.Elapsed(start)
 		errs := append([]string{}, data.Errors...)
@@ -287,7 +311,7 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 			ElapsedMS:     elapsed,
 		}, validationErr
 
-	case "fmt", "check":
+	case SubSkillC99Fmt, SubSkillC99Check:
 		data, runErr := cstyle.RunBySkill(skillID, cstyle.Options{
 			RepoRoot: repo,
 			Scope:    cstyle.Scope(*scopeArg),
@@ -319,10 +343,10 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 			ElapsedMS:     elapsed,
 		}, runErr
 
-	case "verify":
+	case SubSkillC99Verify:
 		data, verifyErr := cstyle.VerifyBySkill(skillID, cstyle.VerifyOptions{
 			RepoRoot: repo,
-			Profile:  *profileArg,
+			Profile:  depth,
 			Target:   *targetArg,
 			Overlays: overlayArgs,
 			Timings:  *timingsArg,
@@ -339,7 +363,7 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 			"target":   data.Target,
 			"overlays": len(data.Overlays),
 			"errors":   len(errs),
-		}, nil, errs, data)
+		}, deprecationWarnings, errs, data)
 		return report.Result{
 			SchemaVersion: 1,
 			Command:       commandPrefix + " verify",
@@ -347,6 +371,7 @@ func runCStyleCommand(commandPrefix string, skillID string, args []string, start
 			Message:       "C99 Standard C skill C Kit verification",
 			RepoRoot:      repo,
 			Data:          standard,
+			Warnings:      deprecationWarnings,
 			Errors:        errs,
 			ElapsedMS:     elapsed,
 		}, verifyErr
@@ -360,9 +385,13 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("hook requires subcommand: pre-commit, commit-msg, pre-push, or post-commit")
 	}
+	subID, err := resolveCatalogSubcommandID(CommandHook, args[0])
+	if err != nil {
+		return report.Result{}, err
+	}
 	sub := args[0]
-	switch sub {
-	case "pre-commit":
+	switch subID {
+	case SubHookPreCommit:
 		fs := newFlagSet("hook pre-commit")
 		repoArg := fs.String("repo-root", "", "repository root")
 		_ = fs.Bool("json", false, "json output")
@@ -418,7 +447,7 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 			}
 		}
 		return report.Result{SchemaVersion: 1, Command: "hook pre-commit", OK: len(errs) == 0, Message: "pre-commit Go gate", RepoRoot: repo, Data: results, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-	case "commit-msg":
+	case SubHookCommitMsg:
 		fs := newFlagSet("hook commit-msg")
 		repoArg := fs.String("repo-root", "", "repository root")
 		fileArg := fs.String("file", "", "commit message file")
@@ -441,9 +470,9 @@ func runHook(args []string, start time.Time) (report.Result, error) {
 		}
 		errs := governance.Lint(repo, "commit-msg", *fileArg)
 		return report.Result{SchemaVersion: 1, Command: "hook commit-msg", OK: len(errs) == 0, Message: "commit-msg fast gate", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-	case "pre-push":
+	case SubHookPrePush:
 		return runHookPrePush(args[1:], start)
-	case "post-commit":
+	case SubHookPostCommit:
 		fs := newFlagSet("hook post-commit")
 		repoArg := fs.String("repo-root", "", "repository root")
 		_ = fs.Bool("json", false, "json output")
@@ -473,10 +502,11 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("governance requires subcommand: lint, dependencies, layout, reuse, or capabilities")
 	}
-	sub := args[0]
-	if !validChoice(sub, "lint", "dependencies", "layout", "reuse", "capabilities") {
-		return report.Result{}, usageErrorf("unsupported governance subcommand: %s", sub)
+	subID, err := resolveCatalogSubcommandID(CommandGovernance, args[0])
+	if err != nil {
+		return report.Result{}, err
 	}
+	sub := args[0]
 	fs := newFlagSet("governance " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	mode := fs.String("mode", "all", "all or pre-commit; lint only")
@@ -488,20 +518,20 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 	if err != nil {
 		return report.Fail("governance "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
-	switch sub {
-	case "lint":
+	switch subID {
+	case SubGovernanceLint:
 		errs := governance.Lint(repo, *mode, "")
 		return report.Result{SchemaVersion: 1, Command: "governance lint", OK: len(errs) == 0, Message: "governance fast lint", RepoRoot: repo, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-	case "dependencies":
+	case SubGovernanceDeps:
 		dependencies := governance.CheckDependencies(repo)
 		return report.Result{SchemaVersion: 1, Command: "governance dependencies", OK: len(dependencies.Errors) == 0, Message: "dependency direction governance gate", RepoRoot: repo, Data: dependencies, Warnings: dependencies.Warnings, Errors: dependencies.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(dependencies.Errors)
-	case "layout":
+	case SubGovernanceLayout:
 		layout := governance.CheckLayout(repo)
 		return report.Result{SchemaVersion: 1, Command: "governance layout", OK: len(layout.Errors) == 0, Message: "repository layout gate", RepoRoot: repo, Data: layout, Errors: layout.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(layout.Errors)
-	case "reuse":
+	case SubGovernanceReuse:
 		check := reuse.Verify(repo)
 		return report.Result{SchemaVersion: 1, Command: "governance reuse", OK: check.OK, Message: "reuse governance evidence gate", RepoRoot: repo, Data: check, Warnings: check.Warnings, Errors: check.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(check.Errors)
-	case "capabilities":
+	case SubGovernanceCaps:
 		return runGovernanceCapabilities(repo, start)
 	default:
 		return report.Result{}, usageErrorf("unsupported governance subcommand: %s", sub)
@@ -509,8 +539,11 @@ func runGovernance(args []string, start time.Time) (report.Result, error) {
 }
 
 func runPowerShell(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 || args[0] != "regex-lint" {
+	if len(args) < 1 {
 		return report.Result{}, usageErrorf("powershell requires subcommand: regex-lint")
+	}
+	if _, err := resolveCatalogSubcommandID(CommandPowerShell, args[0]); err != nil {
+		return report.Result{}, err
 	}
 	fs := newFlagSet("powershell regex-lint")
 	repoArg := fs.String("repo-root", "", "repository root")
@@ -566,37 +599,71 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("kit requires subcommand")
 	}
-	sub := args[0]
-	if !validChoice(sub, "list", "describe", "doctor", "verify", "test", "init", "register", "prefetch") {
-		return report.Result{}, usageErrorf("unsupported kit subcommand: %s", sub)
+	subID, err := resolveCatalogSubcommandID(CommandKit, args[0])
+	if err != nil {
+		return report.Result{}, err
 	}
-	if sub == "init" {
+	sub := args[0]
+	if subID == SubKitInit {
 		return runKitInit(args[1:], start)
 	}
-	if sub == "register" {
+	if subID == SubKitRegister {
 		return runKitRegister(args[1:], start)
 	}
-	if sub == "prefetch" {
+	if subID == SubKitPrefetch {
 		return runKitPrefetch(args[1:], start)
+	}
+	flagArgs := args[1:]
+	deprecationWarnings := []string{}
+	if subID == SubKitVerify {
+		var rewriteErr error
+		flagArgs, deprecationWarnings, rewriteErr = rewriteDeprecatedChoiceFlag(flagArgs, deprecatedChoiceFlag{
+			Old:         "profile",
+			Replacement: "level",
+			Values:      []string{"smoke", "lifecycle"},
+			Warning:     "deprecated: kit verify --profile is retired by ADR 0012; use --level smoke|lifecycle",
+		})
+		if rewriteErr != nil {
+			return report.Result{}, rewriteErr
+		}
+	}
+	if subID == SubKitTest {
+		var rewriteErr error
+		flagArgs, deprecationWarnings, rewriteErr = rewriteDeprecatedChoiceFlag(flagArgs, deprecatedChoiceFlag{
+			Old:     "profile",
+			Values:  []string{"Smoke"},
+			Drop:    true,
+			Warning: "deprecated: kit test --profile Smoke is retired by ADR 0012; omit --profile",
+		})
+		if rewriteErr != nil {
+			return report.Result{}, rewriteErr
+		}
 	}
 	fs := newFlagSet("kit " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	kitArg := fs.String("kit", "", "kit id")
 	allArg := fs.Bool("all", false, "all enabled kits")
-	profile := fs.String("profile", "Smoke", "Smoke, Full or Release")
+	level := "smoke"
+	if subID == SubKitVerify {
+		fs.StringVar(&level, "level", "smoke", "smoke or lifecycle")
+	}
 	withState := fs.Bool("with-state", false, "include stable install state summary")
 	_ = fs.Bool("json", false, "json output")
-	if err := parseNoPositionals(fs, args[1:]); err != nil {
+	if err := parseNoPositionals(fs, flagArgs); err != nil {
 		return report.Result{}, err
 	}
-	if sub != "describe" && *withState {
+	level = strings.ToLower(strings.TrimSpace(level))
+	if subID == SubKitVerify && !validChoice(level, "smoke", "lifecycle") {
+		return report.Result{}, usageErrorf("unsupported kit verify level: %s", level)
+	}
+	if subID != SubKitDescribe && *withState {
 		return report.Result{}, usageErrorf("--with-state is only valid for kit describe")
 	}
 	repo, err := platform.ResolveRepoRoot(*repoArg)
 	if err != nil {
 		return report.Fail("kit "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
-	if sub == "list" {
+	if subID == SubKitList {
 		catalog, loadErr := kit.LoadCatalogSnapshot(repo)
 		if loadErr != nil {
 			return report.Fail("kit list", start, "cannot load kit catalog", nil, loadErr.Error()), loadErr
@@ -612,7 +679,7 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			ElapsedMS:     report.Elapsed(start),
 		}, nil
 	}
-	if sub == "describe" {
+	if subID == SubKitDescribe {
 		if *allArg && *kitArg != "" {
 			return report.Result{}, usageErrorf("use either --all or --kit, not both")
 		}
@@ -633,7 +700,7 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		if projectionErr != nil {
 			return report.Fail("kit describe", start, "cannot load plugin projection inputs", nil, projectionErr.Error()), projectionErr
 		}
-		views, projectionErr := kit.ProjectCatalogPluginViews(repo, selected, projection.Adapter, *withState)
+		views, projectionErr := kit.ProjectCatalogPluginViews(repo, selected, projection, *withState)
 		if projectionErr != nil {
 			return report.Fail("kit describe", start, "cannot project kit plugin view", nil, projectionErr.Error()), projectionErr
 		}
@@ -653,11 +720,11 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 		return report.Fail("kit "+sub, start, "cannot load registry", nil, err.Error()), err
 	}
 	withManifests := kit.LoadKitViews(repo, entries)
-	switch sub {
-	case "doctor":
+	switch subID {
+	case SubKitDoctor:
 		errs := kit.DoctorKits(repo, entries)
 		return report.Result{SchemaVersion: 1, Command: "kit doctor", OK: len(errs) == 0, Message: "kit registry doctor", RepoRoot: repo, Data: withManifests, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-	case "verify", "test":
+	case SubKitVerify, SubKitTest:
 		catalog, loadErr := kit.LoadCatalogSnapshot(repo)
 		if loadErr != nil {
 			return report.Fail("kit "+sub, start, "cannot load kit catalog", nil, loadErr.Error()), loadErr
@@ -668,19 +735,13 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 			res = report.WithDecision(res, report.CategoryUsage, "aicoding kit list --json")
 			return res, usageErrorf("%s", err)
 		}
-		if strings.EqualFold(*profile, "Lifecycle") {
-			if sub != "verify" {
-				return report.Result{}, usageErrorf("Lifecycle profile only supports kit verify")
-			}
+		if subID == SubKitVerify && level == "lifecycle" {
 			projection, _, projectionErr := loadKitPluginProjection(catalog.Digest())
 			if projectionErr != nil {
 				return report.Fail("kit verify", start, "cannot load plugin projection inputs", nil, projectionErr.Error()), projectionErr
 			}
 			structure := kit.VerifyCatalogStructure(repo, selected, projection)
-			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, InputDigest: catalog.Digest(), Data: structure, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
-		}
-		if !strings.EqualFold(*profile, "Smoke") {
-			return report.Result{}, usageErrorf("kit %s handles Smoke/Lifecycle only; use aicoding skill verify --all --profile %s", sub, *profile)
+			return report.Result{SchemaVersion: 1, Command: "kit verify", OK: structure.OK, Message: "kit lifecycle structure verify", RepoRoot: repo, InputDigest: catalog.Digest(), Data: structure, Warnings: deprecationWarnings, Errors: structure.Errors, ElapsedMS: report.Elapsed(start)}, report.BoolErr(structure.Errors)
 		}
 		results := kit.SmokeCatalogKits(repo, selected)
 		errs := []string{}
@@ -691,8 +752,8 @@ func runKit(args []string, start time.Time) (report.Result, error) {
 				}
 			}
 		}
-		warnings := []string{}
-		if sub == "verify" {
+		warnings := append([]string{}, deprecationWarnings...)
+		if subID == SubKitVerify {
 			projection, _, projectionErr := loadKitPluginProjection(catalog.Digest())
 			if projectionErr != nil {
 				return report.Fail("kit verify", start, "cannot load plugin projection inputs", nil, projectionErr.Error()), projectionErr
@@ -710,10 +771,11 @@ func runVerify(args []string, start time.Time) (report.Result, error) {
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 		return runProductVerify(args, start)
 	}
-	sub := args[0]
-	if !validChoice(sub, "hooks", "repo-text", "release-notes") {
-		return report.Result{}, usageErrorf("unsupported verify subcommand: %s", sub)
+	subID, err := resolveCatalogSubcommandID(CommandVerify, args[0])
+	if err != nil {
+		return report.Result{}, err
 	}
+	sub := args[0]
 	fs := newFlagSet("verify " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
@@ -724,14 +786,14 @@ func runVerify(args []string, start time.Time) (report.Result, error) {
 	if err != nil {
 		return report.Fail("verify "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
-	switch sub {
-	case "hooks":
+	switch subID {
+	case SubVerifyHooks:
 		checks, errs := repohealth.VerifyHooks(repo)
 		return report.Result{SchemaVersion: 1, Command: "verify hooks", OK: len(errs) == 0, Message: "hook fast path verification", RepoRoot: repo, Data: checks, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-	case "repo-text":
+	case SubVerifyRepoText:
 		checks, errs := repohealth.VerifyRepoText(repo)
 		return report.Result{SchemaVersion: 1, Command: "verify repo-text", OK: len(errs) == 0, Message: "repository text verification", RepoRoot: repo, Data: checks, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
-	case "release-notes":
+	case SubVerifyReleaseNotes:
 		checks, errs := repohealth.VerifyReleaseNotes(repo)
 		return report.Result{SchemaVersion: 1, Command: "verify release-notes", OK: len(errs) == 0, Message: "release notes and tag policy verification", RepoRoot: repo, Data: checks, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	default:
@@ -743,10 +805,11 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
 		return runProductDoctor(args, start, "doctor --all")
 	}
-	sub := args[0]
-	if !validChoice(sub, "perf", "pwsh", "pwsh-budget") {
-		return report.Result{}, usageErrorf("unsupported doctor subcommand: %s", sub)
+	subID, err := resolveCatalogSubcommandID(CommandDoctor, args[0])
+	if err != nil {
+		return report.Result{}, err
 	}
+	sub := args[0]
 	fs := newFlagSet("doctor " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
@@ -757,15 +820,15 @@ func runDoctor(args []string, start time.Time) (report.Result, error) {
 	if err != nil {
 		return report.Fail("doctor "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
-	if sub == "pwsh" {
+	if subID == SubDoctorPwsh {
 		inventory, errs := repohealth.InspectPwsh(repo)
 		return report.Result{SchemaVersion: 1, Command: "doctor pwsh", OK: len(errs) == 0, Message: "PowerShell invocation and retirement inventory", RepoRoot: repo, Data: inventory, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	}
-	if sub == "pwsh-budget" {
+	if subID == SubDoctorPwshBudget {
 		budget, errs := repohealth.ScanPwshBudget(repo)
 		return report.Result{SchemaVersion: 1, Command: "doctor pwsh-budget", OK: len(errs) == 0, Message: "PowerShell budget inventory", RepoRoot: repo, Data: budget, Errors: errs, ElapsedMS: report.Elapsed(start)}, report.BoolErr(errs)
 	}
-	if sub != "perf" {
+	if subID != SubDoctorPerf {
 		return report.Result{}, usageErrorf("unsupported doctor subcommand: %s", sub)
 	}
 	return runLatencyDoctor(repo, start)
@@ -799,10 +862,11 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("cache requires subcommand: status or clean")
 	}
-	sub := args[0]
-	if !validChoice(sub, "status", "clean") {
-		return report.Result{}, usageErrorf("unsupported cache subcommand: %s", sub)
+	subID, err := resolveCatalogSubcommandID(CommandCache, args[0])
+	if err != nil {
+		return report.Result{}, err
 	}
+	sub := args[0]
 	fs := newFlagSet("cache " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	_ = fs.Bool("json", false, "json output")
@@ -811,7 +875,7 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 	var dryRun *bool
 	var adopt *bool
 	var allRepos *bool
-	if sub == "clean" {
+	if subID == SubCacheClean {
 		scope = fs.String("scope", "", "fast-path|test-results|validation-reports|temp|work-state|pins")
 		keep = fs.Int("keep", 0, "number of newest test results or failed temp directories to retain")
 		dryRun = fs.Bool("dry-run", false, "list planned removals without deleting files")
@@ -825,14 +889,14 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 	if err != nil {
 		return report.Fail("cache "+sub, start, "cannot resolve repo root", nil, err.Error()), err
 	}
-	switch sub {
-	case "status":
+	switch subID {
+	case SubCacheStatus:
 		status, err := cache.Status(repo)
 		if err != nil {
 			return report.Fail("cache status", start, "cache status failed", status, err.Error()), err
 		}
 		return report.Result{SchemaVersion: 1, Command: "cache status", OK: true, Message: "registered local artifact status", RepoRoot: repo, Data: status, ElapsedMS: report.Elapsed(start)}, nil
-	case "clean":
+	case SubCacheClean:
 		selectedScope := cache.Scope(strings.ToLower(strings.TrimSpace(*scope)))
 		if selectedScope != "" && !cache.ValidScope(selectedScope) {
 			return report.Result{}, usageErrorf("unsupported cache scope: %s", *scope)
@@ -856,8 +920,11 @@ func runCache(args []string, start time.Time) (report.Result, error) {
 }
 
 func runTag(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 || args[0] != "audit" {
+	if len(args) < 1 {
 		return report.Result{}, usageErrorf("tag requires subcommand: audit")
+	}
+	if _, err := resolveCatalogSubcommandID(CommandTag, args[0]); err != nil {
+		return report.Result{}, err
 	}
 	fs := newFlagSet("tag audit")
 	repoArg := fs.String("repo-root", "", "repository root")
@@ -915,7 +982,13 @@ func runProvision(args []string, start time.Time) (report.Result, error) {
 }
 
 func runRelease(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 || args[0] != "verify" {
+	if len(args) < 1 {
+		return report.Result{}, usageErrorf("release requires subcommand: verify")
+	}
+	if sub, err := resolveCatalogSubcommandID(CommandRelease, args[0]); err != nil || sub != SubReleaseVerify {
+		if err != nil {
+			return report.Result{}, err
+		}
 		return report.Result{}, usageErrorf("release requires subcommand: verify")
 	}
 	fs := newFlagSet("release verify")

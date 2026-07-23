@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **fix(cli)**: 完成 TODO 0036 与 ADR 0012：将 `--profile` 收敛为唯一产品词汇 Smoke/Full/Release，C99 host 验证改用 `--depth fast|full`，Kit 管理验证改用 `--level smoke|lifecycle`，并把 `kit test` 正式登记为无 profile 子命令；旧参数在限期兼容窗口内继续成功并输出 deprecation warning。Typed command catalog 现唯一登记递归子命令/alias，并向 routing、help 与 pluginview quickstart 投影；FREEZE-008/009 阻断 catalog 外路由、独立 profile help 和第四档词汇。 / Completes TODO 0036 and ADR 0012 by reserving `--profile` for Smoke/Full/Release, moving C99 host depth and Kit management level to orthogonal flags, formally registering profile-free `kit test`, retaining warned legacy forms for a bounded window, and extending the typed catalog plus FREEZE-008/009 across routing, help, and plugin quickstarts.
+
 ## [1.2.0] - 2026-07-23
 
 - **docs(readme)**: 将三份仓库入口 README 的图像契约收敛为 SVG-only：用 Microsoft Visio 绘制并导出“一张图看懂”的 light/dark SVG，以 GitHub `#gh-light-mode-only` / `#gh-dark-mode-only` 自动切换；Banner 延续同一主题写法，外部 raster 图降为普通链接。徽章颜色改为技术/产品公认品牌色或 CI 状态语义色，依赖治理新增 raster、Mermaid、错误主题 marker 与隐式默认 badge 色的 fail-closed 校验。 / Makes the three repository READMEs SVG-only, replaces the Mermaid overview with Visio-exported light/dark SVGs using GitHub theme markers, preserves the themed banner pattern, removes raster embeds, and enforces brand/status badge colors without implicit defaults.

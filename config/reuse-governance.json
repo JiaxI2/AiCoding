@@ -32,7 +32,7 @@
         {
           "integration": "go-cli",
           "path": "internal/cli/cli.go",
-          "contains": "case \"reuse\""
+          "contains": "case SubGovernanceReuse:"
         },
         {
           "integration": "skill-verify",

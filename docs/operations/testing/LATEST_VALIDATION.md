@@ -15,7 +15,7 @@ bin/aicoding.exe test --profile Smoke --json
 bin/aicoding.exe test --profile Full --json
 bin/aicoding.exe test --profile Release --json
 bin/aicoding.exe test latest --json
-bin/aicoding.exe kit verify --all --profile Lifecycle --json
+bin/aicoding.exe kit verify --all --level lifecycle --json
 bin/aicoding.exe skill verify --all --profile Release --json
 bin/aicoding.exe mcp verify --all --profile Release --configured --repo-root F:\Study\AI\AiCoding --json
 bin/aicoding.exe docsync release --json

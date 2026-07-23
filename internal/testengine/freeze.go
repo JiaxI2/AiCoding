@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -181,6 +182,335 @@ func checkKitManifestSourceOptional(repo string) error {
 		if required == "source" {
 			return fmt.Errorf("kit manifest source must remain optional")
 		}
+	}
+	return nil
+}
+
+func checkTypedSubcommandCatalog(repo string) error {
+	cliDir := filepath.Join(repo, "internal", "cli")
+	catalogPath := filepath.Join(cliDir, "catalog.go")
+	catalogFile, err := parser.ParseFile(token.NewFileSet(), catalogPath, nil, 0)
+	if err != nil {
+		return err
+	}
+	handlers, err := catalogSubcommandHandlers(catalogFile)
+	if err != nil {
+		return err
+	}
+	if len(handlers) == 0 {
+		return fmt.Errorf("typed command catalog registers no subcommand handlers")
+	}
+
+	files, err := filepath.Glob(filepath.Join(cliDir, "*.go"))
+	if err != nil {
+		return err
+	}
+	foundHandlers := make(map[string]bool, len(handlers))
+	executeUsesGuard := false
+	for _, path := range files {
+		if strings.HasSuffix(path, "_test.go") {
+			continue
+		}
+		file, parseErr := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if parseErr != nil {
+			return parseErr
+		}
+		for _, declaration := range file.Decls {
+			function, ok := declaration.(*ast.FuncDecl)
+			if !ok || function.Body == nil {
+				continue
+			}
+			if function.Name.Name == "Execute" && callsSelector(function.Body, "commands", "prepareInvocation") {
+				executeUsesGuard = true
+				if literal, ok := directArgsStringComparison(function.Body); ok {
+					return fmt.Errorf("cli.Execute contains catalog-external argv route %q", literal)
+				}
+			}
+			if _, registered := handlers[function.Name.Name]; !registered {
+				continue
+			}
+			foundHandlers[function.Name.Name] = true
+			if !callsIdentifier(function.Body, "resolveCatalogSubcommandID") {
+				return fmt.Errorf("%s routes registered subcommands without typed catalog resolution", function.Name.Name)
+			}
+			if literal, ok := stringCaseLiteral(function.Body); ok {
+				return fmt.Errorf("%s contains catalog-external string subcommand route %q", function.Name.Name, literal)
+			}
+			if literal, ok := directArgsStringComparison(function.Body); ok {
+				return fmt.Errorf("%s contains catalog-external args[0] route %q", function.Name.Name, literal)
+			}
+		}
+	}
+	if !executeUsesGuard {
+		return fmt.Errorf("cli.Execute must route through typed catalog prepareInvocation")
+	}
+	for handler := range handlers {
+		if !foundHandlers[handler] {
+			return fmt.Errorf("typed command catalog references missing subcommand handler %s", handler)
+		}
+	}
+	return nil
+}
+
+func catalogSubcommandHandlers(file *ast.File) (map[string]struct{}, error) {
+	handlers := map[string]struct{}{}
+	for _, declaration := range file.Decls {
+		general, ok := declaration.(*ast.GenDecl)
+		if !ok || general.Tok != token.VAR {
+			continue
+		}
+		for _, specification := range general.Specs {
+			value, ok := specification.(*ast.ValueSpec)
+			if !ok || len(value.Names) != 1 || value.Names[0].Name != "commands" || len(value.Values) != 1 {
+				continue
+			}
+			call, ok := value.Values[0].(*ast.CallExpr)
+			if !ok || len(call.Args) == 0 {
+				return nil, fmt.Errorf("commands must be constructed by the typed catalog")
+			}
+			routes, ok := call.Args[0].(*ast.CompositeLit)
+			if !ok {
+				return nil, fmt.Errorf("typed command routes must be a composite literal")
+			}
+			for _, element := range routes.Elts {
+				route, ok := element.(*ast.CompositeLit)
+				if !ok {
+					continue
+				}
+				descriptor, _ := compositeField(route, "descriptor").(*ast.CompositeLit)
+				handler, _ := compositeField(route, "handler").(*ast.Ident)
+				if descriptor == nil || handler == nil {
+					continue
+				}
+				subcommands, _ := compositeField(descriptor, "Subcommands").(*ast.CompositeLit)
+				if subcommands != nil && len(subcommands.Elts) > 0 {
+					handlers[handler.Name] = struct{}{}
+				}
+			}
+			return handlers, nil
+		}
+	}
+	return nil, fmt.Errorf("typed command catalog variable commands was not found")
+}
+
+func compositeField(literal *ast.CompositeLit, name string) ast.Expr {
+	for _, element := range literal.Elts {
+		pair, ok := element.(*ast.KeyValueExpr)
+		if !ok {
+			continue
+		}
+		key, ok := pair.Key.(*ast.Ident)
+		if ok && key.Name == name {
+			return pair.Value
+		}
+	}
+	return nil
+}
+
+func callsSelector(node ast.Node, receiver, method string) bool {
+	found := false
+	ast.Inspect(node, func(current ast.Node) bool {
+		call, ok := current.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		selector, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return true
+		}
+		identifier, receiverOK := selector.X.(*ast.Ident)
+		if receiverOK && identifier.Name == receiver && selector.Sel.Name == method {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
+}
+
+func callsIdentifier(node ast.Node, name string) bool {
+	found := false
+	ast.Inspect(node, func(current ast.Node) bool {
+		call, ok := current.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		identifier, functionOK := call.Fun.(*ast.Ident)
+		if functionOK && identifier.Name == name {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
+}
+
+func stringCaseLiteral(node ast.Node) (string, bool) {
+	var literal string
+	found := false
+	ast.Inspect(node, func(current ast.Node) bool {
+		clause, ok := current.(*ast.CaseClause)
+		if !ok {
+			return true
+		}
+		for _, expression := range clause.List {
+			basic, ok := expression.(*ast.BasicLit)
+			if !ok || basic.Kind != token.STRING {
+				continue
+			}
+			literal, _ = strconv.Unquote(basic.Value)
+			found = true
+			return false
+		}
+		return !found
+	})
+	return literal, found
+}
+
+func directArgsStringComparison(node ast.Node) (string, bool) {
+	var literal string
+	found := false
+	ast.Inspect(node, func(current ast.Node) bool {
+		binary, ok := current.(*ast.BinaryExpr)
+		if !ok || (binary.Op != token.EQL && binary.Op != token.NEQ) {
+			return true
+		}
+		left, leftString := stringLiteral(binary.X)
+		right, rightString := stringLiteral(binary.Y)
+		switch {
+		case leftString && referencesArgumentZero(binary.Y):
+			literal, found = left, true
+		case rightString && referencesArgumentZero(binary.X):
+			literal, found = right, true
+		}
+		return !found
+	})
+	return literal, found
+}
+
+func stringLiteral(expression ast.Expr) (string, bool) {
+	basic, ok := expression.(*ast.BasicLit)
+	if !ok || basic.Kind != token.STRING {
+		return "", false
+	}
+	value, err := strconv.Unquote(basic.Value)
+	return value, err == nil
+}
+
+func referencesArgumentZero(node ast.Node) bool {
+	found := false
+	ast.Inspect(node, func(current ast.Node) bool {
+		index, ok := current.(*ast.IndexExpr)
+		if !ok {
+			return true
+		}
+		name, nameOK := index.X.(*ast.Ident)
+		value, valueOK := index.Index.(*ast.BasicLit)
+		if nameOK && valueOK && (name.Name == "args" || name.Name == "commandArgs") && value.Kind == token.INT && value.Value == "0" {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
+}
+
+func checkProductProfileVocabulary(repo string) error {
+	cliDir := filepath.Join(repo, "internal", "cli")
+	files, err := filepath.Glob(filepath.Join(cliDir, "*.go"))
+	if err != nil {
+		return err
+	}
+	want := []string{"Smoke", "Full", "Release"}
+	var got []string
+	normalizerUsesCatalog := false
+	profileFlags := 0
+	for _, path := range files {
+		if strings.HasSuffix(path, "_test.go") {
+			continue
+		}
+		file, parseErr := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+		if parseErr != nil {
+			return parseErr
+		}
+		for _, declaration := range file.Decls {
+			general, ok := declaration.(*ast.GenDecl)
+			if ok && general.Tok == token.VAR {
+				for _, specification := range general.Specs {
+					value, ok := specification.(*ast.ValueSpec)
+					if !ok || len(value.Names) != 1 || value.Names[0].Name != "productProfileVocabulary" || len(value.Values) != 1 {
+						continue
+					}
+					literal, ok := value.Values[0].(*ast.CompositeLit)
+					if !ok {
+						return fmt.Errorf("product --profile vocabulary must be a literal")
+					}
+					for _, element := range literal.Elts {
+						value, ok := stringLiteral(element)
+						if !ok {
+							return fmt.Errorf("product --profile vocabulary contains a non-string value")
+						}
+						got = append(got, value)
+					}
+				}
+			}
+			function, ok := declaration.(*ast.FuncDecl)
+			if ok && function.Body != nil {
+				if function.Name.Name == "normalizeTestProfile" {
+					ast.Inspect(function.Body, func(current ast.Node) bool {
+						rangeStatement, ok := current.(*ast.RangeStmt)
+						if !ok {
+							return true
+						}
+						identifier, rangeOK := rangeStatement.X.(*ast.Ident)
+						if rangeOK && identifier.Name == "productProfileVocabulary" {
+							normalizerUsesCatalog = true
+						}
+						return true
+					})
+				}
+				var flagError error
+				ast.Inspect(function.Body, func(current ast.Node) bool {
+					call, ok := current.(*ast.CallExpr)
+					if !ok {
+						return true
+					}
+					selector, ok := call.Fun.(*ast.SelectorExpr)
+					if !ok || (selector.Sel.Name != "String" && selector.Sel.Name != "StringVar") {
+						return true
+					}
+					nameIndex := 0
+					if selector.Sel.Name == "StringVar" {
+						nameIndex = 1
+					}
+					if len(call.Args) <= nameIndex {
+						return true
+					}
+					name, ok := stringLiteral(call.Args[nameIndex])
+					if !ok || name != "profile" {
+						return true
+					}
+					profileFlags++
+					if !callsIdentifier(call, "productProfileHelp") {
+						flagError = fmt.Errorf("%s declares --profile help outside the product vocabulary catalog", function.Name.Name)
+						return false
+					}
+					return true
+				})
+				if flagError != nil {
+					return flagError
+				}
+			}
+		}
+	}
+	if !equalStrings(got, want) {
+		return fmt.Errorf("product --profile vocabulary changed: got %v; want %v", got, want)
+	}
+	if profileFlags == 0 {
+		return fmt.Errorf("no product --profile flags found")
+	}
+	if !normalizerUsesCatalog {
+		return fmt.Errorf("normalizeTestProfile must validate against productProfileVocabulary")
 	}
 	return nil
 }

@@ -34,14 +34,18 @@ func runPlan(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("plan requires subcommand: check, verify, status, or approve")
 	}
-	switch strings.ToLower(args[0]) {
-	case "check":
+	sub, err := resolveCatalogSubcommandID(CommandPlan, args[0])
+	if err != nil {
+		return report.Result{}, err
+	}
+	switch sub {
+	case SubPlanCheck:
 		return runPlanCheck(args[1:], start)
-	case "verify":
+	case SubPlanVerify:
 		return runPlanVerify(args[1:], start)
-	case "status":
+	case SubPlanStatus:
 		return runPlanStatus(args[1:], start)
-	case "approve":
+	case SubPlanApprove:
 		return runPlanApprove(args[1:], start)
 	default:
 		return report.Result{}, usageErrorf("unsupported plan subcommand: %s", args[0])

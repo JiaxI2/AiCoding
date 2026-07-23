@@ -143,7 +143,7 @@ func TestCategorizePwshPriority(t *testing.T) {
 		want string
 	}{
 		{"Taskfile.yml", "bin/aicoding.exe docsync ci --json", "unknown"},
-		{"Taskfile.yml", "bin/aicoding.exe kit verify --all --profile Smoke --json", "verify"},
+		{"Taskfile.yml", "bin/aicoding.exe kit verify --all --level smoke --json", "verify"},
 		{"Taskfile.yml", "bin/aicoding.exe fresh-clone --profile Release --json", "release"},
 		{"README.md", "pwsh -File tools/specialty/uninstall-safety-profile.ps1", "uninstall"},
 		{"README.md", "TI DSS / XDS / flash / erase / write-memory", "dss"},

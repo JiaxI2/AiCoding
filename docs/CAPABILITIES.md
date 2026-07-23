@@ -2,7 +2,7 @@
 
 > 本文件由 `config/internal-capabilities.json` 生成，请运行 `bin/aicoding.exe capability index --write` 更新。
 
-Registry digest: `sha256:1f915ac583c9dc8d7661c87741942fc68d96c3439dbc797a734f0e8fe7523fdd`
+Registry digest: `sha256:cdc4c7c38b0f0acb4d33282e0e84baa64a2964441c37d3becf4c168fc8a3f1d5`
 
 共登记 29 个 `internal/` 一级包；文档义务按公共入口、内部实现域和 Primitive 分级。
 
@@ -67,7 +67,7 @@ Registry digest: `sha256:1f915ac583c9dc8d7661c87741942fc68d96c3439dbc797a734f0e8
 - 架构图：[文档](architecture/C_USERSTYLE_KIT_ARCHITECTURE.md)
 - 怎么用：
   1. `aicoding skill c99-standard-c status --json`
-  2. `aicoding skill c99-standard-c verify --profile fast --json`
+  2. `aicoding skill c99-standard-c verify --depth fast --json`
 - 怎么进 Agent：`cli-entry`；命令已在 typed catalog，Agent 直接调用即可，无需单独 install。；调用 `aicoding skill c99-standard-c status --json`。
 - 怎么验证：`go test ./internal/cstyle/...`
 - 一次查看：`bin/aicoding.exe capability describe --id c-style --json`

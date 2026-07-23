@@ -95,6 +95,89 @@ func validChoice(value string, choices ...string) bool {
 	return false
 }
 
+type deprecatedChoiceFlag struct {
+	Old         string
+	Replacement string
+	Values      []string
+	Drop        bool
+	Warning     string
+}
+
+func rewriteDeprecatedChoiceFlag(args []string, spec deprecatedChoiceFlag) ([]string, []string, error) {
+	oldName := strings.TrimLeft(spec.Old, "-")
+	newName := strings.TrimLeft(spec.Replacement, "-")
+	if oldName == "" || (!spec.Drop && newName == "") {
+		return nil, nil, usageErrorf("invalid deprecated flag rewrite")
+	}
+	oldIndex, oldWidth, value, found, err := findChoiceFlag(args, oldName)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !found {
+		return append([]string(nil), args...), nil, nil
+	}
+	if _, _, _, duplicate, duplicateErr := findChoiceFlag(args[oldIndex+oldWidth:], oldName); duplicateErr != nil || duplicate {
+		if duplicateErr != nil {
+			return nil, nil, duplicateErr
+		}
+		return nil, nil, usageErrorf("--%s may be specified only once", oldName)
+	}
+	if !spec.Drop {
+		if _, _, _, present, presentErr := findChoiceFlag(args, newName); presentErr != nil {
+			return nil, nil, presentErr
+		} else if present {
+			return nil, nil, usageErrorf("deprecated --%s cannot be combined with --%s", oldName, newName)
+		}
+	}
+	canonical := ""
+	for _, candidate := range spec.Values {
+		if strings.EqualFold(strings.TrimSpace(value), candidate) {
+			canonical = candidate
+			break
+		}
+	}
+	if canonical == "" {
+		return nil, nil, usageErrorf("deprecated --%s accepts %s", oldName, strings.Join(spec.Values, "|"))
+	}
+	rewritten := make([]string, 0, len(args)+1)
+	rewritten = append(rewritten, args[:oldIndex]...)
+	if !spec.Drop {
+		rewritten = append(rewritten, "--"+newName, canonical)
+	}
+	rewritten = append(rewritten, args[oldIndex+oldWidth:]...)
+	warnings := []string{}
+	if strings.TrimSpace(spec.Warning) != "" {
+		warnings = append(warnings, spec.Warning)
+	}
+	return rewritten, warnings, nil
+}
+
+func findChoiceFlag(args []string, name string) (index int, width int, value string, found bool, err error) {
+	long := "--" + name
+	short := "-" + name
+	for index, arg := range args {
+		if arg == "--" {
+			break
+		}
+		if arg == long || arg == short {
+			if index+1 >= len(args) {
+				return 0, 0, "", false, usageErrorf("flag needs an argument: --%s", name)
+			}
+			return index, 2, args[index+1], true, nil
+		}
+		for _, prefix := range []string{long + "=", short + "="} {
+			if strings.HasPrefix(arg, prefix) {
+				value := strings.TrimPrefix(arg, prefix)
+				if value == "" {
+					return 0, 0, "", false, usageErrorf("flag needs an argument: --%s", name)
+				}
+				return index, 1, value, true, nil
+			}
+		}
+	}
+	return 0, 0, "", false, nil
+}
+
 func flagSetHelp(fs *flag.FlagSet) string {
 	var options bytes.Buffer
 	fs.SetOutput(&options)

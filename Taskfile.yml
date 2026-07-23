@@ -72,7 +72,7 @@ tasks:
     desc: Run the C UserStyle Kit fast host verification
     deps: [ensure-bin]
     cmds:
-      - bin/aicoding.exe skill c99-standard-c verify --profile fast --timings --json
+      - bin/aicoding.exe skill c99-standard-c verify --depth fast --timings --json
 
   fmt:c:
     desc: Format changed C/H files through C99 Standard C skill

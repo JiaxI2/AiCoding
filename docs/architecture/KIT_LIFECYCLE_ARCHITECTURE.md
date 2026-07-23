@@ -97,8 +97,9 @@ Kit-owned materialization，不删除共享 pin cache，也不修改外部 check
 ## Go Control Plane
 
 ```powershell
-bin\aicoding.exe kit verify --all --profile Smoke --json
-bin\aicoding.exe kit verify --all --profile Lifecycle --json
+bin\aicoding.exe kit verify --all --level smoke --json
+bin\aicoding.exe kit verify --all --level lifecycle --json
+bin\aicoding.exe kit test --all --json
 bin\aicoding.exe kit register --manifest config/kits/<id>.json --prefetch --json
 bin\aicoding.exe kit prefetch --id <id> --json
 bin\aicoding.exe lifecycle plan --action install --scope kit --all --json

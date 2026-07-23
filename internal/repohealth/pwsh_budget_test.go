@@ -11,7 +11,7 @@ import (
 
 func TestScanPwshBudgetClassifiesInvocationPoints(t *testing.T) {
 	repo := t.TempDir()
-	mustWrite(t, filepath.Join(repo, "Taskfile.yml"), "tasks:\n  smoke:\n    cmds:\n      - bin/aicoding.exe kit verify --all --profile Smoke --json\n  full:\n    cmds:\n      - bin/aicoding.exe full --json\n")
+	mustWrite(t, filepath.Join(repo, "Taskfile.yml"), "tasks:\n  smoke:\n    cmds:\n      - bin/aicoding.exe kit verify --all --level smoke --json\n  full:\n    cmds:\n      - bin/aicoding.exe full --json\n")
 	mustWrite(t, filepath.Join(repo, ".githooks", "pre-commit"), "bin/aicoding.exe hook pre-commit --json\n")
 	mustWrite(t, filepath.Join(repo, "docs", "POWERSHELL_BOUNDARY.md"), "pwsh -File tools/specialty/verify-release-governance-overlay.ps1\n")
 	writePwshBudgetConfig(t, repo, []pwshBudgetBaseline{pwshTestBaseline(nil, "a")})

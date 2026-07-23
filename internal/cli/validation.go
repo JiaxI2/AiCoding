@@ -66,16 +66,20 @@ func runValidation(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("validation requires subcommand: status, check, explain, list or clean")
 	}
-	switch strings.ToLower(args[0]) {
-	case "status":
+	sub, err := resolveCatalogSubcommandID(CommandValidation, args[0])
+	if err != nil {
+		return report.Result{}, err
+	}
+	switch sub {
+	case SubValidationStatus:
 		return runValidationStatus(args[1:], start)
-	case "check":
+	case SubValidationCheck:
 		return runValidationCheck(args[1:], start)
-	case "explain":
+	case SubValidationExplain:
 		return runValidationExplain(args[1:], start)
-	case "list":
+	case SubValidationList:
 		return runValidationList(args[1:], start)
-	case "clean":
+	case SubValidationClean:
 		return runValidationClean(args[1:], start)
 	default:
 		return report.Result{}, usageErrorf("unsupported validation subcommand: %s", args[0])
@@ -85,7 +89,7 @@ func runValidation(args []string, start time.Time) (report.Result, error) {
 func runValidationExplain(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("validation explain")
 	repoArg := fs.String("repo-root", "", "repository root")
-	profileArg := fs.String("profile", "", "Smoke, Full or Release")
+	profileArg := fs.String("profile", "", productProfileHelp())
 	targetArg := fs.String("target", "", "HEAD or INDEX")
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args); err != nil {
@@ -220,7 +224,7 @@ func runValidationStatus(args []string, start time.Time) (report.Result, error) 
 func runValidationCheck(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("validation check")
 	repoArg := fs.String("repo-root", "", "repository root")
-	profileArg := fs.String("profile", "", "Smoke, Full or Release")
+	profileArg := fs.String("profile", "", productProfileHelp())
 	targetArg := fs.String("target", "", "HEAD or INDEX")
 	bindAliasArg := fs.Bool("bind-alias", false, "bind a matching HEAD Receipt to the current commit")
 	_ = fs.Bool("json", false, "json output")
@@ -302,7 +306,7 @@ func runValidationCheck(args []string, start time.Time) (report.Result, error) {
 func runValidationList(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("validation list")
 	repoArg := fs.String("repo-root", "", "repository root")
-	profileArg := fs.String("profile", "", "Smoke, Full or Release")
+	profileArg := fs.String("profile", "", productProfileHelp())
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args); err != nil {
 		return report.Result{}, err
@@ -334,7 +338,7 @@ func runValidationList(args []string, start time.Time) (report.Result, error) {
 func runValidationClean(args []string, start time.Time) (report.Result, error) {
 	fs := newFlagSet("validation clean")
 	repoArg := fs.String("repo-root", "", "repository root")
-	profileArg := fs.String("profile", "", "Smoke, Full or Release")
+	profileArg := fs.String("profile", "", productProfileHelp())
 	_ = fs.Bool("json", false, "json output")
 	if err := parseNoPositionals(fs, args); err != nil {
 		return report.Result{}, err

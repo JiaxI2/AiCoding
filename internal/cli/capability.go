@@ -21,10 +21,11 @@ func runCapability(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("capability requires subcommand: list, describe, or index")
 	}
-	sub := args[0]
-	if !validChoice(sub, "list", "describe", "index") {
-		return report.Result{}, usageErrorf("unsupported capability subcommand: %s", sub)
+	subID, err := resolveCatalogSubcommandID(CommandCapability, args[0])
+	if err != nil {
+		return report.Result{}, err
 	}
+	sub := args[0]
 	fs := newFlagSet("capability " + sub)
 	repoArg := fs.String("repo-root", "", "repository root")
 	idArg := fs.String("id", "", "capability id; describe only")
@@ -58,14 +59,14 @@ func runCapability(args []string, start time.Time) (report.Result, error) {
 		return result, err
 	}
 
-	switch sub {
-	case "list":
+	switch subID {
+	case SubCapabilityList:
 		selected, selectErr := capability.List(catalog, *typeArg, *statusArg)
 		if selectErr != nil {
 			return capabilityValidationFailure("capability list", start, repo, catalog.Digest, selectErr)
 		}
 		return report.Result{SchemaVersion: 1, Command: "capability list", OK: true, Message: "internal capability catalog", RepoRoot: repo, InputDigest: catalog.Digest, Data: selected, ElapsedMS: report.Elapsed(start)}, nil
-	case "describe":
+	case SubCapabilityDescribe:
 		if strings.TrimSpace(*idArg) == "" {
 			return report.Result{}, usageErrorf("capability describe requires --id")
 		}
@@ -74,7 +75,7 @@ func runCapability(args []string, start time.Time) (report.Result, error) {
 			return capabilityValidationFailure("capability describe", start, repo, catalog.Digest, describeErr)
 		}
 		return report.Result{SchemaVersion: 1, Command: "capability describe", OK: true, Message: "internal capability detail", RepoRoot: repo, InputDigest: catalog.Digest, Data: item, ElapsedMS: report.Elapsed(start)}, nil
-	case "index":
+	case SubCapabilityIndex:
 		changed, writeErr := writeCapabilityIndex(repo, catalog)
 		if writeErr != nil {
 			result := report.Fail("capability index", start, "cannot write capability index", nil, writeErr.Error())

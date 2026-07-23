@@ -76,8 +76,8 @@ try {
     }
 
     if (Test-Path -LiteralPath 'bin/aicoding.exe') {
-        & bin/aicoding.exe kit verify --all --profile Smoke --json | Out-Host
-        Add-Check -Checks $checks -Name 'aicoding:kit-smoke' -Ok ($LASTEXITCODE -eq 0) -Message 'bin/aicoding.exe kit verify --all --profile Smoke --json'
+        & bin/aicoding.exe kit verify --all --level smoke --json | Out-Host
+        Add-Check -Checks $checks -Name 'aicoding:kit-smoke' -Ok ($LASTEXITCODE -eq 0) -Message 'bin/aicoding.exe kit verify --all --level smoke --json'
         & bin/aicoding.exe governance lint --json | Out-Host
         Add-Check -Checks $checks -Name 'aicoding:governance' -Ok ($LASTEXITCODE -eq 0) -Message 'bin/aicoding.exe governance lint --json'
         & bin/aicoding.exe doctor perf --json | Out-Host

@@ -18,15 +18,18 @@ func runTest(args []string, start time.Time) (report.Result, error) {
 		return report.Result{}, usageErrorf("test requires --profile Smoke|Full|Release or subcommand latest")
 	}
 
-	sub := strings.ToLower(args[0])
+	if strings.HasPrefix(args[0], "-") {
+		return runTestProfile("", args, "", start)
+	}
+	sub, err := resolveCatalogSubcommandID(CommandTest, args[0])
+	if err != nil {
+		return report.Result{}, err
+	}
 	switch sub {
-	case "latest":
+	case SubTestLatest:
 		return runTestLatest(args[1:], start)
 	default:
-		if strings.HasPrefix(args[0], "-") {
-			return runTestProfile("", args, "", start)
-		}
-		return report.Result{}, usageErrorf("unsupported test subcommand: %s", sub)
+		return report.Result{}, usageErrorf("unsupported test subcommand: %s", args[0])
 	}
 }
 
@@ -40,7 +43,7 @@ func runTestProfile(profile string, args []string, command string, start time.Ti
 	outArg := fs.String("out", "", "output directory")
 	profileValue := profile
 	if profile == "" {
-		fs.StringVar(&profileValue, "profile", "", "Smoke, Full or Release")
+		fs.StringVar(&profileValue, "profile", "", productProfileHelp())
 	}
 	timeoutSec := fs.Int("timeout-sec", 180, "per-command timeout seconds")
 	longTimeoutSec := fs.Int("long-timeout-sec", 600, "long-command timeout seconds")
@@ -166,18 +169,16 @@ func runTestLatest(args []string, start time.Time) (report.Result, error) {
 }
 
 func normalizeTestProfile(value string) (string, string, error) {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "smoke":
-		return "smoke", "Smoke", nil
-	case "full":
-		return "full", "Full", nil
-	case "release":
-		return "release", "Release", nil
-	case "":
-		return "", "", usageErrorf("test requires --profile Smoke|Full|Release")
-	default:
-		return "", "", usageErrorf("unsupported test profile: %s", value)
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	if normalized == "" {
+		return "", "", usageErrorf("test requires --profile %s", productProfileChoice())
 	}
+	for _, display := range productProfileVocabulary {
+		if normalized == strings.ToLower(display) {
+			return normalized, display, nil
+		}
+	}
+	return "", "", usageErrorf("unsupported test profile: %s", value)
 }
 
 func globalTestStandardReport(command string, profile string, outDir string, durationMS int64, fileReport testengine.Report) report.StandardReport {

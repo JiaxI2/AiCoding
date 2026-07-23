@@ -80,6 +80,35 @@ func TestExecuteFlagHelpAndJSONUsageError(t *testing.T) {
 	}
 }
 
+func TestOrthogonalProfileFlagHelp(t *testing.T) {
+	for _, tc := range []struct {
+		args      []string
+		contains  []string
+		forbidden []string
+	}{
+		{args: []string{"test", "--help"}, contains: []string{"-profile string", "Smoke, Full, Release"}},
+		{args: []string{"kit", "verify", "--help"}, contains: []string{"-level string", "smoke or lifecycle"}, forbidden: []string{"-profile"}},
+		{args: []string{"kit", "test", "--help"}, contains: []string{"Usage: aicoding kit test"}, forbidden: []string{"-profile", "-level"}},
+		{args: []string{"skill", "c99-standard-c", "verify", "--help"}, contains: []string{"-depth string", "fast or full"}, forbidden: []string{"-profile"}},
+	} {
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+		if code := Execute(tc.args, &stdout, &stderr); code != ExitSuccess {
+			t.Fatalf("Execute(%#v) exit=%d stdout=%q stderr=%q", tc.args, code, stdout.String(), stderr.String())
+		}
+		for _, expected := range tc.contains {
+			if !strings.Contains(stdout.String(), expected) {
+				t.Fatalf("Execute(%#v) help missing %q: %s", tc.args, expected, stdout.String())
+			}
+		}
+		for _, forbidden := range tc.forbidden {
+			if strings.Contains(stdout.String(), forbidden) {
+				t.Fatalf("Execute(%#v) help contains forbidden %q: %s", tc.args, forbidden, stdout.String())
+			}
+		}
+	}
+}
+
 func TestUnsupportedSubcommandsUseExitTwoWithoutExecuting(t *testing.T) {
 	for _, args := range [][]string{
 		{"governance", "unknown", "--json"},

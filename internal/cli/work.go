@@ -57,14 +57,18 @@ func runWork(args []string, start time.Time) (report.Result, error) {
 	if len(args) < 1 {
 		return report.Result{}, usageErrorf("work requires subcommand: validate, next, status, or record")
 	}
-	switch strings.ToLower(args[0]) {
-	case "validate":
+	sub, err := resolveCatalogSubcommandID(CommandWork, args[0])
+	if err != nil {
+		return report.Result{}, err
+	}
+	switch sub {
+	case SubWorkValidate:
 		return runWorkValidate(args[1:], start)
-	case "next":
+	case SubWorkNext:
 		return runWorkEvaluate("next", args[1:], start)
-	case "status":
+	case SubWorkStatus:
 		return runWorkEvaluate("status", args[1:], start)
-	case "record":
+	case SubWorkRecord:
 		return runWorkRecord(args[1:], start)
 	default:
 		return report.Result{}, usageErrorf("unsupported work subcommand: %s", args[0])

@@ -6,14 +6,14 @@ Status: Accepted and Frozen
 
 本文完成发布后的两项收敛：
 
-1. 将八个已被多方消费、语义稳定的契约面正式冻结（§2）；
+1. 将九个已被多方消费、语义稳定的契约面正式冻结（§2）；
 2. 定义外部来源（GitHub/URL 起源的 Skill、MCP、Kit）的获取/激活分离边界与
    标准接入流程，使"慢"被隔离在唯一的获取步骤中，激活保持本地快速（§3）。
 
 原则与 Git 相同：Git 快不是因为网络快，而是因为几乎所有命令都是纯本地操作，
 网络被隔离在 `fetch/push` 两个显式动作里。本仓库将同一结构固化为契约。
 
-## 2. 八项冻结声明
+## 2. 九项冻结声明
 
 ### 2.1 JSON 报告契约
 
@@ -77,6 +77,16 @@ Status: Accepted and Frozen
   cache 缺失必须 fail-closed，不得静默联网。
 - **理由**：registry、Kit lifecycle、pins cache 与 Validation Evidence 已共同消费该语义。
 
+### 2.9 Typed 子命令与 alias 唯一登记面
+
+- **冻结面**：`internal/cli` typed command catalog 不仅登记顶层命令，还唯一登记递归子命令、
+  alias、help route 与 pluginview quickstart route。此项是新增冻结面，不追溯解释为 2.5 的
+  顶层/`work` 登记已经覆盖。
+- **规则**：外部 argv 必须先经 catalog 解析和 alias 规范化；handler 只按 typed
+  `SubcommandID` 分派。help 命令路径与 pluginview quickstart 命令路径只能由同一 descriptor
+  投影，不得在领域层另写可路由命令字符串。
+- **理由**：CLI routing、用户帮助和 Kit pluginview 已共同消费子命令路径，登记面已达到冻结条件。
+
 ## 3. 获取/激活边界
 
 ### 3.1 定义
@@ -120,7 +130,7 @@ Status: Accepted and Frozen
   验证半径 = `internal/mcpcontrol` + component verify，不触碰任何契约；
 - 完全离线激活作为验收抽查项（断网 spot-check），不进入默认门禁。
 
-## 4. 可执行门禁（六条）
+## 4. 可执行门禁（八条）
 
 1. **激活面 URL-free**（governance dependencies 新 check）：
    `config/kit-registry.json`、`config/kits/*.json`、`config/mcp-registry.json`、
@@ -136,8 +146,14 @@ Status: Accepted and Frozen
 5. **FREEZE-006：Receipt 身份字段**：AST 断言 `Fingerprint` 字段清单与顺序不漂移。
 6. **FREEZE-007：pinned source 可选性**：schema 必须声明 `source`，且顶层
    `required` 集合不得包含它。
+7. **FREEZE-008：typed 子命令唯一登记**：所有带子命令的 handler 必须经 catalog
+   解析为 `SubcommandID`，`Execute` 必须先执行 catalog guard；字符串 case 或 catalog 外
+   `args[0]` 路由直接失败并点名 handler/子命令。
+8. **FREEZE-009：产品 profile 词汇表**：`--profile` 固定为 Smoke/Full/Release，flag help
+   与运行时规范化器必须消费同一词汇表；第四档或独立 help 词汇直接失败。
 
-六条检查在当前 main 上应当零违规通过（冻结的是既成现实，不是新行为）。
+八条检查在当前 main 上应当零违规通过；FREEZE-008 是 ADR 0012 新增冻结面，FREEZE-009
+把既有 2.2 三档契约升级为可执行检查。
 
 ## 5. 明确拒绝
 

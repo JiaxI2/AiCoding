@@ -8,7 +8,11 @@ import (
 	registryobject "github.com/JiaxI2/AiCoding/internal/registry"
 )
 
-var typedCommandNamesForPluginProjection func() []string
+var (
+	typedCommandNamesForPluginProjection    func() []string
+	quickstartsForPluginProjection          func() ([]kit.PluginQuickstartRoute, error)
+	commandCatalogDigestForPluginProjection func() string
+)
 
 func init() {
 	typedCommandNamesForPluginProjection = func() []string {
@@ -19,6 +23,18 @@ func init() {
 		}
 		return names
 	}
+	quickstartsForPluginProjection = func() ([]kit.PluginQuickstartRoute, error) {
+		quickstarts := make([]kit.PluginQuickstartRoute, 0, len(commands.descriptor.Quickstarts))
+		for _, form := range commands.descriptor.Quickstarts {
+			tokens, err := commands.invocationTokens(form.Command, form.Path, form.Args)
+			if err != nil {
+				return nil, err
+			}
+			quickstarts = append(quickstarts, kit.PluginQuickstartRoute{Operation: form.Operation, Command: tokens})
+		}
+		return quickstarts, nil
+	}
+	commandCatalogDigestForPluginProjection = func() string { return CatalogSnapshot().Digest() }
 }
 
 func loadKitPluginProjection(kitCatalogDigest string) (kit.PluginProjectionPolicy, string, error) {
@@ -46,16 +62,21 @@ func loadKitPluginProjection(kitCatalogDigest string) (kit.PluginProjectionPolic
 		return kit.PluginProjectionPolicy{}, "", errors.New("kit lifecycle adapter is missing")
 	}
 
-	if typedCommandNamesForPluginProjection == nil {
+	if typedCommandNamesForPluginProjection == nil || quickstartsForPluginProjection == nil || commandCatalogDigestForPluginProjection == nil {
 		return kit.PluginProjectionPolicy{}, "", errors.New("typed command catalog is unavailable")
 	}
 	typedCommands := typedCommandNamesForPluginProjection()
-	input, err := registryobject.NewSnapshot("kit-plugin-view-input", struct {
-		KitCatalogDigest     string `json:"kitCatalogDigest"`
-		AdapterCatalogDigest string `json:"adapterCatalogDigest"`
-	}{KitCatalogDigest: kitCatalogDigest, AdapterCatalogDigest: adapterCatalog.Digest()})
+	quickstarts, err := quickstartsForPluginProjection()
 	if err != nil {
 		return kit.PluginProjectionPolicy{}, "", err
 	}
-	return kit.PluginProjectionPolicy{Adapter: adapter, TypedCommands: typedCommands}, input.Digest(), nil
+	input, err := registryobject.NewSnapshot("kit-plugin-view-input", struct {
+		KitCatalogDigest     string `json:"kitCatalogDigest"`
+		AdapterCatalogDigest string `json:"adapterCatalogDigest"`
+		CommandCatalogDigest string `json:"commandCatalogDigest"`
+	}{KitCatalogDigest: kitCatalogDigest, AdapterCatalogDigest: adapterCatalog.Digest(), CommandCatalogDigest: commandCatalogDigestForPluginProjection()})
+	if err != nil {
+		return kit.PluginProjectionPolicy{}, "", err
+	}
+	return kit.PluginProjectionPolicy{Adapter: adapter, TypedCommands: typedCommands, Quickstarts: quickstarts}, input.Digest(), nil
 }

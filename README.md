@@ -68,7 +68,7 @@ go run ./cmd/aicoding bootstrap --json && .\bin\aicoding.exe provision --json
 
 <!-- BEGIN GENERATED: CAPABILITIES -->
 
-> 此区由 `config/internal-capabilities.json` 生成（`sha256:1f915ac583c9dc8d7661c87741942fc68d96c3439dbc797a734f0e8fe7523fdd`）。完整的 29 项能力见 [能力索引](docs/CAPABILITIES.md)。
+> 此区由 `config/internal-capabilities.json` 生成（`sha256:cdc4c7c38b0f0acb4d33282e0e84baa64a2964441c37d3becf4c168fc8a3f1d5`）。完整的 29 项能力见 [能力索引](docs/CAPABILITIES.md)。
 
 | 可直接使用的能力 | 核心职责 | 快速入口 | 使用闭环 | 架构 |
 |---|---|---|---|---|

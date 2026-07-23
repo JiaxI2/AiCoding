@@ -72,8 +72,11 @@ type changeReceiptProbe struct {
 var probeChangeReceipt = inspectChangeReceipt
 
 func runChange(args []string, start time.Time) (report.Result, error) {
-	if len(args) < 1 || strings.ToLower(args[0]) != "verify" {
+	if len(args) < 1 {
 		return report.Result{}, usageErrorf("change requires subcommand: verify")
+	}
+	if _, err := resolveCatalogSubcommandID(CommandChange, args[0]); err != nil {
+		return report.Result{}, err
 	}
 	fs := newFlagSet("change verify")
 	repoArg := fs.String("repo-root", "", "repository root")

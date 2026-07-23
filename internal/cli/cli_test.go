@@ -25,7 +25,7 @@ func TestRunNewFastPathCommands(t *testing.T) {
 	if out, err := exec.Command("git", "init", repo).CombinedOutput(); err != nil {
 		t.Fatalf("git init: %v: %s", err, out)
 	}
-	mustWrite(t, filepath.Join(repo, "Taskfile.yml"), "tasks:\n  smoke:\n    cmds:\n      - bin/aicoding.exe kit verify --all --profile Smoke --json\n")
+	mustWrite(t, filepath.Join(repo, "Taskfile.yml"), "tasks:\n  smoke:\n    cmds:\n      - bin/aicoding.exe kit verify --all --level smoke --json\n")
 	mustWrite(t, filepath.Join(repo, "config", "tagging-policy.json"), `{"schemaVersion":1}`)
 	mustWrite(t, filepath.Join(repo, "docs", "operations", "evidence", "pwsh-budget-release-fixture.json"), `{"schemaVersion":1,"command":"doctor pwsh","ok":true,"data":{"retirement":{"scope":"tools/specialty/*.ps1","remainingScripts":2,"unspecified":0}}}`)
 	mustWrite(t, filepath.Join(repo, "config", "pwsh-budget.json"), `{"schemaVersion":1,"scope":"tools/specialty/*.ps1","baselines":[{"remainingScripts":2,"unspecified":0,"scripts":["tools/specialty/aicoding-tag-governance.ps1","tools/specialty/verify-release-governance-overlay.ps1"],"observedCommit":"0000000000000000000000000000000000000000","evidence":"docs/operations/evidence/pwsh-budget-release-fixture.json"}]}`)
@@ -340,7 +340,7 @@ func TestKitInitCLIProducesLifecycleValidScaffold(t *testing.T) {
 	if err != nil || !initialized.OK {
 		t.Fatalf("kit init failed: result=%#v err=%v", initialized, err)
 	}
-	verified, err := runKit([]string{"verify", "--kit", "tmp-kit", "--profile", "Lifecycle", "--repo-root", repo, "--json"}, time.Now())
+	verified, err := runKit([]string{"verify", "--kit", "tmp-kit", "--level", "lifecycle", "--repo-root", repo, "--json"}, time.Now())
 	if err != nil || !verified.OK {
 		t.Fatalf("generated Kit failed Lifecycle without edits: result=%#v err=%v", verified, err)
 	}
@@ -480,7 +480,7 @@ func TestC99StandardCSkillVerifyWrapsCStyleKitJSON(t *testing.T) {
 
 	res, err := runSkill([]string{
 		"c99-standard-c", "verify",
-		"--profile", "fast",
+		"--depth", "fast",
 		"--target", "fixtures/target.json",
 		"--overlay", "overlays/project.json",
 		"--timings",
@@ -497,6 +497,33 @@ func TestC99StandardCSkillVerifyWrapsCStyleKitJSON(t *testing.T) {
 	details, ok := standard.Details.(cstyle.VerifyResult)
 	if !ok || details.Payload["ok"] != true || details.Target != "fixtures/target.json" {
 		t.Fatalf("unexpected C Kit verify details: %#v", standard.Details)
+	}
+
+	legacy, err := runSkill([]string{
+		"c99-standard-c", "verify", "--profile", "fast", "--target", "fixtures/target.json", "--repo-root", repo, "--json",
+	}, time.Now())
+	if err != nil || !legacy.OK || len(legacy.Warnings) != 1 || !strings.Contains(legacy.Warnings[0], "use --depth fast|full") {
+		t.Fatalf("legacy C99 --profile compatibility failed: res=%#v err=%v", legacy, err)
+	}
+}
+
+func TestKitLegacyProfileCompatibilityWarnings(t *testing.T) {
+	repo := t.TempDir()
+	writeGoControlFixture(t, repo)
+	if initialized, err := runKit([]string{"init", "tmp-kit", "--repo-root", repo, "--json"}, time.Now()); err != nil || !initialized.OK {
+		t.Fatalf("kit fixture init failed: res=%#v err=%v", initialized, err)
+	}
+	for _, tc := range []struct {
+		args    []string
+		warning string
+	}{
+		{args: []string{"verify", "--kit", "tmp-kit", "--profile", "Lifecycle", "--repo-root", repo, "--json"}, warning: "use --level smoke|lifecycle"},
+		{args: []string{"test", "--kit", "tmp-kit", "--profile", "Smoke", "--repo-root", repo, "--json"}, warning: "omit --profile"},
+	} {
+		result, err := runKit(tc.args, time.Now())
+		if err != nil || !result.OK || len(result.Warnings) != 1 || !strings.Contains(result.Warnings[0], tc.warning) {
+			t.Fatalf("legacy kit compatibility failed for %#v: res=%#v err=%v", tc.args, result, err)
+		}
 	}
 }
 

@@ -98,7 +98,7 @@
       "publicEntries": ["aicoding skill c99-standard-c check","aicoding skill c99-standard-c verify"],
       "architectureDoc": "docs/architecture/C_USERSTYLE_KIT_ARCHITECTURE.md",
       "quickstart": {
-        "steps": ["aicoding skill c99-standard-c status --json","aicoding skill c99-standard-c verify --profile fast --json"]
+        "steps": ["aicoding skill c99-standard-c status --json","aicoding skill c99-standard-c verify --depth fast --json"]
       },
       "activation": {
         "kind": "cli-entry",

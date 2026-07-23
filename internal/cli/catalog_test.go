@@ -137,3 +137,80 @@ func TestCommandCatalogRejectsGitPorcelainVerbs(t *testing.T) {
 		}
 	}
 }
+
+func TestCommandCatalogProjectsSubcommandAliasesHelpAndQuickstarts(t *testing.T) {
+	const (
+		commandID CommandID    = "demo"
+		runID     SubcommandID = "demo.run"
+	)
+	catalog, err := newCommandCatalog(
+		[]commandRoute{{descriptor: CommandDescriptor{
+			ID: commandID, Name: "demo", Aliases: []string{"d"}, RequiresSubcommand: true, LatencyClass: LatencyFast,
+			Subcommands: []SubcommandDescriptor{{ID: runID, Name: "run", Aliases: []string{"quick"}}},
+		}, handler: runBootstrap}},
+		[]HelpSection{{ID: HelpUsage, Title: "Usage:"}},
+		[]HelpForm{help(commandID, HelpUsage, "[--json]", runID)},
+		[]QuickstartForm{{Operation: "demo", Command: commandID, Path: []SubcommandID{runID}, Args: []string{"--json"}}},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	route, ok := catalog.lookup("d")
+	if !ok {
+		t.Fatal("top-level alias was not projected")
+	}
+	normalized, err := catalog.prepareInvocation(route, []string{"quick", "--json"})
+	if err != nil || len(normalized) != 2 || normalized[0] != "run" {
+		t.Fatalf("subcommand alias projection = %#v, %v", normalized, err)
+	}
+	resolved, err := catalog.resolveSubcommandID(commandID, "quick")
+	if err != nil || resolved != runID {
+		t.Fatalf("subcommand route projection = %q, %v", resolved, err)
+	}
+	if got := catalog.descriptor.Help[0].Usage; got != "aicoding demo run [--json]" {
+		t.Fatalf("help projection = %q", got)
+	}
+	tokens, err := catalog.invocationTokens(commandID, []SubcommandID{runID}, []string{"--json"})
+	if err != nil || strings.Join(tokens, " ") != "aicoding demo run --json" {
+		t.Fatalf("quickstart projection = %#v, %v", tokens, err)
+	}
+}
+
+func TestCommandCatalogRejectsProfileHelpOutsideProductVocabulary(t *testing.T) {
+	for _, vocabulary := range []string{"Smoke|Lifecycle", "Smoke|Full|Release|Canary"} {
+		_, err := newCommandCatalog(
+			[]commandRoute{{descriptor: CommandDescriptor{ID: "broken", Name: "broken", LatencyClass: LatencyFast}, handler: runBootstrap}},
+			[]HelpSection{{ID: HelpUsage, Title: "Usage:"}},
+			[]HelpForm{{Command: "broken", Section: HelpUsage, Usage: "aicoding broken --profile " + vocabulary}},
+		)
+		if err == nil || !strings.Contains(err.Error(), "aicoding broken") || !strings.Contains(err.Error(), vocabulary) {
+			t.Fatalf("profile vocabulary %q was not rejected with command context: %v", vocabulary, err)
+		}
+	}
+}
+
+func TestCatalogRegistersKitTestAndProfileFreeQuickstart(t *testing.T) {
+	kitCommand, ok := findCommandByID(Catalog().Commands, CommandKit)
+	if !ok {
+		t.Fatal("kit command is missing")
+	}
+	kitTest, ok := findSubcommandByID(kitCommand.Subcommands, SubKitTest)
+	if !ok || kitTest.Name != "test" {
+		t.Fatalf("kit test is not formally registered: %#v", kitTest)
+	}
+	for _, form := range Catalog().Quickstarts {
+		if form.Operation != "test" {
+			continue
+		}
+		tokens, err := commands.invocationTokens(form.Command, form.Path, form.Args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		command := strings.Join(tokens, " ")
+		if command != "aicoding kit test --kit {kit} --json" || strings.Contains(command, "--profile") {
+			t.Fatalf("kit test quickstart is not catalog-derived and profile-free: %q", command)
+		}
+		return
+	}
+	t.Fatal("kit test quickstart is missing")
+}

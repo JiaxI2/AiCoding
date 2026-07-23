@@ -5,7 +5,7 @@ Common CodingKit modules are repository assets governed by Go CLI checks.
 ## Current Verification
 
 ```powershell
-bin\aicoding.exe kit verify --all --profile Lifecycle --json
+bin\aicoding.exe kit verify --all --level lifecycle --json
 bin\aicoding.exe verify --profile Smoke --json
 bin\aicoding.exe test --profile Smoke --json
 ```

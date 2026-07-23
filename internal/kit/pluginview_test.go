@@ -25,12 +25,19 @@ func TestCatalogPluginViewsAreCompleteDetachedAndDeterministic(t *testing.T) {
 		t.Fatal(err)
 	}
 	adapter := testKitPluginAdapter(t)
+	policy := kit.PluginProjectionPolicy{
+		Adapter: adapter,
+		Quickstarts: []kit.PluginQuickstartRoute{{
+			Operation: "status",
+			Command:   []string{"aicoding", "lifecycle", "status", "--scope", "kit", "--kit", "{kit}", "--json"},
+		}},
+	}
 
-	first, err := kit.ProjectCatalogPluginViews(repo, selected, adapter, false)
+	first, err := kit.ProjectCatalogPluginViews(repo, selected, policy, false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := kit.ProjectCatalogPluginViews(repo, selected, adapter, false)
+	second, err := kit.ProjectCatalogPluginViews(repo, selected, policy, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -91,7 +98,7 @@ func TestCatalogPluginViewsAreCompleteDetachedAndDeterministic(t *testing.T) {
 		}
 	}
 
-	withState, err := kit.ProjectCatalogPluginViews(repo, selected, adapter, true)
+	withState, err := kit.ProjectCatalogPluginViews(repo, selected, policy, true)
 	if err != nil {
 		t.Fatal(err)
 	}
