@@ -259,7 +259,31 @@ refresh、rollback 和 uninstall ownership 验证。
 不得互相依赖，领域不得依赖 CLI/repohealth/testengine。它检查 production Go imports，测试
 可以引用相邻消费者以完成 contract verification。
 
-## 10. 架构冻结条件
+## 10. 延后拆分观察项与触发条件
+
+以下条目只记录领域包何时需要重新评估边界；它们不是 Primitive 例外、违规登记或立即拆分
+计划。未满足触发条件时保持现状，避免仅凭目录大小或表面重复引入第二套实现。
+
+### 10.1 `internal/cstyle`
+
+本文件 §4 的 domain 行已明确允许受控 specialty；`internal/cstyle` 当前唯一生产消费者是
+`internal/cli`。保持该边界，只有出现第二个语言 Kit 时才重新评估是否从核心控制面抽离，
+本轮不移动该包。
+
+### 10.2 `internal/kit`
+
+2026-07-23 按包内非 `_test.go` Go 文件的物理行数实测为 **5839 source LOC**；提示中的
+5814 与当前仓库不一致，故采用实测值。当前生产消费者为 `internal/cache`、`internal/cli`、
+`internal/repohealth`、`internal/testengine` 与 `internal/lifecycle`。只有两个消费者需要独立
+复用同一子域，或包内出现跨文件循环依赖时，才触发拆分评估；**体量本身不是拆分理由**。
+
+### 10.3 Test Registry
+
+2026-07-23 实测 `internal/testengine/engine.go` 已有 **39** 个 `Kind: "command"` leaf。
+静态检查命令是 Primitive，Test Registry 是组合器，两者职责不同；**不合并静态检查命令**，
+防止后续仅因 Registry 引用了这些命令就把它们误判为重复实现。
+
+## 11. 架构冻结条件
 
 本架构在以下条件全部满足时冻结：
 
@@ -279,7 +303,7 @@ refresh、rollback 和 uninstall ownership 验证。
 4. 只有现实问题、稳定变化点和至少两个消费者同时出现，才以 ADR 解冻对应边界。
 5. 架构文档记录长期不变量；功能计划、性能实验和迁移任务进入各自 backlog/ADR。
 
-## 11. 明确拒绝
+## 12. 明确拒绝
 
 - God Core、全局状态仓库或跨领域 `SystemManager`；
 - Go dynamic plugin ABI、任意第三方代码进程内加载；
