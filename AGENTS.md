@@ -175,8 +175,10 @@ For an actual release, also test real Marketplace registration, real plugin inst
   retry. Only the ref tip needs an alias. If the Tree changed (the usual rebase onto an updated main),
   the check must miss and Release must be rerun with `--reuse off`.
 - Do not edit Receipt or alias files manually and do not bypass `.githooks/pre-push` to manufacture
-  a green result. Keep `--reuse off` as the default until three consecutive remote main
-  `release-gate` seed/audit runs pass and the separate promotion change cites all three run URLs.
+  a green result. `--reuse auto` is the default after ADR 0014 cited three consecutive remote main
+  `release-gate` seed/audit runs; keep CI's explicit `--reuse off` seed and `--verify-reuse` audit
+  unchanged. Immediately revert the default to `off` if a changed Tree hits an old Receipt or a real
+  failure is masked by Receipt reuse.
 - Repository hooks may only call the prebuilt Go CLI. They must not run tests/builds, modify the
   worktree, stash/reset/checkout, or invoke a recursive push.
 - Plan Mode path triggering is owned by `bin\aicoding.exe plan check` and `config/plan-policy.json`;

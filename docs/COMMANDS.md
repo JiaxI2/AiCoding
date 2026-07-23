@@ -200,11 +200,16 @@ bin\aicoding.exe cache clean [--scope fast-path|test-results|validation-reports|
 ## Validation Evidence
 
 Validation Evidence 把一次完整 PASS 测试绑定到 Git Tree 和验证语义。当前
-`test --profile ...` 默认是 `--reuse off`；`--reuse auto` 仅显式启用。默认值只有在 main 的
-远端 `release-gate` 连续 3 次完成 seed/audit 且切换提交引用三次 run URL 后才能晋级。
+`test --profile ...` 默认是 `--reuse auto`；完整 identity 与 Receipt/报告完整性均通过才会
+命中，否则普通 miss 真跑。main 远端 `release-gate` 的三次 v2 seed/audit 证据与晋级决定见
+ADR 0014 和 Validation Evidence Budget §13/§15。
 `--force` 忽略命中并完整执行，
 `--verify-reuse` 同样完整执行并审计实际结论及逐用例状态，二者不能同时使用；
 `--allow-dirty` 只允许脏主体继续执行，所得报告永远不可复用。
+
+精确 Receipt 路径存在但内容/报告损坏、fingerprint 非法或 store 读取失败时，默认 `auto`
+非零退出，不把损坏静默当成普通 miss，也不覆盖损坏 Receipt。显式 `--reuse off` 继续强制
+执行全部选中 leaf，CI release-gate 仍用它生成冷 seed。
 
 ```powershell
 bin\aicoding.exe validation status --json

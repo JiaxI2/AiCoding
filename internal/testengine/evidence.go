@@ -23,6 +23,27 @@ var captureValidationSubject = func(repository validationevidence.Repository) (v
 	return repository.Capture(validationevidence.TargetAuto)
 }
 
+func failClosedReuseError(decision validationevidence.ReuseDecision) error {
+	switch decision.Code {
+	case validationevidence.CodeReceiptInvalid, validationevidence.CodeFingerprintInvalid, validationevidence.CodeStoreError:
+		return &validationevidence.Error{
+			Code:           decision.Code,
+			Message:        decision.Reason,
+			RequiredAction: decision.RequiredAction,
+		}
+	default:
+		return nil
+	}
+}
+
+func failClosedReportError(report Report) error {
+	return failClosedReuseError(validationevidence.ReuseDecision{
+		Code:           report.ValidationCode,
+		Reason:         report.ReusableReason,
+		RequiredAction: "clean the affected profile evidence, then rerun without reuse",
+	})
+}
+
 type normalizedTestCase struct {
 	ID                 string   `json:"id"`
 	Node               string   `json:"node"`
@@ -203,7 +224,24 @@ func finalizeEvidence(
 		return
 	}
 	if nodeErrors := nodes.publish(store, startSubject, report.Results); len(nodeErrors) > 0 {
-		report.Summary.ReceiptInvalidReason = appendReceiptInvalidReason(report.Summary.ReceiptInvalidReason, strings.Join(nodeErrors, "; "))
+		messages := make([]string, 0, len(nodeErrors))
+		var blocking *nodeEvidencePublishError
+		for index := range nodeErrors {
+			publishError := &nodeErrors[index]
+			messages = append(messages, publishError.message)
+			if blocking == nil && failClosedReuseError(validationevidence.ReuseDecision{
+				Code: publishError.code, Reason: publishError.message,
+			}) != nil {
+				blocking = publishError
+			}
+		}
+		reason := strings.Join(messages, "; ")
+		report.Summary.ReceiptInvalidReason = appendReceiptInvalidReason(report.Summary.ReceiptInvalidReason, reason)
+		if blocking != nil {
+			report.ValidationCode = blocking.code
+			report.ReusableReason = reason
+			return
+		}
 	}
 	reusable, reason, code := receiptEligible(cfg, testCases, report.Results, startSubject)
 	if !reusable {

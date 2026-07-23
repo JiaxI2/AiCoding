@@ -387,8 +387,8 @@ Receipt `sha256:6b40f63f0a70ce7d2b8cdaa2b8eb99c81b06e570a013627e7a615cab85e69047
 及总运行均为 `success`。
 
 至此三次 v2 证据来自三棵不同的 main Tree，且每次均完成冷种子与全量审计，晋级前置计数
-已满足。`--reuse` 默认值仍保持 `off`；默认值翻转必须另开独立评审提交并引用上述三个 run
-URL，本次不启动该评审。
+已满足。本节证据落账时 `--reuse` 默认值仍保持 `off`，并要求默认值翻转另开独立评审提交；
+该后续评审现已由 ADR 0014 与本文件 §15 完成。
 
 ## 14. 配置与 Receipt 存储裁决：当前不引入数据库
 
@@ -406,3 +406,32 @@ URL，本次不启动该评审。
 
 阈值未触发前，数据库议题关闭；单纯文件数量增长、冷 Release 时长或缺少跨仓查询设想均不
 构成重开依据。
+
+## 15. `--reuse auto` 默认值晋级
+
+生效日期：2026-07-23。ADR 0014 依据 §13 的 `toolchainDigest.v2` 远端 3/3 证据，把
+`test --profile ...` 的默认值从 `off` 晋级为 `auto`。`toolchainDigest.v2` 继续只把
+规范化 Go/Git 版本与平台/架构纳入 Receipt 语义；可执行文件路径、size 与 mtime 只触发本机
+probe，不因路径本身制造语义 miss。
+
+`auto` 只在干净 HEAD 或 index-only 主体上，对 repository、Tree、profile、plan、engine、
+config、toolchain、options 的完整 identity 以及 Receipt/报告/逐 leaf 状态摘要全部校验通过
+后命中。普通 identity 变化是 miss 并真跑；精确路径存在但 store 损坏、fingerprint 非法或
+读取失败则非零 fail-closed，不执行后覆盖损坏 Receipt。
+
+首次本地晋级实测针对最终实现的 staged Tree
+`68a2fc3a23bead9b3db0c9ff21e0abe7da943e23`：
+
+| Release | 结论 | execution mode | cache hit ratio | 命令墙钟 |
+|---|---|---|---:|---:|
+| 默认 auto 冷跑 | 73 PASS / 0 FAIL / 0 WARN / 0 SKIP | executed | 0 | 217,369ms |
+| 同 Tree 默认 auto 热跑 | 同上 | reused | 1 | 344ms |
+
+复用报告保留冷证据自己的 `summary.duration_ms`；热跑墙钟使用 CLI `elapsedMs`。两次共用
+Receipt `sha256:c4fc31279a83a7c2b9e82b63b4139e603020d96ab429a5ad3dbb0492b081a95a`。
+原始 summary 位于 `test-results/0042-final-release-cold/summary.json` 与
+`test-results/0042-final-release-warm/summary.json`，八项负例和 CI 命令逐字证明见 TODO 0042。
+
+以下任一事实出现一次即立即回滚默认值为 `off`：Tree 已变化却命中旧 Receipt；任意真实失败
+被 Receipt 掩盖为绿。不设观察窗口，不以“后续再看”延迟回滚。CLI release-gate 的显式
+`--reuse off` seed 与 `--verify-reuse` audit 在晋级前后逐字不变。

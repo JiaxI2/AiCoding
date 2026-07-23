@@ -142,6 +142,117 @@ func TestAutoMissReportsReceiptInvalidReason(t *testing.T) {
 	}
 }
 
+func TestAutoFailsClosedOnCorruptReceiptStore(t *testing.T) {
+	repo := newEngineEvidenceRepo(t)
+	originalExecute := executeTestCases
+	defer func() { executeTestCases = originalExecute }()
+	executions := 0
+	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
+		executions++
+		return syntheticResults(cfg, tests, false)
+	}
+
+	seed := evidenceRunConfig(t, repo)
+	seed.Out = filepath.Join(t.TempDir(), "seed")
+	seedReport, err := Run(context.Background(), seed)
+	if err != nil || seedReport.ReceiptID == "" {
+		t.Fatalf("seed run = %#v, %v", seedReport, err)
+	}
+	commonDir, err := gitx.CommonDir(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	receiptPath := filepath.Join(
+		commonDir,
+		"aicoding",
+		"validation",
+		"receipts",
+		seed.Profile,
+		strings.TrimPrefix(seedReport.ValidationIdentity, "sha256:")+".json",
+	)
+	corrupt := []byte("{corrupt")
+	if err := os.WriteFile(receiptPath, corrupt, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	auto := seed
+	auto.Out = filepath.Join(t.TempDir(), "auto")
+	auto.Reuse = ReuseAuto
+	autoReport, runErr := Run(context.Background(), auto)
+	evidenceErr, ok := runErr.(*validationevidence.Error)
+	if !ok || evidenceErr.Code != validationevidence.CodeReceiptInvalid {
+		t.Fatalf("corrupt Receipt error = %T %v, report=%#v", runErr, runErr, autoReport)
+	}
+	if executions != 1 {
+		t.Fatalf("corrupt Receipt triggered execution: %d", executions)
+	}
+	stored, err := os.ReadFile(receiptPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(stored, corrupt) {
+		t.Fatalf("corrupt Receipt was overwritten: %q", stored)
+	}
+	t.Logf("inner_exit=1 code=%s executed_after_corruption=0 receipt_unchanged=true", evidenceErr.Code)
+}
+
+func TestAutoFailsClosedWhenCorruptStoreAppearsAtPublish(t *testing.T) {
+	repo := newEngineEvidenceRepo(t)
+	originalExecute := executeTestCases
+	defer func() { executeTestCases = originalExecute }()
+	executions := 0
+	executeTestCases = func(_ context.Context, cfg Config, tests []TestCase) []Result {
+		executions++
+		return syntheticResults(cfg, tests, false)
+	}
+
+	cfg := evidenceRunConfig(t, repo)
+	cfg.Out = filepath.Join(t.TempDir(), "auto")
+	cfg.Reuse = ReuseAuto
+	store, err := validationevidence.Open(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	subject, err := store.Capture(validationevidence.TargetHead)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec, err := EvidenceSpec(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fingerprint, err := store.Fingerprint(subject, spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	commonDir, err := gitx.CommonDir(repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	identity := strings.TrimPrefix(fingerprint.Identity, "sha256:")
+	reportDir := filepath.Join(commonDir, "aicoding", "validation", "reports", identity)
+	if err := os.MkdirAll(reportDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(reportDir, "results.json"), []byte("{corrupt"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	report, runErr := Run(context.Background(), cfg)
+	evidenceErr, ok := runErr.(*validationevidence.Error)
+	if !ok || evidenceErr.Code != validationevidence.CodeStoreError {
+		t.Fatalf("publish-time corruption error = %T %v, report=%#v", runErr, runErr, report)
+	}
+	if executions != 1 {
+		t.Fatalf("ordinary miss execution count = %d", executions)
+	}
+	receiptPath := filepath.Join(commonDir, "aicoding", "validation", "receipts", cfg.Profile, identity+".json")
+	if pathExists(receiptPath) {
+		t.Fatalf("publish-time corruption produced a whole Receipt: %s", receiptPath)
+	}
+	t.Logf("inner_exit=1 code=%s executed_after_miss=1 whole_receipt_written=false", evidenceErr.Code)
+}
+
 func TestVerifyReuseTreatsV1ToolchainReceiptAsOrdinaryMiss(t *testing.T) {
 	repo := newEngineEvidenceRepo(t)
 	originalExecute := executeTestCases
@@ -610,13 +721,13 @@ func TestReceiptEligibilityUsesSeverityAndUnexpectedSkipPolicy(t *testing.T) {
 	}
 }
 
-func TestNormalizeConfigDefaultsReuseOffAndRejectsAuditForce(t *testing.T) {
+func TestNormalizeConfigDefaultsReuseAutoAndRejectsAuditForce(t *testing.T) {
 	t.Parallel()
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Reuse != ReuseOff {
+	if cfg.Reuse != ReuseAuto {
 		t.Fatalf("default reuse = %q", cfg.Reuse)
 	}
 	if _, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke, Reuse: "always"}); err == nil {

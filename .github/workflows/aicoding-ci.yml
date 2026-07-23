@@ -50,8 +50,8 @@ jobs:
           path: test-results/
           if-no-files-found: error
 
-  # Keep default reuse off until reviewers cite three consecutive successful release-gate runs on main.
-  # Promotion to auto must be a separate reviewed commit.
+  # Default auto was promoted after three consecutive successful release-gate runs on main.
+  # Keep the explicit off seed and verify-reuse audit commands unchanged.
   release-gate:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: windows-latest

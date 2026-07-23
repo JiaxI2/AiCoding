@@ -3,6 +3,7 @@ package testengine
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -50,6 +51,11 @@ type nodeEvidencePayload struct {
 	Profile         Profile            `json:"profile"`
 	NodeInputDigest string             `json:"nodeInputDigest"`
 	Results         []nodeResultStatus `json:"results"`
+}
+
+type nodeEvidencePublishError struct {
+	code    validationevidence.ErrorCode
+	message string
 }
 
 func validationNode(configured string) (string, error) {
@@ -313,11 +319,11 @@ func (plan nodeEvidencePlan) auditFailures(cfg Config, results []Result) []Resul
 	return failures
 }
 
-func (plan nodeEvidencePlan) publish(store validationevidence.Repository, subject validationevidence.Subject, results []Result) []string {
+func (plan nodeEvidencePlan) publish(store validationevidence.Repository, subject validationevidence.Subject, results []Result) []nodeEvidencePublishError {
 	if !plan.available || !subject.Reusable {
 		return nil
 	}
-	errorsFound := []string{}
+	errorsFound := []nodeEvidencePublishError{}
 	for _, group := range plan.groups {
 		statuses, err := nodeStatuses(group.tests, results)
 		if err != nil || !nodeStatusesEligible(group.tests, statuses) {
@@ -325,12 +331,12 @@ func (plan nodeEvidencePlan) publish(store validationevidence.Repository, subjec
 		}
 		digest, err := nodeResultStatusDigest(group.fingerprint.Profile, group.name, statuses)
 		if err != nil {
-			errorsFound = append(errorsFound, "node "+group.name+": "+err.Error())
+			errorsFound = append(errorsFound, newNodeEvidencePublishError(group.name, err))
 			continue
 		}
 		bundle, err := nodeReportBundle(group, statuses, digest)
 		if err != nil {
-			errorsFound = append(errorsFound, "node "+group.name+": "+err.Error())
+			errorsFound = append(errorsFound, newNodeEvidencePublishError(group.name, err))
 			continue
 		}
 		_, err = store.PutNode(validationevidence.Receipt{
@@ -342,10 +348,19 @@ func (plan nodeEvidencePlan) publish(store validationevidence.Repository, subjec
 			Scope:              subject.Scope,
 		}, bundle)
 		if err != nil {
-			errorsFound = append(errorsFound, "node "+group.name+": "+err.Error())
+			errorsFound = append(errorsFound, newNodeEvidencePublishError(group.name, err))
 		}
 	}
 	return errorsFound
+}
+
+func newNodeEvidencePublishError(node string, err error) nodeEvidencePublishError {
+	code := validationevidence.CodeStoreError
+	var evidenceError *validationevidence.Error
+	if errors.As(err, &evidenceError) {
+		code = evidenceError.Code
+	}
+	return nodeEvidencePublishError{code: code, message: "node " + node + ": " + err.Error()}
 }
 
 func nodeStatuses(testCases []TestCase, results []Result) ([]nodeResultStatus, error) {
@@ -434,6 +449,15 @@ func (plan nodeEvidencePlan) invalidReason() string {
 		}
 	}
 	return ""
+}
+
+func (plan nodeEvidencePlan) failClosedReuseError() error {
+	for _, group := range plan.groups {
+		if err := failClosedReuseError(group.decision); err != nil {
+			return fmt.Errorf("node %s: %w", group.name, err)
+		}
+	}
+	return nil
 }
 
 func appendReceiptInvalidReason(current, addition string) string {

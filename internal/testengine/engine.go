@@ -184,7 +184,7 @@ func ParseConfig(args []string, stderr io.Writer) (Config, error) {
 	fs.BoolVar(&cfg.Strict, "strict", false, "treat WARN severity command failures as FAIL")
 	fs.BoolVar(&cfg.IncludeMutate, "include-mutating", false, "reserved: include isolated mutating lifecycle tests")
 	fs.BoolVar(&cfg.NoJSONCheck, "no-json-check", false, "disable JSON output validation")
-	fs.StringVar(&reuse, "reuse", string(ReuseOff), "auto|off")
+	fs.StringVar(&reuse, "reuse", string(ReuseAuto), "auto|off")
 	fs.BoolVar(&cfg.Force, "force", false, "ignore a matching Receipt and execute all selected cases")
 	fs.BoolVar(&cfg.AllowDirty, "allow-dirty", false, "allow execution for a dirty subject; never reusable")
 	fs.BoolVar(&cfg.VerifyReuse, "verify-reuse", false, "execute and audit the conclusion against a matching Receipt")
@@ -226,7 +226,7 @@ func NormalizeConfig(cfg Config) (Config, error) {
 		cfg.Concurrency = 1
 	}
 	if cfg.Reuse == "" {
-		cfg.Reuse = ReuseOff
+		cfg.Reuse = ReuseAuto
 	}
 	if cfg.Reuse != ReuseOff && cfg.Reuse != ReuseAuto {
 		return cfg, fmt.Errorf("invalid reuse mode %q", cfg.Reuse)
@@ -294,6 +294,11 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 	if shouldCheck {
 		reuseDecision = evidenceStore.Check(startSubject, startFingerprint)
 	}
+	if cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force {
+		if err := failClosedReuseError(reuseDecision); err != nil {
+			return Report{}, err
+		}
+	}
 	if reuseDecision.Hit && cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force {
 		reused, reuseErr := reusedReport(cfg, testCases, startSubject, startFingerprint, reuseDecision)
 		if reuseErr == nil {
@@ -306,6 +311,7 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 		reuseDecision.Hit = false
 		reuseDecision.Code = validationevidence.CodeReceiptInvalid
 		reuseDecision.Reason = reuseErr.Error()
+		return Report{}, failClosedReuseError(reuseDecision)
 	}
 	start := time.Now()
 	if err := os.MkdirAll(filepath.Join(cfg.Out, "logs"), 0o755); err != nil {
@@ -314,6 +320,11 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 	nodePlan, err := buildNodeEvidencePlan(evidenceStore, startSubject, startFingerprint, cfg, testCases, shouldCheck)
 	if err != nil {
 		return Report{}, fmt.Errorf("prepare node validation evidence: %w", err)
+	}
+	if cfg.Reuse == ReuseAuto && !cfg.VerifyReuse && !cfg.Force {
+		if err := nodePlan.failClosedReuseError(); err != nil {
+			return Report{}, err
+		}
 	}
 	var results []Result
 	executionMode := "executed"
@@ -368,6 +379,9 @@ func Run(ctx context.Context, cfg Config) (Report, error) {
 	}
 	finalizeEvidence(ctx, cfg, testCases, evidenceStore, startSubject, startFingerprint, reuseDecision, nodePlan, &testReport)
 	if err := Write(cfg.Out, testReport); err != nil {
+		return testReport, err
+	}
+	if err := failClosedReportError(testReport); err != nil {
 		return testReport, err
 	}
 	if ctx.Err() != nil {
