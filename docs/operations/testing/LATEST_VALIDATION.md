@@ -12,7 +12,6 @@ go run ./cmd/aicoding bootstrap --json
 bin/aicoding.exe doctor --all --json
 bin/aicoding.exe verify --profile Release --json
 bin/aicoding.exe test --profile Smoke --json
-bin/aicoding.exe test --profile Full --json
 bin/aicoding.exe test --profile Release --json
 bin/aicoding.exe test latest --json
 bin/aicoding.exe kit verify --all --level lifecycle --json
@@ -33,6 +32,9 @@ git hook run pre-commit
 
 ## Notes
 
+- 当前发布流程只执行 Release；Release 对 Full 的 73-leaf 直接超集证据见
+  [TODO 0041](../../todolist/done/0041-release-only-publication.md)。下表的 Full 行保留
+  2026-07-18 历史快照，不是现行发布步骤。
 - Smoke、Full、Release 均通过唯一 `internal/testengine` Registry；跳过项只属于未选择的更高或相邻 profile。
 - Full/Release 的 rollback 用例只验证 `lifecycle rollback --help`，没有读取或应用本地 rollback snapshot。
 - `test latest` 指向本次 release profile；原始日志保存在忽略的 `test-results/`。

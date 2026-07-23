@@ -104,10 +104,14 @@ bin/aicoding.exe skill c99-standard-c status --json
 bin/aicoding.exe docsync ci --json
 bin/aicoding.exe skill verify --all --profile Smoke --json
 bin/aicoding.exe lifecycle plan --action install --scope kit --all --json
-bin/aicoding.exe test --profile Full --json
 bin/aicoding.exe test --profile Release --json
 git diff --check
 ```
+
+For publication, run only Release: it is a strict superset of Full on the current 73-leaf
+registry. The leaf-by-leaf profile, Severity, and executed-Command evidence is recorded in
+[TODO 0041](../todolist/done/0041-release-only-publication.md). Full remains available as an
+independent development-iteration profile.
 
 Run `bin/aicoding.exe docsync all --json` or `bin/aicoding.exe docsync release --json` when a change specifically touches DocSync policy or release documentation.
 

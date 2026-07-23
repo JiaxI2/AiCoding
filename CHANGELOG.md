@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(release)**: 以同一 Tree 的 73 行 leaf 直接对照证明 Release 选中 73 项、Full 选中 69 项且不存在 Full-only leaf；全部 Severity 相同，69 个共同执行 Command 逐字相同，GO-002 均为 ADR 0013 的六包 raceScope。发布维护流程因此只运行 Release，Full 命令继续保留为独立开发迭代入口。 / Proves at leaf level that Release strictly supersets Full with identical severities and shared commands, then removes only the redundant Full step from publication while preserving Full as an independent development profile.
+
 - **perf(testengine)**: 完成 TODO 0040 与 ADR 0013：Release 的 GO-002 与 Full 共用 `impact-policy.json` 六包 raceScope，GO-007 继续以 Required 扫描全仓并发标记并阻断漏登；同一 0039 树、两个独立空 `GOCACHE` 的全仓/scoped race 为 78.523s/59.750s，节省 18.773s（23.9%）。接受不再 instrument 未登记非并发包的严格度变化，不新增 Registry、治理面或 Primitive，全仓 race 保留为显式诊断。 / Completes TODO 0040 and ADR 0013 by projecting the same six-package race scope into Full and Release while retaining required whole-repository concurrency registration, reducing isolated cold race time by 18.773 seconds without adding a registry, governance surface, or Primitive.
 
 - **perf(test)**: 完成 TODO 0039：四个重包以 TestMain 一次构建 CLI、一次初始化只读 Git 模板并向各自 temp dir 复制；仅将无 chdir、环境写入或包级注入依赖的测试并行化。四包 PASS 计数逐项不变，局部墙钟由 46.486/31.737/28.417/28.887s 降至 25.918/20.186/10.480/23.927s，连续三次全仓测试稳定在 34.155–35.651s；未减少断言、删除用例或改变产品行为。 / Completes TODO 0039 by reusing one CLI build and immutable Git template per heavy test package, selectively parallelizing only isolated temp-dir tests, preserving every PASS count and assertion while reducing package and whole-suite execution time without product changes.

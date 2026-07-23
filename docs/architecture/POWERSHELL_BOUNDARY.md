@@ -14,6 +14,10 @@ bin\aicoding.exe test --profile Full --json
 bin\aicoding.exe test --profile Release --json
 ```
 
+上述 profile 是彼此独立的正式入口，不表示发布时依次执行三档。Full 保留给开发迭代；
+发布只执行 Release，因为当前 73-leaf Registry 的直接对照证明 Release 是 Full 的严格
+超集，证据见 [TODO 0041](../todolist/done/0041-release-only-publication.md)。
+
 Go CLI 同时拥有 lifecycle、product doctor/verify、test engine、release、hook、governance、
 DocSync、skill verify、export、fresh-clone 和 C99 C/H style gate。runtime Skill profile/audit
 脚本只能由显式 lifecycle adapter 或专项人工命令调用。

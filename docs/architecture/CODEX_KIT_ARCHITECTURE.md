@@ -57,9 +57,13 @@ bin\aicoding.exe doctor --all --json
 bin\aicoding.exe verify --profile Smoke --json
 bin\aicoding.exe lifecycle plan --action install --scope kit --all --json
 bin\aicoding.exe test --profile Smoke --json
-bin\aicoding.exe test --profile Full --json
-bin\aicoding.exe test --profile Release --json
 ```
+
+Smoke and Full are independent development-feedback profiles; choose the radius required by the
+change. Publication runs only `bin\aicoding.exe test --profile Release --json`, because Release
+is a strict superset of Full on the current 73-leaf registry. The direct profile, Severity, and
+executed-Command comparison is recorded in
+[TODO 0041](../todolist/done/0041-release-only-publication.md).
 
 DocSync is enforced by `bin/aicoding.exe docsync`, `.githooks/pre-commit`, and `.github/workflows/aicoding-ci.yml`.
 
