@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **fix(mcpcontrol)**: 完成 TODO 0037：以真实 state 目录阻塞负例证明 install/update 在 `writeInstallState` 失败后遗留已写入的 Codex managed block，随后仅在该失败分支复用既有 config backup 恢复；入口级 write/status/verify 测试使九个 0% 目标函数全部获得真实覆盖，包语句覆盖率由 46.3% 提升至 67.3%，test/source 比例由 20.0% 提升至 42.0%。 / Completes TODO 0037 by reproducing and minimally repairing the asymmetric config rollback after an install-state write failure, then exercising all nine previously uncovered lifecycle/status/verify functions through real entry points while raising package statement coverage from 46.3% to 67.3% and the test/source ratio from 20.0% to 42.0%.
+
 - **fix(cli)**: 完成 TODO 0036 与 ADR 0012：将 `--profile` 收敛为唯一产品词汇 Smoke/Full/Release，C99 host 验证改用 `--depth fast|full`，Kit 管理验证改用 `--level smoke|lifecycle`，并把 `kit test` 正式登记为无 profile 子命令；旧参数在限期兼容窗口内继续成功并输出 deprecation warning。Typed command catalog 现唯一登记递归子命令/alias，并向 routing、help 与 pluginview quickstart 投影；FREEZE-008/009 阻断 catalog 外路由、独立 profile help 和第四档词汇。 / Completes TODO 0036 and ADR 0012 by reserving `--profile` for Smoke/Full/Release, moving C99 host depth and Kit management level to orthogonal flags, formally registering profile-free `kit test`, retaining warned legacy forms for a bounded window, and extending the typed catalog plus FREEZE-008/009 across routing, help, and plugin quickstarts.
 
 ## [1.2.0] - 2026-07-23

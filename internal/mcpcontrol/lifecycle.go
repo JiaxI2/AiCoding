@@ -209,6 +209,9 @@ func runLifecycle(repo, codexPath string, component Component, action string, dr
 		result.BackupPath = backup
 		if stateErr := writeInstallState(result.StatePath, component, configPath); stateErr != nil {
 			result.Errors = []string{stateErr.Error()}
+			if restoreErr := restoreConfigBackup(configPath, backup); restoreErr != nil {
+				result.Errors = append(result.Errors, "restore Codex config: "+restoreErr.Error())
+			}
 			return result
 		}
 		result.OK = true
