@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **docs(architecture)**: 完成 TODO 0046：逐条真跑并记录 Roadmap 七项地基证据，确认 typed catalog 与八动词、三档 profile、schemaVersion=1 报告、Taskfile 纯路由、PowerShell 六类棘轮和已移除入口防复活全部由现有精确门禁覆盖；据此宣布架构阶段结束，后续默认归类为功能扩展或模块内部优化，解冻仍必须同时具备 ADR、现实问题、稳定变化点和两个真实消费者。 / Closes the architecture stage after recording executable evidence for all seven groundwork contracts, classifies subsequent work as feature expansion or module-internal optimization, and preserves the four-part ADR thaw rule.
+
 - **docs(validation)**: 完成 TODO 0045：把 `VALIDATION_EVIDENCE_BUDGET` 原 §9–11 的第三至第五期过程样本逐字归档到 evidence 目录，主文档只保留已承接结论与链接；搬运块 SHA-256 前后一致，§12 至文件末尾的工具链限制解决记录、晋级计数、数据库裁决及 ADR 0014 默认值翻转记录保持逐字不变，可继续沿 Git 历史追溯。 / Archives the byte-identical phase-three-through-five process evidence from the validation budget, leaves only conclusions and a link in the main document, and preserves every byte from section 12 through the ADR 0014 default-promotion record with Git-traceable history.
 
 - **ci(toolchain)**: 完成 TODO 0044：从五个官方仓库实时解析 latest release、tag ref 与 annotated-tag peel，把 checkout/setup-go/upload-artifact/github-script/setup-task 分别固定到当前 node24 release 的完整 commit SHA；所有 `uses:` 仍保持 `owner/action@<40位SHA> # vN`，workflow 触发条件、job、并发、permissions 及 release-gate 的显式 off seed/audit 命令均未改变。setup-task 的唯一规格锚点同步为 v2.1.0 commit，并以错误 SHA 真实负例证明仍会 fail-closed；main 的 CI 四 job 与 issue-governance 适用 job 远端 dispatch 全绿，两条完整日志的 Node 20/deprecation 匹配数均为零。 / Migrates every workflow action to the current official Node 24 release with verified commit-SHA pins, preserves workflow structure and explicit Release seed/audit commands, proves the exact setup-task anchor fails on a wrong SHA, and completes successful main dispatches with zero Node 20 deprecation matches across both full logs.

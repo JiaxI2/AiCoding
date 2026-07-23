@@ -313,3 +313,140 @@ refresh、rollback 和 uninstall ownership 验证。
 - 默认每次局部修改都跑全量回归，或反过来用局部测试声称 release 完成；
 - 为推测中的未来能力预建 capability graph、全域事务或服务 API；
 - 在实现 identity 中编码版本，或用平行目录表达架构演进。
+
+## 13. 架构阶段收口（TODO 0046）
+
+2026-07-23 对照 [Roadmap §1](07-roadmap.md#1-演化总规则) 的“地基现状”逐项真跑。以下七项
+全部满足；任一对应门禁后续转红，都只表示冻结契约被破坏，不授权绕过或自行解冻。
+
+### 13.1 七项地基证据
+
+1. **顶层命令由 typed catalog 唯一登记，不为单个场景加命令。**
+   `internal/cli/catalog.go` 的 `commands = mustCommandCatalog(...)` 是顶层命令、递归
+   `SubcommandID`、alias、help 与 quickstart 的唯一登记位置。TODO 0036 增加的
+   `FREEZE-008` 由 `internal/testengine/freeze.go:checkTypedSubcommandCatalog` 阻断
+   catalog 外的 `args[0]`/string switch 路由；正反测试为
+   `TestFreezeChecksCurrentRepository/FREEZE-008`、
+   `TestTypedSubcommandCatalogRejectsExternalRoute`、
+   `TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts` 与
+   `TestCommandCatalogProjectsSubcommandAliasesHelpAndQuickstarts`。验证命令：
+   `go test -v ./internal/testengine -run '^(TestFreezeChecksCurrentRepository|TestTypedSubcommandCatalogRejectsExternalRoute)$' -count=1`
+   和对应 `./internal/cli` catalog tests。
+2. **八动词只增不改。** 当前动词精确为
+   `plan / install / update / uninstall / status / doctor / verify / rollback`；登记在
+   `internal/cli/catalog.go` 的 `SubLifecycle*` 与 `CommandLifecycle.Subcommands`，语义表在
+   本文 §6.3，领域 adapter 登记在 `internal/lifecycle/catalog.go`。
+   `TestAdapterCatalogIsInspectableStableAndDetached` 锁定 adapter catalog 的稳定、只读投影，
+   `TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts` 锁定公开路由；验证命令为
+   `go test -v ./internal/lifecycle -run '^TestAdapterCatalogIsInspectableStableAndDetached$' -count=1`
+   与 `bin/aicoding.exe help`。
+3. **测试仅 Smoke/Full/Release 三档。** `internal/cli/catalog.go` 的
+   `productProfileVocabulary` 只含三值；C99 host 的快慢改由 `--depth`、Kit 管理验证改由
+   `--level` 表达，不再建立独立 profile。裁决见
+   [ADR 0012](../decisions/0012-profile-vocabulary-and-subcommand-catalog.md)；门禁为
+   `FREEZE-009`。`TestProductProfileVocabularyRejectsIndependentHelp` 与
+   `TestProductProfileVocabularyRejectsFourthValue` 分别证明独立 profile help 和第四值会被
+   拒绝，`TestOrthogonalProfileFlagHelp` 锁定正交旗标。
+4. **JSON 报告契约 `schemaVersion=1` 冻结。**
+   `internal/report/result.go` 的 `SchemaVersion = 1` 与
+   `config/schemas/cli-report.schema.json` 的 `const: 1` 双向一致；
+   [冻结边界 §2.1](FREEZE_AND_ACQUISITION_BOUNDARY.md#21-json-报告契约) 规定破坏性变化必须
+   升版本并走 ADR。`FREEZE-001` 保证冻结 schema 在位、`FREEZE-002` 保证生产
+   `report.Result` 权威唯一，`TestCLIReportSchemaAndGoTypesStayAligned` 校验 Go 类型与 schema。
+5. **Taskfile 纯路由。** `Taskfile.yml` 只把 task 一对一转发到 `bin/aicoding.exe`，唯一
+   `ensure-bin` 只按 Go source checksum 构建二进制；没有业务判断或第二聚合器。
+   `PWSH-003` 调用 `internal/testengine/engine.go:checkTaskfileGoRoutes`，阻断默认
+   doctor/verify/Smoke/Full/Release 经 PowerShell 编排；Smoke 原始结果为
+   `PASS / REQUIRED`。
+6. **PowerShell 专项六类停止增长。**
+   [POWERSHELL_BOUNDARY.md](POWERSHELL_BOUNDARY.md) 冻结
+   `tag planning / release overlay compatibility / PowerShell quality / Plan Mode helpers /
+   external skill workflows / safety-hardware-toolchain` 六类；
+   `config/pwsh-budget.json` 与 `PWSH-002` 实施只降不升棘轮。真跑
+   `doctor pwsh` 为 `remainingScripts=19 / thinShells=1 / deprecated=1 / unspecified=0`；
+   `doctor pwsh-budget` 为 `ok=true`、baseline/current 均为 `19`、unexpected/missing 均为空。
+7. **已移除的兼容入口不复活。**
+   [命令迁移表](../COMMANDS.md#已移除的兼容入口) 保留旧形态到正式入口的只读映射；
+   `TestRemovedCompatibilityFormsReturnUsageErrors` 逐项要求旧形态返回 exit `2`、结构化 usage
+   error 且不出现 `CLI_DEPRECATED`，`TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts`
+   与 `TestTypedCommandCatalogWiresGoFirstTopLevelCommands` 同时保证 help/catalog 不再暴露它们。
+
+### 13.2 原始输出
+
+定向冻结、catalog、lifecycle 与报告契约测试：
+
+```text
+=== RUN   TestFreezeChecksCurrentRepository
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-001
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-002
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-003
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-004
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-005
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-006
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-007
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-008
+=== RUN   TestFreezeChecksCurrentRepository/FREEZE-009
+--- PASS: TestFreezeChecksCurrentRepository (0.04s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-001 (0.00s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-002 (0.00s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-003 (0.00s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-004 (0.00s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-005 (0.00s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-006 (0.00s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-007 (0.00s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-008 (0.02s)
+    --- PASS: TestFreezeChecksCurrentRepository/FREEZE-009 (0.02s)
+=== RUN   TestTypedSubcommandCatalogRejectsExternalRoute
+=== PAUSE TestTypedSubcommandCatalogRejectsExternalRoute
+=== RUN   TestProductProfileVocabularyRejectsIndependentHelp
+=== PAUSE TestProductProfileVocabularyRejectsIndependentHelp
+=== RUN   TestProductProfileVocabularyRejectsFourthValue
+=== PAUSE TestProductProfileVocabularyRejectsFourthValue
+=== CONT  TestTypedSubcommandCatalogRejectsExternalRoute
+=== CONT  TestProductProfileVocabularyRejectsFourthValue
+=== CONT  TestProductProfileVocabularyRejectsIndependentHelp
+--- PASS: TestProductProfileVocabularyRejectsFourthValue (0.01s)
+--- PASS: TestProductProfileVocabularyRejectsIndependentHelp (0.03s)
+--- PASS: TestTypedSubcommandCatalogRejectsExternalRoute (0.05s)
+PASS
+ok  	github.com/JiaxI2/AiCoding/internal/testengine	2.025s
+=== RUN   TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts
+--- PASS: TestCommandCatalogOwnsRoutesHelpAndNamespaceContracts (0.00s)
+=== RUN   TestCommandCatalogProjectsSubcommandAliasesHelpAndQuickstarts
+--- PASS: TestCommandCatalogProjectsSubcommandAliasesHelpAndQuickstarts (0.00s)
+=== RUN   TestTypedCommandCatalogWiresGoFirstTopLevelCommands
+--- PASS: TestTypedCommandCatalogWiresGoFirstTopLevelCommands (0.00s)
+=== RUN   TestOrthogonalProfileFlagHelp
+--- PASS: TestOrthogonalProfileFlagHelp (0.00s)
+=== RUN   TestRemovedCompatibilityFormsReturnUsageErrors
+--- PASS: TestRemovedCompatibilityFormsReturnUsageErrors (0.07s)
+PASS
+ok  	github.com/JiaxI2/AiCoding/internal/cli	10.825s
+=== RUN   TestAdapterCatalogIsInspectableStableAndDetached
+--- PASS: TestAdapterCatalogIsInspectableStableAndDetached (0.00s)
+PASS
+ok  	github.com/JiaxI2/AiCoding/internal/lifecycle	3.001s
+=== RUN   TestCLIReportSchemaAndGoTypesStayAligned
+--- PASS: TestCLIReportSchemaAndGoTypesStayAligned (0.00s)
+PASS
+ok  	github.com/JiaxI2/AiCoding/internal/report	1.146s
+```
+
+同一轮 Smoke、冻结 leaf 与 PowerShell 预算投影：
+
+```text
+SMOKE_SUMMARY conclusion=PASS total=73 pass=51 fail=0 warn=0 skip=22 summary=test-results/0046-groundwork-smoke/summary.json
+FREEZE-001 status=PASS severity=REQUIRED reason=static check passed
+FREEZE-002 status=PASS severity=REQUIRED reason=static check passed
+FREEZE-008 status=PASS severity=REQUIRED reason=static check passed
+FREEZE-009 status=PASS severity=REQUIRED reason=static check passed
+PWSH-003 status=PASS severity=REQUIRED reason=static check passed
+DOCTOR_PWSH ok=True remainingScripts=19 thinShells=1 deprecated=1 unspecified=0
+PWSH_BUDGET ok=True ratchet=True baseline=19 current=19 unexpected=0 missing=0
+```
+
+### 13.3 收口声明
+
+**架构阶段至此结束。** 后续工作默认归类为功能扩展或模块内部优化，不再称为“继续升级
+架构”。冻结契约不是永不变化，但解冻规则继续有效：必须同时具备 **ADR + 现实问题 +
+稳定变化点 + 两个真实消费者**，缺一不开闸。
