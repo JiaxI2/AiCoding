@@ -1,6 +1,6 @@
 # TODO 0044: GitHub Actions Node 24 迁移
 
-Status: In-Progress
+Status: Done
 Verify: go test ./internal/testengine/... -count=1 && bin/aicoding.exe docsync all --json
 
 ## 范围
@@ -24,7 +24,7 @@ commit，并读取精确 tag 的 `action.yml` 验证 `runs.using=node24`。
 | `go-task/setup-task` | `v2.1.0` | `# v2` | `01a4adf9db2d14c1de7a560f09170b6e0df736aa` |
 
 逐项 ref/peel 原始结果与 release URL 见
-[GitHub Actions Node 24 迁移原始证据](../operations/evidence/github-actions-node24-migration.md)。
+[GitHub Actions Node 24 迁移原始证据](../../operations/evidence/github-actions-node24-migration.md)。
 
 ## 冻结规格锚点
 
@@ -47,5 +47,10 @@ commit，并读取精确 tag 的 `action.yml` 验证 `runs.using=node24`。
 
 - 本地锚点与 workflow 结构门禁全绿。
 - 包含本变更的 main 远端 workflow dispatch 全部适用 job 成功，Node 20 弃用警告消失。
-- 远端 run URL：待首次提交推送后回填。
-- 最终 Release summary：待 0046 收口提交前回填。
+- AiCoding CI：
+  [run 30001965694](https://github.com/JiaxI2/AiCoding/actions/runs/30001965694)，四个 job
+  全部成功；完整 `6567` 行日志中 Node 20/deprecation 匹配数为 `0`。
+- Issue governance：
+  [run 30001969328](https://github.com/JiaxI2/AiCoding/actions/runs/30001969328)，适用的
+  `sync-labels` 成功；完整 `78` 行日志中 Node 20/deprecation 匹配数为 `0`。
+- 最终 Release summary：`test-results/0046-final-release/summary.json`。

@@ -1,6 +1,6 @@
 # TODO 0043: GO-005 晋升 Required
 
-Status: In-Progress
+Status: Done
 Verify: go test ./internal/testengine/... -count=1 && go run honnef.co/go/tools/cmd/staticcheck@v0.7.0 ./...
 
 ## 范围
@@ -28,10 +28,10 @@ Verify: go test ./internal/testengine/... -count=1 && go run honnef.co/go/tools/
 - 探针文件前后 SHA-256 相同，`git diff --exit-code -- internal/todolist/todolist.go` 为 `0`；
   还原后 Staticcheck 再次 exit `0`、零 finding。
 - 完整原始输出见
-  [GO-005 Required 晋升原始证据](../operations/evidence/go005-required-promotion.md)。
+  [GO-005 Required 晋升原始证据](../../operations/evidence/go005-required-promotion.md)。
 
 ## 完成条件
 
 - GO-005 正例、锚点鉴别力和 Full/Release 负例已留原始证据。
 - 最终 Release、docsync、governance、plan、todolist 与 hooks 全绿。
-- 最终 Release summary：待 0046 收口提交前回填。
+- 最终 Release summary：`test-results/0046-final-release/summary.json`。

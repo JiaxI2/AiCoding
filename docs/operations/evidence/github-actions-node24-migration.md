@@ -69,5 +69,28 @@ SETUP_TASK_ANCHOR_WRONG_VALUE_EXIT=1
 
 ## 4. 远端运行
 
-待包含本迁移的 main 提交推送后，以 `workflow_dispatch` 真跑并回填 run URL、四个 job 结论
-与 Node 20 弃用警告检查；`issue-governance.yml` 另以 dispatch 验证 github-script。
+包含本迁移的 `main@21522e92225471450cf492c87a0c16fec95afd55` 经正常 push 和 pre-push
+Receipt 门禁后，以 `workflow_dispatch` 真跑：
+
+- AiCoding CI：[run 30001965694](https://github.com/JiaxI2/AiCoding/actions/runs/30001965694)
+  结论 `success`；`smoke`、`release-gate`、`clean-clone-full`、
+  `scheduled-doctor-perf` 四个 job 全部 `success`。
+- Issue governance：
+  [run 30001969328](https://github.com/JiaxI2/AiCoding/actions/runs/30001969328)
+  结论 `success`；适用于 dispatch 的 `sync-labels` 为 `success`，仅适用于 issue 事件的
+  `normalize-lifecycle` 按既有条件正常 `skipped`。
+
+完整日志逐行检查的原始计数与实际 action 启动行：
+
+```text
+RUN=30001965694 LOG_LINES=6567 NODE20_DEPRECATION_MATCHES=0
+##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+##[group]Run actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+##[group]Run actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+##[group]Run go-task/setup-task@01a4adf9db2d14c1de7a560f09170b6e0df736aa
+RUN=30001969328 LOG_LINES=78 NODE20_DEPRECATION_MATCHES=0
+##[group]Run actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+```
+
+匹配式覆盖 `Node 20`、`Node.js 20`、`node20` 以及同一行内的 Node/deprecated 组合；
+两条完整日志均为零命中。
