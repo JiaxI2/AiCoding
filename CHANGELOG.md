@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-23
+
 - **docs(readme)**: 将三份仓库入口 README 的图像契约收敛为 SVG-only：用 Microsoft Visio 绘制并导出“一张图看懂”的 light/dark SVG，以 GitHub `#gh-light-mode-only` / `#gh-dark-mode-only` 自动切换；Banner 延续同一主题写法，外部 raster 图降为普通链接。徽章颜色改为技术/产品公认品牌色或 CI 状态语义色，依赖治理新增 raster、Mermaid、错误主题 marker 与隐式默认 badge 色的 fail-closed 校验。 / Makes the three repository READMEs SVG-only, replaces the Mermaid overview with Visio-exported light/dark SVGs using GitHub theme markers, preserves the themed banner pattern, removes raster embeds, and enforces brand/status badge colors without implicit defaults.
 
 - **docs(validation)**: 将新 main Tree `878cae97795ac7e62b21f4deee215d76d1ffb420` 的 workflow dispatch run `29922476097` 落账为 `toolchainDigest.v2` 晋级证据 3/3：固定 Task `3.52.0` 后 ENV-004 在冷种子与审计中均转为 PASS，两段均为 `70 PASS / 1 WARN`，唯一 WARN 是设计内 FRESH-004；审计命中同一 Receipt，四个 jobs 全绿。三次独立 Tree 的前置计数已满足，但默认 `--reuse off` 不变，翻转仍须另开独立评审。 / Records independent-tree run 29922476097 as v2 promotion proof 3/3 after Task 3.52.0 turns ENV-004 into PASS in both seed and audit, leaving only the designed FRESH-004 advisory; all jobs pass and default reuse remains off pending a separate review.
@@ -370,7 +372,8 @@
 - **docs**: README、命令文档、架构文档、PowerShell 边界文档、Tag policy 和 Release policy 只描述当前 main 的可观测标准。
 - **chore(pwsh)**: Go 默认控制面之外只保留 PowerShell 专项质量、安全、Plan Mode、外部 skill、tag planning / overlay compatibility 和硬件/工具链边界脚本。
 
-[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/JiaxI2/AiCoding/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/JiaxI2/AiCoding/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/JiaxI2/AiCoding/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/JiaxI2/AiCoding/compare/v0.10.0...v1.0.0
 [0.10.0]: https://github.com/JiaxI2/AiCoding/compare/v0.9.1...v0.10.0
