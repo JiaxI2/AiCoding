@@ -94,10 +94,10 @@ catalog。公共入口反向校验上面的 typed HelpForm；`capability list`/`
 
 Full 保留 Go/race/vet、CLI/JSON、治理和领域结构验证，但不创建发布 ZIP、也不执行 hermetic
 fresh clone；对应覆盖由 EXP-002 export manifest 静态验证和 FRESH-003 clone 契约静态验证承担。
-Full 的 GO-002 只对 `config/impact-policy.json` 的 `raceScope.packages` 跑 race；Required
-静态门禁 GO-007 扫描全仓 Go AST，发现含 goroutine、channel 或 `sync` 的未登记包即失败。
-Release 的 GO-002 始终保持 `go test -race ./...`，每周 schedule 会运行 Release job，因而
-全仓 race 的发布与周期覆盖均未削减。
+Full 与 Release 的 GO-002 都只对 `config/impact-policy.json` 的
+`raceScope.packages` 跑 race；Required 静态门禁 GO-007 扫描全仓 Go AST，发现含
+goroutine、channel 或 `sync` 的未登记包即失败。每周 schedule 运行 Release 时复用同一
+登记面；全仓 `go test -race ./...` 保留为显式诊断命令，不是 profile 或 schedule 门禁。
 Full/Release 还会执行固定版本的 Staticcheck `v0.7.0`（GO-005，首个 release 为 WARN）和
 govulncheck `v1.6.0`（GO-006，真实漏洞为 REQUIRED；仅可识别的网络访问失败降级为 WARN）。
 Release 仍执行真实 `export --zip`；其 FRESH-001 从当前验证 Tree 与本地递归 gitlink 物化

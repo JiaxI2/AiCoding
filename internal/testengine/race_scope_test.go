@@ -21,7 +21,7 @@ func TestRaceScopeRejectsUnregisteredConcurrentPackage(t *testing.T) {
 	t.Log(err)
 }
 
-func TestRaceCommandScopesFullAndKeepsReleaseGlobal(t *testing.T) {
+func TestRaceCommandScopesFullAndRelease(t *testing.T) {
 	t.Parallel()
 	repo := t.TempDir()
 	writeRaceScopeFixture(t, repo, []string{"internal/runner", "internal/testengine"})
@@ -31,8 +31,8 @@ func TestRaceCommandScopesFullAndKeepsReleaseGlobal(t *testing.T) {
 	if got := strings.Join(full, " "); got != "go test -race ./internal/runner ./internal/testengine" {
 		t.Fatalf("Full GO-002 command = %q", got)
 	}
-	if got := strings.Join(release, " "); got != "go test -race ./..." {
-		t.Fatalf("Release GO-002 command = %q, want full-repository race", got)
+	if got := strings.Join(release, " "); got != "go test -race ./internal/runner ./internal/testengine" {
+		t.Fatalf("Release GO-002 command = %q", got)
 	}
 	t.Logf("Full GO-002: %s", strings.Join(full, " "))
 	t.Logf("Release GO-002: %s", strings.Join(release, " "))

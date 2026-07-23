@@ -66,7 +66,9 @@ Release may:
 - create and extract `aicoding-kit-bundle-*.zip`;
 - validate `SHA256SUMS.txt`;
 - scan extracted bundle contents and nested package zips for local absolute path leaks.
-- run the full-repository `go test -race ./...`; the weekly Release CI job preserves the same full race coverage.
+- run race for every package declared concurrent by `config/impact-policy.json`; GO-007 remains Required
+  and rejects any unregistered concurrent package. Full-repository `go test -race ./...` remains an
+  explicit diagnostic rather than a Release or weekly profile gate.
 
 Release must not:
 

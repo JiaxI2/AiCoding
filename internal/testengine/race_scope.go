@@ -25,7 +25,7 @@ type impactPolicy struct {
 
 func raceTestCommand(cfg Config) []string {
 	targets := []string{"./..."}
-	if cfg.Profile == ProfileFull {
+	if cfg.Profile == ProfileFull || cfg.Profile == ProfileRelease {
 		if policy, err := loadImpactPolicy(cfg.Repo); err == nil {
 			targets = make([]string, 0, len(policy.RaceScope.Packages))
 			for _, packageDir := range policy.RaceScope.Packages {

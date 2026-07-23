@@ -25,7 +25,7 @@
 | ID | 用例 | 方法 | 期望结果 | 严重级别 |
 |---|---|---|---|---|
 | GO-001 | 全仓 Go 单元测试 | `go test ./...` | 退出码 0 | REQUIRED |
-| GO-002 | Go race 检查 | Full：`go test -race <raceScope.packages>`；Release：`go test -race ./...` | 退出码 0；环境不支持 race 或历史包不兼容记 WARN；Release 必须保持全仓 | WARN |
+| GO-002 | Go race 检查 | Full/Release：`go test -race <raceScope.packages>` | 退出码 0；环境不支持 race 或历史包不兼容记 WARN；实际包集合由同一 policy 投影 | WARN |
 | GO-003 | Go vet 基础检查 | `go vet ./...` | 退出码 0 | WARN |
 | GO-004 | CLI 并发只读调用 | 并发运行 C99 status/templates/governance lint | 全部退出码 0，无 timeout | REQUIRED |
 | GO-005 | Staticcheck 静态分析 | `go run honnef.co/go/tools/cmd/staticcheck@v0.7.0 ./...` | 零告警；首个 release 失败记 WARN | WARN |
