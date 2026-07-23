@@ -27,7 +27,7 @@
 - **验证绑定内容**：成功运行可把 PASS 结论绑定到 Git Tree 与验证语义；commit message amend 不失效，tracked/untracked/submodule 脏状态 fail-closed。
 - **复用可审计**：默认使用 `--reuse auto`；ADR 0014 依据 main 远端三棵不同 Tree 的 3/3 off seed + `--verify-reuse` audit 完成独立晋级。只有完整 identity 与 Receipt/报告完整性全部通过才命中；损坏 store 非零退出，普通 miss 才真跑并发布新 Receipt。显式 off/force/audit 语义不变。
 - **节点复用是私有加速层**：整树 Receipt miss 后可按 Registry 节点复用；节点 Receipt 不进入 alias、push gate 或公共 CLI 列表，整树 Receipt 仍是唯一外部凭证。
-- **工具链安全**：Full/Release 固定运行 Staticcheck v0.7.0 与 govulncheck v1.6.0；真实漏洞保持 REQUIRED，只有可识别的网络访问失败可降级为 WARN。
+- **工具链安全**：Full/Release 固定运行 Staticcheck v0.7.0 与 govulncheck v1.6.0；Staticcheck finding 与真实漏洞均为 REQUIRED，只有 govulncheck 可识别的网络访问失败可降级为 WARN。
 - **race 登记闭环**：Full/Release 的 GO-002 都只跑 `impact-policy.json` 登记的并发包，GO-007
   以 Required AST 门禁阻断漏登；全仓 race 保留为显式诊断，不另建 profile 或 schedule 门禁。
 - **测试夹具并行边界**：CLI、Kit、Validation Evidence 与 Test Engine 的包测试各由

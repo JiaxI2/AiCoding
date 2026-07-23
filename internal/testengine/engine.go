@@ -462,7 +462,7 @@ func Registry(cfg Config) []TestCase {
 		{ID: "GO-002", Category: "GO", Title: "Go race 检查", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: raceTestCommand(cfg), TimeoutKind: "long"},
 		{ID: "GO-003", Category: "GO", Title: "go vet 基础检查", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "vet", "./..."}, TimeoutKind: "long"},
 		{ID: "GO-004", Category: "GO", Title: "CLI 并发只读调用", Node: nodeGo, Severity: Required, Profiles: []string{"full", "release"}, Kind: "concurrent", TimeoutKind: "normal", ExpectJSON: true},
-		{ID: "GO-005", Category: "GO", Title: "Staticcheck 静态分析", Node: nodeGo, Severity: WarnOnly, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", staticcheckCommand, "./..."}, TimeoutKind: "long", Note: "WarnOnly for one release before promotion to Required"},
+		{ID: "GO-005", Category: "GO", Title: "Staticcheck 静态分析", Node: nodeGo, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", staticcheckCommand, "./..."}, TimeoutKind: "long"},
 		{ID: "GO-006", Category: "GO", Title: "Go 漏洞扫描", Node: nodeGo, Severity: Required, Profiles: []string{"full", "release"}, Kind: "command", Command: []string{"go", "run", govulncheckCommand, "./..."}, TimeoutKind: "long", NetworkFailureWarn: true},
 		{ID: "GO-007", Category: "GO", Title: "并发包 raceScope 登记", Severity: Required, Profiles: []string{"full", "release"}, Kind: "static"},
 

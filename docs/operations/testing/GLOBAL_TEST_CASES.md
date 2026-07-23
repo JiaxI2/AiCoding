@@ -28,7 +28,7 @@
 | GO-002 | Go race 检查 | Full/Release：`go test -race <raceScope.packages>` | 退出码 0；环境不支持 race 或历史包不兼容记 WARN；实际包集合由同一 policy 投影 | WARN |
 | GO-003 | Go vet 基础检查 | `go vet ./...` | 退出码 0 | WARN |
 | GO-004 | CLI 并发只读调用 | 并发运行 C99 status/templates/governance lint | 全部退出码 0，无 timeout | REQUIRED |
-| GO-005 | Staticcheck 静态分析 | `go run honnef.co/go/tools/cmd/staticcheck@v0.7.0 ./...` | 零告警；首个 release 失败记 WARN | WARN |
+| GO-005 | Staticcheck 静态分析 | `go run honnef.co/go/tools/cmd/staticcheck@v0.7.0 ./...` | 零 finding；失败阻断 Full/Release | REQUIRED |
 | GO-006 | Go 漏洞扫描 | `go run golang.org/x/vuln/cmd/govulncheck@v1.6.0 ./...` | 无可达漏洞；仅可识别的网络失败记 WARN | REQUIRED |
 | GO-007 | 并发包 raceScope 登记 | AST 扫描全仓 `.go` 文件，并与 `config/impact-policy.json` 对账 | goroutine、channel 或 `sync` 所在包全部登记；漏登即 Full/Release 失败 | REQUIRED |
 

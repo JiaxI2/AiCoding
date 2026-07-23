@@ -98,7 +98,7 @@ Full 与 Release 的 GO-002 都只对 `config/impact-policy.json` 的
 `raceScope.packages` 跑 race；Required 静态门禁 GO-007 扫描全仓 Go AST，发现含
 goroutine、channel 或 `sync` 的未登记包即失败。每周 schedule 运行 Release 时复用同一
 登记面；全仓 `go test -race ./...` 保留为显式诊断命令，不是 profile 或 schedule 门禁。
-Full/Release 还会执行固定版本的 Staticcheck `v0.7.0`（GO-005，首个 release 为 WARN）和
+Full/Release 还会执行固定版本的 Staticcheck `v0.7.0`（GO-005，零 finding，失败为 REQUIRED）和
 govulncheck `v1.6.0`（GO-006，真实漏洞为 REQUIRED；仅可识别的网络访问失败降级为 WARN）。
 Release 仍执行真实 `export --zip`；其 FRESH-001 从当前验证 Tree 与本地递归 gitlink 物化
 无 `.git` 源码树并重建 CLI、执行 `release verify`。显式 `fresh-clone --profile Release` 与

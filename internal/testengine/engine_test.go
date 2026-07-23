@@ -242,7 +242,7 @@ func TestRegistryPinsStaticcheckAndGovulncheckPolicy(t *testing.T) {
 		found[testCase.ID] = testCase
 	}
 	staticcheck := found["GO-005"]
-	if staticcheck.Severity != WarnOnly || strings.Join(staticcheck.Command, " ") != "go run "+staticcheckCommand+" ./..." {
+	if staticcheck.Severity != Required || staticcheck.Note != "" || strings.Join(staticcheck.Command, " ") != "go run "+staticcheckCommand+" ./..." {
 		t.Fatalf("GO-005 policy mismatch: %#v", staticcheck)
 	}
 	govulncheck := found["GO-006"]
@@ -341,7 +341,7 @@ func TestScheduledCISeedsAndAuditsReleaseBeforeDefaultPromotion(t *testing.T) {
 	}
 	releaseJob := workflow[releaseStart:releaseEnd]
 	for _, required := range []string{
-		"uses: go-task/setup-task@70f2430ad412f838533de8c0515c749ffb2b8bd3 # v1",
+		"uses: go-task/setup-task@01a4adf9db2d14c1de7a560f09170b6e0df736aa # v2",
 		"version: '3.52.0'",
 	} {
 		if !strings.Contains(releaseJob, required) {
