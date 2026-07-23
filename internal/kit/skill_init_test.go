@@ -8,6 +8,7 @@ import (
 )
 
 func TestSkillInitPreviewDryRunAndExternalWrite(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	preview, err := InitSkill(repo, "demo-skill", SkillInitOptions{DryRun: true})
 	if err != nil || !preview.OK || preview.OutputMode != "preview" || !strings.Contains(preview.Content, "## Gate Rules") {
@@ -55,6 +56,7 @@ func TestSkillInitPreviewDryRunAndExternalWrite(t *testing.T) {
 }
 
 func TestSkillInitRejectsAiCodingAndReadOnlySubmoduleOutputs(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	submodule := filepath.Join(repo, "CodingKit", "agents", "skills")
 	if err := os.MkdirAll(submodule, 0o755); err != nil {

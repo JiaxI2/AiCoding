@@ -8,6 +8,7 @@ import (
 )
 
 func TestRaceScopeRejectsUnregisteredConcurrentPackage(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeRaceScopeFixture(t, repo, []string{"internal/runner"})
 	writeRaceTestFile(t, filepath.Join(repo, "internal", "runner", "runner.go"), "package runner\n")
@@ -21,6 +22,7 @@ func TestRaceScopeRejectsUnregisteredConcurrentPackage(t *testing.T) {
 }
 
 func TestRaceCommandScopesFullAndKeepsReleaseGlobal(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeRaceScopeFixture(t, repo, []string{"internal/runner", "internal/testengine"})
 

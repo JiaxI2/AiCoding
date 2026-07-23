@@ -15,6 +15,7 @@ import (
 )
 
 func TestExtractTarStreamRejectsPathTraversal(t *testing.T) {
+	t.Parallel()
 	var payload bytes.Buffer
 	writer := tar.NewWriter(&payload)
 	content := []byte("escape\n")
@@ -42,6 +43,7 @@ func TestExtractTarStreamRejectsPathTraversal(t *testing.T) {
 }
 
 func TestMaterializeSourceMatchesRecursiveGitTreesAndExcludesWorktreeFiles(t *testing.T) {
+	t.Parallel()
 	root := filepath.Join(t.TempDir(), "root")
 	leaf := filepath.Join(t.TempDir(), "leaf")
 	sub := filepath.Join(t.TempDir(), "sub")
@@ -122,6 +124,7 @@ func TestMaterializeSourceMatchesRecursiveGitTreesAndExcludesWorktreeFiles(t *te
 }
 
 func TestFreshCloneTransportDriftWarnsOnlyForSensitiveChanges(t *testing.T) {
+	t.Parallel()
 	repo := filepath.Join(t.TempDir(), "repo")
 	materializeInitRepo(t, repo)
 	materializeWrite(t, filepath.Join(repo, "README.md"), "base\n")
@@ -171,6 +174,7 @@ func TestFreshCloneTransportDriftWarnsOnlyForSensitiveChanges(t *testing.T) {
 }
 
 func TestFreshCloneTransportDriftWarnsWithoutBaseline(t *testing.T) {
+	t.Parallel()
 	repo := filepath.Join(t.TempDir(), "repo")
 	materializeInitRepo(t, repo)
 	materializeWrite(t, filepath.Join(repo, "README.md"), "base\n")
@@ -190,7 +194,7 @@ func materializeInitRepo(t *testing.T, repo string) {
 	if err := os.MkdirAll(repo, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	materializeGit(t, repo, "init", "-q")
+	initKitTestGitRepo(t, repo)
 	materializeGit(t, repo, "config", "user.email", "materialize@example.invalid")
 	materializeGit(t, repo, "config", "user.name", "Materialize Test")
 }

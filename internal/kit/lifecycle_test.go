@@ -8,6 +8,7 @@ import (
 )
 
 func TestPlanLifecycleSkipsUnsupportedMissingAndNoDryRun(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeLifecycleRegistry(t, repo, []string{"unsupported-kit", "missing-action-kit", "no-dry-run-kit"})
 	writeLifecycleManifest(t, repo, "unsupported-kit", `"install":{"type":"unsupported","reason":"not installable"}`, "")
@@ -28,6 +29,7 @@ func TestPlanLifecycleSkipsUnsupportedMissingAndNoDryRun(t *testing.T) {
 }
 
 func TestPlanLifecycleWarnsForMissingGeneratedPluginPackage(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	mustWriteLifecycle(t, filepath.Join(repo, "tools", "specialty", "install-codex-kit.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"aicoding-platform"})
@@ -47,6 +49,7 @@ func TestPlanLifecycleWarnsForMissingGeneratedPluginPackage(t *testing.T) {
 }
 
 func TestPlanLifecycleRequiredPathsMissingFails(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeLifecycleRegistry(t, repo, []string{"required-kit"})
 	writeLifecycleManifest(t, repo, "required-kit", `"status":{"type":"builtin-check","requiredPaths":["README.md"]}`, "")
@@ -65,6 +68,7 @@ func TestPlanLifecycleRequiredPathsMissingFails(t *testing.T) {
 }
 
 func TestPlanLifecycleAggregatesOK(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	mustWriteLifecycle(t, filepath.Join(repo, "tools", "specialty", "install.ps1"), "param()\n")
 	writeLifecycleRegistry(t, repo, []string{"script-kit", "asset-kit"})

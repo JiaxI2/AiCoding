@@ -12,6 +12,7 @@ import (
 )
 
 func TestRunPlanCheckStagedSensitiveAndExemptPaths(t *testing.T) {
+	t.Parallel()
 	repo := initWorkTestRepo(t)
 	mustWrite(t, filepath.Join(repo, filepath.FromSlash(plancheck.PolicyPath)), `{
   "schemaVersion": 1,
@@ -93,6 +94,7 @@ func TestRunPlanCheckRequiresOnePathSource(t *testing.T) {
 }
 
 func TestRunPlanVerifyAndStatusProjectFrontmatter(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	planFile := filepath.Join(repo, "docs", "spec", "sample-plan", "PLAN.md")
 	mustWrite(t, planFile, `---
@@ -127,6 +129,7 @@ gates:
 }
 
 func TestRunPlanApproveBindsCleanTree(t *testing.T) {
+	t.Parallel()
 	repo := initWorkTestRepo(t)
 	mustWrite(t, filepath.Join(repo, "docs", "spec", "sample-plan", "PLAN.md"), `---
 id: sample-plan

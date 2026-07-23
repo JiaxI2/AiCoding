@@ -16,6 +16,7 @@ import (
 )
 
 func TestNormalizeConfigAndRegistry(t *testing.T) {
+	t.Parallel()
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {
 		t.Fatal(err)
@@ -76,6 +77,7 @@ func TestNormalizeConfigAndRegistry(t *testing.T) {
 }
 
 func TestCommandTimingBreakdownAndSlowestCases(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	cfg := Config{Repo: repo, Out: filepath.Join(repo, "results"), Profile: ProfileFull, Timeout: 10 * time.Second}
 	result := runCommand(context.Background(), cfg, TestCase{
@@ -115,6 +117,7 @@ func TestCommandTimingBreakdownAndSlowestCases(t *testing.T) {
 }
 
 func TestRegistryKeepsHermeticAndZipChecksInRelease(t *testing.T) {
+	t.Parallel()
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileFull})
 	if err != nil {
 		t.Fatal(err)
@@ -158,6 +161,7 @@ func TestRegistryKeepsHermeticAndZipChecksInRelease(t *testing.T) {
 }
 
 func TestRegistryHasPrimitiveChecklistGate(t *testing.T) {
+	t.Parallel()
 	// todolist 0001: the registry must own the "new-primitive ADR carries a §12
 	// self-review" gate as a static case so it runs in every profile.
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
@@ -180,6 +184,7 @@ func TestRegistryHasPrimitiveChecklistGate(t *testing.T) {
 }
 
 func TestRegistryBuildCommandsAreBoundedAndBootstrapCoverageRemains(t *testing.T) {
+	t.Parallel()
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileFull})
 	if err != nil {
 		t.Fatal(err)
@@ -227,6 +232,7 @@ func TestRegistryBuildCommandsAreBoundedAndBootstrapCoverageRemains(t *testing.T
 }
 
 func TestRegistryPinsStaticcheckAndGovulncheckPolicy(t *testing.T) {
+	t.Parallel()
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileFull})
 	if err != nil {
 		t.Fatal(err)
@@ -408,6 +414,7 @@ func containsString(values []string, want string) bool {
 }
 
 func TestRegistryTitlesPreserveReadableUTF8InJSON(t *testing.T) {
+	t.Parallel()
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {
 		t.Fatal(err)
@@ -458,6 +465,7 @@ func TestValidateRegistryTitlesRejectsUnreadableText(t *testing.T) {
 }
 
 func TestWriteLoadAndLatestDir(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	older := filepath.Join(repo, "test-results", "aicoding-global-test-20260101-000000")
 	newer := filepath.Join(repo, "test-results", "aicoding-global-test-20260102-000000")
@@ -489,6 +497,7 @@ func TestWriteLoadAndLatestDir(t *testing.T) {
 }
 
 func TestRunCanceledContextStillWritesFailureReport(t *testing.T) {
+	t.Parallel()
 	out := filepath.Join(t.TempDir(), "test-results", "aicoding-global-test-canceled")
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -505,6 +514,7 @@ func TestRunCanceledContextStillWritesFailureReport(t *testing.T) {
 }
 
 func TestSuccessfulTestResultRetentionKeepsLatestFive(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	for index := 0; index < 8; index++ {
 		dir := filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index))
@@ -536,6 +546,7 @@ func TestSuccessfulTestResultRetentionKeepsLatestFive(t *testing.T) {
 }
 
 func TestFailedRunDoesNotTriggerTestResultRetention(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	for index := 0; index < 8; index++ {
 		dir := filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index))

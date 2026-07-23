@@ -8,6 +8,7 @@ import (
 )
 
 func TestRegisterAddsPinnedManifestWithoutVendoringSource(t *testing.T) {
+	t.Parallel()
 	repo := newPinnedConsumerRepository(t)
 	writeRegistryTestFile(t, filepath.Join(repo, "config", "kit-registry.json"), `{"schemaVersion":1,"name":"test","defaultMode":"repo-scoped","kits":[]}`)
 	writeRegistryTestFile(t, filepath.Join(repo, "config", "dependency-governance.json"), `{"schemaVersion":1,"name":"test","direction":"higher-rank-may-depend-on-equal-or-lower-rank","kitRegistry":{"path":"config/kit-registry.json","bindings":[]}}`)
@@ -38,6 +39,7 @@ func TestRegisterAddsPinnedManifestWithoutVendoringSource(t *testing.T) {
 }
 
 func TestRegisterRequiresPinnedSource(t *testing.T) {
+	t.Parallel()
 	repo := newPinnedConsumerRepository(t)
 	writeRegistryTestFile(t, filepath.Join(repo, "config", "kit-registry.json"), `{"schemaVersion":1,"name":"test","defaultMode":"repo-scoped","kits":[]}`)
 	writeRegistryTestFile(t, filepath.Join(repo, "config", "dependency-governance.json"), `{"schemaVersion":1,"name":"test","direction":"higher-rank-may-depend-on-equal-or-lower-rank","kitRegistry":{"path":"config/kit-registry.json","bindings":[]}}`)

@@ -31,6 +31,7 @@ func TestCatalogHasPublicEntryUsesTypedHelpForms(t *testing.T) {
 }
 
 func TestCapabilityCLIListsDescribesAndGeneratesIndexes(t *testing.T) {
+	t.Parallel()
 	repo := capabilityCLIFixture(t, "aicoding capability list")
 	start := time.Now()
 
@@ -83,6 +84,7 @@ func TestCapabilityCLIListsDescribesAndGeneratesIndexes(t *testing.T) {
 }
 
 func TestGovernanceCapabilitiesRejectsUnknownPublicEntry(t *testing.T) {
+	t.Parallel()
 	repo := capabilityCLIFixture(t, "aicoding capability list")
 	if _, err := runCapability([]string{"index", "--write", "--repo-root", repo}, time.Now()); err != nil {
 		t.Fatal(err)

@@ -8,6 +8,7 @@ import (
 )
 
 func TestRunGovernanceDependenciesReturnsStructuredFailure(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	if err := os.WriteFile(filepath.Join(repo, "go.mod"), []byte("module example.com/dependency-fixture\n\ngo 1.22\n"), 0o644); err != nil {
 		t.Fatal(err)

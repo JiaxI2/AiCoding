@@ -403,6 +403,7 @@ func TestFailedNodeDoesNotPublishReceipt(t *testing.T) {
 }
 
 func TestRegistryNodeAssignmentsRemainConservative(t *testing.T) {
+	t.Parallel()
 	cfg := evidenceRunConfig(t, newEngineEvidenceRepo(t))
 	found := map[string]TestCase{}
 	for _, testCase := range Registry(cfg) {
@@ -528,6 +529,7 @@ func TestContentDriftPreservesConclusionButDisablesReceipt(t *testing.T) {
 }
 
 func TestEvidenceSpecIsPathStableAndTracksSemantics(t *testing.T) {
+	t.Parallel()
 	repo := newEngineEvidenceRepo(t)
 	linked := filepath.Join(t.TempDir(), "linked")
 	mustEngineGit(t, repo, "worktree", "add", "--detach", linked, "HEAD")
@@ -609,6 +611,7 @@ func TestReceiptEligibilityUsesSeverityAndUnexpectedSkipPolicy(t *testing.T) {
 }
 
 func TestNormalizeConfigDefaultsReuseOffAndRejectsAuditForce(t *testing.T) {
+	t.Parallel()
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {
 		t.Fatal(err)
@@ -662,7 +665,7 @@ func syntheticResults(cfg Config, tests []TestCase, fail bool) []Result {
 func newEngineEvidenceRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
-	mustEngineGit(t, repo, "init", "-q")
+	initEngineTestGitRepo(t, repo)
 	mustEngineGit(t, repo, "config", "user.email", "test@example.com")
 	mustEngineGit(t, repo, "config", "user.name", "Test User")
 	if err := os.WriteFile(filepath.Join(repo, "tracked.txt"), []byte("content\n"), 0o644); err != nil {

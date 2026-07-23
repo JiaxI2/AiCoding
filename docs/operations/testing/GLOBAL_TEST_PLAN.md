@@ -29,6 +29,10 @@
 - **节点复用是私有加速层**：整树 Receipt miss 后可按 Registry 节点复用；节点 Receipt 不进入 alias、push gate 或公共 CLI 列表，整树 Receipt 仍是唯一外部凭证。
 - **工具链安全**：Full/Release 固定运行 Staticcheck v0.7.0 与 govulncheck v1.6.0；真实漏洞保持 REQUIRED，只有可识别的网络访问失败可降级为 WARN。
 - **race 降频不降级**：Full 的 GO-002 只跑 `impact-policy.json` 登记的并发包，GO-007 以 AST 门禁阻断漏登；Release 与每周 schedule 仍跑全仓 race。
+- **测试夹具并行边界**：CLI、Kit、Validation Evidence 与 Test Engine 的包测试各由
+  `TestMain` 一次建立只读 Git 模板，测试复制到自己的 `t.TempDir`；只有不调用
+  `os.Chdir`、不写进程环境且不修改包级注入点的测试可使用 `t.Parallel()`。CLI 外部路由
+  测试复用 `TestMain` 一次构建的二进制，构建失败在执行用例前 fail-fast。
 - **数据化输出**：统计总用例、通过、失败、告警、跳过、总耗时、各命令耗时。
 - **标准 Markdown 文档**：测试计划、测试用例、报告均使用 `.md`。
 - **全局分功能框架**：用例按照 ENV/BOOTSTRAP/GO/C99_SKILL/DOCSYNC/LIFECYCLE/EXPORT/FRESH_CLONE/README_DOCS/GIT_GOVERNANCE/PWSH_BOUNDARY/RELEASE_GATE 分类。

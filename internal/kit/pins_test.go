@@ -37,6 +37,7 @@ func TestPinnedSourceRejectsMutablePurePathAndKeepsOldManifestCompatible(t *test
 }
 
 func TestPrefetchBadCommitFailsClosed(t *testing.T) {
+	t.Parallel()
 	external, _ := newPinnedExternalRepository(t)
 	consumer := newPinnedConsumerRepository(t)
 	source := &PinnedSource{Kind: "git", URL: external, Commit: strings.Repeat("f", 40)}
@@ -97,6 +98,7 @@ func TestPinnedLifecycleMaterializesLocallyWithZeroImportNetworkCalls(t *testing
 }
 
 func TestPinnedCacheKeepsLooseObjectsReadableAfterLongFinalRename(t *testing.T) {
+	t.Parallel()
 	base := filepath.Join(t.TempDir(), "long-path")
 	external, commit := newPinnedExternalRepositoryAt(t, filepath.Join(base, "external"))
 	consumer := newPinnedConsumerRepositoryAt(t, filepath.Join(base, "consumer"))
@@ -149,6 +151,7 @@ func TestPinnedLifecycleMissingPrefetchReturnsRequiredActionWithoutFetch(t *test
 }
 
 func TestContentDigestPinUsesPreseededCacheWithoutNetwork(t *testing.T) {
+	t.Parallel()
 	consumer := newPinnedConsumerRepository(t)
 	seed := t.TempDir()
 	writeRegistryTestFile(t, filepath.Join(seed, "notes", "knowledge.md"), "immutable knowledge\n")
@@ -178,6 +181,7 @@ func TestContentDigestPinUsesPreseededCacheWithoutNetwork(t *testing.T) {
 }
 
 func TestPinnedSourceChangeInvalidatesOldValidationReceipt(t *testing.T) {
+	t.Parallel()
 	repo := newPinnedConsumerRepository(t)
 	manifest := pinnedManifest("external-skill", "https://example.invalid/upstream.git", strings.Repeat("a", 40))
 	writePinnedCatalog(t, repo, manifest)
@@ -247,7 +251,7 @@ func newPinnedExternalRepositoryAt(t *testing.T, repo string) (string, string) {
 	if err := os.MkdirAll(repo, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	pinGit(t, repo, "init")
+	initKitTestGitRepo(t, repo)
 	configurePinnedGitIdentity(t, repo)
 	content := "---\nname: pinned-external\ndescription: Pinned External Skill\n---\n\n# Pinned External Skill\n\nUse immutable content.\n"
 	writeRegistryTestFile(t, filepath.Join(repo, "skills", "external", "SKILL.md"), content)
@@ -266,7 +270,7 @@ func newPinnedConsumerRepositoryAt(t *testing.T, repo string) string {
 	if err := os.MkdirAll(repo, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	pinGit(t, repo, "init")
+	initKitTestGitRepo(t, repo)
 	configurePinnedGitIdentity(t, repo)
 	return repo
 }

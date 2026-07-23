@@ -15,6 +15,7 @@ import (
 )
 
 func TestWorkCommandsValidateDecideRecordAndReportStatus(t *testing.T) {
+	t.Parallel()
 	repo := initWorkTestRepo(t)
 	specFile := filepath.Join(repo, "work.json")
 	mustWrite(t, specFile, workTestSpec("work-contract", []string{"**"}, nil))
@@ -73,6 +74,7 @@ func TestWorkCommandsValidateDecideRecordAndReportStatus(t *testing.T) {
 }
 
 func TestWorkDetectsScopeViolationAndRejectsExecutorSubcommands(t *testing.T) {
+	t.Parallel()
 	repo := initWorkTestRepo(t)
 	specFile := filepath.Join(repo, "work.json")
 	mustWrite(t, specFile, workTestSpec("scope-contract", []string{"src/**", "work.json"}, []string{"src/private/**"}))
@@ -96,7 +98,7 @@ func TestWorkDetectsScopeViolationAndRejectsExecutorSubcommands(t *testing.T) {
 func initWorkTestRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
-	gitWorkTest(t, repo, "init")
+	initCLITestGitRepo(t, repo)
 	gitWorkTest(t, repo, "config", "user.email", "work@example.invalid")
 	gitWorkTest(t, repo, "config", "user.name", "Work Test")
 	mustWrite(t, filepath.Join(repo, "README.md"), "# fixture\n")

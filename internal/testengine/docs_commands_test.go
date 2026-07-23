@@ -8,6 +8,7 @@ import (
 )
 
 func TestArchitectureDiagramsAcceptTypedCatalogCommands(t *testing.T) {
+	t.Parallel()
 	repo := architectureDiagramFixture(t)
 	if err := checkArchitectureDiagrams(repo); err != nil {
 		t.Fatal(err)
@@ -15,6 +16,7 @@ func TestArchitectureDiagramsAcceptTypedCatalogCommands(t *testing.T) {
 }
 
 func TestArchitectureDiagramsRejectUnknownCommandWithLocation(t *testing.T) {
+	t.Parallel()
 	repo := architectureDiagramFixture(t)
 	writeArchitectureFixtureFile(t, repo, "docs/architecture/LOOP_ENGINEERING_ARCHITECTURE.md", "```mermaid\nflowchart LR\n  BAD[\"aicoding nonexistent\"]\n```\n\n```mermaid\nflowchart LR\n  OK[\"aicoding verify\"]\n```\n")
 
@@ -30,6 +32,7 @@ func TestArchitectureDiagramsRejectUnknownCommandWithLocation(t *testing.T) {
 }
 
 func TestArchitectureDiagramsEnforceNodeBudget(t *testing.T) {
+	t.Parallel()
 	repo := architectureDiagramFixture(t)
 	var source strings.Builder
 	source.WriteString("```mermaid\nflowchart LR\n")
@@ -48,6 +51,7 @@ func TestArchitectureDiagramsEnforceNodeBudget(t *testing.T) {
 }
 
 func TestReadmeArchitectureDiagramRejectsMissingThemeVariant(t *testing.T) {
+	t.Parallel()
 	repo := architectureDiagramFixture(t)
 	writeArchitectureFixtureFile(t, repo, "README.md", `<img src="docs/assets/aicoding-overview-light.svg#gh-light-mode-only">`)
 

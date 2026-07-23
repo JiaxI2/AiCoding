@@ -13,6 +13,7 @@ import (
 )
 
 func TestSkillInitCLIProducesPreviewAndExternalScaffold(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	preview, err := runSkill([]string{"init", "demo-skill", "--dry-run", "--repo-root", repo, "--json"}, time.Now())
 	data, ok := preview.Data.(kit.SkillInitReport)
@@ -37,6 +38,7 @@ func TestSkillInitCLIProducesPreviewAndExternalScaffold(t *testing.T) {
 }
 
 func TestMCPInitCLIProducesCompliantManifestAndSuggestion(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "config", "mcp-registry.json"), `{"schemaVersion":1,"name":"test","components":[]}`+"\n")
 	preview, err := runMCP([]string{"init", "demo-mcp", "--dry-run", "--repo-root", repo, "--json"}, time.Now())

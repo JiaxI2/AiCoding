@@ -113,6 +113,7 @@ func TestPushContextPrefixUsesSharedPathPolicyBoundary(t *testing.T) {
 }
 
 func TestContextGateUsesPushedCommitTreeAndProfileAlias(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -204,6 +205,7 @@ func TestExactCheckPathDoesNotWalkRepositoryFiles(t *testing.T) {
 }
 
 func TestReceiptSurvivesCommitMessageAmendAndLinkedWorktree(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -245,6 +247,7 @@ func TestReceiptSurvivesCommitMessageAmendAndLinkedWorktree(t *testing.T) {
 }
 
 func TestDirtyAndChangedContentInvalidateReuse(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -286,6 +289,7 @@ func TestDirtyAndChangedContentInvalidateReuse(t *testing.T) {
 }
 
 func TestNodeReceiptReusesAcrossWholeTreesButNotDirtySubjects(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -347,6 +351,7 @@ func TestNodeReceiptReusesAcrossWholeTreesButNotDirtySubjects(t *testing.T) {
 }
 
 func TestNodeReceiptTamperFailsClosedAndCleanRepairsStore(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -387,6 +392,7 @@ func TestNodeReceiptTamperFailsClosedAndCleanRepairsStore(t *testing.T) {
 }
 
 func TestWholeAndNodeStoreOperationsRejectWrongFingerprintKind(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -411,6 +417,7 @@ func TestWholeAndNodeStoreOperationsRejectWrongFingerprintKind(t *testing.T) {
 }
 
 func TestDifferentRepositoriesCannotReuseReceipt(t *testing.T) {
+	t.Parallel()
 	first := newEvidenceRepo(t)
 	second := newEvidenceRepo(t)
 	for _, repo := range []string{first, second} {
@@ -453,6 +460,7 @@ func TestDifferentRepositoriesCannotReuseReceipt(t *testing.T) {
 }
 
 func TestSubmoduleGitlinkAndDirtyWorktreeInvalidateReuse(t *testing.T) {
+	t.Parallel()
 	child := newEvidenceRepo(t)
 	writeEvidenceFile(t, child, "child.txt", "one\n")
 	mustEvidenceGit(t, child, "add", "child.txt")
@@ -498,6 +506,7 @@ func TestSubmoduleGitlinkAndDirtyWorktreeInvalidateReuse(t *testing.T) {
 }
 
 func TestSemanticAndConfigInputsChangeIdentity(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	writeEvidenceFile(t, repo, "config.json", "{\"value\":1}\n")
@@ -543,6 +552,7 @@ func TestSemanticAndConfigInputsChangeIdentity(t *testing.T) {
 }
 
 func TestTamperedReportAndReceiptFailClosed(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -581,6 +591,7 @@ func TestTamperedReportAndReceiptFailClosed(t *testing.T) {
 }
 
 func TestConcurrentPutIsIdempotentOnWindowsRenameSemantics(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -612,6 +623,7 @@ func TestConcurrentPutIsIdempotentOnWindowsRenameSemantics(t *testing.T) {
 }
 
 func TestToolchainCacheHitDoesNotRewriteFile(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -636,6 +648,7 @@ func TestToolchainCacheHitDoesNotRewriteFile(t *testing.T) {
 }
 
 func TestCorruptToolchainCacheIsRebuilt(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -658,6 +671,7 @@ func TestCorruptToolchainCacheIsRebuilt(t *testing.T) {
 }
 
 func TestCheckUsesExactReceiptPath(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -677,6 +691,7 @@ func TestCheckUsesExactReceiptPath(t *testing.T) {
 }
 
 func TestPutRejectsFailAndPathsCannotEscapeStore(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -699,6 +714,7 @@ func TestPutRejectsFailAndPathsCannotEscapeStore(t *testing.T) {
 }
 
 func TestListReturnsNewestReceiptByFileMtime(t *testing.T) {
+	t.Parallel()
 	repo := newEvidenceRepo(t)
 	writeEvidenceFile(t, repo, "tracked.txt", "one\n")
 	mustEvidenceGit(t, repo, "add", "tracked.txt")
@@ -779,7 +795,7 @@ func putNodeFixture(t *testing.T, store Repository, fingerprint Fingerprint) Rec
 func newEvidenceRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
-	mustEvidenceGit(t, repo, "init", "-q")
+	initEvidenceTestGitRepo(t, repo)
 	mustEvidenceGit(t, repo, "config", "user.email", "test@example.com")
 	mustEvidenceGit(t, repo, "config", "user.name", "Test User")
 	return repo

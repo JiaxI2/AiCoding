@@ -16,6 +16,7 @@ import (
 )
 
 func TestValidationExplainHitAndTreeOnlyMissAreDeterministic(t *testing.T) {
+	t.Parallel()
 	repo := newValidationCLIRepo(t)
 	_, fingerprint := putValidationCLIReceipt(t, repo, validationevidence.TargetHead)
 
@@ -53,6 +54,7 @@ func TestValidationExplainHitAndTreeOnlyMissAreDeterministic(t *testing.T) {
 }
 
 func TestValidationCommandsCheckListStatusAndCleanReceipts(t *testing.T) {
+	t.Parallel()
 	repo := newValidationCLIRepo(t)
 	start := time.Now()
 
@@ -97,6 +99,7 @@ func TestValidationCommandsCheckListStatusAndCleanReceipts(t *testing.T) {
 }
 
 func TestValidationIndexReceiptSurvivesCommitAndMessageAmend(t *testing.T) {
+	t.Parallel()
 	repo := newValidationCLIRepo(t)
 	mustWrite(t, filepath.Join(repo, "tracked.txt"), "staged\n")
 	mustValidationCLIGit(t, repo, "add", "tracked.txt")
@@ -130,6 +133,7 @@ func TestValidationIndexReceiptSurvivesCommitAndMessageAmend(t *testing.T) {
 }
 
 func TestValidationHeadCheckExplicitlyRepairsOnlyMetadataOnlyTipAlias(t *testing.T) {
+	t.Parallel()
 	repo := newValidationCLIRepo(t)
 	store, fingerprint := putValidationCLIReceipt(t, repo, validationevidence.TargetHead)
 	mustValidationCLIGit(t, repo, "commit", "--allow-empty", "-m", "metadata-only replacement one")
@@ -170,6 +174,7 @@ func TestValidationHeadCheckExplicitlyRepairsOnlyMetadataOnlyTipAlias(t *testing
 }
 
 func TestValidationHeadCheckDoesNotBindAliasOnMiss(t *testing.T) {
+	t.Parallel()
 	repo := newValidationCLIRepo(t)
 	store, err := validationevidence.Open(repo)
 	if err != nil {
@@ -260,7 +265,7 @@ func TestValidationCommandRejectsRemovedAndInvalidForms(t *testing.T) {
 func newValidationCLIRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
-	mustValidationCLIGit(t, repo, "init")
+	initCLITestGitRepo(t, repo)
 	mustValidationCLIGit(t, repo, "config", "user.email", "validation@example.invalid")
 	mustValidationCLIGit(t, repo, "config", "user.name", "Validation Test")
 	mustWrite(t, filepath.Join(repo, "tracked.txt"), "initial\n")

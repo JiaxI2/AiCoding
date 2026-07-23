@@ -33,6 +33,7 @@ func TestFreezeChecksCurrentRepository(t *testing.T) {
 }
 
 func TestUniqueProductionTypeRejectsDuplicate(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFreezeTestFile(t, repo, "internal/report/result.go", "package report\n\ntype Result struct{}\n")
 	writeFreezeTestFile(t, repo, "internal/report/nested/duplicate.go", "package nested\n\ntype Result struct{}\n")
@@ -43,6 +44,7 @@ func TestUniqueProductionTypeRejectsDuplicate(t *testing.T) {
 }
 
 func TestRegistryContainsFreezeGates(t *testing.T) {
+	t.Parallel()
 	cfg, err := NormalizeConfig(Config{Repo: t.TempDir(), Profile: ProfileSmoke})
 	if err != nil {
 		t.Fatal(err)
@@ -62,6 +64,7 @@ func TestRegistryContainsFreezeGates(t *testing.T) {
 }
 
 func TestLoopWorkCatalogRejectsExecutionCommand(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFreezeTestFile(t, repo, "internal/cli/catalog.go", "package cli\n\nvar forbidden = \"aicoding work run --file SPEC.json\"\n")
 	err := checkLoopWorkCatalog(repo)
@@ -71,6 +74,7 @@ func TestLoopWorkCatalogRejectsExecutionCommand(t *testing.T) {
 }
 
 func TestLoopDecideSignatureRejectsFifthParameter(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFreezeTestFile(t, repo, "internal/loopkit/transition/transition.go", `package transition
 
@@ -85,6 +89,7 @@ func Decide(spec workspec.Spec, history []Attempt, gates []GateStatus, now time.
 }
 
 func TestValidationFingerprintRejectsFieldDrift(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFreezeTestFile(t, repo, "internal/validationevidence/model.go", "package validationevidence\n\ntype Fingerprint struct { Identity string }\n")
 	err := checkValidationFingerprintFields(repo)
@@ -94,6 +99,7 @@ func TestValidationFingerprintRejectsFieldDrift(t *testing.T) {
 }
 
 func TestKitManifestSourceRejectsRequired(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFreezeTestFile(t, repo, "config/schemas/kit-manifest.schema.json", `{"required":["source"],"properties":{"source":{}}}`)
 	err := checkKitManifestSourceOptional(repo)
@@ -103,6 +109,7 @@ func TestKitManifestSourceRejectsRequired(t *testing.T) {
 }
 
 func TestTypedSubcommandCatalogRejectsExternalRoute(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeFreezeTestFile(t, repo, "internal/cli/catalog.go", `package cli
 
@@ -136,6 +143,7 @@ func runKit(args []string) {
 }
 
 func TestProductProfileVocabularyRejectsIndependentHelp(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeProfileFreezeFixture(t, repo, `[]string{"Smoke", "Full", "Release"}`, `fs.String("profile", "Smoke", "Smoke, Full or Lifecycle")`)
 	err := checkProductProfileVocabulary(repo)
@@ -145,6 +153,7 @@ func TestProductProfileVocabularyRejectsIndependentHelp(t *testing.T) {
 }
 
 func TestProductProfileVocabularyRejectsFourthValue(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeProfileFreezeFixture(t, repo, `[]string{"Smoke", "Full", "Release", "Canary"}`, `fs.String("profile", "Smoke", productProfileHelp())`)
 	err := checkProductProfileVocabulary(repo)

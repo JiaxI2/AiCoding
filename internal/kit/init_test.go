@@ -11,6 +11,7 @@ import (
 )
 
 func TestKitInitDryRunThenGeneratedScaffoldPassesLifecycle(t *testing.T) {
+	t.Parallel()
 	repo := structureRepo(t, true)
 	registryPath := filepath.Join(repo, "config", "kit-registry.json")
 	originalRegistry := []byte("{\n  \"schemaVersion\": 1,\n  \"name\": \"test\",\n  \"defaultMode\": \"repo-scoped\",\n  \"kits\": []\n}\n")
@@ -89,6 +90,7 @@ func TestKitInitDryRunThenGeneratedScaffoldPassesLifecycle(t *testing.T) {
 }
 
 func TestKitInitExternalBoundaryAndInputPolicy(t *testing.T) {
+	t.Parallel()
 	repo := structureRepo(t, true)
 	writeLifecycleRegistry(t, repo, []string{"existing-kit"})
 	writeLifecycleManifest(t, repo, "existing-kit", `"status":{"type":"builtin-check","requiredPaths":[]}`, "")
@@ -203,6 +205,7 @@ func countKitInitDependencyBindings(t *testing.T, path, id string) int {
 }
 
 func TestKitInitManifestValidationRejectsTemplateSchemaDrift(t *testing.T) {
+	t.Parallel()
 	data := kitInitTemplateData{
 		ID: "demo-kit", Name: "Demo Kit", ManifestPath: "config/kits/demo-kit.json",
 		BoundaryPath: "docs/reference/kits/demo-kit-BOUNDARY.md",

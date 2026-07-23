@@ -52,6 +52,7 @@ func TestKitRegisterStartsBackgroundPrefetchAndListStaysFast(t *testing.T) {
 }
 
 func TestLifecycleCLIReportsEvidenceMissingWithoutImplicitFetch(t *testing.T) {
+	t.Parallel()
 	external, commit := newPinnedCLIExternalRepo(t)
 	repo := newPinnedCLIRepo(t)
 	writePinnedCLIManifest(t, repo, external, commit)
@@ -74,6 +75,7 @@ func TestLifecycleCLIReportsEvidenceMissingWithoutImplicitFetch(t *testing.T) {
 }
 
 func TestKitPrefetchThenLifecycleInstallUsesLocalPin(t *testing.T) {
+	t.Parallel()
 	external, commit := newPinnedCLIExternalRepo(t)
 	repo := newPinnedCLIRepo(t)
 	writePinnedCLIManifest(t, repo, external, commit)
@@ -101,7 +103,7 @@ func TestKitPrefetchThenLifecycleInstallUsesLocalPin(t *testing.T) {
 func newPinnedCLIRepo(t *testing.T) string {
 	t.Helper()
 	repo := t.TempDir()
-	gitWorkTest(t, repo, "init")
+	initCLITestGitRepo(t, repo)
 	gitWorkTest(t, repo, "config", "user.email", "pins@example.invalid")
 	gitWorkTest(t, repo, "config", "user.name", "Pinned CLI")
 	mustWrite(t, filepath.Join(repo, "go.mod"), "module example.invalid/pinned\n\ngo 1.22\n")
@@ -113,7 +115,7 @@ func newPinnedCLIRepo(t *testing.T) string {
 func newPinnedCLIExternalRepo(t *testing.T) (string, string) {
 	t.Helper()
 	repo := t.TempDir()
-	gitWorkTest(t, repo, "init")
+	initCLITestGitRepo(t, repo)
 	gitWorkTest(t, repo, "config", "user.email", "pins@example.invalid")
 	gitWorkTest(t, repo, "config", "user.name", "Pinned CLI")
 	mustWrite(t, filepath.Join(repo, "skills", "external", "SKILL.md"), "---\nname: pinned-external\ndescription: Pinned CLI Skill\n---\n\n# Pinned CLI Skill\n")

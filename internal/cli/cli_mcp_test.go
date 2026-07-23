@@ -12,6 +12,7 @@ import (
 )
 
 func TestRunMCPList(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "config", "mcp-registry.json"), `{
   "schemaVersion":1,
@@ -50,6 +51,7 @@ func TestRunMCPList(t *testing.T) {
 }
 
 func TestRunUnifiedLifecycleMCPPlan(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "config", "mcp-registry.json"), `{
   "schemaVersion":1,

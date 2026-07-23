@@ -10,6 +10,7 @@ import (
 )
 
 func TestToolchainSemanticDigestChangesWithToolVersions(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		goVersion  string
@@ -45,6 +46,7 @@ func TestToolchainSemanticDigestChangesWithToolVersions(t *testing.T) {
 }
 
 func TestToolchainPathAndMtimeReprobeWithoutSemanticDrift(t *testing.T) {
+	t.Parallel()
 	store := Repository{root: t.TempDir()}
 	firstDir := t.TempDir()
 	firstGo := writeProbeFile(t, firstDir, "go")
@@ -94,6 +96,7 @@ func TestToolchainPathAndMtimeReprobeWithoutSemanticDrift(t *testing.T) {
 }
 
 func TestToolchainPlatformArchitectureInjectionChangesDigest(t *testing.T) {
+	t.Parallel()
 	store := Repository{root: t.TempDir()}
 	dir := t.TempDir()
 	goPath := writeProbeFile(t, dir, "go")
@@ -132,6 +135,7 @@ func TestToolchainPlatformArchitectureInjectionChangesDigest(t *testing.T) {
 }
 
 func TestToolchainProbeFailuresAreFailClosed(t *testing.T) {
+	t.Parallel()
 	t.Run("locate", func(t *testing.T) {
 		probe := fakeToolchainProbe("", "", "", "", "windows", "amd64", nil)
 		probe.Locate = func(name string) (executableFingerprint, error) {
@@ -157,6 +161,7 @@ func TestToolchainProbeFailuresAreFailClosed(t *testing.T) {
 }
 
 func TestCorruptToolchainCacheIsRejectedAndRebuiltFromProbe(t *testing.T) {
+	t.Parallel()
 	store := Repository{root: t.TempDir()}
 	dir := t.TempDir()
 	goPath := writeProbeFile(t, dir, "go")

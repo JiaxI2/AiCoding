@@ -20,11 +20,10 @@ import (
 )
 
 func TestRunNewFastPathCommands(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	mustWrite(t, filepath.Join(repo, "go.mod"), "module example.com/repo\n\ngo 1.22\n")
-	if out, err := exec.Command("git", "init", repo).CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v: %s", err, out)
-	}
+	initCLITestGitRepo(t, repo)
 	mustWrite(t, filepath.Join(repo, "Taskfile.yml"), "tasks:\n  smoke:\n    cmds:\n      - bin/aicoding.exe kit verify --all --level smoke --json\n")
 	mustWrite(t, filepath.Join(repo, "config", "tagging-policy.json"), `{"schemaVersion":1}`)
 	mustWrite(t, filepath.Join(repo, "docs", "operations", "evidence", "pwsh-budget-release-fixture.json"), `{"schemaVersion":1,"command":"doctor pwsh","ok":true,"data":{"retirement":{"scope":"tools/specialty/*.ps1","remainingScripts":2,"unspecified":0}}}`)
@@ -168,12 +167,13 @@ func mustWrite(t *testing.T, path, content string) {
 }
 
 func TestMainSwitchRoutesNewCommands(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
-	cmd := exec.Command("go", "run", "../../cmd/aicoding", "cache", "status", "--repo-root", repo, "--json")
+	cmd := exec.Command(cliTestBinary, "cache", "status", "--repo-root", repo, "--json")
 	cmd.Dir = "."
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("go run cache status: %v: %s", err, out)
+		t.Fatalf("built aicoding cache status: %v: %s", err, out)
 	}
 	if !strings.Contains(string(out), `"command": "cache status"`) {
 		t.Fatalf("unexpected output: %s", out)
@@ -181,6 +181,7 @@ func TestMainSwitchRoutesNewCommands(t *testing.T) {
 }
 
 func TestRunCacheCleanParsesRetentionFlags(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	for index := 0; index < 8; index++ {
 		mustWrite(t, filepath.Join(repo, "test-results", fmt.Sprintf("aicoding-global-test-%02d", index), "summary.json"), `{"conclusion":"PASS"}`)
@@ -325,6 +326,7 @@ func TestKitDescribeRejectsInvalidSelectionAndScopesWithState(t *testing.T) {
 }
 
 func TestKitInitCLIProducesLifecycleValidScaffold(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeGoControlFixture(t, repo)
 
@@ -384,9 +386,7 @@ func gitStatusPorcelain(t *testing.T, repo string) string {
 
 func TestGoControlPlaneCommandsUseRealGoImplementations(t *testing.T) {
 	repo := t.TempDir()
-	if out, err := exec.Command("git", "init", repo).CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v: %s", err, out)
-	}
+	initCLITestGitRepo(t, repo)
 	writeGoControlFixture(t, repo)
 	installPassingTestEngine(t)
 	if out, err := exec.Command("git", "-C", repo, "add", ".").CombinedOutput(); err != nil {
@@ -450,6 +450,7 @@ func TestGoControlPlaneCommandsUseRealGoImplementations(t *testing.T) {
 }
 
 func TestFreshCloneCommandReportsGoPathErrors(t *testing.T) {
+	t.Parallel()
 	missingRepo := filepath.Join(t.TempDir(), "missing")
 	res, err := runFreshClone([]string{"--repo-root", missingRepo, "--json"}, time.Now())
 	if err == nil || res.OK || res.Command != "fresh-clone" {
@@ -458,6 +459,7 @@ func TestFreshCloneCommandReportsGoPathErrors(t *testing.T) {
 }
 
 func TestC99StandardCSkillCommandsRouteToCStyle(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeC99SkillFixture(t, repo)
 
@@ -472,6 +474,7 @@ func TestC99StandardCSkillCommandsRouteToCStyle(t *testing.T) {
 }
 
 func TestC99StandardCSkillVerifyWrapsCStyleKitJSON(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeC99SkillFixture(t, repo)
 	writeFakeCStyleKit(t, repo)
@@ -508,6 +511,7 @@ func TestC99StandardCSkillVerifyWrapsCStyleKitJSON(t *testing.T) {
 }
 
 func TestKitLegacyProfileCompatibilityWarnings(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	writeGoControlFixture(t, repo)
 	if initialized, err := runKit([]string{"init", "tmp-kit", "--repo-root", repo, "--json"}, time.Now()); err != nil || !initialized.OK {
@@ -636,6 +640,7 @@ func TestCanonicalTestCommandsRouteDirectlyToEngine(t *testing.T) {
 }
 
 func TestRunTestLatestReadsLatestReport(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
 	older := filepath.Join(repo, "test-results", "aicoding-global-test-20260101-000000")
 	newer := filepath.Join(repo, "test-results", "aicoding-global-test-20260102-000000")

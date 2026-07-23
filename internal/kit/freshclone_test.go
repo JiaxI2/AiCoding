@@ -3,7 +3,6 @@ package kit
 import (
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -61,12 +60,9 @@ func TestFreshCloneStepElapsedMSIsAlwaysSerialized(t *testing.T) {
 }
 
 func TestFreshCloneFailureRetainsRegisteredEvidence(t *testing.T) {
+	t.Parallel()
 	repo := t.TempDir()
-	command := exec.Command("git", "init", "-q")
-	command.Dir = repo
-	if output, err := command.CombinedOutput(); err != nil {
-		t.Skipf("git unavailable: %v: %s", err, output)
-	}
+	initKitTestGitRepo(t, repo)
 	report := FreshClone(repo, "Smoke", false)
 	if report.OK || !report.KeptTemp || report.TempRoot == "" || report.SourceMode != "cloned" {
 		t.Fatalf("fresh-clone failure was not retained: %#v", report)
